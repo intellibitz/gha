@@ -1,7 +1,6 @@
 package cc.thevar.gha
 
 import cc.thevar.gha.safety.GhaSandboxManager
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
@@ -10,30 +9,24 @@ import org.gradle.work.DisableCachingByDefault
 abstract class GhaStatusTask : GhaTask() {
 
     @get:Input
-    abstract val projectName: Property<String>
+    var taskGradleVersionStr: String = "9.7.1"
 
     @get:Input
-    abstract val gradleVersion: Property<String>
-
-    init {
-        projectName.convention(project.rootProject.name)
-        gradleVersion.convention(project.gradle.gradleVersion)
-    }
+    var taskSubprojectsSummary: String = "(Single Project)"
 
     @TaskAction
     fun execute() {
-        val rootDir = projectRootDir.get().asFile
-        val userHome = gradleUserHomeDir.get().asFile
+        val rootDir = taskRootDirFile
+        val userHome = taskGradleUserHomeDirFile
         val (isHealthy, _) = GhaSandboxManager.healthCheck(rootDir, userHome)
-        val subprojects = project.rootProject.subprojects.map { ":${it.name}" }
 
-        logger.lifecycle("📊 [GHA Status] Project: ${projectName.get()} ${if (subprojects.isNotEmpty()) "(Subprojects: ${subprojects.joinToString(", ")})" else "(Single Project)"}")
-        logger.lifecycle("   RootDir: ${rootDir.absolutePath}")
-        logger.lifecycle("   Sandbox: ${if (isHealthy) "✅ HEALTHY" else "❌ UNHEALTHY"}")
-        logger.lifecycle("   Platform: ${System.getProperty("os.name")} (${System.getProperty("os.arch")})")
-        logger.lifecycle("   Gradle Engine: ${gradleVersion.get()} (Delegating to official Gradle Engine)")
-        logger.lifecycle("   Git Engine: Official Git VCS CLI (Delegating to GhaGitExec)")
-        logger.lifecycle("   GitHub Engine: Official GitHub CLI & REST API (Delegating to gh CLI)")
-        logger.lifecycle("   GitHub Token: ${maskedToken()}")
+        println("📊 [GHA Status] Project: $taskProjectNameStr $taskSubprojectsSummary")
+        println("   RootDir: ${rootDir.absolutePath}")
+        println("   Sandbox: ${if (isHealthy) "✅ HEALTHY" else "❌ UNHEALTHY"}")
+        println("   Platform: ${System.getProperty("os.name")} (${System.getProperty("os.arch")})")
+        println("   Gradle Engine: $taskGradleVersionStr (Delegating to official Gradle Engine)")
+        println("   Git Engine: Official Git VCS CLI (Delegating to GhaGitExec)")
+        println("   GitHub Engine: Official GitHub CLI & REST API (Delegating to gh CLI)")
+        println("   GitHub Token: ${maskedToken()}")
     }
 }

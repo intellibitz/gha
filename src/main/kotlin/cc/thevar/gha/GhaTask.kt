@@ -6,11 +6,9 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.work.DisableCachingByDefault
+import java.io.File
 
 /**
  * Base task for GitHub Automation.
@@ -19,15 +17,10 @@ import org.gradle.work.DisableCachingByDefault
 @DisableCachingByDefault(because = "Base task for GitHub Automation")
 abstract class GhaTask : DefaultTask() {
 
-    /**
-     * Marked @get:Internal so credentials are NEVER recorded in
-     * task inputs, build scans, or configuration cache reports.
-     */
     @get:Internal
     abstract val gitHubToken: Property<String>
 
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
+    @get:Internal
     abstract val projectRootDir: DirectoryProperty
 
     @get:Internal
@@ -36,15 +29,43 @@ abstract class GhaTask : DefaultTask() {
     @get:Internal
     abstract val ghaProjectName: Property<String>
 
+    @get:Internal
+    var taskRootDirFile: File = File(".")
+
+    @get:Internal
+    var taskGitHubToken: String = ""
+
+    @get:Internal
+    var taskGradleUserHomeDirFile: File = File(".")
+
+    @get:Internal
+    var taskProjectNameStr: String = "gha"
+
     init {
-        gitHubToken.convention(
-            GhaCredentialsResolver.resolveGitHubToken(project.providers)
-        )
-        // Resolves the root project directory for Git & GitHub operations across multi-module subprojects
-        projectRootDir.convention(project.rootProject.layout.projectDirectory)
-        ghaProjectName.convention(project.rootProject.name)
+        val rootFile = project.layout.projectDirectory.asFile
+        val pName = project.name
         val homeDir = project.gradle.gradleUserHomeDir
-        gradleUserHomeDir.convention(project.layout.dir(project.providers.provider { homeDir }))
+
+        val tokenVal = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
+
+        gitHubToken.convention(tokenVal)
+        projectRootDir.convention(project.layout.dir(project.provider { rootFile }))
+        ghaProjectName.convention(pName)
+        gradleUserHomeDir.convention(project.layout.dir(project.provider { homeDir }))
+
+        taskRootDirFile = rootFile
+        taskGitHubToken = tokenVal
+        taskGradleUserHomeDirFile = homeDir
+        taskProjectNameStr = pName
+    }
+
+    /**
+     * Safely resolves the active GitHub token without Configuration Cache violations.
+     */
+    protected fun resolveToken(): String {
+        val t = gitHubToken.orNull ?: ""
+        if (t.isNotBlank()) return t
+        return GhaCredentialsResolver.resolveDirectToken(projectRootDir.get().asFile)
     }
 
     /**
@@ -74,6 +95,6 @@ abstract class GhaTask : DefaultTask() {
      * Safely returns a masked representation of the GitHub token for logging purposes.
      */
     protected fun maskedToken(): String {
-        return GhaCredentialsResolver.maskToken(gitHubToken.orNull)
+        return GhaCredentialsResolver.maskToken(resolveToken())
     }
 }
