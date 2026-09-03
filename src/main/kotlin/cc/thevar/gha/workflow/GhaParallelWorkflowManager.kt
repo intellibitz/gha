@@ -15,7 +15,8 @@ import java.util.Locale
  * 2. Rebase-First Sync: Keeps feature/working branches up-to-date with upstream base branches via `git pull --rebase`.
  * 3. Idempotency & Loop Prevention: Detects existing PRs for head branches to avoid duplicate PRs or creation loops.
  * 4. Self-Healing Stale Branch Recovery: Automatically recovers terminals stuck on stale merged auto-branches.
- * 5. Smart Branch Lifecycle:
+ * 5. Auto Git Init: Automatically initializes a Git repository if run in a brand new folder.
+ * 6. Smart Branch Lifecycle:
  *    - Preserves User-created branches (e.g., `feature/login`, `john/hotfix`).
  *    - Automatically deletes GHA auto-created branches (e.g., `gha-auto/...`, `gha/...`, `dependabot/...`) after merge.
  */
@@ -75,6 +76,7 @@ object GhaParallelWorkflowManager {
     /**
      * Ensures the repository is on a safe working branch.
      * Self-heals if the repository is stuck on a clean, stale auto-branch from a previous run.
+     * Auto-initializes Git if run in a directory that is not yet a Git repository.
      */
     fun prepareWorkingBranch(
         projectDir: File,
@@ -84,6 +86,13 @@ object GhaParallelWorkflowManager {
     ): Pair<String, Boolean> {
         var current = GhaGitExec.currentBranch(projectDir)
         val targetBase = if (requestedBaseBranch.isNotBlank()) requestedBaseBranch else "main"
+
+        // Auto-initialize Git repository if running in a brand new non-git folder
+        if (current == "unknown" || !File(projectDir, ".git").exists()) {
+            GhaGitExec.exec(projectDir, "init")
+            GhaGitExec.exec(projectDir, "checkout", "-b", targetBase)
+            current = GhaGitExec.currentBranch(projectDir).ifBlank { targetBase }
+        }
 
         if (!isProtectedBranch(current)) {
             val isAuto = isAutoCreatedBranch(current)
