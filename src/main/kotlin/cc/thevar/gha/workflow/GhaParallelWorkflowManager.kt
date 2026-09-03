@@ -14,7 +14,8 @@ import java.util.Locale
  * 1. Protected Branch Protection: Direct commits/pushes to protected base branches (main/master/release) are guarded.
  * 2. Rebase-First Sync: Keeps feature/working branches up-to-date with upstream base branches via `git pull --rebase`.
  * 3. Idempotency & Loop Prevention: Detects existing PRs for head branches to avoid duplicate PRs or creation loops.
- * 4. Smart Branch Lifecycle:
+ * 4. Self-Healing Stale Branch Recovery: Automatically recovers terminals stuck on stale merged auto-branches.
+ * 5. Smart Branch Lifecycle:
  *    - Preserves User-created branches (e.g., `feature/login`, `john/hotfix`).
  *    - Automatically deletes GHA auto-created branches (e.g., `gha-auto/...`, `gha/...`, `dependabot/...`) after merge.
  */
@@ -64,22 +65,37 @@ object GhaParallelWorkflowManager {
     }
 
     /**
-     * Ensures the repository is on a safe working branch (not directly on a protected base branch).
+     * Ensures the repository is on a safe working branch.
+     * Self-heals if the repository is stuck on a clean, stale auto-branch from a previous run.
      */
     fun prepareWorkingBranch(
         projectDir: File,
         requestedBaseBranch: String = "main",
         customUserBranch: String? = null,
+        token: String? = null,
     ): Pair<String, Boolean> {
-        val current = GhaGitExec.currentBranch(projectDir)
+        var current = GhaGitExec.currentBranch(projectDir)
+        val targetBase = if (requestedBaseBranch.isNotBlank()) requestedBaseBranch else "main"
 
         if (!isProtectedBranch(current)) {
-            // Already on a feature/working branch
             val isAuto = isAutoCreatedBranch(current)
-            return Pair(current, isAuto)
+            if (isAuto && GhaGitExec.isClean(projectDir)) {
+                val openPr = findOpenPr(projectDir, token, current, targetBase)
+                if (openPr == null) {
+                    // Stale auto-branch recovery: switch back to base branch and delete stale auto-branch
+                    GhaGitExec.checkout(projectDir, targetBase)
+                    GhaGitExec.pullRebase(projectDir, "origin", targetBase)
+                    GhaGitExec.deleteLocalBranch(projectDir, current, force = true)
+                    current = targetBase
+                } else {
+                    return Pair(current, true)
+                }
+            } else {
+                return Pair(current, isAuto)
+            }
         }
 
-        // We are on a protected branch (e.g., main). We MUST switch to a feature branch.
+        // We are on a protected branch (e.g., main).
         val targetBranch = if (!customUserBranch.isNullOrBlank()) {
             customUserBranch
         } else {
@@ -91,10 +107,9 @@ object GhaParallelWorkflowManager {
             workingDir = projectDir,
             branchName = targetBranch,
             createIfMissing = true,
-            startPoint = if (requestedBaseBranch.isNotBlank()) requestedBaseBranch else "main",
+            startPoint = targetBase,
         )
         if (!checkoutRes.isSuccess) {
-            // Fallback
             val fallback = generateAutoBranchName("fallback")
             GhaGitExec.checkout(projectDir, fallback, createIfMissing = true)
             return Pair(fallback, true)
