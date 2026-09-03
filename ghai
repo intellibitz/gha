@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# 🤖 ghai - Autonomous AI Workflow Execution Script
+./gradlew --init-script init/gha.init.gradle.kts ghai "$@"

@@ -6,7 +6,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import java.io.File
 
-@DisableCachingByDefault(because = "Initializes sandboxed GitHub Automation environment ridiculously easy")
+@DisableCachingByDefault(because = "Initializes sandboxed GitHub Automation environment ridiculously easy for creators & users")
 abstract class GhaInitTask : GhaTask() {
 
     @get:Input
@@ -30,10 +30,10 @@ abstract class GhaInitTask : GhaTask() {
                 """
                 {
                   "project": "${projectName.get()}",
-                  "version": "0.1.0",
+                  "version": "0.1.0-SNAPSHOT",
                   "sandboxed": true
                 }
-                """.trimIndent()
+                """.trimIndent() + "\n"
             )
         }
 
@@ -66,11 +66,34 @@ abstract class GhaInitTask : GhaTask() {
                 allprojects {
                     apply<cc.thevar.gha.GhaPlugin>()
                 }
-                """.trimIndent()
+                """.trimIndent() + "\n"
             )
         }
 
-        // 3. Create GitHub Actions Workflow (.github/workflows/gha.yml)
+        // 3. Create top-level ./ghai executable script
+        val ghaiScript = File(rootDir, "ghai")
+        if (!ghaiScript.exists()) {
+            ghaiScript.writeText(
+                """
+                #!/usr/bin/env bash
+                # 🤖 ghai - Autonomous AI Workflow Execution Script
+                ./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
+                """.trimIndent() + "\n"
+            )
+            ghaiScript.setExecutable(true)
+        }
+
+        val ghaiBat = File(rootDir, "ghai.bat")
+        if (!ghaiBat.exists()) {
+            ghaiBat.writeText(
+                """
+                @echo off
+                .\gradlew.bat --init-script init/gha.init.gradle.kts ghai %*
+                """.trimIndent() + "\n"
+            )
+        }
+
+        // 4. Create GitHub Actions Workflow (.github/workflows/gha.yml)
         val workflowsDir = File(rootDir, ".github/workflows")
         if (!workflowsDir.exists()) workflowsDir.mkdirs()
 
@@ -105,16 +128,17 @@ abstract class GhaInitTask : GhaTask() {
                         env:
                           GITHUB_TOKEN: ${'$'}{{ secrets.GITHUB_TOKEN }}
                         run: |
-                          chmod +x gradlew
-                          ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai
-                """.trimIndent()
+                          chmod +x gradlew ghai
+                          ./ghai
+                """.trimIndent() + "\n"
             )
         }
 
         logger.lifecycle("⚡ [gha] Ridiculously Easy 0-Effort Installation Complete!")
         logger.lifecycle("   ├── .gha/ sandbox initialized")
         logger.lifecycle("   ├── init/gha.init.gradle.kts created")
+        logger.lifecycle("   ├── ./ghai & ./ghai.bat runner scripts created")
         logger.lifecycle("   └── .github/workflows/gha.yml CI workflow created")
-        logger.lifecycle("🎉 gha is ready! Type './gradlew ghai' to run autonomous AI automation.")
+        logger.lifecycle("🎉 gha is ready! Type './ghai' to run autonomous AI automation.")
     }
 }

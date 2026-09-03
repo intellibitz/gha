@@ -1,9 +1,9 @@
-# 🚀 gha: 0 Effort, Ridiculously Easy Installer for Windows PowerShell
+# 🚀 gha: 0 Effort, Ridiculously Easy Installer for Creators & Users (Windows PowerShell)
 # Usage: iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "🚀 [gha Installer] Installing gha (Git, GitHub & Gradle Automation)..." -ForegroundColor Green
+Write-Host "🚀 [gha Installer] Installing gha for Creators & Users..." -ForegroundColor Green
 
 if (-not (Test-Path "init")) {
     New-Item -ItemType Directory -Path "init" | Out-Null
@@ -37,10 +37,18 @@ allprojects {
     }
 }
 
+# Create top-level ghai.bat runner script
+@'
+@echo off
+.\gradlew.bat --init-script init/gha.init.gradle.kts ghai %*
+'@ | Out-File -Encoding utf8 "ghai.bat"
+
 if (Test-Path ".\gradlew.bat") {
     Write-Host "⚙️ Initializing gha sandbox..." -ForegroundColor Cyan
-    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+    .\gradlew.bat --init-script init/gha.init.gradle.kts ghaInit
+    Write-Host "🤖 Executing ghai autonomous AI workflow..." -ForegroundColor Cyan
+    .\ghai.bat
 }
 
-Write-Host "🎉 [gha Installer] gha installed ridiculously easy in 1 second!" -ForegroundColor Green
-Write-Host "👉 Run: .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai" -ForegroundColor Yellow
+Write-Host "🎉 [gha Installer] gha & ghai installed ridiculously easy in 1 second!" -ForegroundColor Green
+Write-Host "👉 Creators & Users: Simply run '.\ghai.bat' anytime!" -ForegroundColor Yellow
