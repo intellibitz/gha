@@ -8,15 +8,6 @@ initscript {
     }
     dependencies {
         classpath("cc.thevar.gha:gha:0.1.0-SNAPSHOT")
-        classpath("org.gradle.toolchains:foojay-resolver:1.0.0")
-    }
-}
-
-settingsEvaluated {
-    try {
-        apply(plugin = "org.gradle.toolchains.foojay-resolver-convention")
-    } catch (_: Throwable) {
-        // Safe fallback if plugin repositories are not yet configured in settings
     }
 }
 
