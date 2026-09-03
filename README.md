@@ -87,6 +87,14 @@ plugins {
 | `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions |
 | `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
 
+### GitHub Wiki Tasks
+| Task | Description |
+| :--- | :--- |
+| `./gradlew ghaWikiInit` | Creates local `wiki/` documentation directory and template pages (`Home.md`, `_Sidebar.md`, etc.) |
+| `./gradlew ghaWikiStatus` | Displays local wiki pages, sizes, remote wiki URL, and sync status |
+| `./gradlew ghaWikiSync` | Pulls latest remote GitHub Wiki pages into local `wiki/` directory |
+| `./gradlew ghaWikiPublish` | Commits and pushes local `wiki/` pages to remote GitHub Wiki repository |
+
 ### GitHub Operations Tasks
 | Task | Description |
 | :--- | :--- |

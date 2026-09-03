@@ -11,6 +11,10 @@ import cc.thevar.gha.github.GhaIssueListTask
 import cc.thevar.gha.github.GhaPrCreateTask
 import cc.thevar.gha.github.GhaPrListTask
 import cc.thevar.gha.github.GhaReleaseCreateTask
+import cc.thevar.gha.wiki.GhaWikiInitTask
+import cc.thevar.gha.wiki.GhaWikiPublishTask
+import cc.thevar.gha.wiki.GhaWikiStatusTask
+import cc.thevar.gha.wiki.GhaWikiSyncTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -35,6 +39,27 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaDependencies", GhaDependenciesTask::class.java) {
             group = "GitHub Automation"
             description = "Prints all GHA dependencies, tools, SDKs, and their current versions"
+        }
+
+        // GitHub Wiki Tasks
+        project.tasks.register("ghaWikiInit", GhaWikiInitTask::class.java) {
+            group = "GitHub Wiki"
+            description = "Initializes local Wiki directory structure and template pages"
+        }
+
+        project.tasks.register("ghaWikiStatus", GhaWikiStatusTask::class.java) {
+            group = "GitHub Wiki"
+            description = "Displays current GitHub Wiki pages and sync status"
+        }
+
+        project.tasks.register("ghaWikiSync", GhaWikiSyncTask::class.java) {
+            group = "GitHub Wiki"
+            description = "Pulls latest changes from remote GitHub Wiki repository"
+        }
+
+        project.tasks.register("ghaWikiPublish", GhaWikiPublishTask::class.java) {
+            group = "GitHub Wiki"
+            description = "Publishes local wiki/ directory pages to remote GitHub Wiki repository"
         }
 
         // GitHub Operations
