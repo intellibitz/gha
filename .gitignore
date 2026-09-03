@@ -8,13 +8,9 @@
 .cxx
 local.properties
 
-# Android Studio IDE user workspace
-/.idea/workspace.xml
-/.idea/caches/
-/.idea/libraries/
-/.idea/modules.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+# IDE settings & user workspace (IntelliJ / Android Studio / VS Code)
+/.idea/
+.vscode/
 
 # Sandboxed Gradle User Home (dependencies & JDKs)
 .gha/gradle-user-home/
