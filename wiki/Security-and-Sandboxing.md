@@ -1,7 +1,15 @@
-# Security & Sandboxing
+# Security Policy for gha
 
-## Sandboxed Dependencies
-All Gradle user home caches, toolchain downloads, and execution state are confined to `.gha/gradle-user-home/`. Zero changes are made to `~/.gradle/`.
+## Supported Versions
 
-## Secret Isolation
-GitHub tokens are resolved via `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token` dynamically and masked (`ghp_...cdef`) in all task output.
+| Version | Supported          |
+| ------- | ------------------ |
+| 0.1.x   | :white_check_mark: |
+
+## Reporting a Vulnerability
+
+If you discover a security vulnerability within **gha**, please **do not** open a public issue.
+
+Instead, report the security vulnerability via GitHub Private Vulnerability Reporting or email the maintainers directly.
+
+All vulnerability reports will be acknowledged within 24 hours, and security patches will be released promptly.

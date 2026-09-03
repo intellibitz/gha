@@ -6,7 +6,7 @@ import java.io.File
 
 /**
  * Platform-independent GitHub Wiki manager.
- * Manages local `wiki/` documentation pages and synchronizes them with the remote `<owner>/<repo>.wiki.git` repository.
+ * Manages local `wiki/` documentation pages and synchronizes them with current project docs and the remote `<owner>/<repo>.wiki.git` repository.
  */
 object GhaWikiManager {
 
@@ -47,37 +47,28 @@ object GhaWikiManager {
     }
 
     /**
-     * Initializes a standard local `wiki/` directory with template pages.
+     * Synchronizes current project documentation (README.md, .github/SECURITY.md) into local `wiki/` pages.
      */
-    fun initLocalWiki(wikiDir: File, projectName: String) {
+    fun syncDocsToWiki(projectDir: File, wikiDir: File) {
         if (!wikiDir.exists()) {
             wikiDir.mkdirs()
         }
 
-        val homeFile = File(wikiDir, "Home.md")
-        if (!homeFile.exists()) {
-            homeFile.writeText(
-                """
-                # Welcome to $projectName Wiki
-
-                Welcome to the official documentation for **$projectName** (`cc.thevar.gha`).
-
-                ## Overview
-
-                **gha** is a 100% self-contained, platform-independent Git and GitHub automation framework written in pure Kotlin.
-
-                ## Quick Navigation
-
-                - [Installation & Quick Start](Installation)
-                - [Tasks Reference](Tasks-Reference)
-                - [Security & Sandboxing](Security-and-Sandboxing)
-
-                ---
-                *Automated and maintained via `ghaWikiPublish`.*
-                """.trimIndent()
-            )
+        // Sync README.md -> wiki/Home.md
+        val readmeFile = File(projectDir, "README.md")
+        if (readmeFile.exists()) {
+            val homeFile = File(wikiDir, "Home.md")
+            homeFile.writeText(readmeFile.readText())
         }
 
+        // Sync .github/SECURITY.md -> wiki/Security-and-Sandboxing.md
+        val securityFile = File(projectDir, ".github/SECURITY.md")
+        if (securityFile.exists()) {
+            val wikiSecurityFile = File(wikiDir, "Security-and-Sandboxing.md")
+            wikiSecurityFile.writeText(securityFile.readText())
+        }
+
+        // Ensure _Sidebar.md exists
         val sidebarFile = File(wikiDir, "_Sidebar.md")
         if (!sidebarFile.exists()) {
             sidebarFile.writeText(
@@ -92,16 +83,18 @@ object GhaWikiManager {
             )
         }
 
+        // Ensure _Footer.md exists
         val footerFile = File(wikiDir, "_Footer.md")
         if (!footerFile.exists()) {
             footerFile.writeText(
                 """
                 ---
-                *Powered by [gha](https://github.com/intellibitz/gha) — 100% Kotlin GitHub Automation.*
+                *Powered by [gha](https://github.com/intellibitz/gha) — 100% Kotlin Git, GitHub & Gradle Automation.*
                 """.trimIndent()
             )
         }
 
+        // Ensure Installation.md exists
         val installationFile = File(wikiDir, "Installation.md")
         if (!installationFile.exists()) {
             installationFile.writeText(
@@ -129,6 +122,7 @@ object GhaWikiManager {
             )
         }
 
+        // Ensure Tasks-Reference.md exists
         val referenceFile = File(wikiDir, "Tasks-Reference.md")
         if (!referenceFile.exists()) {
             referenceFile.writeText(
@@ -141,17 +135,44 @@ object GhaWikiManager {
                 - `./gradlew ghaDependencies`: Prints trusted vendors and dependency versions.
                 - `./gradlew ghaWorkflow`: Executes automated workflows.
 
+                ## GitHub Insights
+                - `./gradlew ghaInsights`: Displays repository overview, stars, forks, watchers, and commit counts.
+                - `./gradlew ghaContributors`: Displays contributor breakdown and commit percentages.
+                - `./gradlew ghaTraffic`: Displays repository views and clone statistics.
+
+                ## GitHub Security & Vulnerabilities
+                - `./gradlew ghaSecurityInit`: Generates default security workflows, Dependabot, CodeQL, and SECURITY.md.
+                - `./gradlew ghaSecurityStatus`: Displays security and Dependabot status.
+                - `./gradlew ghaDependabotInit`: Generates .github/dependabot.yml.
+                - `./gradlew ghaDependabotList`: Lists active Dependabot PRs and branches.
+                - `./gradlew ghaDependabotMerge`: Merges Dependabot PRs and deletes remote branches.
+                - `./gradlew ghaDependabotClose`: Closes Dependabot PRs and deletes remote branches.
+                - `./gradlew ghaDependabotRebase`: Requests Dependabot to rebase or recreate PRs.
+                - `./gradlew ghaCodeScanningInit`: Generates CodeQL code scanning workflow.
+
                 ## GitHub Wiki Tasks
                 - `./gradlew ghaWikiInit`: Creates local `wiki/` documentation directory and template pages.
                 - `./gradlew ghaWikiStatus`: Inspects local wiki pages and remote wiki status.
                 - `./gradlew ghaWikiSync`: Pulls remote wiki changes into local `wiki/` directory.
-                - `./gradlew ghaWikiPublish`: Commits and pushes local `wiki/` pages to remote GitHub Wiki.
+                - `./gradlew ghaWikiPublish`: Syncs project docs and pushes local `wiki/` pages to remote GitHub Wiki.
 
                 ## GitHub Operations
                 - `./gradlew ghaPrCreate`: Creates Pull Requests.
                 - `./gradlew ghaPrList`: Lists open Pull Requests.
+                - `./gradlew ghaPrView`: Displays Pull Request details.
+                - `./gradlew ghaPrCheckout`: Checks out Pull Request branch locally.
+                - `./gradlew ghaPrEdit`: Edits Pull Request details.
+                - `./gradlew ghaPrReview`: Submits a Pull Request review.
+                - `./gradlew ghaPrMerge`: Merges Pull Requests.
+                - `./gradlew ghaPrClose`: Closes Pull Requests.
+                - `./gradlew ghaPrReopen`: Reopens closed Pull Requests.
                 - `./gradlew ghaIssueCreate`: Creates Issues.
-                - `./gradlew ghaIssueList`: Lists open Issues.
+                - `./gradlew ghaIssueList`: Lists Issues.
+                - `./gradlew ghaIssueView`: Displays Issue details.
+                - `./gradlew ghaIssueComment`: Adds comments to Issues.
+                - `./gradlew ghaIssueEdit`: Edits Issue details.
+                - `./gradlew ghaIssueClose`: Closes Issues.
+                - `./gradlew ghaIssueReopen`: Reopens closed Issues.
                 - `./gradlew ghaReleaseCreate`: Creates Releases.
 
                 ## Git Operations
@@ -164,21 +185,13 @@ object GhaWikiManager {
                 """.trimIndent()
             )
         }
+    }
 
-        val securityFile = File(wikiDir, "Security-and-Sandboxing.md")
-        if (!securityFile.exists()) {
-            securityFile.writeText(
-                """
-                # Security & Sandboxing
-
-                ## Sandboxed Dependencies
-                All Gradle user home caches, toolchain downloads, and execution state are confined to `.gha/gradle-user-home/`. Zero changes are made to `~/.gradle/`.
-
-                ## Secret Isolation
-                GitHub tokens are resolved via `GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token` dynamically and masked (`ghp_...cdef`) in all task output.
-                """.trimIndent()
-            )
-        }
+    /**
+     * Initializes a standard local `wiki/` directory with template pages.
+     */
+    fun initLocalWiki(wikiDir: File, projectName: String = "") {
+        syncDocsToWiki(wikiDir.parentFile ?: wikiDir, wikiDir)
     }
 
     /**
@@ -229,6 +242,9 @@ object GhaWikiManager {
      * Publishes local `wiki/` contents to the remote GitHub Wiki repository.
      */
     fun publishWiki(projectDir: File, wikiDir: File, token: String?, commitMessage: String): GhaProcessRunner.ProcessResult {
+        // Automatically sync current project docs (README.md, SECURITY.md) to local wiki/ pages first
+        syncDocsToWiki(projectDir, wikiDir)
+
         val (workspace, prepareResult) = prepareWikiWorkspace(projectDir, token)
         if (workspace == null) {
             return prepareResult
@@ -262,8 +278,9 @@ object GhaWikiManager {
         }
 
         // Push current branch to origin
-        val branch = GhaGitExec.currentBranch(workspace)
-        val pushResult = GhaProcessRunner.exec(workspace, listOf("git", "push", "-u", "origin", branch), extraEnv = env, timeoutSeconds = 45L)
+        val rawBranch = GhaGitExec.currentBranch(workspace)
+        val branch = if (rawBranch.isNotBlank() && rawBranch != "HEAD" && rawBranch != "unknown") rawBranch else "master"
+        val pushResult = GhaProcessRunner.exec(workspace, listOf("git", "push", "-u", "origin", "HEAD:refs/heads/$branch"), extraEnv = env, timeoutSeconds = 45L)
         if (!pushResult.isSuccess) {
             val err = pushResult.stderr.ifEmpty { pushResult.stdout }
             if (err.contains("Repository not found")) {
