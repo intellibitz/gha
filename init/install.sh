@@ -8,7 +8,19 @@ mkdir -p init gradle/wrapper
 if [ ! -f "settings.gradle.kts" ] && [ ! -f "settings.gradle" ]; then
     PROJECT_NAME="$(basename "$PWD")"
     echo "📥 Creating settings.gradle.kts (rootProject.name = \"$PROJECT_NAME\")..."
-    echo "rootProject.name = \"$PROJECT_NAME\"" > settings.gradle.kts
+    cat << 'EOF' > settings.gradle.kts
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+EOF
+    echo "rootProject.name = \"$PROJECT_NAME\"" >> settings.gradle.kts
 fi
 
 # 2. Scaffold minimal build.gradle.kts if no build file exists

@@ -1,6 +1,5 @@
 // Self-contained Gradle Init Script for GitHub Automation (GHA)
 // 100% Sandboxed - 0% System Modifications.
-// Usage: ./gradlew --init-script init/gha.init.gradle.kts ghaInit
 initscript {
     repositories {
         mavenLocal()
@@ -14,7 +13,11 @@ initscript {
 }
 
 settingsEvaluated {
-    apply(plugin = "org.gradle.toolchains.foojay-resolver-convention")
+    try {
+        apply(plugin = "org.gradle.toolchains.foojay-resolver-convention")
+    } catch (_: Throwable) {
+        // Safe fallback if plugin repositories are not yet configured in settings
+    }
 }
 
 allprojects {
