@@ -71,6 +71,9 @@ abstract class GhaAiTask : GhaTask() {
         )
         val branchCategory = if (isAutoBranch) "GHA Auto-Branch" else "User Branch"
 
+        var activeHeadBranch = headBranch
+        var activeBranchCategory = branchCategory
+
         var commitSummary = "No uncommitted local changes"
         var pushSummary = "Up to date"
         var prSummary = "N/A"
@@ -161,13 +164,15 @@ abstract class GhaAiTask : GhaTask() {
                         if (merged) {
                             prSummary = "PR #${openPr.number} MERGED"
                             if (isAutoBranch) {
-                                logger.lifecycle("🗑️ Merged PR #${openPr.number} and auto-cleaned branch '$headBranch'.")
+                                logger.lifecycle("🗑️ Merged PR #${openPr.number} and auto-cleaned branch '$headBranch'. Switched back to '$base'.")
+                                activeHeadBranch = base
+                                activeBranchCategory = "Base Branch"
                             } else {
                                 logger.lifecycle("🛡️ Merged PR #${openPr.number} and preserved user branch '$headBranch'.")
                             }
                             GhaGitExec.checkout(rootDir, base)
                             GhaGitExec.pullRebase(rootDir, "origin", base)
-                            logger.lifecycle("✅ Local repository is 100% synced with merged origin/$base.")
+                            logger.lifecycle("✅ Local repository is 100% clean and fully synced with merged origin/$base.")
                             tipRecommendation = "Start your next feature or type './gradlew ghaStatus' to inspect repo health."
                         } else {
                             tipRecommendation = "Merge requested on GitHub for PR #${openPr.number}. Re-run './ghai' in a moment."
@@ -210,8 +215,19 @@ abstract class GhaAiTask : GhaTask() {
                         tipRecommendation = "PR #${prInfo.number} created! Run './ghai' after CI builds finish to merge into $base."
                     }
                 } else {
-                    logger.lifecycle("✅ Local repository is 100% clean and fully synced with origin/$base.")
-                    tipRecommendation = "Make code edits anytime and type './ghai' to auto-save, sync, and push to GitHub."
+                    if (isAutoBranch && headBranch != base) {
+                        logger.lifecycle("🗑️ [ghai] Auto-created branch '$headBranch' PR is complete/merged. Returning to base branch '$base'...")
+                        GhaGitExec.checkout(rootDir, base)
+                        GhaGitExec.pullRebase(rootDir, "origin", base)
+                        GhaGitExec.deleteLocalBranch(rootDir, headBranch, force = true)
+                        activeHeadBranch = base
+                        activeBranchCategory = "Base Branch"
+                        logger.lifecycle("✅ Returned to clean '$base' branch and cleaned up local auto-branch '$headBranch'.")
+                        tipRecommendation = "Start your next feature or type './ghai' anytime to auto-save and push changes."
+                    } else {
+                        logger.lifecycle("✅ Local repository is 100% clean and fully synced with origin/$base.")
+                        tipRecommendation = "Make code edits anytime and type './ghai' to auto-save, sync, and push to GitHub."
+                    }
                 }
             }
         }
@@ -220,7 +236,7 @@ abstract class GhaAiTask : GhaTask() {
         logger.lifecycle("")
         logger.lifecycle("════════════════════════════════════════════════════════════════════════════════")
         logger.lifecycle("📋 [ghai Execution Summary]")
-        logger.lifecycle("   • Working Branch : $headBranch ($branchCategory)")
+        logger.lifecycle("   • Working Branch : $activeHeadBranch ($activeBranchCategory)")
         logger.lifecycle("   • Commit Status  : $commitSummary")
         logger.lifecycle("   • Remote Push    : $pushSummary")
         logger.lifecycle("   • GitHub PR      : $prSummary ${if (prUrlSummary != "N/A") "($prUrlSummary)" else ""}")
