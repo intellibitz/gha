@@ -4,6 +4,8 @@
 - `./gradlew ghaInit`: Initializes sandboxed GitHub Automation environment (`.gha/`).
 - `./gradlew ghaKotlinInit`: Scaffolds a new 100% Kotlin project structure with Gradle DSL, version catalog, and sandboxed GHA.
 - `./gradlew ghaKotlinProjectCreate`: Creates a new 100% Kotlin project structure platform-independently.
+- `./gradlew ghaAndroidRemove`: Removes Android manifests, resources, plugins, and dependencies for pure Kotlin development.
+- `./gradlew ghaAndroidProjectRemove`: Converts an Android project into a pure 100% Kotlin project.
 - `./gradlew ghaStatus`: Displays current project status and platform details.
 - `./gradlew ghaSandbox`: Displays real-time sandbox status and environment health checks.
 - `./gradlew ghaDependencies`: Prints trusted vendors and dependency versions.

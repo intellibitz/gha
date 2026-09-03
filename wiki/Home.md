@@ -85,6 +85,8 @@ plugins {
 | `./gradlew ghaInit` | Initializes sandboxed GitHub Automation environment (`.gha/`) | `./gradlew ghaInit` |
 | `./gradlew ghaKotlinInit` | Initializes a 100% Kotlin project with Gradle DSL, version catalog, and sandboxed GHA | `./gradlew ghaKotlinInit [-PprojectName="my-app"]` |
 | `./gradlew ghaKotlinProjectCreate` | Creates a new 100% Kotlin project structure platform-independently | `./gradlew ghaKotlinProjectCreate [-PprojectName="my-app"]` |
+| `./gradlew ghaAndroidRemove` | Removes Android manifests, resources, plugins, and dependencies for pure Kotlin dev | `./gradlew ghaAndroidRemove` |
+| `./gradlew ghaAndroidProjectRemove` | Alias for ghaAndroidRemove: Converts project to 100% pure Kotlin | `./gradlew ghaAndroidProjectRemove` |
 | `./gradlew ghaStatus` | Displays current GitHub Automation project and platform status | `./gradlew ghaStatus` |
 | `./gradlew ghaSandbox` | Displays real-time sandbox status and environment health checks | `./gradlew ghaSandbox` |
 | `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions | `./gradlew ghaDependencies` |
@@ -192,6 +194,7 @@ gha/
 │   ├── GhaTask.kt                               # Base Task with secret handling & relative path input
 │   ├── GhaInitTask.kt                           # Sandboxed GHA Init Task (.gha/)
 │   ├── GhaKotlinInitTask.kt                     # 100% Kotlin Project Scaffolding Task
+│   ├── GhaAndroidRemoveTask.kt                  # Removes Android components for pure Kotlin dev
 │   ├── GhaStatusTask.kt                         # GHA Status Task
 │   ├── GhaSandboxTask.kt                        # GHA Sandbox Health Check Task
 │   ├── GhaDependenciesTask.kt                   # Prints trusted vendors, dependency table, and versions

@@ -70,6 +70,16 @@ class GhaPlugin : Plugin<Project> {
             description = "Creates a new 100% Kotlin project with Gradle DSL, version catalog, and sandboxed GHA"
         }
 
+        project.tasks.register("ghaAndroidRemove", GhaAndroidRemoveTask::class.java) {
+            group = "GitHub Automation"
+            description = "Removes Android project files, plugins, and dependencies to convert to a pure Kotlin project"
+        }
+
+        project.tasks.register("ghaAndroidProjectRemove", GhaAndroidRemoveTask::class.java) {
+            group = "GitHub Automation"
+            description = "Alias for ghaAndroidRemove: Converts project to pure Kotlin by removing Android components"
+        }
+
         project.tasks.register("ghaStatus", GhaStatusTask::class.java) {
             group = "GitHub Automation"
             description = "Displays the current GitHub Automation workflow status"
