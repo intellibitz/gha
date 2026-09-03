@@ -52,6 +52,32 @@ Run `./gradlew --init-script init/gha.init.gradle.kts ghaDependencies` to inspec
 
 ---
 
+## 🚀 0 Effort, 100% Gain — Autonomous AI Workflow (`ghai`)
+
+For maximum productivity with zero cognitive overhead, developers can simply type:
+
+```bash
+./gradlew ghai
+```
+
+`ghai` (and aliases `ghaAI`, `ghaAuto`, `ghaSync`, `ghaSave`) adapts autonomously to your repository and GitHub state:
+
+### 📦 Mode A: Dirty Working Tree (Local Changes Exist)
+1. **Analyzes Diffs & Generates Smart Messages**: Inspects modified/added files and auto-generates semantic commit messages (e.g. `feat(github): update ghai engine`, `docs: update README`, `build: update gradle configuration`).
+2. **Guards Protected Branches**: If on `main`/`master`, auto-creates or switches to a clean feature branch (`gha-auto/...`).
+3. **Zero-Loss Staging & Commit**: Stages all changes (`git add -A`) and commits local work.
+4. **Rebase-Syncs with Upstream**: Rebase-pulls from `origin/main` (`git pull --rebase`) to keep local code 100% in sync.
+5. **Remote Push & PR Creation**: Pushes branch to GitHub (`git push -u origin <head>`), opens/updates PR against `main`, and enables GitHub auto-merge!
+
+### ✨ Mode B: Clean Working Tree (Post-Push or Synced State)
+1. **Rebase Sync**: Syncs local branch with `origin/main`.
+2. **Queries Active GitHub PR**: Inspects active PR details and combined CI check statuses using `gh pr view --json statusCheckRollup`.
+3. **CI PASSED**: Automatically merges PR into `main`, auto-deletes temporary auto-branches, and rebase-pulls `main` so local repository is **100% synced with merged `main`**.
+4. **CI PENDING**: Enables GitHub `--auto` merge flag so GitHub merges the PR automatically once CI passes.
+5. **CI FAILED**: Displays diagnostic report pointing directly to build failure logs.
+
+---
+
 ## How to Use
 
 ### Option 1: Self-Contained Init Script (Zero Modifications)
