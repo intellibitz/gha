@@ -77,7 +77,10 @@ abstract class GhaInitTask : GhaTask() {
                 """
                 #!/usr/bin/env bash
                 # 🤖 ghai - Autonomous AI Workflow Execution Script
-                ./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
+                if [ "${'$'}1" = "--version" ] || [ "${'$'}1" = "-v" ] || [ "${'$'}1" = "version" ]; then
+                    exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+                fi
+                exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "${'$'}@"
                 """.trimIndent() + "\n"
             )
         }
@@ -88,7 +91,19 @@ abstract class GhaInitTask : GhaTask() {
             ghaiBat.writeText(
                 """
                 @echo off
-                .\gradlew.bat --init-script init/gha.init.gradle.kts ghai %*
+                if "%1"=="--version" (
+                    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+                    exit /b 0
+                )
+                if "%1"=="-v" (
+                    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+                    exit /b 0
+                )
+                if "%1"=="version" (
+                    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+                    exit /b 0
+                )
+                .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai %*
                 """.trimIndent() + "\n"
             )
         }
