@@ -1,14 +1,32 @@
-# Installation & Setup
+# Ridiculously Easy 0-Effort Installation
 
-## Option 1: Self-Contained Init Script (Zero Modifications)
+Install `gha` into **any repository** in 1 second without modifying global system settings:
 
-Run `gha` tasks on any cloned project without changing build scripts:
+## ⚡ 1-Second One-Liner Installers
 
+### macOS, Linux, & WSL
 ```bash
-./gradlew --init-script init/gha.init.gradle.kts ghaInit ghaStatus ghaDependencies
+curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh | bash
 ```
 
-## Option 2: Gradle Plugin
+### Windows PowerShell
+```powershell
+iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps1 | iex
+```
+
+---
+
+## Option 2: Self-Contained Gradle Init Script
+
+Run `gha` tasks on any cloned project directly:
+
+```bash
+./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+```
+
+---
+
+## Option 3: Standard Gradle Plugin
 
 Add `cc.thevar.gha` to your project's `build.gradle.kts`:
 
