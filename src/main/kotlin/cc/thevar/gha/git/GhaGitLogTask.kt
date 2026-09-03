@@ -14,21 +14,27 @@ abstract class GhaGitLogTask : GhaTask() {
     @get:Optional
     abstract val maxCount: Property<Int>
 
+    @get:Input
+    @get:Optional
+    abstract val targetRef: Property<String>
+
     init {
-        maxCount.convention(5)
+        maxCount.convention(1)
+        targetRef.convention(project.providers.gradleProperty("targetRef").orElse("origin/main"))
     }
 
     @TaskAction
     fun execute() {
         val dir = projectRootDir.get().asFile
-        val count = maxCount.get()
+        val count = maxCount.getOrElse(1)
+        val ref = targetRef.getOrElse("origin/main")
 
-        logger.lifecycle("📜 [GHA Git Log] Showing last $count commits...")
-        val logResult = GhaGitExec.exec(dir, "log", "-n", count.toString(), "--oneline")
+        println("📜 [GHA Git Log] Showing last $count commit(s) for '$ref'...")
+        val logResult = GhaGitExec.exec(dir, "log", "-n", count.toString(), "--format=commit %H%nAuthor: %an <%ae>%nDate:   %ad%n%n    %s%n", ref)
         if (logResult.isSuccess) {
-            logger.lifecycle(logResult.stdout.prependIndent("   "))
+            println(logResult.stdout.prependIndent("   "))
         } else {
-            logger.error("❌ Git log failed: ${logResult.stderr}")
+            println("❌ Git log failed: ${logResult.stderr.ifEmpty { logResult.stdout }}")
         }
     }
 }
