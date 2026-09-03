@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
-# 🤖 ghai - Autonomous AI Workflow Execution Script
+# 🤖 ghai - Autonomous AI Workflow Launcher
+# Convenient shortcut wrapper for: ./gradlew --init-script init/gha.init.gradle.kts ghai
 ./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
