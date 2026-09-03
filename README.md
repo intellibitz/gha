@@ -10,8 +10,9 @@ GitHub users can clone this project and expect **0% system modifications**. All 
 
 ## Key Principles
 
+- **Strict Official Stable Versions & Trusted Vendors**: `gha` strictly uses official stable releases from verified trusted vendors (`JetBrains`, `Gradle Inc.`, `Eclipse Adoptium`, `Oracle`, `GitHub Inc.`). No alpha, beta, rc, or untrusted third-party repositories.
 - **gha Runs on gha**: Self-testing and self-automating via `.github/workflows/gha.yml`.
-- **Centralized Version Configuration ([`GhaConfig.kt`](file:///home/ramadoss/Projects/AI/gha/src/main/kotlin/cc/thevar/gha/config/GhaConfig.kt))**: Single source of truth for tools, SDKs, frameworks, and plugin versions.
+- **Centralized Version Catalog ([`GhaConfig.kt`](file:///home/ramadoss/Projects/AI/gha/src/main/kotlin/cc/thevar/gha/config/GhaConfig.kt))**: Single source of truth for tools, SDKs, frameworks, and plugin versions.
 - **Infinite Loop Guard & Timeout Protection**: `GhaProcessRunner` enforces strict execution timeouts (30s) and non-interactive flags (`GIT_TERMINAL_PROMPT=0`, `GH_NO_PROMPT=1`), preventing infinite hangs or recursion loops.
 - **100% Sandboxed Dependencies & JDKs**: All external libraries, Kotlin DSL plugins, and JDK toolchains are downloaded into `.gha/gradle-user-home/`.
 - **0% System Modifications**: Zero changes to `~/.gradle/`, user system settings, shell configurations, or global user directories.
@@ -22,21 +23,21 @@ GitHub users can clone this project and expect **0% system modifications**. All 
 
 ---
 
-## Centralized Version Catalog & Dependency Tracking
+## Trusted Vendors & Official Stable Version Policy
 
 All tools, SDKs, frameworks, and plugins are defined centrally in `gradle/libs.versions.toml` and [`GhaConfig.kt`](file:///home/ramadoss/Projects/AI/gha/src/main/kotlin/cc/thevar/gha/config/GhaConfig.kt):
 
-| Dependency / Tool | Category | Configured Version |
-| :--- | :--- | :--- |
-| **Java / JDK Toolchain** | SDK | `17` |
-| **Kotlin Language & DSL** | Framework | `2.1.0` |
-| **Gradle Build Engine** | Build Tool | `9.7.1` |
-| **Gradle Plugin Publish** | Plugin | `1.3.1` |
-| **Foojay JDK Resolver** | Plugin | `0.9.0` |
-| **Git VCS Engine** | CLI Tool | Latest Compatible |
-| **GitHub CLI (`gh`)** | CLI Tool | Latest Compatible |
+| Tool / Dependency | Category | Trusted Vendor | Configured Version | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Java / JDK Toolchain** | SDK | Eclipse Adoptium (Temurin) / Oracle (LTS) | `17` | ✅ Official Stable |
+| **Kotlin Language & DSL** | Framework | JetBrains | `2.1.0` | ✅ Official Stable |
+| **Gradle Build Engine** | Build Tool | Gradle Inc. | `9.7.1` | ✅ Official Stable |
+| **Gradle Plugin Publish** | Plugin | Gradle Inc. | `1.3.1` | ✅ Official Stable |
+| **Foojay JDK Resolver** | Plugin | Foojay / Gradle Inc. | `0.9.0` | ✅ Official Stable |
+| **Git VCS Engine** | CLI Tool | Software Freedom Conservancy | Latest Compatible | ✅ Official Stable |
+| **GitHub CLI (`gh`)** | CLI Tool | GitHub Inc. | Latest Compatible | ✅ Official Stable |
 
-Run `./gradlew ghaDependencies` to print real-time version status in a structured table.
+Run `./gradlew ghaDependencies` to inspect real-time version status and vendor verification in a structured table.
 
 ---
 
@@ -72,7 +73,7 @@ plugins {
 | :--- | :--- |
 | `./gradlew ghaInit` | Initializes sandboxed GitHub Automation environment (`.gha/`) |
 | `./gradlew ghaStatus` | Displays current GitHub Automation project and platform status |
-| `./gradlew ghaDependencies` | Prints all GHA dependencies, tools, SDKs, and active runtime versions |
+| `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions |
 | `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
 
 ### GitHub Operations Tasks
@@ -114,10 +115,10 @@ gha/
 │   ├── GhaTask.kt                               # Base Task with secret handling
 │   ├── GhaInitTask.kt                           # Sandboxed GHA Init Task (.gha/)
 │   ├── GhaStatusTask.kt                         # GHA Status Task
-│   ├── GhaDependenciesTask.kt                   # Prints dependency table and runtime versions
+│   ├── GhaDependenciesTask.kt                   # Prints trusted vendors, dependency table, and versions
 │   ├── GhaWorkflowTask.kt                       # GHA Workflow Task
 │   ├── config/
-│   │   └── GhaConfig.kt                         # Centralized tools, SDK, and framework config
+│   │   └── GhaConfig.kt                         # Centralized tools, SDK, and vendor stability rules
 │   ├── safety/
 │   │   └── GhaProcessRunner.kt                  # Timeouts, non-interactive flags, recursion guard
 │   ├── git/
