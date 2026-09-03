@@ -23,6 +23,9 @@ import cc.thevar.gha.github.GhaPrReopenTask
 import cc.thevar.gha.github.GhaPrReviewTask
 import cc.thevar.gha.github.GhaPrViewTask
 import cc.thevar.gha.github.GhaReleaseCreateTask
+import cc.thevar.gha.insights.GhaContributorsTask
+import cc.thevar.gha.insights.GhaInsightsTask
+import cc.thevar.gha.insights.GhaTrafficTask
 import cc.thevar.gha.security.GhaCodeScanningInitTask
 import cc.thevar.gha.security.GhaDependabotInitTask
 import cc.thevar.gha.security.GhaSecurityInitTask
@@ -55,6 +58,22 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaDependencies", GhaDependenciesTask::class.java) {
             group = "GitHub Automation"
             description = "Prints all GHA dependencies, tools, SDKs, and their current versions"
+        }
+
+        // GitHub Insights Tasks
+        project.tasks.register("ghaInsights", GhaInsightsTask::class.java) {
+            group = "GitHub Insights"
+            description = "Displays GitHub repository overview, stars, forks, issues, and commit metrics"
+        }
+
+        project.tasks.register("ghaContributors", GhaContributorsTask::class.java) {
+            group = "GitHub Insights"
+            description = "Displays repository contributors and commit breakdowns"
+        }
+
+        project.tasks.register("ghaTraffic", GhaTrafficTask::class.java) {
+            group = "GitHub Insights"
+            description = "Displays repository traffic, page views, and clone statistics"
         }
 
         // GitHub Security & Vulnerability Tasks

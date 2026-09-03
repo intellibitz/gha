@@ -87,6 +87,13 @@ plugins {
 | `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions |
 | `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
 
+### GitHub Insights Tasks
+| Task | Description |
+| :--- | :--- |
+| `./gradlew ghaInsights` | Displays repository overview, stars, forks, watchers, open issues, and commit counts |
+| `./gradlew ghaContributors` | Displays contributor breakdown, commit counts, and percentage contributions |
+| `./gradlew ghaTraffic` | Displays repository traffic, page views, and clone statistics |
+
 ### GitHub Security & Vulnerability Tasks
 | Task | Description |
 | :--- | :--- |
