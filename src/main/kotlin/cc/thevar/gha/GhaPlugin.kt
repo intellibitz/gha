@@ -106,6 +106,16 @@ class GhaPlugin : Plugin<Project> {
             description = "Initializes sandboxed GitHub Automation workflows for any project automatically"
         }
 
+        project.tasks.register("ghaUpdate", GhaUpdateTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Updates gha init scripts, version configurations, and runner wrappers (100% Kotlin)"
+        }
+
+        project.tasks.register("ghaUninstall", GhaUninstallTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Completely removes gha sandbox, runner scripts, and workflows (100% Kotlin)"
+        }
+
         project.tasks.register("ghaStatus", GhaStatusTask::class.java) {
             group = GROUP_GRADLE
             description = "Displays the current GitHub Automation workflow status"
