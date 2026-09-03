@@ -23,7 +23,8 @@ abstract class GhaStatusTask : GhaTask() {
     @TaskAction
     fun execute() {
         val rootDir = projectRootDir.get().asFile
-        val (isHealthy, _) = GhaSandboxManager.healthCheck(rootDir)
+        val userHome = gradleUserHomeDir.get().asFile
+        val (isHealthy, _) = GhaSandboxManager.healthCheck(rootDir, userHome)
 
         logger.lifecycle("📊 [GHA Status] Project: ${projectName.get()}")
         logger.lifecycle("   RootDir: ${rootDir.absolutePath}")
