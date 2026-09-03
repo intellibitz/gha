@@ -1,34 +1,19 @@
 package cc.thevar.gha.git
 
+import cc.thevar.gha.safety.GhaProcessRunner
 import java.io.File
 
 /**
- * 100% Kotlin, platform-independent Git execution engine.
+ * 100% Kotlin, platform-independent Git execution engine with loop prevention and timeouts.
  */
 object GhaGitExec {
 
-    data class GitResult(
-        val exitCode: Int,
-        val stdout: String,
-        val stderr: String
-    ) {
-        val isSuccess: Boolean get() = exitCode == 0
-    }
-
-    fun exec(workingDir: File, vararg args: String): GitResult {
-        return try {
-            val process = ProcessBuilder("git", *args)
-                .directory(workingDir)
-                .start()
-
-            val stdout = process.inputStream.bufferedReader().readText().trim()
-            val stderr = process.errorStream.bufferedReader().readText().trim()
-            val exitCode = process.waitFor()
-
-            GitResult(exitCode, stdout, stderr)
-        } catch (e: Exception) {
-            GitResult(-1, "", e.message ?: "Unknown git execution error")
-        }
+    fun exec(workingDir: File, vararg args: String, timeoutSeconds: Long = 30L): GhaProcessRunner.ProcessResult {
+        return GhaProcessRunner.exec(
+            workingDir = workingDir,
+            command = listOf("git") + args.toList(),
+            timeoutSeconds = timeoutSeconds
+        )
     }
 
     fun currentBranch(workingDir: File): String {
