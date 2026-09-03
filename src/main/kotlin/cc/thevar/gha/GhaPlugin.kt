@@ -54,309 +54,314 @@ import org.gradle.api.Project
 
 class GhaPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        // GitHub Core Tasks
+        val GROUP_GIT = "Git Automation"
+        val GROUP_GITHUB = "GitHub Automation"
+        val GROUP_GRADLE = "Gradle Automation"
+
+        // ---------------------------------------------------------------------
+        // 1. Gradle Automation Tasks
+        // ---------------------------------------------------------------------
         project.tasks.register("ghaInit", GhaInitTask::class.java) {
-            group = "GitHub Automation"
+            group = GROUP_GRADLE
             description = "Initializes sandboxed GitHub Automation workflows for any project automatically"
         }
 
-        project.tasks.register("ghaKotlinInit", GhaKotlinInitTask::class.java) {
-            group = "GitHub Automation"
-            description = "Initializes a 100% Kotlin project structure with sandboxed GHA automation"
-        }
-
-        project.tasks.register("ghaKotlinProjectCreate", GhaKotlinInitTask::class.java) {
-            group = "GitHub Automation"
-            description = "Creates a new 100% Kotlin project with Gradle DSL, version catalog, and sandboxed GHA"
-        }
-
-        project.tasks.register("ghaAndroidRemove", GhaAndroidRemoveTask::class.java) {
-            group = "GitHub Automation"
-            description = "Removes Android project files, plugins, and dependencies to convert to a pure Kotlin project"
-        }
-
-        project.tasks.register("ghaAndroidProjectRemove", GhaAndroidRemoveTask::class.java) {
-            group = "GitHub Automation"
-            description = "Alias for ghaAndroidRemove: Converts project to pure Kotlin by removing Android components"
-        }
-
         project.tasks.register("ghaStatus", GhaStatusTask::class.java) {
-            group = "GitHub Automation"
+            group = GROUP_GRADLE
             description = "Displays the current GitHub Automation workflow status"
         }
 
         project.tasks.register("ghaSandbox", GhaSandboxTask::class.java) {
-            group = "GitHub Automation"
+            group = GROUP_GRADLE
             description = "Displays a detailed GHA sandbox report"
         }
 
-        project.tasks.register("ghaWorkflow", GhaWorkflowTask::class.java) {
-            group = "GitHub Automation"
-            description = "Executes platform-independent GitHub automation workflows"
-        }
-
         project.tasks.register("ghaDependencies", GhaDependenciesTask::class.java) {
-            group = "GitHub Automation"
+            group = GROUP_GRADLE
             description = "Prints all GHA dependencies, tools, SDKs, and their current versions"
         }
 
-        // GitHub Actions Workflow Management & Cleanup
-        project.tasks.register("ghaWorkflowList", GhaWorkflowListTask::class.java) {
-            group = "GitHub Actions"
-            description = "Lists recent GitHub Actions workflow runs and their status"
+        project.tasks.register("ghaKotlinInit", GhaKotlinInitTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Initializes a 100% Kotlin project structure with sandboxed GHA automation"
         }
 
-        project.tasks.register("ghaWorkflowCleanup", GhaWorkflowCleanupTask::class.java) {
-            group = "GitHub Actions"
-            description = "Cleans up and deletes old, failed, or cancelled GitHub Actions workflow runs"
+        project.tasks.register("ghaKotlinProjectCreate", GhaKotlinInitTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Creates a new 100% Kotlin project with Gradle DSL, version catalog, and sandboxed GHA"
         }
 
-        project.tasks.register("ghaWorkflowCancel", GhaWorkflowCancelTask::class.java) {
-            group = "GitHub Actions"
-            description = "Cancels in-progress GitHub Actions workflow runs"
+        project.tasks.register("ghaAndroidRemove", GhaAndroidRemoveTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Removes Android project files, plugins, and dependencies to convert to a pure Kotlin project"
         }
 
-        // GitHub Projects Tasks
-        project.tasks.register("ghaProjectInit", GhaProjectInitTask::class.java) {
-            group = "GitHub Projects"
-            description = "Initializes default GitHub Project boards (Roadmap, Issue Tracker, Releases) automatically"
+        project.tasks.register("ghaAndroidProjectRemove", GhaAndroidRemoveTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Alias for ghaAndroidRemove: Converts project to pure Kotlin by removing Android components"
         }
 
-        project.tasks.register("ghaProjectCreate", GhaProjectCreateTask::class.java) {
-            group = "GitHub Projects"
-            description = "Creates a new GitHub Project board"
-        }
-
-        project.tasks.register("ghaProjectList", GhaProjectListTask::class.java) {
-            group = "GitHub Projects"
-            description = "Lists GitHub Project boards for an owner or repository"
-        }
-
-        project.tasks.register("ghaProjectView", GhaProjectViewTask::class.java) {
-            group = "GitHub Projects"
-            description = "Displays details and items of a GitHub Project board"
-        }
-
-        project.tasks.register("ghaProjectAddItem", GhaProjectAddItemTask::class.java) {
-            group = "GitHub Projects"
-            description = "Adds an Issue or Pull Request URL to a GitHub Project board"
-        }
-
-        project.tasks.register("ghaProjectClose", GhaProjectCloseTask::class.java) {
-            group = "GitHub Projects"
-            description = "Closes or archives a GitHub Project board"
-        }
-
-        // GitHub Insights Tasks
-        project.tasks.register("ghaInsights", GhaInsightsTask::class.java) {
-            group = "GitHub Insights"
-            description = "Displays GitHub repository overview, stars, forks, issues, and commit metrics"
-        }
-
-        project.tasks.register("ghaContributors", GhaContributorsTask::class.java) {
-            group = "GitHub Insights"
-            description = "Displays repository contributors and commit breakdowns"
-        }
-
-        project.tasks.register("ghaTraffic", GhaTrafficTask::class.java) {
-            group = "GitHub Insights"
-            description = "Displays repository traffic, page views, and clone statistics"
-        }
-
-        // GitHub Security & Vulnerability Tasks
-        project.tasks.register("ghaSecurityInit", GhaSecurityInitTask::class.java) {
-            group = "GitHub Security"
-            description = "Generates default GitHub security workflows, Dependabot, CodeQL, and SECURITY.md"
-        }
-
-        project.tasks.register("ghaSecurityStatus", GhaSecurityStatusTask::class.java) {
-            group = "GitHub Security"
-            description = "Displays current GitHub security, scanning, and Dependabot status"
-        }
-
-        project.tasks.register("ghaDependabotInit", GhaDependabotInitTask::class.java) {
-            group = "GitHub Security"
-            description = "Generates .github/dependabot.yml for automated dependency updates"
-        }
-
-        project.tasks.register("ghaDependabotList", GhaDependabotListTask::class.java) {
-            group = "GitHub Security"
-            description = "Lists active Dependabot pull requests and remote branches"
-        }
-
-        project.tasks.register("ghaDependabotMerge", GhaDependabotMergeTask::class.java) {
-            group = "GitHub Security"
-            description = "Merges open Dependabot pull requests and deletes remote branches"
-        }
-
-        project.tasks.register("ghaDependabotClose", GhaDependabotCloseTask::class.java) {
-            group = "GitHub Security"
-            description = "Closes Dependabot pull requests and deletes remote dependabot/ branches"
-        }
-
-        project.tasks.register("ghaDependabotCleanup", GhaDependabotCleanupTask::class.java) {
-            group = "GitHub Security"
-            description = "Removes stale remote dependabot/ branches that have no open pull requests"
-        }
-
-        project.tasks.register("ghaDependabotRebase", GhaDependabotRebaseTask::class.java) {
-            group = "GitHub Security"
-            description = "Requests Dependabot to rebase or recreate pull requests to resolve conflicts"
-        }
-
-        project.tasks.register("ghaCodeScanningInit", GhaCodeScanningInitTask::class.java) {
-            group = "GitHub Security"
-            description = "Generates CodeQL code scanning workflow .github/workflows/codeql.yml"
-        }
-
-        // GitHub Wiki Tasks
-        project.tasks.register("ghaWikiInit", GhaWikiInitTask::class.java) {
-            group = "GitHub Wiki"
-            description = "Initializes local Wiki directory structure and template pages"
-        }
-
-        project.tasks.register("ghaWikiStatus", GhaWikiStatusTask::class.java) {
-            group = "GitHub Wiki"
-            description = "Displays current GitHub Wiki pages and sync status"
-        }
-
-        project.tasks.register("ghaWikiSync", GhaWikiSyncTask::class.java) {
-            group = "GitHub Wiki"
-            description = "Pulls latest changes from remote GitHub Wiki repository"
-        }
-
-        project.tasks.register("ghaWikiPublish", GhaWikiPublishTask::class.java) {
-            group = "GitHub Wiki"
-            description = "Publishes local wiki/ directory pages to remote GitHub Wiki repository"
-        }
-
-        // GitHub Issue Operations
-        project.tasks.register("ghaIssueCreate", GhaIssueCreateTask::class.java) {
-            group = "GitHub Operations"
-            description = "Creates an Issue on GitHub"
-        }
-
-        project.tasks.register("ghaIssueList", GhaIssueListTask::class.java) {
-            group = "GitHub Operations"
-            description = "Lists Issues on GitHub"
-        }
-
-        project.tasks.register("ghaIssueView", GhaIssueViewTask::class.java) {
-            group = "GitHub Operations"
-            description = "Displays details and comments for a GitHub Issue"
-        }
-
-        project.tasks.register("ghaIssueClose", GhaIssueCloseTask::class.java) {
-            group = "GitHub Operations"
-            description = "Closes an Issue on GitHub"
-        }
-
-        project.tasks.register("ghaIssueReopen", GhaIssueReopenTask::class.java) {
-            group = "GitHub Operations"
-            description = "Reopens a closed Issue on GitHub"
-        }
-
-        project.tasks.register("ghaIssueComment", GhaIssueCommentTask::class.java) {
-            group = "GitHub Operations"
-            description = "Adds a comment to an Issue on GitHub"
-        }
-
-        project.tasks.register("ghaIssueEdit", GhaIssueEditTask::class.java) {
-            group = "GitHub Operations"
-            description = "Edits title, body, labels, or assignees of an Issue on GitHub"
-        }
-
-        // GitHub PR Operations
-        project.tasks.register("ghaPrCreate", GhaPrCreateTask::class.java) {
-            group = "GitHub Operations"
-            description = "Creates a Pull Request on GitHub"
-        }
-
-        project.tasks.register("ghaPrList", GhaPrListTask::class.java) {
-            group = "GitHub Operations"
-            description = "Lists Pull Requests on GitHub"
-        }
-
-        project.tasks.register("ghaPrView", GhaPrViewTask::class.java) {
-            group = "GitHub Operations"
-            description = "Displays details and comments for a Pull Request on GitHub"
-        }
-
-        project.tasks.register("ghaPrMerge", GhaPrMergeTask::class.java) {
-            group = "GitHub Operations"
-            description = "Merges a Pull Request on GitHub"
-        }
-
-        project.tasks.register("ghaPrClose", GhaPrCloseTask::class.java) {
-            group = "GitHub Operations"
-            description = "Closes a Pull Request on GitHub"
-        }
-
-        project.tasks.register("ghaPrReopen", GhaPrReopenTask::class.java) {
-            group = "GitHub Operations"
-            description = "Reopens a closed Pull Request on GitHub"
-        }
-
-        project.tasks.register("ghaPrEdit", GhaPrEditTask::class.java) {
-            group = "GitHub Operations"
-            description = "Edits title, body, base branch, or reviewers of a Pull Request on GitHub"
-        }
-
-        project.tasks.register("ghaPrCheckout", GhaPrCheckoutTask::class.java) {
-            group = "GitHub Operations"
-            description = "Checks out a Pull Request branch locally"
-        }
-
-        project.tasks.register("ghaPrReview", GhaPrReviewTask::class.java) {
-            group = "GitHub Operations"
-            description = "Submits a review on a Pull Request on GitHub"
-        }
-
-        // GitHub Release Operations
-        project.tasks.register("ghaReleaseCreate", GhaReleaseCreateTask::class.java) {
-            group = "GitHub Operations"
-            description = "Creates a Release on GitHub"
-        }
-
-        // Git Operations
+        // ---------------------------------------------------------------------
+        // 2. Git Automation Tasks
+        // ---------------------------------------------------------------------
         project.tasks.register("ghaGitStatus", GhaGitStatusTask::class.java) {
-            group = "Git Operations"
+            group = GROUP_GIT
             description = "Displays current Git repository status"
         }
 
         project.tasks.register("ghaGitBranch", GhaGitBranchTask::class.java) {
-            group = "Git Operations"
+            group = GROUP_GIT
             description = "Lists local and remote Git branches"
         }
 
         project.tasks.register("ghaGitCommit", GhaGitCommitTask::class.java) {
-            group = "Git Operations"
+            group = GROUP_GIT
             description = "Stages and commits working tree changes"
         }
 
         project.tasks.register("ghaGitPush", GhaGitPushTask::class.java) {
-            group = "Git Operations"
+            group = GROUP_GIT
             description = "Pushes current branch to origin remote"
         }
 
         project.tasks.register("ghaGitPull", GhaGitPullTask::class.java) {
-            group = "Git Operations"
+            group = GROUP_GIT
             description = "Pulls latest changes from remote with rebase"
         }
 
         project.tasks.register("ghaGitTag", GhaGitTagTask::class.java) {
-            group = "Git Operations"
+            group = GROUP_GIT
             description = "Creates and pushes an annotated Git tag"
         }
 
         project.tasks.register("ghaGitLog", GhaGitLogTask::class.java) {
-            group = "Git Operations"
+            group = GROUP_GIT
             description = "Displays recent Git commits"
         }
 
-        // GitHub Help Task - Registered last to capture all tasks
+        // ---------------------------------------------------------------------
+        // 3. GitHub Automation Tasks
+        // ---------------------------------------------------------------------
+        project.tasks.register("ghaWorkflow", GhaWorkflowTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Executes platform-independent GitHub automation workflows"
+        }
+
+        project.tasks.register("ghaWorkflowList", GhaWorkflowListTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Lists recent GitHub Actions workflow runs and their status"
+        }
+
+        project.tasks.register("ghaWorkflowCleanup", GhaWorkflowCleanupTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Cleans up and deletes old, failed, or cancelled GitHub Actions workflow runs"
+        }
+
+        project.tasks.register("ghaWorkflowCancel", GhaWorkflowCancelTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Cancels in-progress GitHub Actions workflow runs"
+        }
+
+        project.tasks.register("ghaProjectInit", GhaProjectInitTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Initializes default GitHub Project boards (Roadmap, Issue Tracker, Releases) automatically"
+        }
+
+        project.tasks.register("ghaProjectCreate", GhaProjectCreateTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Creates a new GitHub Project board"
+        }
+
+        project.tasks.register("ghaProjectList", GhaProjectListTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Lists GitHub Project boards for an owner or repository"
+        }
+
+        project.tasks.register("ghaProjectView", GhaProjectViewTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Displays details and items of a GitHub Project board"
+        }
+
+        project.tasks.register("ghaProjectAddItem", GhaProjectAddItemTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Adds an Issue or Pull Request URL to a GitHub Project board"
+        }
+
+        project.tasks.register("ghaProjectClose", GhaProjectCloseTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Closes or archives a GitHub Project board"
+        }
+
+        project.tasks.register("ghaInsights", GhaInsightsTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Displays GitHub repository overview, stars, forks, issues, and commit metrics"
+        }
+
+        project.tasks.register("ghaContributors", GhaContributorsTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Displays repository contributors and commit breakdowns"
+        }
+
+        project.tasks.register("ghaTraffic", GhaTrafficTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Displays repository traffic, page views, and clone statistics"
+        }
+
+        project.tasks.register("ghaSecurityInit", GhaSecurityInitTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Generates default GitHub security workflows, Dependabot, CodeQL, and SECURITY.md"
+        }
+
+        project.tasks.register("ghaSecurityStatus", GhaSecurityStatusTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Displays current GitHub security, scanning, and Dependabot status"
+        }
+
+        project.tasks.register("ghaDependabotInit", GhaDependabotInitTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Generates .github/dependabot.yml for automated dependency updates"
+        }
+
+        project.tasks.register("ghaDependabotList", GhaDependabotListTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Lists active Dependabot pull requests and remote branches"
+        }
+
+        project.tasks.register("ghaDependabotMerge", GhaDependabotMergeTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Merges open Dependabot pull requests and deletes remote branches"
+        }
+
+        project.tasks.register("ghaDependabotClose", GhaDependabotCloseTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Closes Dependabot pull requests and deletes remote dependabot/ branches"
+        }
+
+        project.tasks.register("ghaDependabotCleanup", GhaDependabotCleanupTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Removes stale remote dependabot/ branches that have no open pull requests"
+        }
+
+        project.tasks.register("ghaDependabotRebase", GhaDependabotRebaseTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Requests Dependabot to rebase or recreate pull requests to resolve conflicts"
+        }
+
+        project.tasks.register("ghaCodeScanningInit", GhaCodeScanningInitTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Generates CodeQL code scanning workflow .github/workflows/codeql.yml"
+        }
+
+        project.tasks.register("ghaWikiInit", GhaWikiInitTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Initializes local Wiki directory structure and template pages"
+        }
+
+        project.tasks.register("ghaWikiStatus", GhaWikiStatusTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Displays current GitHub Wiki pages and sync status"
+        }
+
+        project.tasks.register("ghaWikiSync", GhaWikiSyncTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Pulls latest changes from remote GitHub Wiki repository"
+        }
+
+        project.tasks.register("ghaWikiPublish", GhaWikiPublishTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Publishes local wiki/ directory pages to remote GitHub Wiki repository"
+        }
+
+        project.tasks.register("ghaIssueCreate", GhaIssueCreateTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Creates an Issue on GitHub"
+        }
+
+        project.tasks.register("ghaIssueList", GhaIssueListTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Lists Issues on GitHub"
+        }
+
+        project.tasks.register("ghaIssueView", GhaIssueViewTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Displays details and comments for a GitHub Issue"
+        }
+
+        project.tasks.register("ghaIssueClose", GhaIssueCloseTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Closes an Issue on GitHub"
+        }
+
+        project.tasks.register("ghaIssueReopen", GhaIssueReopenTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Reopens a closed Issue on GitHub"
+        }
+
+        project.tasks.register("ghaIssueComment", GhaIssueCommentTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Adds a comment to an Issue on GitHub"
+        }
+
+        project.tasks.register("ghaIssueEdit", GhaIssueEditTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Edits title, body, labels, or assignees of an Issue on GitHub"
+        }
+
+        project.tasks.register("ghaPrCreate", GhaPrCreateTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Creates a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrList", GhaPrListTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Lists Pull Requests on GitHub"
+        }
+
+        project.tasks.register("ghaPrView", GhaPrViewTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Displays details and comments for a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrMerge", GhaPrMergeTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Merges a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrClose", GhaPrCloseTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Closes a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrReopen", GhaPrReopenTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Reopens a closed Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrEdit", GhaPrEditTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Edits title, body, base branch, or reviewers of a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrCheckout", GhaPrCheckoutTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Checks out a Pull Request branch locally"
+        }
+
+        project.tasks.register("ghaPrReview", GhaPrReviewTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Submits a review on a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaReleaseCreate", GhaReleaseCreateTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Creates a Release on GitHub"
+        }
+
+        // ---------------------------------------------------------------------
+        // 4. Help Task
+        // ---------------------------------------------------------------------
         project.tasks.register("ghaHelp", GhaHelpTask::class.java) {
-            group = "GitHub Automation"
+            group = GROUP_GRADLE
             description = "Displays help information for all GHA tasks"
             taskDetails.set(project.provider {
                 project.tasks.filter { it.name.startsWith("gha") && it.name != "ghaHelp" }
