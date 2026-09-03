@@ -1,11 +1,13 @@
 package cc.thevar.gha.security
 
+import cc.thevar.gha.safety.GhaProcessRunner
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
 import org.gradle.process.ExecOperations
 import java.io.ByteArrayOutputStream
+import java.io.File
 import javax.inject.Inject
 
 /**
@@ -54,6 +56,26 @@ object GhaCredentialsResolver {
             .orElse(providers.environmentVariable("GH_TOKEN"))
             .orElse(providers.gradleProperty("gha.github.token"))
             .orElse(providers.of(GhAuthTokenValueSource::class.java) {})
+    }
+
+    /**
+     * Directly resolves token from environment or gh CLI execution without Configuration Cache task wrappers.
+     */
+    fun resolveDirectToken(projectDir: File? = null): String {
+        val envToken = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN")
+        if (!envToken.isNullOrBlank()) return envToken
+
+        if (projectDir != null && projectDir.exists()) {
+            val res = GhaProcessRunner.exec(
+                workingDir = projectDir,
+                command = listOf("gh", "auth", "token"),
+                timeoutSeconds = 10L
+            )
+            if (res.isSuccess && res.stdout.isNotBlank()) {
+                return res.stdout.trim()
+            }
+        }
+        return ""
     }
 
     /**
