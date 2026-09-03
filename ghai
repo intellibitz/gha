@@ -4,6 +4,12 @@
 
 set -e
 
+# Handle "version" / "--version" / "-v" sanity check
+if [ "$1" = "--version" ] || [ "$1" = "-v" ] || [ "$1" = "version" ]; then
+    chmod +x gradlew 2>/dev/null || true
+    exec ./gradlew --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+fi
+
 # Handle "update" action: curl 1-step install to fetch latest ghai
 if [ "$1" = "update" ]; then
     echo "🚀 [ghai Update] Fetching and updating gha to latest version..."
@@ -35,7 +41,19 @@ done
 # Auto-scaffold minimal Gradle settings and build files if missing in tree
 if [ ! -f "$PROJECT_ROOT/settings.gradle.kts" ] && [ ! -f "$PROJECT_ROOT/settings.gradle" ]; then
     PROJECT_NAME="$(basename "$PROJECT_ROOT")"
-    echo "rootProject.name = \"$PROJECT_NAME\"" > "$PROJECT_ROOT/settings.gradle.kts"
+    cat << 'EOF' > "$PROJECT_ROOT/settings.gradle.kts"
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+EOF
+    echo "rootProject.name = \"$PROJECT_NAME\"" >> "$PROJECT_ROOT/settings.gradle.kts"
 fi
 
 if [ ! -f "$PROJECT_ROOT/build.gradle.kts" ] && [ ! -f "$PROJECT_ROOT/build.gradle" ]; then
@@ -77,7 +95,9 @@ initscript {
     }
 }
 settingsEvaluated {
-    apply(plugin = "org.gradle.toolchains.foojay-resolver-convention")
+    try {
+        apply(plugin = "org.gradle.toolchains.foojay-resolver-convention")
+    } catch (_: Throwable) {}
 }
 allprojects {
     apply<cc.thevar.gha.GhaPlugin>()
