@@ -7,10 +7,10 @@ initscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath("com.intellibitz.gha:gha:0.1.0-SNAPSHOT")
+        classpath("cc.thevar.gha:gha:0.1.0-SNAPSHOT")
     }
 }
 
 allprojects {
-    apply<com.intellibitz.gha.GhaPlugin>()
+    apply<cc.thevar.gha.GhaPlugin>()
 }

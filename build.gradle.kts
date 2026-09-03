@@ -4,7 +4,7 @@ plugins {
     id("com.gradle.plugin-publish") version "1.3.1"
 }
 
-group = "com.intellibitz.gha"
+group = "cc.thevar.gha"
 version = "0.1.0-SNAPSHOT"
 
 gradlePlugin {
@@ -13,10 +13,10 @@ gradlePlugin {
 
     plugins {
         create("gha") {
-            id = "com.intellibitz.gha"
+            id = "cc.thevar.gha"
             displayName = "GitHub Automation Gradle Plugin"
             description = "100% Kotlin, 100% platform-independent GitHub automation workflow Gradle tasks"
-            implementationClass = "com.intellibitz.gha.GhaPlugin"
+            implementationClass = "cc.thevar.gha.GhaPlugin"
             tags = listOf("github", "automation", "workflow", "ci", "kotlin")
         }
     }

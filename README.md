@@ -1,6 +1,6 @@
 # gha: GitHub Automation
 
-**gha** provides 100% Kotlin, 100% platform-independent Gradle tasks for GitHub automation workflows that can be run on **any Gradle project in the world with zero effort**.
+**gha** (`cc.thevar.gha`) provides 100% Kotlin, 100% platform-independent Gradle tasks for GitHub automation workflows that can be run on **any Gradle project in the world with zero effort**.
 
 ## Mission
 
@@ -43,7 +43,7 @@ Add the plugin to your project's `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("com.intellibitz.gha") version "0.1.0"
+    id("cc.thevar.gha") version "0.1.0"
 }
 ```
 
@@ -67,7 +67,7 @@ gha/
 ├── settings.gradle.kts                          # Gradle settings
 ├── init/
 │   └── gha.init.gradle.kts                      # Zero-effort init script for global injection
-├── src/main/kotlin/com/intellibitz/gha/
+├── src/main/kotlin/cc/thevar/gha/
 │   ├── GhaPlugin.kt                             # Core Gradle Plugin
 │   ├── GhaInitTask.kt                           # 100% Kotlin GHA Init Task
 │   ├── GhaStatusTask.kt                         # 100% Kotlin GHA Status Task

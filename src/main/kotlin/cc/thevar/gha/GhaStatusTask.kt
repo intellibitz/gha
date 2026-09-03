@@ -1,4 +1,4 @@
-package com.intellibitz.gha
+package cc.thevar.gha
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty

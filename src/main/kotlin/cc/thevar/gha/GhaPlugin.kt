@@ -1,4 +1,4 @@
-package com.intellibitz.gha
+package cc.thevar.gha
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
