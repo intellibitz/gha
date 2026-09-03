@@ -11,7 +11,23 @@
 - **100% Kotlin**: Built entirely using Kotlin for type safety, coroutines, DSL capabilities, and multiplatform support.
 - **100% Platform Independent**: Runs seamlessly across macOS, Linux, Windows, and containerized CI environments without bash or shell dependencies.
 - **100% GitHub Automation Workflows**: Automates repository setup, issue management, PR checks, releases, code analysis, and agent workflows.
+- **100% Secure & Zero Secret Leakage**: Enforces strict security rules to prevent accidental token exposure in logs, task inputs, build reports, or configuration cache.
 - **Zero Effort for Any Project**: Run GHA tasks on any project worldwide instantly without editing target project files.
+
+---
+
+## Security & Credential Management
+
+`gha` handles Git and GitHub credentials with zero secret leakage:
+
+1. **Non-Leaking Task Inputs:** All token properties are annotated with `@get:Internal` so secrets are **never recorded in Gradle task cache, build scans, or reports**.
+2. **Masked Logging:** Any console or log output automatically masks sensitive tokens (e.g., `ghp_...JReW`).
+3. **Configuration-Cache Safe:** Uses Gradle `ValueSource` to securely query system credentials (`gh auth token`) without violating configuration cache constraints.
+4. **Resolution Order:**
+   - Environment Variable: `GITHUB_TOKEN`
+   - Environment Variable: `GH_TOKEN`
+   - Gradle Property: `gha.github.token` (in `~/.gradle/gradle.properties`)
+   - System GitHub CLI: `gh auth token`
 
 ---
 
@@ -69,9 +85,12 @@ gha/
 │   └── gha.init.gradle.kts                      # Zero-effort init script for global injection
 ├── src/main/kotlin/cc/thevar/gha/
 │   ├── GhaPlugin.kt                             # Core Gradle Plugin
+│   ├── GhaTask.kt                               # Base Task with @get:Internal secret handling
 │   ├── GhaInitTask.kt                           # 100% Kotlin GHA Init Task
 │   ├── GhaStatusTask.kt                         # 100% Kotlin GHA Status Task
-│   └── GhaWorkflowTask.kt                       # 100% Kotlin GHA Workflow Task
+│   ├── GhaWorkflowTask.kt                       # 100% Kotlin GHA Workflow Task
+│   └── security/
+│       └── GhaCredentialsResolver.kt            # Secure GhAuthTokenValueSource & maskToken
 └── README.md                                    # Project documentation
 ```
 

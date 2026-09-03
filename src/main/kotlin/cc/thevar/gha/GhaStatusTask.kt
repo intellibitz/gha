@@ -1,6 +1,5 @@
 package cc.thevar.gha
 
-import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -11,7 +10,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Prints real-time workflow status to console")
-abstract class GhaStatusTask : DefaultTask() {
+abstract class GhaStatusTask : GhaTask() {
 
     @get:Input
     abstract val projectName: Property<String>
@@ -35,5 +34,6 @@ abstract class GhaStatusTask : DefaultTask() {
         logger.lifecycle("   RootDir: ${projectRootDir.get().asFile.absolutePath}")
         logger.lifecycle("   Platform: ${System.getProperty("os.name")} (${System.getProperty("os.arch")})")
         logger.lifecycle("   Gradle Version: ${gradleVersion.get()}")
+        logger.lifecycle("   GitHub Token: ${maskedToken()}")
     }
 }
