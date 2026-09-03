@@ -175,6 +175,9 @@ object GhaSecurityManager {
                 - name: Validate Gradle Wrapper
                   uses: gradle/actions/wrapper-validation@v4
 
+                - name: Build & Publish Plugin to MavenLocal
+                  run: ./gradlew publishToMavenLocal
+
                 - name: Execute GHA Security & Dependency Audit
                   run: ./gradlew --init-script init/gha.init.gradle.kts ghaSecurityStatus ghaDependencies
             """.trimIndent()
