@@ -9,11 +9,10 @@ echo "🚀 [gha Installer] Installing gha & ghai..."
 # Ensure init directory exists
 mkdir -p init
 
-# Download gha.init.gradle.kts if not present
+# Download or create gha.init.gradle.kts if not present
 if [ ! -f "init/gha.init.gradle.kts" ]; then
-    echo "📥 Downloading init/gha.init.gradle.kts..."
-    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" || {
-        echo "⚠️ Could not download init script online. Creating local fallback init script..."
+    echo "📥 Creating init/gha.init.gradle.kts..."
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" 2>/dev/null || {
         cat << 'EOF' > init/gha.init.gradle.kts
 initscript {
     repositories {
@@ -36,8 +35,9 @@ EOF
     }
 fi
 
-# Create top-level ./ghai executable script
-cat << 'EOF' > ghai
+# Create top-level ./ghai executable script if missing
+if [ ! -f "ghai" ]; then
+    cat << 'EOF' > ghai
 #!/usr/bin/env bash
 # 🤖 ghai - Autonomous AI Workflow Executable Launcher
 # 0 Effort, 100% Gain: Works Anywhere, Everywhere.
@@ -63,7 +63,8 @@ chmod +x gradlew ghai 2>/dev/null || true
 if [ ! -f "init/gha.init.gradle.kts" ] || [ ! -d ".gha" ]; then
     echo "⚡ [ghai] First-time run detected! Auto-initializing gha sandbox..."
     mkdir -p init
-    cat << 'FALLBACK_EOF' > init/gha.init.gradle.kts
+    if [ ! -f "init/gha.init.gradle.kts" ]; then
+        cat << 'FALLBACK_EOF' > init/gha.init.gradle.kts
 initscript {
     repositories {
         mavenLocal()
@@ -82,13 +83,15 @@ allprojects {
     apply<cc.thevar.gha.GhaPlugin>()
 }
 FALLBACK_EOF
+    fi
     ./gradlew --init-script init/gha.init.gradle.kts ghaInit
 fi
 
 exec ./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
 EOF
+fi
 
-chmod +x ghai
+chmod +x ghai 2>/dev/null || true
 
 # Symlink to ~/.local/bin/ghai if directory exists for global 'ghai' CLI access
 if [ -d "$HOME/.local/bin" ]; then
