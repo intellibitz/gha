@@ -8,6 +8,9 @@ Write-Host "🚀 [gha Installer] Installing gha for Creators & Users..." -Foregr
 if (-not (Test-Path "init")) {
     New-Item -ItemType Directory -Path "init" | Out-Null
 }
+if (-not (Test-Path "gradle\wrapper")) {
+    New-Item -ItemType Directory -Path "gradle\wrapper" | Out-Null
+}
 
 if (-not (Test-Path "init\gha.init.gradle.kts")) {
     Write-Host "📥 Downloading init\gha.init.gradle.kts..." -ForegroundColor Cyan
@@ -37,6 +40,19 @@ allprojects {
     }
 }
 
+# Auto-bootstrap Gradle wrapper if missing
+if (-not (Test-Path ".\gradlew.bat")) {
+    Write-Host "📥 Bootstrapping Gradle wrapper (gradlew.bat)..." -ForegroundColor Cyan
+    try {
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew" -OutFile "gradlew"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew.bat" -OutFile "gradlew.bat"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.properties" -OutFile "gradle\wrapper\gradle-wrapper.properties"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.jar" -OutFile "gradle\wrapper\gradle-wrapper.jar"
+    } catch {
+        Write-Host "⚠️ Gradle wrapper auto-download failed." -ForegroundColor Yellow
+    }
+}
+
 # Create top-level ghai.bat runner script
 @'
 @echo off
@@ -50,5 +66,5 @@ if (Test-Path ".\gradlew.bat") {
     .\ghai.bat
 }
 
-Write-Host "🎉 [gha Installer] gha & ghai installed ridiculously easy in 1 second!" -ForegroundColor Green
+Write-Host "🎉 [gha Installer] gha & ghai installed ridiculously easy!" -ForegroundColor Green
 Write-Host "👉 Creators & Users: Simply run '.\ghai.bat' anytime!" -ForegroundColor Yellow

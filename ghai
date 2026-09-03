@@ -4,7 +4,6 @@
 
 set -e
 
-# Find project root directory containing gradlew or .git
 PROJECT_ROOT="$PWD"
 while [ "$PROJECT_ROOT" != "/" ]; do
     if [ -f "$PROJECT_ROOT/gradlew" ] || [ -d "$PROJECT_ROOT/.git" ]; then
@@ -13,19 +12,25 @@ while [ "$PROJECT_ROOT" != "/" ]; do
     PROJECT_ROOT="$(dirname "$PROJECT_ROOT")"
 done
 
+# Auto-bootstrap Gradle wrapper in project root if missing
 if [ ! -f "$PROJECT_ROOT/gradlew" ]; then
-    echo "❌ [ghai] No Gradle wrapper (gradlew) found in project tree."
-    exit 1
+    echo "📥 [ghai] Bootstrapping Gradle wrapper in $PROJECT_ROOT..."
+    mkdir -p "$PROJECT_ROOT/gradle/wrapper"
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew" -o "$PROJECT_ROOT/gradlew" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew.bat" -o "$PROJECT_ROOT/gradlew.bat" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.properties" -o "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.properties" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.jar" -o "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.jar" 2>/dev/null || true
+    chmod +x "$PROJECT_ROOT/gradlew" 2>/dev/null || true
 fi
 
 cd "$PROJECT_ROOT"
 chmod +x gradlew ghai 2>/dev/null || true
 
-# First-time auto-initialization check
 if [ ! -f "init/gha.init.gradle.kts" ] || [ ! -d ".gha" ]; then
     echo "⚡ [ghai] First-time run detected! Auto-initializing gha sandbox..."
     mkdir -p init
-    cat << 'EOF' > init/gha.init.gradle.kts
+    if [ ! -f "init/gha.init.gradle.kts" ]; then
+        cat << 'FALLBACK_EOF' > init/gha.init.gradle.kts
 initscript {
     repositories {
         mavenLocal()
@@ -43,9 +48,9 @@ settingsEvaluated {
 allprojects {
     apply<cc.thevar.gha.GhaPlugin>()
 }
-EOF
+FALLBACK_EOF
+    fi
     ./gradlew --init-script init/gha.init.gradle.kts ghaInit
 fi
 
-# Execute Autonomous AI Workflow Engine
 exec ./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
