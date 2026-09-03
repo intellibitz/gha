@@ -328,5 +328,15 @@ class GhaPlugin : Plugin<Project> {
             group = "Git Operations"
             description = "Displays recent Git commits"
         }
+
+        // GitHub Help Task - Registered last to capture all tasks
+        project.tasks.register("ghaHelp", GhaHelpTask::class.java) {
+            group = "GitHub Automation"
+            description = "Displays help information for all GHA tasks"
+            taskDetails.set(project.provider {
+                project.tasks.filter { it.name.startsWith("gha") && it.name != "ghaHelp" }
+                    .map { "${it.group ?: "Other"}|${it.name}|${it.description ?: "No description"}" }
+            })
+        }
     }
 }
