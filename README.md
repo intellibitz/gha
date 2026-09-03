@@ -117,10 +117,16 @@ curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh
 iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps1 | iex
 ```
 
-Or run `ghaInit` on any cloned project:
+### 🔄 Update & Uninstall Management Commands
+
+Once `ghai` is present, managing `gha` is completely zero-effort:
 
 ```bash
-./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+# Update gha & ghai to the latest release version:
+./ghai update
+
+# Completely uninstall and remove gha (0 lingering system files):
+./ghai uninstall
 ```
 
 ---
