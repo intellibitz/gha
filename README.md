@@ -243,6 +243,10 @@ gha/
 └── README.md                                    # Project documentation
 ```
 
+## Contributors
+
+`gha` is co-created and maintained by **IntelliBitz**, **Muthu Ramadoss**, and **Gemini (Google AI)**. See [CONTRIBUTORS.md](file:///home/ramadoss/Projects/AI/gha/CONTRIBUTORS.md) for the full list of project creators and contributors.
+
 ## Contributing
 
 Contributions are welcome from both human developers and AI agents! Check open issues or submit pull requests following 100% Kotlin and platform-independent conventions.
