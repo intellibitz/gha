@@ -44,6 +44,9 @@ import cc.thevar.gha.wiki.GhaWikiInitTask
 import cc.thevar.gha.wiki.GhaWikiPublishTask
 import cc.thevar.gha.wiki.GhaWikiStatusTask
 import cc.thevar.gha.wiki.GhaWikiSyncTask
+import cc.thevar.gha.workflow.GhaWorkflowCancelTask
+import cc.thevar.gha.workflow.GhaWorkflowCleanupTask
+import cc.thevar.gha.workflow.GhaWorkflowListTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -68,6 +71,22 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaDependencies", GhaDependenciesTask::class.java) {
             group = "GitHub Automation"
             description = "Prints all GHA dependencies, tools, SDKs, and their current versions"
+        }
+
+        // GitHub Actions Workflow Management & Cleanup
+        project.tasks.register("ghaWorkflowList", GhaWorkflowListTask::class.java) {
+            group = "GitHub Actions"
+            description = "Lists recent GitHub Actions workflow runs and their status"
+        }
+
+        project.tasks.register("ghaWorkflowCleanup", GhaWorkflowCleanupTask::class.java) {
+            group = "GitHub Actions"
+            description = "Cleans up and deletes old, failed, or cancelled GitHub Actions workflow runs"
+        }
+
+        project.tasks.register("ghaWorkflowCancel", GhaWorkflowCancelTask::class.java) {
+            group = "GitHub Actions"
+            description = "Cancels in-progress GitHub Actions workflow runs"
         }
 
         // GitHub Projects Tasks

@@ -27,4 +27,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./gradlew --init-script init/gha.init.gradle.kts ghaInit ghaStatus ghaDependencies ghaGitStatus ghaGitLog ghaWorkflow
+          ./gradlew --init-script init/gha.init.gradle.kts ghaInit ghaStatus ghaDependencies ghaGitStatus ghaGitLog ghaWorkflow ghaWorkflowList
