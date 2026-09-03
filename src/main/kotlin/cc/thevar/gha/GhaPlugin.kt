@@ -32,6 +32,11 @@ class GhaPlugin : Plugin<Project> {
             description = "Executes platform-independent GitHub automation workflows"
         }
 
+        project.tasks.register("ghaDependencies", GhaDependenciesTask::class.java) {
+            group = "GitHub Automation"
+            description = "Prints all GHA dependencies, tools, SDKs, and their current versions"
+        }
+
         // GitHub Operations
         project.tasks.register("ghaPrCreate", GhaPrCreateTask::class.java) {
             group = "GitHub Operations"

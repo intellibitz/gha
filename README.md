@@ -1,6 +1,6 @@
 # gha: Git & GitHub Automation
 
-**gha** (`cc.thevar.gha`) is a **100% self-contained, 100% Kotlin** Git and GitHub automation plugin. **gha runs on gha**—automating its own development, testing, commits, pulls, PRs, and releases.
+**gha** (`cc.thevar.gha`) is a **100% self-contained, 100% Kotlin** Git and GitHub automation plugin. **gha runs on gha**—automating its own development, testing, dependencies, commits, pulls, PRs, and releases.
 
 GitHub users can clone this project and expect **0% system modifications**. All dependencies, Kotlin libraries, Gradle caches, JDK toolchains, and execution state are strictly sandboxed inside the local repository folder (`.gha/`).
 
@@ -11,6 +11,7 @@ GitHub users can clone this project and expect **0% system modifications**. All 
 ## Key Principles
 
 - **gha Runs on gha**: Self-testing and self-automating via `.github/workflows/gha.yml`.
+- **Centralized Version Configuration ([`GhaConfig.kt`](file:///home/ramadoss/Projects/AI/gha/src/main/kotlin/cc/thevar/gha/config/GhaConfig.kt))**: Single source of truth for tools, SDKs, frameworks, and plugin versions.
 - **Infinite Loop Guard & Timeout Protection**: `GhaProcessRunner` enforces strict execution timeouts (30s) and non-interactive flags (`GIT_TERMINAL_PROMPT=0`, `GH_NO_PROMPT=1`), preventing infinite hangs or recursion loops.
 - **100% Sandboxed Dependencies & JDKs**: All external libraries, Kotlin DSL plugins, and JDK toolchains are downloaded into `.gha/gradle-user-home/`.
 - **0% System Modifications**: Zero changes to `~/.gradle/`, user system settings, shell configurations, or global user directories.
@@ -21,13 +22,21 @@ GitHub users can clone this project and expect **0% system modifications**. All 
 
 ---
 
-## Safety & Loop Prevention Engine ([`GhaProcessRunner.kt`](file:///home/ramadoss/Projects/AI/gha/src/main/kotlin/cc/thevar/gha/safety/GhaProcessRunner.kt))
+## Centralized Version Catalog & Dependency Tracking
 
-To guarantee `gha` never hangs or enters an infinite execution loop:
+All tools, SDKs, frameworks, and plugins are defined centrally in `gradle/libs.versions.toml` and [`GhaConfig.kt`](file:///home/ramadoss/Projects/AI/gha/src/main/kotlin/cc/thevar/gha/config/GhaConfig.kt):
 
-1. **Strict Execution Timeouts:** Every process call enforces a 30–45 second maximum timeout. If exceeded, the process is killed forcibly.
-2. **Non-Interactive Enforcements:** Environment variables `GIT_TERMINAL_PROMPT=0` and `GH_NO_PROMPT=1` prevent processes from waiting for interactive keyboard input.
-3. **Recursion Guard:** `GHA_RECURSION_DEPTH` tracking limits nested task calls to a maximum depth of 3, aborting re-entry loops automatically.
+| Dependency / Tool | Category | Configured Version |
+| :--- | :--- | :--- |
+| **Java / JDK Toolchain** | SDK | `17` |
+| **Kotlin Language & DSL** | Framework | `2.1.0` |
+| **Gradle Build Engine** | Build Tool | `9.7.1` |
+| **Gradle Plugin Publish** | Plugin | `1.3.1` |
+| **Foojay JDK Resolver** | Plugin | `0.9.0` |
+| **Git VCS Engine** | CLI Tool | Latest Compatible |
+| **GitHub CLI (`gh`)** | CLI Tool | Latest Compatible |
+
+Run `./gradlew ghaDependencies` to print real-time version status in a structured table.
 
 ---
 
@@ -38,8 +47,8 @@ To guarantee `gha` never hangs or enters an infinite execution loop:
 Run `gha` tasks on any cloned project without changing system or build files:
 
 ```bash
-# Run ghaInit or ghaGitStatus in local sandbox
-./gradlew --init-script init/gha.init.gradle.kts ghaGitStatus
+# Print dependencies or run status in local sandbox
+./gradlew --init-script init/gha.init.gradle.kts ghaDependencies
 ```
 
 ---
@@ -63,6 +72,7 @@ plugins {
 | :--- | :--- |
 | `./gradlew ghaInit` | Initializes sandboxed GitHub Automation environment (`.gha/`) |
 | `./gradlew ghaStatus` | Displays current GitHub Automation project and platform status |
+| `./gradlew ghaDependencies` | Prints all GHA dependencies, tools, SDKs, and active runtime versions |
 | `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
 
 ### GitHub Operations Tasks
@@ -95,7 +105,8 @@ gha/
 ├── build.gradle.kts                             # Gradle Plugin build configuration
 ├── settings.gradle.kts                          # Gradle settings with Foojay sandboxed JDK resolver
 ├── gradle.properties                            # Sandboxed org.gradle.user.home=.gha/gradle-user-home
-├── gradlew / gradlew.bat                        # Wrapper configuring sandboxed GRADLE_USER_HOME
+├── gradle/
+│   └── libs.versions.toml                       # Centralized Version Catalog
 ├── init/
 │   └── gha.init.gradle.kts                      # Self-contained init script
 ├── src/main/kotlin/cc/thevar/gha/
@@ -103,7 +114,10 @@ gha/
 │   ├── GhaTask.kt                               # Base Task with secret handling
 │   ├── GhaInitTask.kt                           # Sandboxed GHA Init Task (.gha/)
 │   ├── GhaStatusTask.kt                         # GHA Status Task
+│   ├── GhaDependenciesTask.kt                   # Prints dependency table and runtime versions
 │   ├── GhaWorkflowTask.kt                       # GHA Workflow Task
+│   ├── config/
+│   │   └── GhaConfig.kt                         # Centralized tools, SDK, and framework config
 │   ├── safety/
 │   │   └── GhaProcessRunner.kt                  # Timeouts, non-interactive flags, recursion guard
 │   ├── git/
