@@ -47,9 +47,9 @@ object GhaAiManager {
         val hasTests = changedFiles.any { it.contains("Test") || it.startsWith("src/test/") }
 
         return when {
-            hasBuild && changedFiles.size == 1 -> "build: update Gradle project configuration"
-            hasDocs && !hasBuild && !hasGit && !hasGitHub -> "docs: update documentation and project wiki"
-            hasGit && !hasGitHub -> "feat(git): update Git automation engine"
+            (hasBuild && changedFiles.size == 1) -> "build: update Gradle project configuration"
+            (hasDocs && !hasBuild && !hasGit && !hasGitHub) -> "docs: update documentation and project wiki"
+            (hasGit && !hasGitHub) -> "feat(git): update Git automation engine"
             hasGitHub -> "feat(github): update GitHub automation workflows and ghai AI engine"
             hasSecurity -> "security: update security policies and dependabot tasks"
             hasTests -> "test: update project test suite"
@@ -74,7 +74,13 @@ object GhaAiManager {
         )
 
         if (!result.isSuccess || result.stdout.isBlank()) {
-            return PrCiStatus(prNumber, "OPEN", true, CiStatus.NO_CHECKS, "No check details available")
+            return PrCiStatus(
+                prNumber = prNumber,
+                state = "OPEN",
+                isMergeable = true,
+                ciStatus = CiStatus.NO_CHECKS,
+                rawSummary = "No check details available",
+            )
         }
 
         val json = result.stdout
@@ -101,17 +107,5 @@ object GhaAiManager {
     fun isBranchAheadOfRemote(projectDir: File, baseBranch: String): Boolean {
         val res = GhaGitExec.exec(projectDir, "log", "origin/$baseBranch..HEAD", "--oneline")
         return res.isSuccess && res.stdout.isNotBlank()
-    }
-
-    /**
-     * Summary of working tree changes for AI reporting.
-     */
-    fun summarizeChanges(projectDir: File): String {
-        val res = GhaGitExec.exec(projectDir, "status", "--short")
-        return if (res.isSuccess && res.stdout.isNotBlank()) {
-            res.stdout.lines().take(10).joinToString("\n") { "   $it" }
-        } else {
-            "   (no uncommitted changes)"
-        }
     }
 }
