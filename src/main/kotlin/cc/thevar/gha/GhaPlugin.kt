@@ -13,8 +13,15 @@ import cc.thevar.gha.github.GhaIssueEditTask
 import cc.thevar.gha.github.GhaIssueListTask
 import cc.thevar.gha.github.GhaIssueReopenTask
 import cc.thevar.gha.github.GhaIssueViewTask
+import cc.thevar.gha.github.GhaPrCheckoutTask
+import cc.thevar.gha.github.GhaPrCloseTask
 import cc.thevar.gha.github.GhaPrCreateTask
+import cc.thevar.gha.github.GhaPrEditTask
 import cc.thevar.gha.github.GhaPrListTask
+import cc.thevar.gha.github.GhaPrMergeTask
+import cc.thevar.gha.github.GhaPrReopenTask
+import cc.thevar.gha.github.GhaPrReviewTask
+import cc.thevar.gha.github.GhaPrViewTask
 import cc.thevar.gha.github.GhaReleaseCreateTask
 import cc.thevar.gha.wiki.GhaWikiInitTask
 import cc.thevar.gha.wiki.GhaWikiPublishTask
@@ -103,7 +110,7 @@ class GhaPlugin : Plugin<Project> {
             description = "Edits title, body, labels, or assignees of an Issue on GitHub"
         }
 
-        // GitHub PR & Release Operations
+        // GitHub PR Operations
         project.tasks.register("ghaPrCreate", GhaPrCreateTask::class.java) {
             group = "GitHub Operations"
             description = "Creates a Pull Request on GitHub"
@@ -111,9 +118,45 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaPrList", GhaPrListTask::class.java) {
             group = "GitHub Operations"
-            description = "Lists open Pull Requests on GitHub"
+            description = "Lists Pull Requests on GitHub"
         }
 
+        project.tasks.register("ghaPrView", GhaPrViewTask::class.java) {
+            group = "GitHub Operations"
+            description = "Displays details and comments for a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrMerge", GhaPrMergeTask::class.java) {
+            group = "GitHub Operations"
+            description = "Merges a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrClose", GhaPrCloseTask::class.java) {
+            group = "GitHub Operations"
+            description = "Closes a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrReopen", GhaPrReopenTask::class.java) {
+            group = "GitHub Operations"
+            description = "Reopens a closed Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrEdit", GhaPrEditTask::class.java) {
+            group = "GitHub Operations"
+            description = "Edits title, body, base branch, or reviewers of a Pull Request on GitHub"
+        }
+
+        project.tasks.register("ghaPrCheckout", GhaPrCheckoutTask::class.java) {
+            group = "GitHub Operations"
+            description = "Checks out a Pull Request branch locally"
+        }
+
+        project.tasks.register("ghaPrReview", GhaPrReviewTask::class.java) {
+            group = "GitHub Operations"
+            description = "Submits a review on a Pull Request on GitHub"
+        }
+
+        // GitHub Release Operations
         project.tasks.register("ghaReleaseCreate", GhaReleaseCreateTask::class.java) {
             group = "GitHub Operations"
             description = "Creates a Release on GitHub"

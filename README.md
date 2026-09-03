@@ -106,12 +106,23 @@ plugins {
 | `./gradlew ghaIssueClose` | Closes an Issue (reason: completed or not_planned) | `./gradlew ghaIssueClose -PissueNumber=1 [-PcloseComment="Fixed"]` |
 | `./gradlew ghaIssueReopen` | Reopens a closed Issue | `./gradlew ghaIssueReopen -PissueNumber=1` |
 
-### GitHub PR & Release Operations Tasks
-| Task | Description |
-| :--- | :--- |
-| `./gradlew ghaPrCreate` | Creates a Pull Request on GitHub |
-| `./gradlew ghaPrList` | Lists open Pull Requests on GitHub |
-| `./gradlew ghaReleaseCreate` | Creates a Release on GitHub |
+### GitHub Pull Request Operations Tasks
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaPrCreate` | Creates a new Pull Request on GitHub | `./gradlew ghaPrCreate -PprTitle="Feature PR" -PprBody="Details"` |
+| `./gradlew ghaPrList` | Lists Pull Requests (supports open/closed/merged/all filtering) | `./gradlew ghaPrList [-PprState=open\|closed\|merged\|all]` |
+| `./gradlew ghaPrView` | Displays details, comments, and files for a PR | `./gradlew ghaPrView [-PprNumber=1]` |
+| `./gradlew ghaPrCheckout` | Checks out a Pull Request branch locally | `./gradlew ghaPrCheckout -PprNumber=1` |
+| `./gradlew ghaPrEdit` | Edits title, body, base branch, labels, or reviewers | `./gradlew ghaPrEdit -PprNumber=1 -PprTitle="Updated PR Title"` |
+| `./gradlew ghaPrReview` | Submits a PR review (approve, request changes, or comment) | `./gradlew ghaPrReview [-PprNumber=1] -Papprove=true` |
+| `./gradlew ghaPrMerge` | Merges a Pull Request (squash, merge, or rebase) | `./gradlew ghaPrMerge [-PprNumber=1] [-PmergeMethod=squash]` |
+| `./gradlew ghaPrClose` | Closes a Pull Request without merging | `./gradlew ghaPrClose [-PprNumber=1] [-PcloseComment="Closed"]` |
+| `./gradlew ghaPrReopen` | Reopens a closed Pull Request | `./gradlew ghaPrReopen [-PprNumber=1]` |
+
+### GitHub Release Operations Tasks
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaReleaseCreate` | Creates a Release on GitHub | `./gradlew ghaReleaseCreate -PtagName="v1.0.0"` |
 
 ### Git Operations Tasks
 | Task | Description |

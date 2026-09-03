@@ -20,15 +20,42 @@ abstract class GhaPrCreateTask : GhaTask() {
     abstract val repoDir: DirectoryProperty
 
     @get:Input
+    @get:Optional
     abstract val prTitle: Property<String>
 
     @get:Input
     @get:Optional
     abstract val prBody: Property<String>
 
+    @get:Input
+    @get:Optional
+    abstract val prBase: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val prHead: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val prDraft: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val prReviewers: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val prLabels: Property<String>
+
     init {
         repoDir.convention(project.layout.projectDirectory)
-        prBody.convention("Automated Pull Request created by GHA")
+        prTitle.convention(project.providers.gradleProperty("prTitle").orElse("Automated Pull Request via GHA"))
+        prBody.convention(project.providers.gradleProperty("prBody").orElse("Automated Pull Request created by GHA"))
+        prBase.convention(project.providers.gradleProperty("prBase"))
+        prHead.convention(project.providers.gradleProperty("prHead"))
+        prDraft.convention(project.providers.gradleProperty("prDraft"))
+        prReviewers.convention(project.providers.gradleProperty("prReviewers"))
+        prLabels.convention(project.providers.gradleProperty("prLabels"))
     }
 
     @TaskAction
@@ -40,10 +67,36 @@ abstract class GhaPrCreateTask : GhaTask() {
 
         logger.lifecycle("🔀 [GHA PR Create] Creating Pull Request: \"$title\"...")
 
-        val env = if (token.isNotBlank()) mapOf("GITHUB_TOKEN" to token) else emptyMap()
+        val cmd = mutableListOf("gh", "pr", "create", "--title", title, "--body", body)
+
+        prBase.orNull?.takeIf { it.isNotBlank() }?.let { base ->
+            cmd.add("--base")
+            cmd.add(base)
+        }
+
+        prHead.orNull?.takeIf { it.isNotBlank() }?.let { head ->
+            cmd.add("--head")
+            cmd.add(head)
+        }
+
+        if (prDraft.orNull?.lowercase() == "true") {
+            cmd.add("--draft")
+        }
+
+        prReviewers.orNull?.takeIf { it.isNotBlank() }?.let { reviewers ->
+            cmd.add("--reviewer")
+            cmd.add(reviewers)
+        }
+
+        prLabels.orNull?.takeIf { it.isNotBlank() }?.let { labels ->
+            cmd.add("--label")
+            cmd.add(labels)
+        }
+
+        val env = if (token.isNotBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
         val result = GhaProcessRunner.exec(
             workingDir = dir,
-            command = listOf("gh", "pr", "create", "--title", title, "--body", body),
+            command = cmd,
             extraEnv = env,
             timeoutSeconds = 45L
         )
