@@ -1,5 +1,6 @@
 package cc.thevar.gha
 
+import cc.thevar.gha.git.GhaGitBranchTask
 import cc.thevar.gha.git.GhaGitCommitTask
 import cc.thevar.gha.git.GhaGitLogTask
 import cc.thevar.gha.git.GhaGitPullTask
@@ -296,6 +297,11 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaGitStatus", GhaGitStatusTask::class.java) {
             group = "Git Operations"
             description = "Displays current Git repository status"
+        }
+
+        project.tasks.register("ghaGitBranch", GhaGitBranchTask::class.java) {
+            group = "Git Operations"
+            description = "Lists local and remote Git branches"
         }
 
         project.tasks.register("ghaGitCommit", GhaGitCommitTask::class.java) {
