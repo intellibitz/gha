@@ -7,6 +7,12 @@ plugins {
 group = "cc.thevar.gha"
 version = "0.1.0-SNAPSHOT"
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
 gradlePlugin {
     website = "https://github.com/intellibitz/gha"
     vcsUrl = "https://github.com/intellibitz/gha.git"

@@ -8,3 +8,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Sandboxed Gradle User Home (dependencies & JDKs)
+.gha/gradle-user-home/
+.gha/tmp/
