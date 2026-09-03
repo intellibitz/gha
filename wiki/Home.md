@@ -76,6 +76,22 @@ For maximum productivity with zero cognitive overhead, developers can simply typ
 4. **CI PENDING**: Enables GitHub `--auto` merge flag so GitHub merges the PR automatically once CI passes.
 5. **CI FAILED**: Displays diagnostic report pointing directly to build failure logs.
 
+### 📋 Structured Summary & Actionable One-Line Tip
+Every run of `ghai` prints a clear execution summary block and an actionable tip for what to do next:
+```text
+════════════════════════════════════════════════════════════════════════════════
+📋 [ghai Execution Summary]
+   • Working Branch : main (User Branch)
+   • Commit Status  : Committed: "docs: update ghai docs and summary output"
+   • Remote Push    : Pushed to origin/main
+   • GitHub PR      : PR #12 active (https://github.com/owner/repo/pull/12)
+   • CI/CD Status   : PENDING / AUTO-MERGE
+   • Local Sync     : 100% Synced with origin/main
+────────────────────────────────────────────────────────────────────────────────
+💡 Tip: Run './ghai' after GitHub CI builds finish to verify and complete auto-merge into main.
+════════════════════════════════════════════════════════════════════════════════
+```
+
 ---
 
 ## How to Use
