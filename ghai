@@ -1,4 +1,51 @@
 #!/usr/bin/env bash
-# 🤖 ghai - Autonomous AI Workflow Launcher
-# Convenient shortcut wrapper for: ./gradlew --init-script init/gha.init.gradle.kts ghai
-./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
+# 🤖 ghai - Autonomous AI Workflow Executable Launcher
+# 0 Effort, 100% Gain: Works Anywhere, Everywhere.
+
+set -e
+
+# Find project root directory containing gradlew or .git
+PROJECT_ROOT="$PWD"
+while [ "$PROJECT_ROOT" != "/" ]; do
+    if [ -f "$PROJECT_ROOT/gradlew" ] || [ -d "$PROJECT_ROOT/.git" ]; then
+        break
+    fi
+    PROJECT_ROOT="$(dirname "$PROJECT_ROOT")"
+done
+
+if [ ! -f "$PROJECT_ROOT/gradlew" ]; then
+    echo "❌ [ghai] No Gradle wrapper (gradlew) found in project tree."
+    exit 1
+fi
+
+cd "$PROJECT_ROOT"
+chmod +x gradlew ghai 2>/dev/null || true
+
+# First-time auto-initialization check
+if [ ! -f "init/gha.init.gradle.kts" ] || [ ! -d ".gha" ]; then
+    echo "⚡ [ghai] First-time run detected! Auto-initializing gha sandbox..."
+    mkdir -p init
+    cat << 'EOF' > init/gha.init.gradle.kts
+initscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath("cc.thevar.gha:gha:0.1.0-SNAPSHOT")
+        classpath("org.gradle.toolchains:foojay-resolver:1.0.0")
+    }
+}
+settingsEvaluated {
+    apply(plugin = "org.gradle.toolchains.foojay-resolver-convention")
+}
+allprojects {
+    apply<cc.thevar.gha.GhaPlugin>()
+}
+EOF
+    ./gradlew --init-script init/gha.init.gradle.kts ghaInit
+fi
+
+# Execute Autonomous AI Workflow Engine
+exec ./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
