@@ -120,10 +120,15 @@ object GhaParallelWorkflowManager {
 
     /**
      * Syncs current branch with remote base branch via rebase pull.
+     * Aborts rebase safely if a merge conflict occurs to prevent leaving the repo in a broken state.
      */
     fun syncWithRemoteBase(projectDir: File, baseBranch: String, remoteName: String = "origin"): GhaProcessRunner.ProcessResult {
         GhaGitExec.fetch(projectDir, remoteName)
-        return GhaGitExec.pullRebase(projectDir, remoteName, baseBranch)
+        val res = GhaGitExec.pullRebase(projectDir, remoteName, baseBranch)
+        if (!res.isSuccess && (res.stderr.contains("conflict", ignoreCase = true) || res.stdout.contains("conflict", ignoreCase = true))) {
+            GhaGitExec.exec(projectDir, "rebase", "--abort")
+        }
+        return res
     }
 
     /**
