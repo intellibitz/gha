@@ -117,11 +117,17 @@ curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh
 iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps1 | iex
 ```
 
-### 🔄 Version, Update & Uninstall Subcommands
+### 🔄 Clone, Version, Update & Uninstall Subcommands
 
 Once `ghai` is installed, managing `gha` is completely zero-effort:
 
 ```bash
+# Smart clone repository (e.g. ./ghai clone intellibitz -> https://github.com/intellibitz/intellibitz):
+./ghai clone intellibitz
+
+# Clone specific owner/repo:
+./ghai clone intellibitz/gha
+
 # Print version report & verify engine stability:
 ./ghai version
 

@@ -2,6 +2,7 @@
 
 ## 🤖 GHA Autonomous AI Tasks (0 Effort, 100% Gain)
 - `./ghai`: Primary zero-effort AI task: auto-detects diffs, commits with AI messages, rebase-syncs, pushes, opens PRs, checks CI status, auto-merges into main, and auto-prunes old CI logs!
+- `./ghai clone <repo>`: Smart Git clone (e.g. `./ghai clone intellibitz` -> `https://github.com/intellibitz/intellibitz`).
 - `./ghai version`: Displays `ghai` Version Report and verifies engine stability.
 - `./ghai update`: Fetches and updates `gha` & `ghai` to the latest release in 1 second.
 - `./ghai uninstall`: Completely removes `.gha` sandbox, runner scripts, and CI workflows with 0 lingering system files.
