@@ -1,6 +1,6 @@
-# gha: Git & GitHub Automation
+# gha: Git, GitHub & Gradle Automation
 
-**gha** (`cc.thevar.gha`) is a **100% self-contained, 100% Kotlin** Git and GitHub automation plugin. **gha runs on gha**—automating its own development, testing, dependencies, commits, pulls, PRs, and releases.
+**gha** (`cc.thevar.gha`) is a **100% self-contained, 100% Kotlin** Git, GitHub, and Gradle automation plugin. **gha runs on gha**—automating its own development, testing, dependencies, commits, pulls, PRs, releases, security, issues, wikis, and insights.
 
 GitHub users and developers across any IDE or terminal can clone this project and expect **0% system modifications**. All dependencies, Kotlin libraries, Gradle caches, JDK toolchains, and execution state are strictly sandboxed inside the local repository folder (`.gha/`).
 

@@ -20,10 +20,10 @@ gradlePlugin {
     plugins {
         create("gha") {
             id = "cc.thevar.gha"
-            displayName = "GitHub Automation Gradle Plugin"
-            description = "100% Kotlin, 100% platform-independent GitHub automation workflow Gradle tasks"
+            displayName = "gha: Git, GitHub & Gradle Automation"
+            description = "100% Kotlin, 100% platform-independent Git, GitHub, and Gradle automation workflow tasks"
             implementationClass = "cc.thevar.gha.GhaPlugin"
-            tags = listOf("github", "automation", "workflow", "ci", "kotlin")
+            tags = listOf("git", "github", "gradle", "automation", "workflow", "ci", "kotlin")
         }
     }
 }
