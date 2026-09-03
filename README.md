@@ -95,12 +95,16 @@ plugins {
 | `./gradlew ghaTraffic` | Displays repository traffic, page views, and clone statistics |
 
 ### GitHub Security & Vulnerability Tasks
-| Task | Description |
-| :--- | :--- |
-| `./gradlew ghaSecurityInit` | Generates default security workflows, Dependabot, CodeQL scanning, and `SECURITY.md` |
-| `./gradlew ghaSecurityStatus` | Inspects current GitHub security, scanning, Dependabot, and policy status |
-| `./gradlew ghaDependabotInit` | Generates `.github/dependabot.yml` for automated dependency updates |
-| `./gradlew ghaCodeScanningInit` | Generates `.github/workflows/codeql.yml` for CodeQL code scanning |
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaSecurityInit` | Generates default security workflows, Dependabot, CodeQL scanning, and `SECURITY.md` | `./gradlew ghaSecurityInit` |
+| `./gradlew ghaSecurityStatus` | Inspects current GitHub security, scanning, Dependabot, and policy status | `./gradlew ghaSecurityStatus` |
+| `./gradlew ghaDependabotInit` | Generates `.github/dependabot.yml` for automated dependency updates | `./gradlew ghaDependabotInit` |
+| `./gradlew ghaDependabotList` | Lists active Dependabot pull requests and remote `dependabot/` branches | `./gradlew ghaDependabotList` |
+| `./gradlew ghaDependabotMerge` | Merges Dependabot PRs and deletes remote branches | `./gradlew ghaDependabotMerge [-PprNumber=123] [-PmergeAll=true]` |
+| `./gradlew ghaDependabotClose` | Closes Dependabot PRs and deletes remote `dependabot/` branches | `./gradlew ghaDependabotClose [-PprNumber=123] [-PcloseAll=true]` |
+| `./gradlew ghaDependabotRebase` | Requests Dependabot to `@dependabot rebase` or `@dependabot recreate` | `./gradlew ghaDependabotRebase [-PprNumber=123] [-PrebaseAll=true] [-Precreate=true]` |
+| `./gradlew ghaCodeScanningInit` | Generates `.github/workflows/codeql.yml` for CodeQL code scanning | `./gradlew ghaCodeScanningInit` |
 
 ### GitHub Wiki Tasks
 | Task | Description |

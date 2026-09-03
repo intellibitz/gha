@@ -27,7 +27,11 @@ import cc.thevar.gha.insights.GhaContributorsTask
 import cc.thevar.gha.insights.GhaInsightsTask
 import cc.thevar.gha.insights.GhaTrafficTask
 import cc.thevar.gha.security.GhaCodeScanningInitTask
+import cc.thevar.gha.security.GhaDependabotCloseTask
 import cc.thevar.gha.security.GhaDependabotInitTask
+import cc.thevar.gha.security.GhaDependabotListTask
+import cc.thevar.gha.security.GhaDependabotMergeTask
+import cc.thevar.gha.security.GhaDependabotRebaseTask
 import cc.thevar.gha.security.GhaSecurityInitTask
 import cc.thevar.gha.security.GhaSecurityStatusTask
 import cc.thevar.gha.wiki.GhaWikiInitTask
@@ -90,6 +94,26 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaDependabotInit", GhaDependabotInitTask::class.java) {
             group = "GitHub Security"
             description = "Generates .github/dependabot.yml for automated dependency updates"
+        }
+
+        project.tasks.register("ghaDependabotList", GhaDependabotListTask::class.java) {
+            group = "GitHub Security"
+            description = "Lists active Dependabot pull requests and remote branches"
+        }
+
+        project.tasks.register("ghaDependabotMerge", GhaDependabotMergeTask::class.java) {
+            group = "GitHub Security"
+            description = "Merges open Dependabot pull requests and deletes remote branches"
+        }
+
+        project.tasks.register("ghaDependabotClose", GhaDependabotCloseTask::class.java) {
+            group = "GitHub Security"
+            description = "Closes Dependabot pull requests and deletes remote dependabot/ branches"
+        }
+
+        project.tasks.register("ghaDependabotRebase", GhaDependabotRebaseTask::class.java) {
+            group = "GitHub Security"
+            description = "Requests Dependabot to rebase or recreate pull requests to resolve conflicts"
         }
 
         project.tasks.register("ghaCodeScanningInit", GhaCodeScanningInitTask::class.java) {
