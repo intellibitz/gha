@@ -73,16 +73,7 @@ abstract class GhaAiTask : GhaTask() {
         val branchCategory = if (isAutoBranch) "GHA Auto-Branch" else "User Branch"
         logger.lifecycle("🌿 [ghaAI] Working Branch: '$headBranch' ($branchCategory)")
 
-        // Step 3: Rebase Sync with upstream
-        logger.lifecycle("🔄 [ghaAI] Syncing with 'origin/$base' via rebase...")
-        val syncRes = GhaParallelWorkflowManager.syncWithRemoteBase(rootDir, base)
-        if (syncRes.isSuccess) {
-            logger.lifecycle("✅ Local branch rebased and 100% synced with origin/$base.")
-        } else {
-            logger.lifecycle("ℹ️ Sync status: ${syncRes.stderr.ifEmpty { syncRes.stdout }}")
-        }
-
-        // Step 4: Stage & Auto-Commit
+        // Step 3: Stage & Auto-Commit uncommitted local work FIRST before rebase
         logger.lifecycle("📦 [ghaAI] Staging working tree changes...")
         GhaGitExec.exec(rootDir, "add", "-A")
 
@@ -94,6 +85,15 @@ abstract class GhaAiTask : GhaTask() {
             }
         } else {
             logger.lifecycle("ℹ️ Working tree clean, no new changes to commit.")
+        }
+
+        // Step 4: Rebase Sync with upstream
+        logger.lifecycle("🔄 [ghaAI] Syncing with 'origin/$base' via rebase...")
+        val syncRes = GhaParallelWorkflowManager.syncWithRemoteBase(rootDir, base)
+        if (syncRes.isSuccess) {
+            logger.lifecycle("✅ Local branch rebased and 100% synced with origin/$base.")
+        } else {
+            logger.lifecycle("ℹ️ Sync status: ${syncRes.stderr.ifEmpty { syncRes.stdout }}")
         }
 
         // Step 5: Push to Remote
