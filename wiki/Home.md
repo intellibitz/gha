@@ -54,11 +54,15 @@ Run `./gradlew --init-script init/gha.init.gradle.kts ghaDependencies` to inspec
 
 ## 🚀 0 Effort, 100% Gain — Autonomous AI Workflow (`ghai`)
 
-For maximum productivity with zero cognitive overhead, developers can simply type:
+For maximum productivity with zero cognitive overhead, developers can run:
 
 ```bash
-./gradlew ghai
+./ghai           # Short launcher shortcut
+# OR
+./gradlew ghai   # Standard Gradle task
 ```
+
+> 💡 **Note:** `./ghai` is simply an executable wrapper script that delegates directly to `./gradlew ghai`. Both execute the exact same autonomous AI workflow task!
 
 `ghai` (and aliases `ghaAI`, `ghaAuto`, `ghaSync`, `ghaSave`) adapts autonomously to your repository and GitHub state:
 
