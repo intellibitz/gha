@@ -7,7 +7,7 @@ set -e
 # Handle "version" / "--version" / "-v" sanity check
 if [ "$1" = "--version" ] || [ "$1" = "-v" ] || [ "$1" = "version" ]; then
     chmod +x gradlew 2>/dev/null || true
-    exec ./gradlew --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+    exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
 fi
 
 # Handle "update" action: curl 1-step install to fetch latest ghai
@@ -98,7 +98,7 @@ allprojects {
 }
 FALLBACK_EOF
     fi
-    ./gradlew --init-script init/gha.init.gradle.kts ghaInit
+    ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
 fi
 
-exec ./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
+exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
