@@ -1,7 +1,9 @@
 # GHA Tasks Reference
 
 ## 🤖 GHA Autonomous AI Tasks (0 Effort, 100% Gain)
-- `./gradlew ghai`: Primary zero-effort AI task: auto-detects diffs, commits with AI messages, rebase-syncs, pushes, opens PRs, checks CI status, and auto-merges into main!
+- `./ghai`: Primary zero-effort AI task: auto-detects diffs, commits with AI messages, rebase-syncs, pushes, opens PRs, checks CI status, auto-merges into main, and auto-prunes old CI logs!
+- `./ghai update`: Fetches and updates `gha` & `ghai` to the latest release in 1 second.
+- `./ghai uninstall`: Completely removes `.gha` sandbox, runner scripts, and CI workflows with 0 lingering system files.
 - `./gradlew ghaAI`: Alias for `ghai`.
 - `./gradlew ghaAuto`: Alias for `ghai`.
 - `./gradlew ghaSync`: Alias for `ghai`: Keeps local working branch 100% synced with remote base branch via rebase and push.

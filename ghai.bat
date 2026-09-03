@@ -1,6 +1,23 @@
 @echo off
 rem 🤖 ghai - Autonomous AI Workflow Executable Launcher for Windows
-rem 0 Effort, 100% Gain: Works Anywhere, Everywhere.
+
+if "%1"=="update" (
+    echo 🚀 [ghai Update] Fetching and updating gha to latest version...
+    powershell -Command "iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps1 | iex"
+    echo 🎉 [ghai Update] Updated gha & ghai to latest version successfully!
+    exit /b 0
+)
+
+if "%1"=="uninstall" (
+    echo 🧹 [ghai Uninstall] Completely removing gha sandbox, runner scripts, and workflows...
+    if exist ".gha" rmdir /s /q .gha
+    if exist "init\gha.init.gradle.kts" del /q init\gha.init.gradle.kts
+    if exist ".github\workflows\gha.yml" del /q .github\workflows\gha.yml
+    echo ✨ [ghai Uninstall] gha removed completely with 0 lingering system modifications!
+    if exist "ghai.bat" del /q ghai.bat
+    if exist "ghai" del /q ghai
+    exit /b 0
+)
 
 if not exist "init\gha.init.gradle.kts" (
     echo ⚡ [ghai] First-time run detected! Auto-initializing gha sandbox...

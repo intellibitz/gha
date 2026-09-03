@@ -54,6 +54,26 @@ if [ ! -f "ghai" ]; then
 
 set -e
 
+# Handle "update" action: curl 1-step install to fetch latest ghai
+if [ "$1" = "update" ]; then
+    echo "🚀 [ghai Update] Fetching and updating gha to latest version..."
+    curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh | bash
+    echo "🎉 [ghai Update] Updated gha & ghai to latest version successfully!"
+    exit 0
+fi
+
+# Handle "uninstall" action: completely remove gha and self-clean
+if [ "$1" = "uninstall" ]; then
+    echo "🧹 [ghai Uninstall] Completely removing gha sandbox, runner scripts, and workflows..."
+    rm -rf .gha
+    rm -f init/gha.init.gradle.kts
+    rm -f .github/workflows/gha.yml
+    rm -f "$HOME/.local/bin/ghai" 2>/dev/null || true
+    echo "✨ [ghai Uninstall] gha removed completely with 0 lingering system modifications!"
+    rm -f ghai ghai.bat 2>/dev/null || true
+    exit 0
+fi
+
 PROJECT_ROOT="$PWD"
 while [ "$PROJECT_ROOT" != "/" ]; do
     if [ -f "$PROJECT_ROOT/gradlew" ] || [ -d "$PROJECT_ROOT/.git" ]; then
