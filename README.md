@@ -1,6 +1,8 @@
 # gha: Git & GitHub Automation
 
-**gha** (`cc.thevar.gha`) provides 100% Kotlin, 100% platform-independent Gradle tasks for Git and GitHub automation workflows that can be run on **any Gradle project in the world with zero effort**.
+**gha** (`cc.thevar.gha`) is a **100% self-contained, 100% Kotlin** Git and GitHub automation plugin.
+
+GitHub users can clone this project and expect **0% system modifications**. All GHA configuration and state are strictly sandboxed inside the local repository folder (`.gha/` and `build/`).
 
 ## Mission
 
@@ -8,48 +10,36 @@
 
 ## Key Principles
 
+- **100% Self-Contained**: No third-party system dependencies or external tooling installers required.
+- **0% System Modifications**: Zero changes to user system settings, shell configurations, or global user directories.
+- **100% Sandboxed**: All execution state, logs, and configuration remain strictly inside `.gha/` and `build/` within the cloned repository.
 - **100% Kotlin**: Built entirely using Kotlin for type safety, coroutines, DSL capabilities, and multiplatform support.
 - **100% Platform Independent**: Runs seamlessly across macOS, Linux, Windows, and containerized CI environments without bash or shell dependencies.
-- **Git & GitHub Automation Workflows**: Automates working tree operations, commits, pushes, tags, repository setup, issue management, PR checks, releases, and agent workflows.
 - **100% Secure & Zero Secret Leakage**: Enforces strict security rules to prevent accidental token exposure in logs, task inputs, build reports, or configuration cache.
-- **Zero Effort for Any Project**: Run GHA tasks on any project worldwide instantly without editing target project files.
 
 ---
 
-## Security & Credential Management
+## Security & Sandboxing Architecture
 
-`gha` handles Git and GitHub credentials with zero secret leakage:
+`gha` operates in a local sandbox with complete security guarantees:
 
-1. **Non-Leaking Task Inputs:** All token properties are annotated with `@get:Internal` so secrets are **never recorded in Gradle task cache, build scans, or reports**.
-2. **Masked Logging:** Any console or log output automatically masks sensitive tokens (e.g., `ghp_...JReW`).
-3. **Configuration-Cache Safe:** Uses Gradle `ValueSource` to securely query system credentials (`gh auth token`) without violating configuration cache constraints.
-4. **Resolution Order:**
-   - Environment Variable: `GITHUB_TOKEN`
-   - Environment Variable: `GH_TOKEN`
-   - Gradle Property: `gha.github.token` (in `~/.gradle/gradle.properties`)
-   - System GitHub CLI: `gh auth token`
+1. **Local Project Sandbox:** State is written exclusively to `.gha/gha.json` inside the local repository root.
+2. **Non-Leaking Task Inputs:** All token properties are annotated with `@get:Internal` so secrets are **never recorded in Gradle task cache, build scans, or reports**.
+3. **Masked Logging:** Any console or log output automatically masks sensitive tokens (e.g., `ghp_...JReW`).
+4. **Configuration-Cache Safe:** Uses Gradle `ValueSource` to securely query system credentials (`gh auth token`) without violating configuration cache constraints.
 
 ---
 
 ## How to Use
 
-### Option 1: Zero-Effort Init Script (No Modifications to Target Project)
+### Option 1: Self-Contained Init Script (Zero Modifications)
 
-Run `gha` tasks on **any Gradle project in the world** without changing its source code or build files:
-
-```bash
-# Run ghaInit or ghaGitStatus on any project
-gradle --init-script https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts ghaGitStatus
-```
-
-Or install globally on your machine/CI runner by copying `gha.init.gradle.kts` to `~/.gradle/init.d/`:
+Run `gha` tasks on any cloned project without changing system or build files:
 
 ```bash
-mkdir -p ~/.gradle/init.d/
-cp init/gha.init.gradle.kts ~/.gradle/init.d/gha.init.gradle.kts
+# Run ghaInit in local sandbox
+./gradlew --init-script init/gha.init.gradle.kts ghaInit
 ```
-
-Once placed in `~/.gradle/init.d/`, **every Gradle project automatically gets GHA Git & GitHub tasks available out of the box!**
 
 ---
 
@@ -70,8 +60,8 @@ plugins {
 ### GitHub Automation Tasks
 | Task | Description |
 | :--- | :--- |
-| `./gradlew ghaInit` | Initializes GitHub Automation workflows for the project |
-| `./gradlew ghaStatus` | Displays the current GitHub Automation project and platform status |
+| `./gradlew ghaInit` | Initializes sandboxed GitHub Automation environment (`.gha/`) |
+| `./gradlew ghaStatus` | Displays current GitHub Automation project and platform status |
 | `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
 
 ### Git Automation Tasks
@@ -91,13 +81,13 @@ gha/
 ├── build.gradle.kts                             # Gradle Plugin build configuration
 ├── settings.gradle.kts                          # Gradle settings
 ├── init/
-│   └── gha.init.gradle.kts                      # Zero-effort init script for global injection
+│   └── gha.init.gradle.kts                      # Self-contained init script
 ├── src/main/kotlin/cc/thevar/gha/
 │   ├── GhaPlugin.kt                             # Core Gradle Plugin registering Git & GitHub tasks
 │   ├── GhaTask.kt                               # Base Task with secret handling
-│   ├── GhaInitTask.kt                           # 100% Kotlin GHA Init Task
-│   ├── GhaStatusTask.kt                         # 100% Kotlin GHA Status Task
-│   ├── GhaWorkflowTask.kt                       # 100% Kotlin GHA Workflow Task
+│   ├── GhaInitTask.kt                           # Sandboxed GHA Init Task (.gha/)
+│   ├── GhaStatusTask.kt                         # GHA Status Task
+│   ├── GhaWorkflowTask.kt                       # GHA Workflow Task
 │   ├── git/
 │   │   ├── GhaGitExec.kt                        # 100% Kotlin Git execution engine
 │   │   ├── GhaGitStatusTask.kt                  # Git status task
