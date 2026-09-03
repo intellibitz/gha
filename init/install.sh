@@ -6,8 +6,8 @@ set -e
 
 echo "🚀 [gha Installer] Installing gha & ghai..."
 
-# Ensure init directory exists
-mkdir -p init
+# Ensure init and wrapper directories exist
+mkdir -p init gradle/wrapper
 
 # Download or create gha.init.gradle.kts if not present
 if [ ! -f "init/gha.init.gradle.kts" ]; then
@@ -35,6 +35,16 @@ EOF
     }
 fi
 
+# Auto-bootstrap Gradle wrapper if missing
+if [ ! -f "gradlew" ]; then
+    echo "📥 Bootstrapping Gradle wrapper (gradlew)..."
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew" -o "gradlew" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew.bat" -o "gradlew.bat" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.properties" -o "gradle/wrapper/gradle-wrapper.properties" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.jar" -o "gradle/wrapper/gradle-wrapper.jar" 2>/dev/null || true
+    chmod +x gradlew 2>/dev/null || true
+fi
+
 # Create top-level ./ghai executable script if missing
 if [ ! -f "ghai" ]; then
     cat << 'EOF' > ghai
@@ -52,9 +62,15 @@ while [ "$PROJECT_ROOT" != "/" ]; do
     PROJECT_ROOT="$(dirname "$PROJECT_ROOT")"
 done
 
+# Auto-bootstrap Gradle wrapper in project root if missing
 if [ ! -f "$PROJECT_ROOT/gradlew" ]; then
-    echo "❌ [ghai] No Gradle wrapper (gradlew) found in project tree."
-    exit 1
+    echo "📥 [ghai] Bootstrapping Gradle wrapper in $PROJECT_ROOT..."
+    mkdir -p "$PROJECT_ROOT/gradle/wrapper"
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew" -o "$PROJECT_ROOT/gradlew" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew.bat" -o "$PROJECT_ROOT/gradlew.bat" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.properties" -o "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.properties" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.jar" -o "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.jar" 2>/dev/null || true
+    chmod +x "$PROJECT_ROOT/gradlew" 2>/dev/null || true
 fi
 
 cd "$PROJECT_ROOT"
