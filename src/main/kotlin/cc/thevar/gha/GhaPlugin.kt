@@ -73,24 +73,29 @@ class GhaPlugin : Plugin<Project> {
         // ---------------------------------------------------------------------
         // 0. Autonomous AI Automation Tasks (0 Effort, 100% Gain)
         // ---------------------------------------------------------------------
+        project.tasks.register("ghai", GhaAiTask::class.java) {
+            group = GROUP_AI
+            description = "0 Effort, 100% Gain: Autonomous AI task for instant local checkin or GitHub PR/CI auto-merge & sync"
+        }
+
         project.tasks.register("ghaAI", GhaAiTask::class.java) {
             group = GROUP_AI
-            description = "0 Effort, 100% Gain: Autonomous AI task that auto-detects context, commits, syncs rebase, pushes, and manages PRs"
+            description = "Alias for ghai: Autonomous AI task that auto-detects context, commits, syncs rebase, pushes, and manages PRs"
         }
 
         project.tasks.register("ghaAuto", GhaAiTask::class.java) {
             group = GROUP_AI
-            description = "Alias for ghaAI: Autonomous zero-effort project automation"
+            description = "Alias for ghai: Autonomous zero-effort project automation"
         }
 
         project.tasks.register("ghaSync", GhaAiTask::class.java) {
             group = GROUP_AI
-            description = "Alias for ghaAI: Syncs local working branch 100% with remote base via rebase and push"
+            description = "Alias for ghai: Syncs local working branch 100% with remote base via rebase and push"
         }
 
         project.tasks.register("ghaSave", GhaAiTask::class.java) {
             group = GROUP_AI
-            description = "Alias for ghaAI: Saves and pushes all local work to GitHub automatically"
+            description = "Alias for ghai: Saves and pushes all local work to GitHub automatically"
         }
 
         // ---------------------------------------------------------------------
