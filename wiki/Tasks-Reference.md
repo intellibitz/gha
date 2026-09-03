@@ -1,10 +1,11 @@
 # GHA Tasks Reference
 
 ## 🤖 GHA Autonomous AI Tasks (0 Effort, 100% Gain)
-- `./gradlew ghaAI`: Auto-detects context, generates smart commit message, stages, rebase-syncs, pushes, and manages PRs.
-- `./gradlew ghaAuto`: Alias for `ghaAI`.
-- `./gradlew ghaSync`: Alias for `ghaAI`: Syncs local working branch 100% with remote base branch via rebase and push.
-- `./gradlew ghaSave`: Alias for `ghaAI`: Saves and pushes all local work to GitHub automatically.
+- `./gradlew ghai`: Primary zero-effort AI task: auto-detects diffs, commits with AI messages, rebase-syncs, pushes, opens PRs, checks CI status, and auto-merges into main!
+- `./gradlew ghaAI`: Alias for `ghai`.
+- `./gradlew ghaAuto`: Alias for `ghai`.
+- `./gradlew ghaSync`: Alias for `ghai`: Keeps local working branch 100% synced with remote base branch via rebase and push.
+- `./gradlew ghaSave`: Alias for `ghai`: Saves and pushes all local work to GitHub automatically.
 
 ## Gradle Automation Tasks
 - `./gradlew ghaInit`: Initializes sandboxed GitHub Automation environment (`.gha/`).
