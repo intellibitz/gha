@@ -14,7 +14,7 @@ object GhaWorkflowManager {
         val name: String,
         val status: String,
         val conclusion: String,
-        val createdAt: String
+        val createdAt: String,
     )
 
     /**
@@ -27,7 +27,7 @@ object GhaWorkflowManager {
             workingDir = projectDir,
             command = listOf("gh", "run", "list", "--limit", limit.toString()),
             extraEnv = env,
-            timeoutSeconds = 30L
+            timeoutSeconds = 30L,
         )
     }
 
@@ -44,7 +44,7 @@ object GhaWorkflowManager {
             workingDir = projectDir,
             command = listOf("gh", "api", "-X", "DELETE", "repos/$ownerRepo/actions/runs/$runId"),
             extraEnv = env,
-            timeoutSeconds = 30L
+            timeoutSeconds = 30L,
         )
     }
 
@@ -58,7 +58,7 @@ object GhaWorkflowManager {
             workingDir = projectDir,
             command = listOf("gh", "run", "cancel", runId),
             extraEnv = env,
-            timeoutSeconds = 30L
+            timeoutSeconds = 30L,
         )
     }
 
@@ -75,10 +75,10 @@ object GhaWorkflowManager {
                 "--limit", limit.toString(),
                 "--json", "databaseId,name,status,conclusion,createdAt",
                 "--template",
-                "{{range .}}{{printf \"%.0f\" .databaseId}}|{{.name}}|{{.status}}|{{.conclusion}}|{{.createdAt}}{{\"\\n\"}}{{end}}"
+                "{{range .}}{{printf \"%.0f\" .databaseId}}|{{.name}}|{{.status}}|{{.conclusion}}|{{.createdAt}}{{\"\\n\"}}{{end}}",
             ),
             extraEnv = env,
-            timeoutSeconds = 30L
+            timeoutSeconds = 30L,
         )
 
         if (!result.isSuccess || result.stdout.isBlank()) return emptyList()
@@ -89,6 +89,32 @@ object GhaWorkflowManager {
                 WorkflowRun(parts[0], parts[1], parts[2], parts[3], parts[4])
             } else null
         }
+    }
+
+    /**
+     * Automatically prunes older completed/failed/cancelled workflow runs to keep history lean.
+     * Keeps the most recent `maxKeep` runs intact.
+     */
+    fun pruneOldWorkflowRuns(projectDir: File, token: String?, maxKeep: Int = 10): Int {
+        val runs = fetchWorkflowRunsList(projectDir, token, limit = 50)
+        val completedRuns = runs.filter { run ->
+            val status = run.status.lowercase()
+            val conclusion = run.conclusion.lowercase()
+            status == "completed" || conclusion in listOf("success", "failure", "cancelled")
+        }
+
+        if (completedRuns.size <= maxKeep) return 0
+
+        val runsToDelete = completedRuns.drop(maxKeep)
+        var deletedCount = 0
+
+        for (run in runsToDelete) {
+            val res = deleteWorkflowRun(projectDir, token, run.databaseId)
+            if (res.isSuccess) {
+                deletedCount++
+            }
+        }
+        return deletedCount
     }
 
     /**
@@ -138,5 +164,4 @@ object GhaWorkflowManager {
 
         return Pair(totalDeleted, totalFailed)
     }
-
 }
