@@ -36,6 +36,14 @@ object GhaParallelWorkflowManager {
         val url: String,
     )
 
+    data class OpenPrDetails(
+        val number: Int,
+        val headBranch: String,
+        val baseBranch: String,
+        val title: String,
+        val url: String,
+    )
+
     /**
      * Checks if a branch name matches known protected base branch conventions.
      */
@@ -155,6 +163,37 @@ object GhaParallelWorkflowManager {
         val url = match.groupValues[4]
 
         return ExistingPrInfo(num, title, state, url)
+    }
+
+    /**
+     * Lists all open PRs targeting baseBranch (regardless of head branch).
+     */
+    fun listOpenPrsTargetingBase(projectDir: File, token: String?, baseBranch: String): List<OpenPrDetails> {
+        val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
+
+        val result = GhaProcessRunner.exec(
+            workingDir = projectDir,
+            command = listOf("gh", "pr", "list", "--base", baseBranch, "--state", "open", "--json", "number,headRefName,baseRefName,title,url"),
+            extraEnv = env,
+            timeoutSeconds = 30L,
+        )
+
+        if (!result.isSuccess || result.stdout.isBlank()) return emptyList()
+
+        val prs = mutableListOf<OpenPrDetails>()
+        val regex = "\\{\"baseRefName\":\"([^\"]+)\",\"headRefName\":\"([^\"]+)\",\"number\":(\\d+),\"title\":\"([^\"]+)\",\"url\":\"([^\"]+)\"\\}".toRegex()
+
+        regex.findAll(result.stdout).forEach { match ->
+            val baseRef = match.groupValues[1]
+            val headRef = match.groupValues[2]
+            val num = match.groupValues[3].toIntOrNull() ?: 0
+            val title = match.groupValues[4]
+            val url = match.groupValues[5]
+            if (num > 0) {
+                prs.add(OpenPrDetails(num, headRef, baseRef, title, url))
+            }
+        }
+        return prs
     }
 
     /**
