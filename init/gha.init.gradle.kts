@@ -9,7 +9,12 @@ initscript {
     }
     dependencies {
         classpath("cc.thevar.gha:gha:0.1.0-SNAPSHOT")
+        classpath("org.gradle.toolchains:foojay-resolver:1.0.0")
     }
+}
+
+settingsEvaluated {
+    apply(plugin = "org.gradle.toolchains.foojay-resolver-convention")
 }
 
 allprojects {

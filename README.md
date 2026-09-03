@@ -40,7 +40,7 @@ All tools, SDKs, frameworks, and plugins are defined centrally in `gradle/libs.v
 
 | Tool / Dependency | Category | Trusted Vendor | Configured Version | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **Java / JDK Toolchain** | SDK | Eclipse Adoptium (Temurin) / Oracle | `25` | ✅ Official Stable |
+| **Java / JDK Toolchain** | SDK | Eclipse Adoptium (Temurin) / Oracle | `21` | ✅ Official Stable |
 | **Kotlin Language & DSL** | Framework | JetBrains | `2.1.0` | ✅ Official Stable |
 | **Gradle Build Engine** | Build Tool | Gradle Inc. | `9.7.1` | ✅ Official Stable |
 | **Gradle Plugin Publish** | Plugin | Gradle Inc. | `1.3.1` | ✅ Official Stable |

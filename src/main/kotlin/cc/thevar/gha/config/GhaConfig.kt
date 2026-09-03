@@ -5,7 +5,7 @@ package cc.thevar.gha.config
  * Strictly enforces official stable versions from verified, trusted vendors.
  */
 object GhaConfig {
-    const val JAVA_VERSION = "25"
+    const val JAVA_VERSION = "21"
     const val JAVA_VENDOR = "Eclipse Adoptium (Temurin) / Oracle"
 
     const val KOTLIN_VERSION = "2.1.0"

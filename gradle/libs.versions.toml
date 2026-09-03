@@ -1,5 +1,5 @@
 [versions]
-java = "25"
+java = "21"
 kotlin = "2.4.10"
 gradle = "9.7.1"
 gradle-plugin-publish = "2.1.1"
