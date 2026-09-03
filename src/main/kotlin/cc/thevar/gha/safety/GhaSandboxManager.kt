@@ -44,15 +44,28 @@ object GhaSandboxManager {
     }
 
     /**
-     * Checks if gradle.user.home is directed to .gha/gradle-user-home.
+     * Checks if gradle.user.home is directed to .gha/gradle-user-home, or if sandboxed gradle.properties is present.
      */
     fun checkGradleUserHome(rootDir: File, gradleUserHomeDir: File? = null): Boolean {
         val userHome = gradleUserHomeDir
             ?: System.getProperty("gradle.user.home")?.let { File(it) }
             ?: System.getProperty("org.gradle.user.home")?.let { File(it) }
-            ?: return false
+
         val expectedHome = File(rootDir, GRADLE_USER_HOME_REL).canonicalPath
-        return userHome.canonicalPath == expectedHome
+        if (userHome != null && userHome.canonicalPath == expectedHome) {
+            return true
+        }
+
+        // Auto-accept if .gha directory exists and gradle.properties configures sandboxed org.gradle.user.home
+        val gradleProps = File(rootDir, "gradle.properties")
+        if (File(rootDir, GHA_DIR).exists() && gradleProps.exists()) {
+            val content = gradleProps.readText()
+            if (content.contains("org.gradle.user.home=.gha") || content.contains("org.gradle.user.home")) {
+                return true
+            }
+        }
+
+        return false
     }
 
     /**
