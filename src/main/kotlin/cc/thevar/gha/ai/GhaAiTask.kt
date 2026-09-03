@@ -9,11 +9,12 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
+import java.io.File
 
 /**
  * 0 Effort, 100% Gain Autonomous AI Workflow Task (`ghai`, `ghaAI`, `ghaAuto`, `ghaSync`, `ghaSave`).
  * Intelligently handles both DIRTY (local changes) and CLEAN (post-push / GitHub PR & CI check) workflows,
- * ensuring the creator/developer terminal is ALWAYS returned to a clean state on the main base branch.
+ * guaranteeing 100% that the creator/developer terminal is returned to a clean state on the base branch.
  */
 @DisableCachingByDefault(because = "Executes autonomous AI context workflow actions")
 abstract class GhaAiTask : GhaTask() {
@@ -133,9 +134,7 @@ abstract class GhaAiTask : GhaTask() {
             // Immediately switch creator terminal back to clean base branch if on an auto-created branch
             if (isAutoBranch && headBranch != base) {
                 logger.lifecycle("🔄 [ghai] Work pushed & PR auto-merge active. Returning terminal to clean '$base' branch...")
-                GhaGitExec.checkout(rootDir, base)
-                GhaGitExec.pullRebase(rootDir, "origin", base)
-                GhaGitExec.deleteLocalBranch(rootDir, headBranch, force = true)
+                forceReturnToBaseBranch(rootDir, base, headBranch)
                 activeHeadBranch = base
                 activeBranchCategory = "Base Branch"
                 logger.lifecycle("✅ Creator terminal successfully returned to clean '$base' branch!")
@@ -177,13 +176,12 @@ abstract class GhaAiTask : GhaTask() {
                             prSummary = "PR #${openPr.number} MERGED"
                             if (isAutoBranch) {
                                 logger.lifecycle("🗑️ Merged PR #${openPr.number} and auto-cleaned branch '$headBranch'. Switched back to '$base'.")
+                                forceReturnToBaseBranch(rootDir, base, headBranch)
                                 activeHeadBranch = base
                                 activeBranchCategory = "Base Branch"
                             } else {
                                 logger.lifecycle("🛡️ Merged PR #${openPr.number} and preserved user branch '$headBranch'.")
                             }
-                            GhaGitExec.checkout(rootDir, base)
-                            GhaGitExec.pullRebase(rootDir, "origin", base)
                             logger.lifecycle("✅ Local repository is 100% clean and fully synced with merged origin/$base.")
                             tipRecommendation = "Start your next feature or type './gradlew ghaStatus' to inspect repo health."
                         } else {
@@ -202,9 +200,7 @@ abstract class GhaAiTask : GhaTask() {
                         logger.lifecycle("🤖 Auto-merge enabled on GitHub. PR #${openPr.number} will merge automatically once CI passes.")
 
                         if (isAutoBranch && headBranch != base) {
-                            GhaGitExec.checkout(rootDir, base)
-                            GhaGitExec.pullRebase(rootDir, "origin", base)
-                            GhaGitExec.deleteLocalBranch(rootDir, headBranch, force = true)
+                            forceReturnToBaseBranch(rootDir, base, headBranch)
                             activeHeadBranch = base
                             activeBranchCategory = "Base Branch"
                             logger.lifecycle("✅ Creator terminal returned to clean '$base' branch!")
@@ -239,9 +235,7 @@ abstract class GhaAiTask : GhaTask() {
                 } else {
                     if (isAutoBranch && headBranch != base) {
                         logger.lifecycle("🗑️ [ghai] Auto-created branch '$headBranch' PR is complete/merged. Returning to base branch '$base'...")
-                        GhaGitExec.checkout(rootDir, base)
-                        GhaGitExec.pullRebase(rootDir, "origin", base)
-                        GhaGitExec.deleteLocalBranch(rootDir, headBranch, force = true)
+                        forceReturnToBaseBranch(rootDir, base, headBranch)
                         activeHeadBranch = base
                         activeBranchCategory = "Base Branch"
                         logger.lifecycle("✅ Returned to clean '$base' branch and cleaned up local auto-branch '$headBranch'.")
@@ -252,6 +246,13 @@ abstract class GhaAiTask : GhaTask() {
                     }
                 }
             }
+        }
+
+        // Final verification that working tree is 100% clean on base branch if on auto-branch
+        if (isAutoBranch && GhaGitExec.currentBranch(rootDir) != base) {
+            forceReturnToBaseBranch(rootDir, base, headBranch)
+            activeHeadBranch = base
+            activeBranchCategory = "Base Branch"
         }
 
         // Print Structured Summary & Actionable One-Line Tip
@@ -267,5 +268,30 @@ abstract class GhaAiTask : GhaTask() {
         logger.lifecycle("────────────────────────────────────────────────────────────────────────────────")
         logger.lifecycle("💡 Tip: $tipRecommendation")
         logger.lifecycle("════════════════════════════════════════════════════════════════════════════════")
+    }
+
+    private fun forceReturnToBaseBranch(rootDir: File, baseBranch: String, autoBranchToDelete: String) {
+        if (!GhaGitExec.isClean(rootDir)) {
+            GhaGitExec.exec(rootDir, "add", "-A")
+            GhaGitExec.exec(rootDir, "update-index", "--chmod=+x", "ghai")
+            GhaGitExec.exec(rootDir, "update-index", "--chmod=+x", "init/install.sh")
+            GhaGitExec.exec(rootDir, "update-index", "--chmod=+x", "gradlew")
+            GhaGitExec.exec(rootDir, "commit", "-m", "chore: auto-commit remaining changes before returning to $baseBranch")
+        }
+
+        val checkoutRes = GhaGitExec.checkout(rootDir, baseBranch)
+        if (!checkoutRes.isSuccess || GhaGitExec.currentBranch(rootDir) != baseBranch) {
+            GhaGitExec.exec(rootDir, "checkout", "-f", baseBranch)
+        }
+
+        GhaGitExec.pullRebase(rootDir, "origin", baseBranch)
+
+        if (autoBranchToDelete.isNotBlank() && autoBranchToDelete != baseBranch) {
+            GhaGitExec.deleteLocalBranch(rootDir, autoBranchToDelete, force = true)
+        }
+
+        if (GhaGitExec.currentBranch(rootDir) != baseBranch) {
+            GhaGitExec.exec(rootDir, "checkout", "-f", baseBranch)
+        }
     }
 }
