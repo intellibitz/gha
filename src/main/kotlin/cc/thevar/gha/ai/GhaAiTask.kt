@@ -61,13 +61,14 @@ abstract class GhaAiTask : GhaTask() {
         val isDirty = !GhaGitExec.isClean(rootDir)
         val currentBranch = GhaGitExec.currentBranch(rootDir)
 
-        logger.lifecycle("🤖 [ghai] 0 Effort, 100% Gain — Branch: '$currentBranch', Working Tree Dirty: $isDirty")
+        logger.lifecycle("🤖 [ghai] 0 Effort, 100% Gain — Current Branch: '$currentBranch', Working Tree Dirty: $isDirty")
 
-        // Step 1: Ensure safe working branch
+        // Step 1: Ensure safe working branch (auto-heals stale branches)
         val (headBranch, isAutoBranch) = GhaParallelWorkflowManager.prepareWorkingBranch(
             projectDir = rootDir,
             requestedBaseBranch = base,
             customUserBranch = customBranch,
+            token = token,
         )
         val branchCategory = if (isAutoBranch) "GHA Auto-Branch" else "User Branch"
 
