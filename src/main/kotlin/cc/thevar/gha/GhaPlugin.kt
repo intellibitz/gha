@@ -483,19 +483,32 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaHelp", GhaHelpTask::class.java) {
             group = GROUP_GRADLE
             description = "Displays help information for all GHA tasks"
-            taskDetails.set(project.provider {
-                project.tasks.filter { it.name.startsWith("gha") && it.name != "ghaHelp" }
-                    .map { "${it.group ?: "Other"}|${it.name}|${it.description ?: "No description"}" }
-            })
+            val staticDetails = project.tasks
+                .filter { it.name.startsWith("gha") && it.name != "ghaHelp" }
+                .map { "${it.group ?: "Other"}|${it.name}|${it.description ?: "No description"}" }
+            taskDetails.set(staticDetails)
         }
 
-        // Enforce Sandbox for all GhaTasks except ghaInit and ghaHelp
+        // Configure tasks and set properties at configuration time for Configuration Cache support
         project.tasks.withType(GhaTask::class.java).configureEach {
+            taskRootDirFile = project.layout.projectDirectory.asFile
+            taskProjectNameStr = project.name
+            taskGradleUserHomeDirFile = project.gradle.gradleUserHomeDir
+            taskGitHubToken = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
+
             if (name != "ghaInit" && name != "ghaHelp") {
-                doFirst {
-                    verifySandbox()
-                }
+                verifySandbox()
             }
+        }
+
+        project.tasks.withType(GhaAiTask::class.java).configureEach {
+            taskBaseBranch = (project.findProperty("baseBranch") as? String) ?: "main"
+            taskUserBranch = (project.findProperty("userBranch") as? String) ?: (project.findProperty("branch") as? String)
+            taskCommitMessage = (project.findProperty("commitMessage") as? String)
+                ?: (project.findProperty("message") as? String)
+                ?: (project.findProperty("ghaAction") as? String)
+            taskAutoMerge = ((project.findProperty("autoMerge") as? String) ?: "true").lowercase() == "true"
+            taskMergeMethod = (project.findProperty("mergeMethod") as? String) ?: "squash"
         }
     }
 }
