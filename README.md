@@ -117,11 +117,14 @@ curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh
 iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps1 | iex
 ```
 
-### 🔄 Update & Uninstall Management Commands
+### 🔄 Version, Update & Uninstall Subcommands
 
-Once `ghai` is present, managing `gha` is completely zero-effort:
+Once `ghai` is installed, managing `gha` is completely zero-effort:
 
 ```bash
+# Print version report & verify engine stability:
+./ghai version
+
 # Update gha & ghai to the latest release version:
 ./ghai update
 
