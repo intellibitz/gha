@@ -26,6 +26,12 @@ import cc.thevar.gha.github.GhaReleaseCreateTask
 import cc.thevar.gha.insights.GhaContributorsTask
 import cc.thevar.gha.insights.GhaInsightsTask
 import cc.thevar.gha.insights.GhaTrafficTask
+import cc.thevar.gha.projects.GhaProjectAddItemTask
+import cc.thevar.gha.projects.GhaProjectCloseTask
+import cc.thevar.gha.projects.GhaProjectCreateTask
+import cc.thevar.gha.projects.GhaProjectInitTask
+import cc.thevar.gha.projects.GhaProjectListTask
+import cc.thevar.gha.projects.GhaProjectViewTask
 import cc.thevar.gha.security.GhaCodeScanningInitTask
 import cc.thevar.gha.security.GhaDependabotCloseTask
 import cc.thevar.gha.security.GhaDependabotInitTask
@@ -62,6 +68,37 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaDependencies", GhaDependenciesTask::class.java) {
             group = "GitHub Automation"
             description = "Prints all GHA dependencies, tools, SDKs, and their current versions"
+        }
+
+        // GitHub Projects Tasks
+        project.tasks.register("ghaProjectInit", GhaProjectInitTask::class.java) {
+            group = "GitHub Projects"
+            description = "Initializes default GitHub Project boards (Roadmap, Issue Tracker, Releases) automatically"
+        }
+
+        project.tasks.register("ghaProjectCreate", GhaProjectCreateTask::class.java) {
+            group = "GitHub Projects"
+            description = "Creates a new GitHub Project board"
+        }
+
+        project.tasks.register("ghaProjectList", GhaProjectListTask::class.java) {
+            group = "GitHub Projects"
+            description = "Lists GitHub Project boards for an owner or repository"
+        }
+
+        project.tasks.register("ghaProjectView", GhaProjectViewTask::class.java) {
+            group = "GitHub Projects"
+            description = "Displays details and items of a GitHub Project board"
+        }
+
+        project.tasks.register("ghaProjectAddItem", GhaProjectAddItemTask::class.java) {
+            group = "GitHub Projects"
+            description = "Adds an Issue or Pull Request URL to a GitHub Project board"
+        }
+
+        project.tasks.register("ghaProjectClose", GhaProjectCloseTask::class.java) {
+            group = "GitHub Projects"
+            description = "Closes or archives a GitHub Project board"
         }
 
         // GitHub Insights Tasks

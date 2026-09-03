@@ -87,6 +87,16 @@ plugins {
 | `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions |
 | `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
 
+### GitHub Projects Tasks
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaProjectInit` | Initializes default GitHub Project boards (Roadmap, Issue Tracker, Releases) | `./gradlew ghaProjectInit` |
+| `./gradlew ghaProjectCreate` | Creates a new GitHub Project board | `./gradlew ghaProjectCreate -PprojectTitle="My Board"` |
+| `./gradlew ghaProjectList` | Lists GitHub Project boards for an owner or repository | `./gradlew ghaProjectList [-PprojectOwner="owner"]` |
+| `./gradlew ghaProjectView` | Displays details and items of a GitHub Project board | `./gradlew ghaProjectView -PprojectNumber=1` |
+| `./gradlew ghaProjectAddItem` | Adds an Issue or Pull Request URL to a project board | `./gradlew ghaProjectAddItem -PprojectNumber=1 -PitemUrl="https://..."` |
+| `./gradlew ghaProjectClose` | Closes or archives a GitHub Project board | `./gradlew ghaProjectClose -PprojectNumber=1` |
+
 ### GitHub Insights Tasks
 | Task | Description |
 | :--- | :--- |
