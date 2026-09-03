@@ -80,19 +80,26 @@ For maximum productivity with zero cognitive overhead, developers can run:
 4. **CI PENDING**: Enables GitHub `--auto` merge flag so GitHub merges the PR automatically once CI passes.
 5. **CI FAILED**: Displays diagnostic report pointing directly to build failure logs.
 
+### 🌐 Worldwide Parallel Developer Collaboration
+When multiple developers ($N$ users) work concurrently on protected branches across the globe:
+- **User A pushes first**: PR #1 is merged into `origin/main`.
+- **User B pushes second**: Before User B pushes to GitHub, `ghai` automatically executes `git fetch origin` and `git pull --rebase origin main`. User B's local commit is rebased on top of User A's merged `main` commit **before User B's branch is pushed to GitHub**.
+- **Conflict Prevention**: If a rebase conflict occurs, `ghai` safely runs `git rebase --abort` to protect User B's local repository from being left in a broken state.
+- **Terminal Auto-Return**: Once changes are pushed and auto-merge is requested on GitHub, `ghai` automatically returns the developer terminal to a clean state on `main` (`git checkout main`).
+
 ### 📋 Structured Summary & Actionable One-Line Tip
 Every run of `ghai` prints a clear execution summary block and an actionable tip for what to do next:
 ```text
 ════════════════════════════════════════════════════════════════════════════════
 📋 [ghai Execution Summary]
-   • Working Branch : main (User Branch)
+   • Working Branch : main (Base Branch)
    • Commit Status  : Committed: "docs: update ghai docs and summary output"
-   • Remote Push    : Pushed to origin/main
+   • Remote Push    : Pushed to origin/gha-auto/work-12345
    • GitHub PR      : PR #12 active (https://github.com/owner/repo/pull/12)
    • CI/CD Status   : PENDING / AUTO-MERGE
    • Local Sync     : 100% Synced with origin/main
 ────────────────────────────────────────────────────────────────────────────────
-💡 Tip: Run './ghai' after GitHub CI builds finish to verify and complete auto-merge into main.
+💡 Tip: Your changes are saved, pushed, and auto-merging on GitHub. Terminal is clean on main!
 ════════════════════════════════════════════════════════════════════════════════
 ```
 
