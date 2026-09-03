@@ -1,6 +1,6 @@
 # gha: GitHub Automation
 
-**gha** is a 100% Kotlin, 100% platform-independent Gradle task library for GitHub automation workflows.
+**gha** provides 100% Kotlin, 100% platform-independent Gradle tasks for GitHub automation workflows that can be run on **any Gradle project in the world with zero effort**.
 
 ## Mission
 
@@ -8,20 +8,71 @@
 
 ## Key Principles
 
-- **100% Kotlin**: Built entirely using Kotlin to leverage its strong typing, coroutines, DSL capabilities, and multiplatform compatibility.
-- **100% Platform Independent**: Runs seamlessly across macOS, Linux, Windows, and containerized CI environments (GitHub Actions, local, etc.) without bash or shell-specific dependencies.
-- **100% GitHub Automation Workflows**: Automate repository setup, issue management, pull request checks, release publishing, code analysis, and agent-driven workflows directly through Gradle tasks.
-- **AI Agent & Human Collaboration**: Designed to be co-developed and maintained by AI agents (Gemini, Copilot, custom LLM agents) and human contributors.
+- **100% Kotlin**: Built entirely using Kotlin for type safety, coroutines, DSL capabilities, and multiplatform support.
+- **100% Platform Independent**: Runs seamlessly across macOS, Linux, Windows, and containerized CI environments without bash or shell dependencies.
+- **100% GitHub Automation Workflows**: Automates repository setup, issue management, PR checks, releases, code analysis, and agent workflows.
+- **Zero Effort for Any Project**: Run GHA tasks on any project worldwide instantly without editing target project files.
+
+---
+
+## How to Use
+
+### Option 1: Zero-Effort Init Script (No Modifications to Target Project)
+
+Run `gha` tasks on **any Gradle project in the world** without changing its source code or build files:
+
+```bash
+# Run ghaInit on any project
+gradle --init-script https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts ghaInit
+```
+
+Or install globally on your machine/CI runner by copying `gha.init.gradle.kts` to `~/.gradle/init.d/`:
+
+```bash
+mkdir -p ~/.gradle/init.d/
+cp init/gha.init.gradle.kts ~/.gradle/init.d/gha.init.gradle.kts
+```
+
+Once placed in `~/.gradle/init.d/`, **every Gradle project automatically gets GHA tasks available out of the box!**
+
+---
+
+### Option 2: Standard Gradle Plugin
+
+Add the plugin to your project's `build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("com.intellibitz.gha") version "0.1.0"
+}
+```
+
+---
+
+## Available GHA Tasks
+
+| Task | Description |
+| :--- | :--- |
+| `./gradlew ghaInit` | Initializes GitHub Automation workflows for the project |
+| `./gradlew ghaStatus` | Displays the current GitHub Automation project and platform status |
+| `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
+
+---
 
 ## Project Structure
 
 ```
 gha/
-├── build.gradle.kts       # Top-level Gradle configuration
-├── settings.gradle.kts    # Gradle settings
-├── gradle/
-│   └── libs.versions.toml # Dependency catalog
-└── README.md              # Project documentation
+├── build.gradle.kts                             # Gradle Plugin build configuration
+├── settings.gradle.kts                          # Gradle settings
+├── init/
+│   └── gha.init.gradle.kts                      # Zero-effort init script for global injection
+├── src/main/kotlin/com/intellibitz/gha/
+│   ├── GhaPlugin.kt                             # Core Gradle Plugin
+│   ├── GhaInitTask.kt                           # 100% Kotlin GHA Init Task
+│   ├── GhaStatusTask.kt                         # 100% Kotlin GHA Status Task
+│   └── GhaWorkflowTask.kt                       # 100% Kotlin GHA Workflow Task
+└── README.md                                    # Project documentation
 ```
 
 ## Contributing
