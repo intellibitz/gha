@@ -40,7 +40,7 @@ All tools, SDKs, frameworks, and plugins are defined centrally in `gradle/libs.v
 
 | Tool / Dependency | Category | Trusted Vendor | Configured Version | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **Java / JDK Toolchain** | SDK | Eclipse Adoptium (Temurin) / Oracle (LTS) | `17` | ✅ Official Stable |
+| **Java / JDK Toolchain** | SDK | Eclipse Adoptium (Temurin) / Oracle | `25` | ✅ Official Stable |
 | **Kotlin Language & DSL** | Framework | JetBrains | `2.1.0` | ✅ Official Stable |
 | **Gradle Build Engine** | Build Tool | Gradle Inc. | `9.7.1` | ✅ Official Stable |
 | **Gradle Plugin Publish** | Plugin | Gradle Inc. | `1.3.1` | ✅ Official Stable |
@@ -48,7 +48,7 @@ All tools, SDKs, frameworks, and plugins are defined centrally in `gradle/libs.v
 | **Git VCS Engine** | CLI Tool | Software Freedom Conservancy | Latest Compatible | ✅ Official Stable |
 | **GitHub CLI (`gh`)** | CLI Tool | GitHub Inc. | Latest Compatible | ✅ Official Stable |
 
-Run `./gradlew ghaDependencies` to inspect real-time version status and vendor verification in a structured table.
+Run `./gradlew --init-script init/gha.init.gradle.kts ghaDependencies` to inspect real-time version status and vendor verification in a structured table.
 
 ---
 
@@ -59,8 +59,8 @@ Run `./gradlew ghaDependencies` to inspect real-time version status and vendor v
 Run `gha` tasks on any cloned project without changing system or build files:
 
 ```bash
-# Print dependencies or run status in local sandbox
-./gradlew --init-script init/gha.init.gradle.kts ghaDependencies
+# Initialize sandbox, check status, and verify dependencies
+./gradlew --init-script init/gha.init.gradle.kts ghaInit ghaStatus ghaDependencies
 ```
 
 ---

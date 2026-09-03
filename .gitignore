@@ -1,17 +1,48 @@
-*.iml
-.gradle
-/local.properties
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Built outputs & Gradle
+/build/
+**/build/
+.gradle/
+/out/
+/bin/
+
+# Kotlin compiler & cache
+.kotlin/
+
+# Sandboxed GHA runtime, caches, & local home
+.gha/
+
+# Local properties & secrets
 local.properties
+/local.properties
+*.keystore
+*.jks
+*.p12
+*.pem
+.env
 
-# IDE settings & user workspace (IntelliJ / Android Studio / VS Code)
-/.idea/
+# IDE & Editor settings
+.idea/
+/*.idea/
+*.iml
+*.ipr
+*.iws
 .vscode/
+.project
+.classpath
+.settings/
 
-# Sandboxed Gradle User Home (dependencies & JDKs)
-.gha/gradle-user-home/
-.gha/tmp/
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+*.swp
+.directory
+
+# Log files & temp files
+*.log
+*.tmp
