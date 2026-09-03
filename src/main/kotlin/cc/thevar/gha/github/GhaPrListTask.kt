@@ -2,22 +2,14 @@ package cc.thevar.gha.github
 
 import cc.thevar.gha.GhaTask
 import cc.thevar.gha.safety.GhaProcessRunner
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Lists Pull Requests on GitHub")
 abstract class GhaPrListTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val repoDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -32,7 +24,6 @@ abstract class GhaPrListTask : GhaTask() {
     abstract val prBase: Property<String>
 
     init {
-        repoDir.convention(project.layout.projectDirectory)
         prState.convention(project.providers.gradleProperty("prState").orElse("open"))
         prLimit.convention(project.providers.gradleProperty("prLimit").orElse("30"))
         prBase.convention(project.providers.gradleProperty("prBase"))
@@ -40,7 +31,7 @@ abstract class GhaPrListTask : GhaTask() {
 
     @TaskAction
     fun execute() {
-        val dir = repoDir.get().asFile
+        val dir = projectRootDir.get().asFile
         val token = gitHubToken.orNull ?: ""
         val state = prState.get()
         val limit = prLimit.get()

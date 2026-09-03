@@ -1,13 +1,9 @@
 package cc.thevar.gha.wiki
 
 import cc.thevar.gha.GhaTask
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import java.io.File
@@ -15,16 +11,11 @@ import java.io.File
 @DisableCachingByDefault(because = "Publishes local wiki/ directory pages to remote GitHub Wiki")
 abstract class GhaWikiPublishTask : GhaTask() {
 
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val projectRootDir: DirectoryProperty
-
     @get:Input
     @get:Optional
     abstract val commitMessage: Property<String>
 
     init {
-        projectRootDir.convention(project.layout.projectDirectory)
         commitMessage.convention("Update GitHub Wiki pages via GHA")
     }
 

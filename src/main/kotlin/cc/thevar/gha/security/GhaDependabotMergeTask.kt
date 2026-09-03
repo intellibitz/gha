@@ -1,22 +1,14 @@
 package cc.thevar.gha.security
 
 import cc.thevar.gha.GhaTask
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Merges open Dependabot pull requests and deletes remote branches")
 abstract class GhaDependabotMergeTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val projectRootDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -31,7 +23,6 @@ abstract class GhaDependabotMergeTask : GhaTask() {
     abstract val mergeMethod: Property<String>
 
     init {
-        projectRootDir.convention(project.layout.projectDirectory)
         prNumber.convention(project.providers.gradleProperty("prNumber"))
         mergeAll.convention(project.providers.gradleProperty("mergeAll").orElse("false"))
         mergeMethod.convention(project.providers.gradleProperty("mergeMethod").orElse("squash"))

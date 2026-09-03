@@ -65,6 +65,11 @@ class GhaPlugin : Plugin<Project> {
             description = "Displays the current GitHub Automation workflow status"
         }
 
+        project.tasks.register("ghaSandbox", GhaSandboxTask::class.java) {
+            group = "GitHub Automation"
+            description = "Displays a detailed GHA sandbox report"
+        }
+
         project.tasks.register("ghaWorkflow", GhaWorkflowTask::class.java) {
             group = "GitHub Automation"
             description = "Executes platform-independent GitHub automation workflows"
@@ -337,6 +342,15 @@ class GhaPlugin : Plugin<Project> {
                 project.tasks.filter { it.name.startsWith("gha") && it.name != "ghaHelp" }
                     .map { "${it.group ?: "Other"}|${it.name}|${it.description ?: "No description"}" }
             })
+        }
+
+        // Enforce Sandbox for all GhaTasks except ghaInit and ghaHelp
+        project.tasks.withType(GhaTask::class.java).configureEach {
+            if (name != "ghaInit" && name != "ghaHelp") {
+                doFirst {
+                    verifySandbox()
+                }
+            }
         }
     }
 }

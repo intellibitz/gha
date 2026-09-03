@@ -79,13 +79,18 @@ plugins {
 
 ## Complete Suite of GHA Tasks
 
-### GitHub Automation Tasks
-| Task | Description |
-| :--- | :--- |
-| `./gradlew ghaInit` | Initializes sandboxed GitHub Automation environment (`.gha/`) |
-| `./gradlew ghaStatus` | Displays current GitHub Automation project and platform status |
-| `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions |
-| `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
+### GitHub Automation & Workflow Tasks
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaInit` | Initializes sandboxed GitHub Automation environment (`.gha/`) | `./gradlew ghaInit` |
+| `./gradlew ghaStatus` | Displays current GitHub Automation project and platform status | `./gradlew ghaStatus` |
+| `./gradlew ghaSandbox` | Displays real-time sandbox status and environment health checks | `./gradlew ghaSandbox` |
+| `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions | `./gradlew ghaDependencies` |
+| `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows | `./gradlew ghaWorkflow` |
+| `./gradlew ghaWorkflowList` | Lists GitHub Actions workflow runs | `./gradlew ghaWorkflowList` |
+| `./gradlew ghaWorkflowCleanup` | Cleans up old or failed workflow runs | `./gradlew ghaWorkflowCleanup` |
+| `./gradlew ghaWorkflowCancel` | Cancels active or queued workflow runs | `./gradlew ghaWorkflowCancel -PrunId=123` |
+| `./gradlew ghaHelp` | Displays all registered GHA tasks and CLI usage instructions | `./gradlew ghaHelp` |
 
 ### GitHub Projects Tasks
 | Task | Description | Usage Example |
@@ -113,6 +118,7 @@ plugins {
 | `./gradlew ghaDependabotList` | Lists active Dependabot pull requests and remote `dependabot/` branches | `./gradlew ghaDependabotList` |
 | `./gradlew ghaDependabotMerge` | Merges Dependabot PRs and deletes remote branches | `./gradlew ghaDependabotMerge [-PprNumber=123] [-PmergeAll=true]` |
 | `./gradlew ghaDependabotClose` | Closes Dependabot PRs and deletes remote `dependabot/` branches | `./gradlew ghaDependabotClose [-PprNumber=123] [-PcloseAll=true]` |
+| `./gradlew ghaDependabotCleanup` | Cleans up closed or merged Dependabot branches | `./gradlew ghaDependabotCleanup` |
 | `./gradlew ghaDependabotRebase` | Requests Dependabot to `@dependabot rebase` or `@dependabot recreate` | `./gradlew ghaDependabotRebase [-PprNumber=123] [-PrebaseAll=true] [-Precreate=true]` |
 | `./gradlew ghaCodeScanningInit` | Generates `.github/workflows/codeql.yml` for CodeQL code scanning | `./gradlew ghaCodeScanningInit` |
 
@@ -157,6 +163,7 @@ plugins {
 | Task | Description |
 | :--- | :--- |
 | `./gradlew ghaGitStatus` | Displays current Git repository status, branch, and working tree changes |
+| `./gradlew ghaGitBranch` | Displays current Git branches and branch status |
 | `./gradlew ghaGitCommit` | Stages and commits working tree changes platform-independently |
 | `./gradlew ghaGitPush` | Pushes current branch to origin remote |
 | `./gradlew ghaGitPull` | Pulls latest changes from remote with rebase |
@@ -180,15 +187,18 @@ gha/
 │   └── gha.init.gradle.kts                      # Self-contained init script
 ├── src/main/kotlin/cc/thevar/gha/
 │   ├── GhaPlugin.kt                             # Core Gradle Plugin registering Git & GitHub tasks
-│   ├── GhaTask.kt                               # Base Task with secret handling
+│   ├── GhaTask.kt                               # Base Task with secret handling & relative path input
 │   ├── GhaInitTask.kt                           # Sandboxed GHA Init Task (.gha/)
 │   ├── GhaStatusTask.kt                         # GHA Status Task
+│   ├── GhaSandboxTask.kt                        # GHA Sandbox Health Check Task
 │   ├── GhaDependenciesTask.kt                   # Prints trusted vendors, dependency table, and versions
+│   ├── GhaHelpTask.kt                           # Displays available tasks and usage examples
 │   ├── GhaWorkflowTask.kt                       # GHA Workflow Task
 │   ├── config/
 │   │   └── GhaConfig.kt                         # Centralized tools, SDK, and vendor stability rules
 │   ├── safety/
-│   │   └── GhaProcessRunner.kt                  # Timeouts, non-interactive flags, recursion guard
+│   │   ├── GhaProcessRunner.kt                  # Timeouts, non-interactive flags, recursion guard
+│   │   └── GhaSandboxManager.kt                 # Sandbox environment health checking
 │   ├── git/
 │   │   ├── GhaGitExec.kt                        # 100% Kotlin Git execution engine
 │   │   ├── GhaGitStatusTask.kt                  # Git status task

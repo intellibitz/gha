@@ -1,22 +1,14 @@
 package cc.thevar.gha.projects
 
 import cc.thevar.gha.GhaTask
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Adds an Issue or Pull Request to a GitHub Project board")
 abstract class GhaProjectAddItemTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val projectRootDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -31,7 +23,6 @@ abstract class GhaProjectAddItemTask : GhaTask() {
     abstract val projectOwner: Property<String>
 
     init {
-        projectRootDir.convention(project.layout.projectDirectory)
         projectNumber.convention(project.providers.gradleProperty("projectNumber"))
         itemUrl.convention(project.providers.gradleProperty("itemUrl"))
         projectOwner.convention(project.providers.gradleProperty("projectOwner"))

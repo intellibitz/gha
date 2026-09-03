@@ -2,22 +2,14 @@ package cc.thevar.gha.github
 
 import cc.thevar.gha.GhaTask
 import cc.thevar.gha.safety.GhaProcessRunner
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Creates Issues on GitHub")
 abstract class GhaIssueCreateTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val repoDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -36,7 +28,6 @@ abstract class GhaIssueCreateTask : GhaTask() {
     abstract val issueAssignees: Property<String>
 
     init {
-        repoDir.convention(project.layout.projectDirectory)
         issueTitle.convention(project.providers.gradleProperty("issueTitle").orElse("Automated Issue via GHA"))
         issueBody.convention(project.providers.gradleProperty("issueBody").orElse("Automated Issue created by GHA"))
         issueLabels.convention(project.providers.gradleProperty("issueLabels"))
@@ -45,7 +36,7 @@ abstract class GhaIssueCreateTask : GhaTask() {
 
     @TaskAction
     fun execute() {
-        val dir = repoDir.get().asFile
+        val dir = projectRootDir.get().asFile
         val title = issueTitle.get()
         val body = issueBody.get()
         val token = gitHubToken.orNull ?: ""

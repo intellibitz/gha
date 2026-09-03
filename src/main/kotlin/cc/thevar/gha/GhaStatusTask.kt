@@ -1,11 +1,8 @@
 package cc.thevar.gha
 
-import org.gradle.api.file.DirectoryProperty
+import cc.thevar.gha.safety.GhaSandboxManager
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
@@ -15,23 +12,22 @@ abstract class GhaStatusTask : GhaTask() {
     @get:Input
     abstract val projectName: Property<String>
 
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val projectRootDir: DirectoryProperty
-
     @get:Input
     abstract val gradleVersion: Property<String>
 
     init {
         projectName.convention(project.name)
-        projectRootDir.convention(project.layout.projectDirectory)
         gradleVersion.convention(project.gradle.gradleVersion)
     }
 
     @TaskAction
     fun execute() {
+        val rootDir = projectRootDir.get().asFile
+        val (isHealthy, _) = GhaSandboxManager.healthCheck(rootDir)
+
         logger.lifecycle("📊 [GHA Status] Project: ${projectName.get()}")
-        logger.lifecycle("   RootDir: ${projectRootDir.get().asFile.absolutePath}")
+        logger.lifecycle("   RootDir: ${rootDir.absolutePath}")
+        logger.lifecycle("   Sandbox: ${if (isHealthy) "✅ HEALTHY" else "❌ UNHEALTHY"}")
         logger.lifecycle("   Platform: ${System.getProperty("os.name")} (${System.getProperty("os.arch")})")
         logger.lifecycle("   Gradle Version: ${gradleVersion.get()}")
         logger.lifecycle("   GitHub Token: ${maskedToken()}")

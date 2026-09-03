@@ -1,22 +1,14 @@
 package cc.thevar.gha.security
 
 import cc.thevar.gha.GhaTask
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Closes Dependabot pull requests and deletes remote dependabot/ branches")
 abstract class GhaDependabotCloseTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val projectRootDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -31,7 +23,6 @@ abstract class GhaDependabotCloseTask : GhaTask() {
     abstract val closeComment: Property<String>
 
     init {
-        projectRootDir.convention(project.layout.projectDirectory)
         prNumber.convention(project.providers.gradleProperty("prNumber"))
         closeAll.convention(project.providers.gradleProperty("closeAll").orElse("false"))
         closeComment.convention(project.providers.gradleProperty("closeComment").orElse("Closed by Maintainer via GHA"))

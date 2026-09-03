@@ -3,33 +3,24 @@ package cc.thevar.gha
 import cc.thevar.gha.config.GhaConfig
 import cc.thevar.gha.git.GhaGitExec
 import cc.thevar.gha.safety.GhaProcessRunner
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Prints real-time dependency and toolchain versions from trusted vendors")
 abstract class GhaDependenciesTask : GhaTask() {
 
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val repoDir: DirectoryProperty
-
     @get:Input
     abstract val gradleVersion: Property<String>
 
     init {
-        repoDir.convention(project.layout.projectDirectory)
         gradleVersion.convention(project.gradle.gradleVersion)
     }
 
     @TaskAction
     fun execute() {
-        val dir = repoDir.get().asFile
+        val dir = projectRootDir.get().asFile
 
         // Detect Git version
         val gitResult = GhaGitExec.exec(dir, "version")

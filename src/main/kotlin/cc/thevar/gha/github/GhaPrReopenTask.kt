@@ -2,22 +2,14 @@ package cc.thevar.gha.github
 
 import cc.thevar.gha.GhaTask
 import cc.thevar.gha.safety.GhaProcessRunner
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Reopens a closed Pull Request on GitHub")
 abstract class GhaPrReopenTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val repoDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -28,14 +20,13 @@ abstract class GhaPrReopenTask : GhaTask() {
     abstract val reopenComment: Property<String>
 
     init {
-        repoDir.convention(project.layout.projectDirectory)
         prNumber.convention(project.providers.gradleProperty("prNumber"))
         reopenComment.convention(project.providers.gradleProperty("reopenComment"))
     }
 
     @TaskAction
     fun execute() {
-        val dir = repoDir.get().asFile
+        val dir = projectRootDir.get().asFile
         val num = prNumber.orNull
 
         val token = gitHubToken.orNull ?: ""

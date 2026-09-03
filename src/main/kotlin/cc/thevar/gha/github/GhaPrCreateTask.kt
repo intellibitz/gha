@@ -2,22 +2,14 @@ package cc.thevar.gha.github
 
 import cc.thevar.gha.GhaTask
 import cc.thevar.gha.safety.GhaProcessRunner
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Creates Pull Requests on GitHub")
 abstract class GhaPrCreateTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val repoDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -48,7 +40,6 @@ abstract class GhaPrCreateTask : GhaTask() {
     abstract val prLabels: Property<String>
 
     init {
-        repoDir.convention(project.layout.projectDirectory)
         prTitle.convention(project.providers.gradleProperty("prTitle").orElse("Automated Pull Request via GHA"))
         prBody.convention(project.providers.gradleProperty("prBody").orElse("Automated Pull Request created by GHA"))
         prBase.convention(project.providers.gradleProperty("prBase"))
@@ -60,7 +51,7 @@ abstract class GhaPrCreateTask : GhaTask() {
 
     @TaskAction
     fun execute() {
-        val dir = repoDir.get().asFile
+        val dir = projectRootDir.get().asFile
         val title = prTitle.get()
         val body = prBody.get()
         val token = gitHubToken.orNull ?: ""

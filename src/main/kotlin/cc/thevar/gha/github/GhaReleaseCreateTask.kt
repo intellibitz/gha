@@ -2,22 +2,14 @@ package cc.thevar.gha.github
 
 import cc.thevar.gha.GhaTask
 import cc.thevar.gha.safety.GhaProcessRunner
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Creates Releases on GitHub")
 abstract class GhaReleaseCreateTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val repoDir: DirectoryProperty
 
     @get:Input
     abstract val tag: Property<String>
@@ -31,12 +23,11 @@ abstract class GhaReleaseCreateTask : GhaTask() {
     abstract val notes: Property<String>
 
     init {
-        repoDir.convention(project.layout.projectDirectory)
     }
 
     @TaskAction
     fun execute() {
-        val dir = repoDir.get().asFile
+        val dir = projectRootDir.get().asFile
         val tagName = tag.get()
         val relTitle = title.orNull ?: "Release $tagName"
         val relNotes = notes.orNull ?: "Automated Release $tagName created by GHA"

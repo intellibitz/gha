@@ -1,22 +1,14 @@
 package cc.thevar.gha.projects
 
 import cc.thevar.gha.GhaTask
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Creates a new GitHub Project board")
 abstract class GhaProjectCreateTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val projectRootDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -27,7 +19,6 @@ abstract class GhaProjectCreateTask : GhaTask() {
     abstract val projectOwner: Property<String>
 
     init {
-        projectRootDir.convention(project.layout.projectDirectory)
         projectTitle.convention(project.providers.gradleProperty("projectTitle").orElse("${project.name} Project Board"))
         projectOwner.convention(project.providers.gradleProperty("projectOwner"))
     }

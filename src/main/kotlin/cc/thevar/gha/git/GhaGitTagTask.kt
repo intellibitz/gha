@@ -1,22 +1,14 @@
 package cc.thevar.gha.git
 
 import cc.thevar.gha.GhaTask
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Creates and pushes Git tags")
 abstract class GhaGitTagTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val repoDir: DirectoryProperty
 
     @get:Input
     abstract val tagName: Property<String>
@@ -26,12 +18,11 @@ abstract class GhaGitTagTask : GhaTask() {
     abstract val tagMessage: Property<String>
 
     init {
-        repoDir.convention(project.layout.projectDirectory)
     }
 
     @TaskAction
     fun execute() {
-        val dir = repoDir.get().asFile
+        val dir = projectRootDir.get().asFile
         val tag = tagName.get()
         val msg = tagMessage.orNull ?: "Release $tag"
 

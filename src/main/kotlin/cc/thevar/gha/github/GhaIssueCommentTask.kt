@@ -2,22 +2,14 @@ package cc.thevar.gha.github
 
 import cc.thevar.gha.GhaTask
 import cc.thevar.gha.safety.GhaProcessRunner
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Adds a comment to an Issue on GitHub")
 abstract class GhaIssueCommentTask : GhaTask() {
-
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val repoDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -28,14 +20,13 @@ abstract class GhaIssueCommentTask : GhaTask() {
     abstract val commentBody: Property<String>
 
     init {
-        repoDir.convention(project.layout.projectDirectory)
         issueNumber.convention(project.providers.gradleProperty("issueNumber"))
         commentBody.convention(project.providers.gradleProperty("commentBody"))
     }
 
     @TaskAction
     fun execute() {
-        val dir = repoDir.get().asFile
+        val dir = projectRootDir.get().asFile
         val num = issueNumber.orNull
         val body = commentBody.orNull
 

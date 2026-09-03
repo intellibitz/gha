@@ -1,10 +1,6 @@
 package cc.thevar.gha.wiki
 
 import cc.thevar.gha.GhaTask
-import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import java.io.File
@@ -12,12 +8,7 @@ import java.io.File
 @DisableCachingByDefault(because = "Pulls latest GitHub Wiki changes from remote")
 abstract class GhaWikiSyncTask : GhaTask() {
 
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val projectRootDir: DirectoryProperty
-
     init {
-        projectRootDir.convention(project.layout.projectDirectory)
     }
 
     @TaskAction
