@@ -84,8 +84,10 @@ plugins {
 | :--- | :--- | :--- |
 | `./gradlew ghaGitInit` | Initializes a local Git repository | `./gradlew ghaGitInit` |
 | `./gradlew ghaGitStatus` | Displays current Git repository status, branch, and working tree changes | `./gradlew ghaGitStatus` |
-| `./gradlew ghaGitBranch` | Displays current Git branches and branch status | `./gradlew ghaGitBranch` |
+| `./gradlew ghaGitBranch` | Lists, creates (`-PcreateBranch=...`), or deletes (`-PdeleteBranch=...`) Git branches | `./gradlew ghaGitBranch` |
+| `./gradlew ghaGitCheckout` | Checks out or creates a Git branch safely with stash support | `./gradlew ghaGitCheckout -PbranchName="feature/login"` |
 | `./gradlew ghaGitCommit` | Stages and commits working tree changes platform-independently | `./gradlew ghaGitCommit -PcommitMessage="Message"` |
+| `./gradlew ghaGitCheckin` | Stages and checks in/commits working tree changes safely | `./gradlew ghaGitCheckin -PcommitMessage="Message"` |
 | `./gradlew ghaGitPush` | Pushes current branch to origin remote | `./gradlew ghaGitPush` |
 | `./gradlew ghaGitPull` | Pulls latest changes from remote with rebase | `./gradlew ghaGitPull` |
 | `./gradlew ghaGitTag` | Creates and pushes an annotated Git tag | `./gradlew ghaGitTag -PtagName="v1.0.0"` |
@@ -93,6 +95,16 @@ plugins {
 | `./gradlew ghaGitReset` | Resets working tree changes (`--hard` / `--soft` / `--mixed`) | `./gradlew ghaGitReset [-PresetMode="hard"]` |
 | `./gradlew ghaGitStash` | Stashes working tree changes (`push` / `pop` / `list` / `drop`) | `./gradlew ghaGitStash [-PstashAction="pop"]` |
 | `./gradlew ghaGitDiff` | Inspects working tree changes and diffs | `./gradlew ghaGitDiff` |
+
+---
+
+### 2. Enterprise Parallel Collaboration & GitHub Automation Tasks
+
+#### Enterprise Parallel Workflow (Protected Branch Guarded)
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaParallelWorkflow` | Executes end-to-end enterprise workflow (`pull` -> `branch` -> `checkin` -> `push` -> `PR` -> `merge` -> `auto-cleanup`) on protected branches | `./gradlew ghaParallelWorkflow -PbaseBranch=main -PcommitMessage="Feature contribution"` |
+| `./gradlew ghaDevWorkflow` | Alias for `ghaParallelWorkflow`: Parallel developer contribution workflow with PR creation and smart branch preservation | `./gradlew ghaDevWorkflow -PautoMerge=true` |
 
 ---
 

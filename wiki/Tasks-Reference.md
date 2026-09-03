@@ -17,8 +17,10 @@
 ## Git Automation Tasks
 - `./gradlew ghaGitInit`: Initializes a local Git repository.
 - `./gradlew ghaGitStatus`: Displays Git repository status.
-- `./gradlew ghaGitBranch`: Lists local and remote Git branches.
+- `./gradlew ghaGitBranch`: Lists, creates (`-PcreateBranch=...`), or deletes (`-PdeleteBranch=...`) Git branches.
+- `./gradlew ghaGitCheckout`: Checks out or creates a Git branch safely with stash support (`-PbranchName=...`).
 - `./gradlew ghaGitCommit`: Stages and commits working tree changes.
+- `./gradlew ghaGitCheckin`: Stages and checks in/commits working tree changes safely (`-PcommitMessage=...`).
 - `./gradlew ghaGitPush`: Pushes current branch to origin.
 - `./gradlew ghaGitPull`: Pulls remote changes with rebase.
 - `./gradlew ghaGitTag`: Tagging and pushing.
@@ -27,7 +29,9 @@
 - `./gradlew ghaGitStash`: Stashes working tree changes (push / pop / list / drop).
 - `./gradlew ghaGitDiff`: Inspects working tree changes and diffs.
 
-## GitHub Automation Tasks
+## GitHub & Enterprise Parallel Automation Tasks
+- `./gradlew ghaParallelWorkflow`: Executes enterprise parallel collaboration workflow (pull -> branch -> checkin -> push -> PR -> merge -> auto-cleanup).
+- `./gradlew ghaDevWorkflow`: Alias for `ghaParallelWorkflow`: End-to-end parallel developer contribution workflow on protected branches.
 - `./gradlew ghaRepoView`: Displays GitHub repository details and metadata.
 - `./gradlew ghaGistCreate`: Creates a GitHub Gist from a local file.
 - `./gradlew ghaSecretSet`: Configures repository secrets safely.
@@ -45,16 +49,9 @@
 ## GitHub Operations
 - `./gradlew ghaPrCreate`: Creates Pull Requests.
 - `./gradlew ghaPrList`: Lists open Pull Requests.
+- `./gradlew ghaPrCheckout`: Checks out a Pull Request branch locally (`-PprNumber=...`).
+- `./gradlew ghaPrMerge`: Merges Pull Requests (`-PprNumber=...` `-PautoMerge=true`).
 - `./gradlew ghaIssueCreate`: Creates Issues.
 - `./gradlew ghaIssueList`: Lists open Issues.
 - `./gradlew ghaReleaseCreate`: Creates Releases.
 - `./gradlew ghaDependabotCleanup`: Cleans up Dependabot branches.
-
-## Git Operations
-- `./gradlew ghaGitStatus`: Displays Git repository status.
-- `./gradlew ghaGitBranch`: Displays current Git branches and branch status.
-- `./gradlew ghaGitCommit`: Stages and commits working tree changes.
-- `./gradlew ghaGitPush`: Pushes current branch to origin.
-- `./gradlew ghaGitPull`: Pulls remote changes with rebase.
-- `./gradlew ghaGitTag`: Tagging and pushing.
-- `./gradlew ghaGitLog`: Displays commit log.

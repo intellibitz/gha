@@ -84,8 +84,10 @@ plugins {
 | :--- | :--- | :--- |
 | `./gradlew ghaGitInit` | Initializes a local Git repository | `./gradlew ghaGitInit` |
 | `./gradlew ghaGitStatus` | Displays current Git repository status, branch, and working tree changes | `./gradlew ghaGitStatus` |
-| `./gradlew ghaGitBranch` | Displays current Git branches and branch status | `./gradlew ghaGitBranch` |
+| `./gradlew ghaGitBranch` | Lists, creates (`-PcreateBranch=...`), or deletes (`-PdeleteBranch=...`) Git branches | `./gradlew ghaGitBranch` |
+| `./gradlew ghaGitCheckout` | Checks out or creates a Git branch safely with stash support | `./gradlew ghaGitCheckout -PbranchName="feature/login"` |
 | `./gradlew ghaGitCommit` | Stages and commits working tree changes platform-independently | `./gradlew ghaGitCommit -PcommitMessage="Message"` |
+| `./gradlew ghaGitCheckin` | Stages and checks in/commits working tree changes safely | `./gradlew ghaGitCheckin -PcommitMessage="Message"` |
 | `./gradlew ghaGitPush` | Pushes current branch to origin remote | `./gradlew ghaGitPush` |
 | `./gradlew ghaGitPull` | Pulls latest changes from remote with rebase | `./gradlew ghaGitPull` |
 | `./gradlew ghaGitTag` | Creates and pushes an annotated Git tag | `./gradlew ghaGitTag -PtagName="v1.0.0"` |
@@ -96,7 +98,13 @@ plugins {
 
 ---
 
-### 2. GitHub Automation Tasks
+### 2. Enterprise Parallel Collaboration & GitHub Automation Tasks
+
+#### Enterprise Parallel Workflow (Protected Branch Guarded)
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaParallelWorkflow` | Executes end-to-end enterprise workflow (`pull` -> `branch` -> `checkin` -> `push` -> `PR` -> `merge` -> `auto-cleanup`) on protected branches | `./gradlew ghaParallelWorkflow -PbaseBranch=main -PcommitMessage="Feature contribution"` |
+| `./gradlew ghaDevWorkflow` | Alias for `ghaParallelWorkflow`: Parallel developer contribution workflow with PR creation and smart branch preservation | `./gradlew ghaDevWorkflow -PautoMerge=true` |
 
 #### Actions & Workflow Management
 | Task | Description | Usage Example |
@@ -118,139 +126,3 @@ plugins {
 | `./gradlew ghaPrMerge` | Merges a Pull Request (squash, merge, or rebase) | `./gradlew ghaPrMerge [-PprNumber=1] [-PmergeMethod=squash]` |
 | `./gradlew ghaPrClose` | Closes a Pull Request without merging | `./gradlew ghaPrClose [-PprNumber=1] [-PcloseComment="Closed"]` |
 | `./gradlew ghaPrReopen` | Reopens a closed Pull Request | `./gradlew ghaPrReopen [-PprNumber=1]` |
-
-#### Issue Operations
-| Task | Description | Usage Example |
-| :--- | :--- | :--- |
-| `./gradlew ghaIssueCreate` | Creates a new Issue on GitHub | `./gradlew ghaIssueCreate -PissueTitle="Bug title" -PissueBody="Details"` |
-| `./gradlew ghaIssueList` | Lists Issues (supports open/closed/all filtering) | `./gradlew ghaIssueList [-PissueState=open\|closed\|all]` |
-| `./gradlew ghaIssueView` | Displays details and comments for an Issue | `./gradlew ghaIssueView -PissueNumber=1` |
-| `./gradlew ghaIssueComment` | Adds a comment to an Issue | `./gradlew ghaIssueComment -PissueNumber=1 -PcommentBody="Comment text"` |
-| `./gradlew ghaIssueEdit` | Edits title, body, labels, or assignees | `./gradlew ghaIssueEdit -PissueNumber=1 -PissueTitle="Updated title"` |
-| `./gradlew ghaIssueClose` | Closes an Issue (reason: completed or not_planned) | `./gradlew ghaIssueClose -PissueNumber=1 [-PcloseComment="Fixed"]` |
-| `./gradlew ghaIssueReopen` | Reopens a closed Issue | `./gradlew ghaIssueReopen -PissueNumber=1` |
-
-#### Projects & Releases
-| Task | Description | Usage Example |
-| :--- | :--- | :--- |
-| `./gradlew ghaProjectInit` | Initializes default GitHub Project boards (Roadmap, Issue Tracker, Releases) | `./gradlew ghaProjectInit` |
-| `./gradlew ghaProjectCreate` | Creates a new GitHub Project board | `./gradlew ghaProjectCreate -PprojectTitle="My Board"` |
-| `./gradlew ghaProjectList` | Lists GitHub Project boards for an owner or repository | `./gradlew ghaProjectList [-PprojectOwner="owner"]` |
-| `./gradlew ghaProjectView` | Displays details and items of a GitHub Project board | `./gradlew ghaProjectView -PprojectNumber=1` |
-| `./gradlew ghaProjectAddItem` | Adds an Issue or Pull Request URL to a project board | `./gradlew ghaProjectAddItem -PprojectNumber=1 -PitemUrl="https://..."` |
-| `./gradlew ghaProjectClose` | Closes or archives a GitHub Project board | `./gradlew ghaProjectClose -PprojectNumber=1` |
-| `./gradlew ghaReleaseCreate` | Creates a Release on GitHub | `./gradlew ghaReleaseCreate -PtagName="v1.0.0"` |
-
-#### Security & Vulnerability
-| Task | Description | Usage Example |
-| :--- | :--- | :--- |
-| `./gradlew ghaSecurityInit` | Generates default security workflows, Dependabot, CodeQL scanning, and `SECURITY.md` | `./gradlew ghaSecurityInit` |
-| `./gradlew ghaSecurityStatus` | Inspects current GitHub security, scanning, Dependabot, and policy status | `./gradlew ghaSecurityStatus` |
-| `./gradlew ghaDependabotInit` | Generates `.github/dependabot.yml` for automated dependency updates | `./gradlew ghaDependabotInit` |
-| `./gradlew ghaDependabotList` | Lists active Dependabot pull requests and remote `dependabot/` branches | `./gradlew ghaDependabotList` |
-| `./gradlew ghaDependabotMerge` | Merges Dependabot PRs and deletes remote branches | `./gradlew ghaDependabotMerge [-PprNumber=123] [-PmergeAll=true]` |
-| `./gradlew ghaDependabotClose` | Closes Dependabot PRs and deletes remote `dependabot/` branches | `./gradlew ghaDependabotClose [-PprNumber=123] [-PcloseAll=true]` |
-| `./gradlew ghaDependabotCleanup` | Cleans up closed or merged Dependabot branches | `./gradlew ghaDependabotCleanup` |
-| `./gradlew ghaDependabotRebase` | Requests Dependabot to `@dependabot rebase` or `@dependabot recreate` | `./gradlew ghaDependabotRebase [-PprNumber=123] [-PrebaseAll=true] [-Precreate=true]` |
-| `./gradlew ghaCodeScanningInit` | Generates `.github/workflows/codeql.yml` for CodeQL code scanning | `./gradlew ghaCodeScanningInit` |
-
-#### Repository, Gists & Secrets
-| Task | Description | Usage Example |
-| :--- | :--- | :--- |
-| `./gradlew ghaRepoView` | Displays GitHub repository details and metadata | `./gradlew ghaRepoView` |
-| `./gradlew ghaGistCreate` | Creates a GitHub Gist from a local file | `./gradlew ghaGistCreate [-PfilePath="README.md"]` |
-| `./gradlew ghaSecretSet` | Configures repository secrets safely | `./gradlew ghaSecretSet -PsecretName="KEY" -PsecretValue="VAL"` |
-
-#### Wiki & Insights
-| Task | Description |
-| :--- | :--- |
-| `./gradlew ghaWikiInit` | Creates local `wiki/` documentation directory and template pages (`Home.md`, `_Sidebar.md`, etc.) |
-| `./gradlew ghaWikiStatus` | Displays local wiki pages, sizes, remote wiki URL, and sync status |
-| `./gradlew ghaWikiSync` | Pulls latest remote GitHub Wiki pages into local `wiki/` directory |
-| `./gradlew ghaWikiPublish` | Commits and pushes local `wiki/` pages to remote GitHub Wiki repository |
-| `./gradlew ghaInsights` | Displays repository overview, stars, forks, watchers, open issues, and commit counts |
-| `./gradlew ghaContributors` | Displays contributor breakdown, commit counts, and percentage contributions |
-| `./gradlew ghaTraffic` | Displays repository traffic, page views, and clone statistics |
-
----
-
-### 3. Gradle Automation Tasks
-| Task | Description | Usage Example |
-| :--- | :--- | :--- |
-| `./gradlew ghaInit` | Initializes sandboxed GitHub Automation environment (`.gha/`) | `./gradlew ghaInit` |
-| `./gradlew ghaStatus` | Displays current GitHub Automation project and platform status | `./gradlew ghaStatus` |
-| `./gradlew ghaSandbox` | Displays real-time sandbox status and environment health checks | `./gradlew ghaSandbox` |
-| `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions | `./gradlew ghaDependencies` |
-| `./gradlew ghaClean` | Cleans build directory and temporary caches | `./gradlew ghaClean` |
-| `./gradlew ghaBuild` | Executes sandboxed Gradle build | `./gradlew ghaBuild` |
-| `./gradlew ghaTest` | Executes project test suite | `./gradlew ghaTest` |
-| `./gradlew ghaKotlinInit` | Initializes a 100% Kotlin project with Gradle DSL, version catalog, and sandboxed GHA | `./gradlew ghaKotlinInit [-PprojectName="my-app"]` |
-| `./gradlew ghaKotlinProjectCreate` | Creates a new 100% Kotlin project structure platform-independently | `./gradlew ghaKotlinProjectCreate [-PprojectName="my-app"]` |
-| `./gradlew ghaAndroidRemove` | Removes Android manifests, resources, plugins, and dependencies for pure Kotlin dev | `./gradlew ghaAndroidRemove` |
-| `./gradlew ghaAndroidProjectRemove` | Alias for ghaAndroidRemove: Converts project to 100% pure Kotlin | `./gradlew ghaAndroidProjectRemove` |
-| `./gradlew ghaHelp` | Displays all registered GHA tasks grouped by domain and CLI usage instructions | `./gradlew ghaHelp` |
-
----
-
-## Project Structure
-
-```
-gha/
-├── .github/workflows/
-│   └── gha.yml                                  # Self-testing GHA CI automation workflow
-├── build.gradle.kts                             # Gradle Plugin build configuration
-├── settings.gradle.kts                          # Gradle settings with Foojay sandboxed JDK resolver
-├── gradle.properties                            # Sandboxed org.gradle.user.home=.gha/gradle-user-home
-├── gradle/
-│   └── libs.versions.toml                       # Centralized Version Catalog
-├── init/
-│   └── gha.init.gradle.kts                      # Self-contained init script
-├── src/main/kotlin/cc/thevar/gha/
-│   ├── GhaPlugin.kt                             # Core Gradle Plugin registering Git & GitHub tasks
-│   ├── GhaTask.kt                               # Base Task with secret handling & relative path input
-│   ├── GhaInitTask.kt                           # Sandboxed GHA Init Task (.gha/)
-│   ├── GhaKotlinInitTask.kt                     # 100% Kotlin Project Scaffolding Task
-│   ├── GhaAndroidRemoveTask.kt                  # Removes Android components for pure Kotlin dev
-│   ├── GhaCleanTask.kt                          # Cleans build directory and temporary caches
-│   ├── GhaBuildTask.kt                          # Sandboxed Gradle Build Task
-│   ├── GhaTestTask.kt                           # Project Test Execution Task
-│   ├── GhaStatusTask.kt                         # GHA Status Task
-│   ├── GhaSandboxTask.kt                        # GHA Sandbox Health Check Task
-│   ├── GhaDependenciesTask.kt                   # Prints trusted vendors, dependency table, and versions
-│   ├── GhaHelpTask.kt                           # Displays available tasks and usage examples
-│   ├── GhaWorkflowTask.kt                       # GHA Workflow Task
-│   ├── config/
-│   │   └── GhaConfig.kt                         # Centralized tools, SDK, and vendor stability rules
-│   ├── safety/
-│   │   ├── GhaProcessRunner.kt                  # Timeouts, non-interactive flags, recursion guard
-│   │   └── GhaSandboxManager.kt                 # Sandbox environment health checking
-│   ├── git/
-│   │   ├── GhaGitExec.kt                        # 100% Kotlin Git execution engine
-│   │   ├── GhaGitStatusTask.kt                  # Git status task
-│   │   ├── GhaGitCommitTask.kt                  # Git stage & commit task
-│   │   ├── GhaGitPushTask.kt                    # Git push task
-│   │   ├── GhaGitPullTask.kt                    # Git pull task
-│   │   ├── GhaGitTagTask.kt                     # Git tag & push task
-│   │   └── GhaGitLogTask.kt                     # Git log task
-│   ├── github/
-│   │   ├── GhaPrCreateTask.kt                   # PR create task
-│   │   ├── GhaPrListTask.kt                     # PR list task
-│   │   ├── GhaIssueCreateTask.kt                # Issue create task
-│   │   ├── GhaIssueListTask.kt                  # Issue list task
-│   │   └── GhaReleaseCreateTask.kt              # Release create task
-│   └── security/
-│       └── GhaCredentialsResolver.kt            # Secure GhAuthTokenValueSource & maskToken
-└── README.md                                    # Project documentation
-```
-
-## Contributors
-
-`gha` is co-created and maintained by **IntelliBitz**, **Muthu Ramadoss**, and **Gemini (Google AI)**. See [CONTRIBUTORS.md](file:///home/ramadoss/Projects/AI/gha/CONTRIBUTORS.md) for the full list of project creators and contributors.
-
-## Contributing
-
-Contributions are welcome from both human developers and AI agents! Check open issues or submit pull requests following 100% Kotlin and platform-independent conventions.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).

@@ -1,6 +1,8 @@
 package cc.thevar.gha
 
 import cc.thevar.gha.git.GhaGitBranchTask
+import cc.thevar.gha.git.GhaGitCheckinTask
+import cc.thevar.gha.git.GhaGitCheckoutTask
 import cc.thevar.gha.git.GhaGitCommitTask
 import cc.thevar.gha.git.GhaGitDiffTask
 import cc.thevar.gha.git.GhaGitInitTask
@@ -53,6 +55,7 @@ import cc.thevar.gha.wiki.GhaWikiInitTask
 import cc.thevar.gha.wiki.GhaWikiPublishTask
 import cc.thevar.gha.wiki.GhaWikiStatusTask
 import cc.thevar.gha.wiki.GhaWikiSyncTask
+import cc.thevar.gha.workflow.GhaParallelWorkflowTask
 import cc.thevar.gha.workflow.GhaWorkflowCancelTask
 import cc.thevar.gha.workflow.GhaWorkflowCleanupTask
 import cc.thevar.gha.workflow.GhaWorkflowListTask
@@ -138,12 +141,22 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaGitBranch", GhaGitBranchTask::class.java) {
             group = GROUP_GIT
-            description = "Lists local and remote Git branches"
+            description = "Lists, creates, or deletes local and remote Git branches"
+        }
+
+        project.tasks.register("ghaGitCheckout", GhaGitCheckoutTask::class.java) {
+            group = GROUP_GIT
+            description = "Checks out or creates a Git branch safely with stash support"
         }
 
         project.tasks.register("ghaGitCommit", GhaGitCommitTask::class.java) {
             group = GROUP_GIT
             description = "Stages and commits working tree changes"
+        }
+
+        project.tasks.register("ghaGitCheckin", GhaGitCheckinTask::class.java) {
+            group = GROUP_GIT
+            description = "Stages and checks in/commits working tree changes safely"
         }
 
         project.tasks.register("ghaGitPush", GhaGitPushTask::class.java) {
@@ -184,6 +197,16 @@ class GhaPlugin : Plugin<Project> {
         // ---------------------------------------------------------------------
         // 3. GitHub Automation Tasks
         // ---------------------------------------------------------------------
+        project.tasks.register("ghaParallelWorkflow", GhaParallelWorkflowTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Executes enterprise parallel collaboration workflow (pull -> branch -> checkin -> push -> PR -> merge -> auto-cleanup)"
+        }
+
+        project.tasks.register("ghaDevWorkflow", GhaParallelWorkflowTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Alias for ghaParallelWorkflow: Executes end-to-end parallel developer contribution workflow on protected branches"
+        }
+
         project.tasks.register("ghaRepoView", GhaRepoViewTask::class.java) {
             group = GROUP_GITHUB
             description = "Displays GitHub repository details and metadata"

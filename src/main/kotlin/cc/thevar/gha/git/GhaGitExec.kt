@@ -25,4 +25,59 @@ object GhaGitExec {
         val result = exec(workingDir, "status", "--porcelain")
         return result.isSuccess && result.stdout.isBlank()
     }
+
+    fun localBranchExists(workingDir: File, branchName: String): Boolean {
+        val result = exec(workingDir, "show-ref", "--verify", "--quiet", "refs/heads/$branchName")
+        return result.isSuccess
+    }
+
+    fun remoteBranchExists(workingDir: File, remoteName: String, branchName: String): Boolean {
+        val result = exec(workingDir, "show-ref", "--verify", "--quiet", "refs/remotes/$remoteName/$branchName")
+        return result.isSuccess
+    }
+
+    fun fetch(workingDir: File, remoteName: String = "origin"): GhaProcessRunner.ProcessResult {
+        return exec(workingDir, "fetch", remoteName, timeoutSeconds = 45L)
+    }
+
+    fun checkout(
+        workingDir: File,
+        branchName: String,
+        createIfMissing: Boolean = false,
+        startPoint: String? = null
+    ): GhaProcessRunner.ProcessResult {
+        val exists = localBranchExists(workingDir, branchName)
+        val args = mutableListOf("checkout")
+        if (!exists && createIfMissing) {
+            args.add("-b")
+        }
+        args.add(branchName)
+        if (!exists && createIfMissing && !startPoint.isNullOrBlank()) {
+            args.add(startPoint)
+        }
+        return exec(workingDir, *args.toTypedArray())
+    }
+
+    fun deleteLocalBranch(workingDir: File, branchName: String, force: Boolean = false): GhaProcessRunner.ProcessResult {
+        val flag = if (force) "-D" else "-d"
+        return exec(workingDir, "branch", flag, branchName)
+    }
+
+    fun deleteRemoteBranch(workingDir: File, remoteName: String, branchName: String): GhaProcessRunner.ProcessResult {
+        return exec(workingDir, "push", remoteName, "--delete", branchName, timeoutSeconds = 45L)
+    }
+
+    fun pullRebase(workingDir: File, remoteName: String = "origin", branchName: String): GhaProcessRunner.ProcessResult {
+        return exec(workingDir, "pull", "--rebase", remoteName, branchName, timeoutSeconds = 60L)
+    }
+
+    fun push(workingDir: File, remoteName: String = "origin", branchName: String, setUpstream: Boolean = true): GhaProcessRunner.ProcessResult {
+        val args = mutableListOf("push")
+        if (setUpstream) {
+            args.add("-u")
+        }
+        args.add(remoteName)
+        args.add(branchName)
+        return exec(workingDir, *args.toTypedArray(), timeoutSeconds = 60L)
+    }
 }
