@@ -1,16 +1,16 @@
-# gha: GitHub Automation
+# gha: Git & GitHub Automation
 
-**gha** (`cc.thevar.gha`) provides 100% Kotlin, 100% platform-independent Gradle tasks for GitHub automation workflows that can be run on **any Gradle project in the world with zero effort**.
+**gha** (`cc.thevar.gha`) provides 100% Kotlin, 100% platform-independent Gradle tasks for Git and GitHub automation workflows that can be run on **any Gradle project in the world with zero effort**.
 
 ## Mission
 
-`gha` creators—**Intellibitz**, **Gemini**, and other AI agents alongside GitHub community contributors—build platform-independent Gradle tasks and plugins written purely in **100% Kotlin** to power end-to-end GitHub automation workflows.
+`gha` creators—**Intellibitz**, **Gemini**, and other AI agents alongside GitHub community contributors—build platform-independent Gradle tasks and plugins written purely in **100% Kotlin** to power end-to-end Git and GitHub automation workflows.
 
 ## Key Principles
 
 - **100% Kotlin**: Built entirely using Kotlin for type safety, coroutines, DSL capabilities, and multiplatform support.
 - **100% Platform Independent**: Runs seamlessly across macOS, Linux, Windows, and containerized CI environments without bash or shell dependencies.
-- **100% GitHub Automation Workflows**: Automates repository setup, issue management, PR checks, releases, code analysis, and agent workflows.
+- **Git & GitHub Automation Workflows**: Automates working tree operations, commits, pushes, tags, repository setup, issue management, PR checks, releases, and agent workflows.
 - **100% Secure & Zero Secret Leakage**: Enforces strict security rules to prevent accidental token exposure in logs, task inputs, build reports, or configuration cache.
 - **Zero Effort for Any Project**: Run GHA tasks on any project worldwide instantly without editing target project files.
 
@@ -38,8 +38,8 @@
 Run `gha` tasks on **any Gradle project in the world** without changing its source code or build files:
 
 ```bash
-# Run ghaInit on any project
-gradle --init-script https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts ghaInit
+# Run ghaInit or ghaGitStatus on any project
+gradle --init-script https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts ghaGitStatus
 ```
 
 Or install globally on your machine/CI runner by copying `gha.init.gradle.kts` to `~/.gradle/init.d/`:
@@ -49,7 +49,7 @@ mkdir -p ~/.gradle/init.d/
 cp init/gha.init.gradle.kts ~/.gradle/init.d/gha.init.gradle.kts
 ```
 
-Once placed in `~/.gradle/init.d/`, **every Gradle project automatically gets GHA tasks available out of the box!**
+Once placed in `~/.gradle/init.d/`, **every Gradle project automatically gets GHA Git & GitHub tasks available out of the box!**
 
 ---
 
@@ -67,11 +67,20 @@ plugins {
 
 ## Available GHA Tasks
 
+### GitHub Automation Tasks
 | Task | Description |
 | :--- | :--- |
 | `./gradlew ghaInit` | Initializes GitHub Automation workflows for the project |
 | `./gradlew ghaStatus` | Displays the current GitHub Automation project and platform status |
 | `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
+
+### Git Automation Tasks
+| Task | Description |
+| :--- | :--- |
+| `./gradlew ghaGitStatus` | Displays current Git repository status, branch, and working tree changes |
+| `./gradlew ghaGitCommit` | Stages and commits working tree changes platform-independently |
+| `./gradlew ghaGitPush` | Pushes current branch to origin remote |
+| `./gradlew ghaGitTag` | Creates and pushes an annotated Git tag |
 
 ---
 
@@ -84,11 +93,17 @@ gha/
 ├── init/
 │   └── gha.init.gradle.kts                      # Zero-effort init script for global injection
 ├── src/main/kotlin/cc/thevar/gha/
-│   ├── GhaPlugin.kt                             # Core Gradle Plugin
-│   ├── GhaTask.kt                               # Base Task with @get:Internal secret handling
+│   ├── GhaPlugin.kt                             # Core Gradle Plugin registering Git & GitHub tasks
+│   ├── GhaTask.kt                               # Base Task with secret handling
 │   ├── GhaInitTask.kt                           # 100% Kotlin GHA Init Task
 │   ├── GhaStatusTask.kt                         # 100% Kotlin GHA Status Task
 │   ├── GhaWorkflowTask.kt                       # 100% Kotlin GHA Workflow Task
+│   ├── git/
+│   │   ├── GhaGitExec.kt                        # 100% Kotlin Git execution engine
+│   │   ├── GhaGitStatusTask.kt                  # Git status task
+│   │   ├── GhaGitCommitTask.kt                  # Git stage & commit task
+│   │   ├── GhaGitPushTask.kt                    # Git push task
+│   │   └── GhaGitTagTask.kt                     # Git tag & push task
 │   └── security/
 │       └── GhaCredentialsResolver.kt            # Secure GhAuthTokenValueSource & maskToken
 └── README.md                                    # Project documentation
