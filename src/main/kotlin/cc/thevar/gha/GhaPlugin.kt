@@ -60,6 +60,16 @@ class GhaPlugin : Plugin<Project> {
             description = "Initializes sandboxed GitHub Automation workflows for any project automatically"
         }
 
+        project.tasks.register("ghaKotlinInit", GhaKotlinInitTask::class.java) {
+            group = "GitHub Automation"
+            description = "Initializes a 100% Kotlin project structure with sandboxed GHA automation"
+        }
+
+        project.tasks.register("ghaKotlinProjectCreate", GhaKotlinInitTask::class.java) {
+            group = "GitHub Automation"
+            description = "Creates a new 100% Kotlin project with Gradle DSL, version catalog, and sandboxed GHA"
+        }
+
         project.tasks.register("ghaStatus", GhaStatusTask::class.java) {
             group = "GitHub Automation"
             description = "Displays the current GitHub Automation workflow status"
