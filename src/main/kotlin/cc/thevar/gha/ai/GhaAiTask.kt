@@ -42,7 +42,7 @@ abstract class GhaAiTask : GhaTask() {
         userBranch.convention(project.providers.gradleProperty("userBranch").orElse(project.providers.gradleProperty("branch")))
         commitMessage.convention(
             project.providers.gradleProperty("commitMessage")
-                .orElse(project.providers.gradleProperty("message"))
+                .orElse(project.providers.gradleProperty("message")),
         )
         autoMerge.convention(project.providers.gradleProperty("autoMerge").orElse("true"))
         mergeMethod.convention(project.providers.gradleProperty("mergeMethod").orElse("squash"))
@@ -97,7 +97,7 @@ abstract class GhaAiTask : GhaTask() {
                 body = "Automated contribution created by ghai.",
             )
 
-            if (prOk && prInfo != null) {
+            if (prOk && (prInfo != null)) {
                 logger.lifecycle("✅ Pull Request #${prInfo.number} active on GitHub: ${prInfo.url}")
                 val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
                 GhaProcessRunner.exec(
@@ -180,7 +180,7 @@ abstract class GhaAiTask : GhaTask() {
                         title = lastCommitMsg,
                         body = "Automated contribution created by ghai.",
                     )
-                    if (prOk && prInfo != null) {
+                    if (prOk && (prInfo != null)) {
                         logger.lifecycle("✅ Created Pull Request #${prInfo.number}: ${prInfo.url}")
                     }
                 } else {
