@@ -12,7 +12,8 @@ import org.gradle.work.DisableCachingByDefault
 
 /**
  * 0 Effort, 100% Gain Autonomous AI Workflow Task (`ghai`, `ghaAI`, `ghaAuto`, `ghaSync`, `ghaSave`).
- * Intelligently handles both DIRTY (local changes) and CLEAN (post-push / GitHub PR & CI check) workflows.
+ * Intelligently handles both DIRTY (local changes) and CLEAN (post-push / GitHub PR & CI check) workflows,
+ * printing a clear execution summary and an actionable one-line next step tip.
  */
 @DisableCachingByDefault(because = "Executes autonomous AI context workflow actions")
 abstract class GhaAiTask : GhaTask() {
@@ -70,10 +71,18 @@ abstract class GhaAiTask : GhaTask() {
         )
         val branchCategory = if (isAutoBranch) "GHA Auto-Branch" else "User Branch"
 
+        var commitSummary = "No uncommitted local changes"
+        var pushSummary = "Up to date"
+        var prSummary = "N/A"
+        var prUrlSummary = "N/A"
+        var ciSummary = "N/A"
+        var tipRecommendation = "Make code edits anytime and type './ghai' to auto-save, sync, and push to GitHub."
+
         if (isDirty) {
             // WORKFLOW A: DIRTY WORKING TREE (Local changes exist)
             logger.lifecycle("📦 [ghai] Detected dirty working tree. Executing local checkin & remote push workflow...")
             val smartMsg = GhaAiManager.detectSmartCommitMessage(rootDir, explicitMsg)
+            commitSummary = "Committed: \"$smartMsg\""
 
             logger.lifecycle("📦 Staging working tree changes...")
             GhaGitExec.exec(rootDir, "add", "-A")
@@ -85,7 +94,8 @@ abstract class GhaAiTask : GhaTask() {
             GhaParallelWorkflowManager.syncWithRemoteBase(rootDir, base)
 
             logger.lifecycle("🚀 Pushing '$headBranch' to origin remote...")
-            GhaGitExec.push(rootDir, "origin", headBranch, setUpstream = true)
+            val pushRes = GhaGitExec.push(rootDir, "origin", headBranch, setUpstream = true)
+            pushSummary = if (pushRes.isSuccess) "Pushed to origin/$headBranch" else "Push attempted"
 
             logger.lifecycle("🔀 Managing Pull Request against protected '$base'...")
             val (prOk, prInfo) = GhaParallelWorkflowManager.createOrUpdatePr(
@@ -98,6 +108,10 @@ abstract class GhaAiTask : GhaTask() {
             )
 
             if (prOk && (prInfo != null)) {
+                prSummary = "PR #${prInfo.number} active"
+                prUrlSummary = prInfo.url
+                ciSummary = "PENDING / AUTO-MERGE"
+
                 logger.lifecycle("✅ Pull Request #${prInfo.number} active on GitHub: ${prInfo.url}")
                 val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
                 GhaProcessRunner.exec(
@@ -109,9 +123,7 @@ abstract class GhaAiTask : GhaTask() {
                 logger.lifecycle("🤖 GitHub Auto-Merge enabled for PR #${prInfo.number}.")
             }
 
-            logger.lifecycle("🎉 [ghai] Complete! Work saved, committed, pushed, and PR auto-merge requested.")
-            logger.lifecycle("   Branch: $headBranch ($branchCategory)")
-            logger.lifecycle("   Commit Message: \"$smartMsg\"")
+            tipRecommendation = "Run './ghai' after GitHub CI builds finish to verify and complete auto-merge into $base."
 
         } else {
             // WORKFLOW B: CLEAN WORKING TREE (Post-push or clean local state)
@@ -122,8 +134,12 @@ abstract class GhaAiTask : GhaTask() {
 
             val openPr = GhaParallelWorkflowManager.findOpenPr(rootDir, token, headBranch, base)
             if (openPr != null) {
+                prSummary = "PR #${openPr.number} open"
+                prUrlSummary = openPr.url
                 logger.lifecycle("🔀 Active PR #${openPr.number} found: ${openPr.url}")
+
                 val ciStatus = GhaAiManager.checkPrCiStatus(rootDir, token, openPr.number)
+                ciSummary = ciStatus.ciStatus.name
                 logger.lifecycle("📊 CI Check Status: ${ciStatus.ciStatus} (Mergeable: ${ciStatus.isMergeable})")
 
                 when (ciStatus.ciStatus) {
@@ -140,6 +156,7 @@ abstract class GhaAiTask : GhaTask() {
                         )
 
                         if (merged) {
+                            prSummary = "PR #${openPr.number} MERGED"
                             if (isAutoBranch) {
                                 logger.lifecycle("🗑️ Merged PR #${openPr.number} and auto-cleaned branch '$headBranch'.")
                             } else {
@@ -148,8 +165,9 @@ abstract class GhaAiTask : GhaTask() {
                             GhaGitExec.checkout(rootDir, base)
                             GhaGitExec.pullRebase(rootDir, "origin", base)
                             logger.lifecycle("✅ Local repository is 100% synced with merged origin/$base.")
+                            tipRecommendation = "Start your next feature or type './gradlew ghaStatus' to inspect repo health."
                         } else {
-                            logger.lifecycle("ℹ️ Merge requested on GitHub for PR #${openPr.number}.")
+                            tipRecommendation = "Merge requested on GitHub for PR #${openPr.number}. Re-run './ghai' in a moment."
                         }
                     }
                     GhaAiManager.CiStatus.PENDING -> {
@@ -162,9 +180,11 @@ abstract class GhaAiTask : GhaTask() {
                             timeoutSeconds = 30L,
                         )
                         logger.lifecycle("🤖 Auto-merge enabled on GitHub. PR #${openPr.number} will merge automatically once CI passes.")
+                        tipRecommendation = "CI checks in progress. Run './ghai' in a moment to auto-verify and complete merge."
                     }
                     GhaAiManager.CiStatus.FAILED -> {
                         logger.lifecycle("❌ [ghai] CI checks FAILED for PR #${openPr.number}. Please check build logs at ${openPr.url}")
+                        tipRecommendation = "Run './gradlew ghaWorkflowList' or visit $prUrlSummary to view build failure logs."
                     }
                 }
             } else {
@@ -181,12 +201,30 @@ abstract class GhaAiTask : GhaTask() {
                         body = "Automated contribution created by ghai.",
                     )
                     if (prOk && (prInfo != null)) {
+                        prSummary = "PR #${prInfo.number} created"
+                        prUrlSummary = prInfo.url
                         logger.lifecycle("✅ Created Pull Request #${prInfo.number}: ${prInfo.url}")
+                        tipRecommendation = "PR #${prInfo.number} created! Run './ghai' after CI builds finish to merge into $base."
                     }
                 } else {
                     logger.lifecycle("✅ Local repository is 100% clean and fully synced with origin/$base.")
+                    tipRecommendation = "Make code edits anytime and type './ghai' to auto-save, sync, and push to GitHub."
                 }
             }
         }
+
+        // Print Structured Summary & Actionable One-Line Tip
+        logger.lifecycle("")
+        logger.lifecycle("════════════════════════════════════════════════════════════════════════════════")
+        logger.lifecycle("📋 [ghai Execution Summary]")
+        logger.lifecycle("   • Working Branch : $headBranch ($branchCategory)")
+        logger.lifecycle("   • Commit Status  : $commitSummary")
+        logger.lifecycle("   • Remote Push    : $pushSummary")
+        logger.lifecycle("   • GitHub PR      : $prSummary ${if (prUrlSummary != "N/A") "($prUrlSummary)" else ""}")
+        logger.lifecycle("   • CI/CD Status   : $ciSummary")
+        logger.lifecycle("   • Local Sync     : 100% Synced with origin/$base")
+        logger.lifecycle("────────────────────────────────────────────────────────────────────────────────")
+        logger.lifecycle("💡 Tip: $tipRecommendation")
+        logger.lifecycle("════════════════════════════════════════════════════════════════════════════════")
     }
 }
