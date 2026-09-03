@@ -49,10 +49,8 @@ plugins {
 EOF
 fi
 
-# 3. Download init script if missing
-if [ ! -f "init/gha.init.gradle.kts" ]; then
-    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" 2>/dev/null || true
-fi
+# 3. Download or refresh init script
+curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" 2>/dev/null || true
 
 # 4. Bootstrap Gradle wrapper if missing in current folder
 if [ ! -f "gradlew" ]; then
@@ -65,11 +63,11 @@ fi
 
 chmod +x gradlew 2>/dev/null || true
 
-# 5. Create ./ghai executable wrapper if missing
-if [ ! -f "ghai" ]; then
-    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/ghai" -o "ghai" 2>/dev/null || true
-    chmod +x ghai 2>/dev/null || true
-fi
+# 5. Fetch and update ./ghai executable wrapper with latest handler
+echo "📥 Fetching latest ghai launcher script..."
+curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/ghai" -o "ghai" 2>/dev/null || true
+curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/ghai.bat" -o "ghai.bat" 2>/dev/null || true
+chmod +x ghai 2>/dev/null || true
 
 # 6. Delegate to gradlew
 exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit "$@"

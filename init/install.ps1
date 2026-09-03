@@ -47,10 +47,8 @@ plugins {
 '@ | Out-File -Encoding utf8 "build.gradle.kts"
 }
 
-# 3. Download init script if missing
-if (-not (Test-Path "init\gha.init.gradle.kts")) {
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -OutFile "init\gha.init.gradle.kts" -ErrorAction SilentlyContinue
-}
+# 3. Download or refresh init script
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -OutFile "init\gha.init.gradle.kts" -ErrorAction SilentlyContinue
 
 # 4. Bootstrap Gradle wrapper if missing
 if (-not (Test-Path ".\gradlew.bat")) {
@@ -61,9 +59,8 @@ if (-not (Test-Path ".\gradlew.bat")) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.jar" -OutFile "gradle\wrapper\gradle-wrapper.jar" -ErrorAction SilentlyContinue
 }
 
-# 5. Create ./ghai.bat wrapper if missing
-if (-not (Test-Path ".\ghai.bat")) {
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/ghai.bat" -OutFile "ghai.bat" -ErrorAction SilentlyContinue
-}
+# 5. Fetch latest ghai.bat wrapper
+Write-Host "📥 Fetching latest ghai.bat launcher script..." -ForegroundColor Cyan
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/ghai.bat" -OutFile "ghai.bat" -ErrorAction SilentlyContinue
 
 .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit $args
