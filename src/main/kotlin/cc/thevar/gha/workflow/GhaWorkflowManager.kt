@@ -65,7 +65,7 @@ object GhaWorkflowManager {
     /**
      * Fetches workflow runs list using gh template for robust parsing.
      */
-    fun fetchWorkflowRunsList(projectDir: File, token: String?, limit: Int = 100): List<WorkflowRun> {
+    fun fetchWorkflowRunsList(projectDir: File, token: String?, limit: Int = 1000): List<WorkflowRun> {
         val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
 
         val result = GhaProcessRunner.exec(
@@ -92,11 +92,11 @@ object GhaWorkflowManager {
     }
 
     /**
-     * Automatically prunes older completed/failed/cancelled workflow runs to keep history lean.
+     * Automatically prunes older completed/failed/cancelled workflow runs across the entire repository history.
      * Keeps the most recent `maxKeep` runs intact.
      */
     fun pruneOldWorkflowRuns(projectDir: File, token: String?, maxKeep: Int = 10): Int {
-        val runs = fetchWorkflowRunsList(projectDir, token, limit = 50)
+        val runs = fetchWorkflowRunsList(projectDir, token, limit = 1000)
         val completedRuns = runs.filter { run ->
             val status = run.status.lowercase()
             val conclusion = run.conclusion.lowercase()
@@ -125,7 +125,7 @@ object GhaWorkflowManager {
         var totalFailed = 0
 
         while (true) {
-            val runs = fetchWorkflowRunsList(projectDir, token, limit = 100)
+            val runs = fetchWorkflowRunsList(projectDir, token, limit = 1000)
             if (runs.isEmpty()) break
 
             var deletedInBatch = 0
