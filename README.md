@@ -95,13 +95,22 @@ plugins {
 | `./gradlew ghaWikiSync` | Pulls latest remote GitHub Wiki pages into local `wiki/` directory |
 | `./gradlew ghaWikiPublish` | Commits and pushes local `wiki/` pages to remote GitHub Wiki repository |
 
-### GitHub Operations Tasks
+### GitHub Issue Operations Tasks
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaIssueCreate` | Creates a new Issue on GitHub | `./gradlew ghaIssueCreate -PissueTitle="Bug title" -PissueBody="Details"` |
+| `./gradlew ghaIssueList` | Lists Issues (supports open/closed/all filtering) | `./gradlew ghaIssueList [-PissueState=open\|closed\|all]` |
+| `./gradlew ghaIssueView` | Displays details and comments for an Issue | `./gradlew ghaIssueView -PissueNumber=1` |
+| `./gradlew ghaIssueComment` | Adds a comment to an Issue | `./gradlew ghaIssueComment -PissueNumber=1 -PcommentBody="Comment text"` |
+| `./gradlew ghaIssueEdit` | Edits title, body, labels, or assignees | `./gradlew ghaIssueEdit -PissueNumber=1 -PissueTitle="Updated title"` |
+| `./gradlew ghaIssueClose` | Closes an Issue (reason: completed or not_planned) | `./gradlew ghaIssueClose -PissueNumber=1 [-PcloseComment="Fixed"]` |
+| `./gradlew ghaIssueReopen` | Reopens a closed Issue | `./gradlew ghaIssueReopen -PissueNumber=1` |
+
+### GitHub PR & Release Operations Tasks
 | Task | Description |
 | :--- | :--- |
 | `./gradlew ghaPrCreate` | Creates a Pull Request on GitHub |
 | `./gradlew ghaPrList` | Lists open Pull Requests on GitHub |
-| `./gradlew ghaIssueCreate` | Creates an Issue on GitHub |
-| `./gradlew ghaIssueList` | Lists open Issues on GitHub |
 | `./gradlew ghaReleaseCreate` | Creates a Release on GitHub |
 
 ### Git Operations Tasks

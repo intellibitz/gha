@@ -20,15 +20,27 @@ abstract class GhaIssueCreateTask : GhaTask() {
     abstract val repoDir: DirectoryProperty
 
     @get:Input
+    @get:Optional
     abstract val issueTitle: Property<String>
 
     @get:Input
     @get:Optional
     abstract val issueBody: Property<String>
 
+    @get:Input
+    @get:Optional
+    abstract val issueLabels: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val issueAssignees: Property<String>
+
     init {
         repoDir.convention(project.layout.projectDirectory)
-        issueBody.convention("Automated Issue created by GHA")
+        issueTitle.convention(project.providers.gradleProperty("issueTitle").orElse("Automated Issue via GHA"))
+        issueBody.convention(project.providers.gradleProperty("issueBody").orElse("Automated Issue created by GHA"))
+        issueLabels.convention(project.providers.gradleProperty("issueLabels"))
+        issueAssignees.convention(project.providers.gradleProperty("issueAssignees"))
     }
 
     @TaskAction
@@ -40,10 +52,22 @@ abstract class GhaIssueCreateTask : GhaTask() {
 
         logger.lifecycle("📌 [GHA Issue Create] Creating Issue: \"$title\"...")
 
-        val env = if (token.isNotBlank()) mapOf("GITHUB_TOKEN" to token) else emptyMap()
+        val cmd = mutableListOf("gh", "issue", "create", "--title", title, "--body", body)
+
+        issueLabels.orNull?.takeIf { it.isNotBlank() }?.let { labels ->
+            cmd.add("--label")
+            cmd.add(labels)
+        }
+
+        issueAssignees.orNull?.takeIf { it.isNotBlank() }?.let { assignees ->
+            cmd.add("--assignee")
+            cmd.add(assignees)
+        }
+
+        val env = if (token.isNotBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
         val result = GhaProcessRunner.exec(
             workingDir = dir,
-            command = listOf("gh", "issue", "create", "--title", title, "--body", body),
+            command = cmd,
             extraEnv = env,
             timeoutSeconds = 30L
         )

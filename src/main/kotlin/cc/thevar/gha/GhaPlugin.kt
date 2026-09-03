@@ -6,8 +6,13 @@ import cc.thevar.gha.git.GhaGitPullTask
 import cc.thevar.gha.git.GhaGitPushTask
 import cc.thevar.gha.git.GhaGitStatusTask
 import cc.thevar.gha.git.GhaGitTagTask
+import cc.thevar.gha.github.GhaIssueCloseTask
+import cc.thevar.gha.github.GhaIssueCommentTask
 import cc.thevar.gha.github.GhaIssueCreateTask
+import cc.thevar.gha.github.GhaIssueEditTask
 import cc.thevar.gha.github.GhaIssueListTask
+import cc.thevar.gha.github.GhaIssueReopenTask
+import cc.thevar.gha.github.GhaIssueViewTask
 import cc.thevar.gha.github.GhaPrCreateTask
 import cc.thevar.gha.github.GhaPrListTask
 import cc.thevar.gha.github.GhaReleaseCreateTask
@@ -62,7 +67,43 @@ class GhaPlugin : Plugin<Project> {
             description = "Publishes local wiki/ directory pages to remote GitHub Wiki repository"
         }
 
-        // GitHub Operations
+        // GitHub Issue Operations
+        project.tasks.register("ghaIssueCreate", GhaIssueCreateTask::class.java) {
+            group = "GitHub Operations"
+            description = "Creates an Issue on GitHub"
+        }
+
+        project.tasks.register("ghaIssueList", GhaIssueListTask::class.java) {
+            group = "GitHub Operations"
+            description = "Lists Issues on GitHub"
+        }
+
+        project.tasks.register("ghaIssueView", GhaIssueViewTask::class.java) {
+            group = "GitHub Operations"
+            description = "Displays details and comments for a GitHub Issue"
+        }
+
+        project.tasks.register("ghaIssueClose", GhaIssueCloseTask::class.java) {
+            group = "GitHub Operations"
+            description = "Closes an Issue on GitHub"
+        }
+
+        project.tasks.register("ghaIssueReopen", GhaIssueReopenTask::class.java) {
+            group = "GitHub Operations"
+            description = "Reopens a closed Issue on GitHub"
+        }
+
+        project.tasks.register("ghaIssueComment", GhaIssueCommentTask::class.java) {
+            group = "GitHub Operations"
+            description = "Adds a comment to an Issue on GitHub"
+        }
+
+        project.tasks.register("ghaIssueEdit", GhaIssueEditTask::class.java) {
+            group = "GitHub Operations"
+            description = "Edits title, body, labels, or assignees of an Issue on GitHub"
+        }
+
+        // GitHub PR & Release Operations
         project.tasks.register("ghaPrCreate", GhaPrCreateTask::class.java) {
             group = "GitHub Operations"
             description = "Creates a Pull Request on GitHub"
@@ -71,16 +112,6 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaPrList", GhaPrListTask::class.java) {
             group = "GitHub Operations"
             description = "Lists open Pull Requests on GitHub"
-        }
-
-        project.tasks.register("ghaIssueCreate", GhaIssueCreateTask::class.java) {
-            group = "GitHub Operations"
-            description = "Creates an Issue on GitHub"
-        }
-
-        project.tasks.register("ghaIssueList", GhaIssueListTask::class.java) {
-            group = "GitHub Operations"
-            description = "Lists open Issues on GitHub"
         }
 
         project.tasks.register("ghaReleaseCreate", GhaReleaseCreateTask::class.java) {
