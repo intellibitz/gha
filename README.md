@@ -52,6 +52,24 @@ Run `./gradlew --init-script init/gha.init.gradle.kts ghaDependencies` to inspec
 
 ---
 
+## 🚀 0 Effort, 100% Gain — Autonomous AI Workflow (`ghaAI`)
+
+For maximum productivity with zero cognitive overhead, developers can simply type:
+
+```bash
+./gradlew ghaAI
+```
+
+`ghaAI` (and aliases `ghaAuto`, `ghaSync`, `ghaSave`) automatically:
+1. **Analyzes Project Context & Diffs**: Inspects working tree changes and generates smart, semantic commit messages (e.g. `feat(git): update branch engine`, `docs: update README`, `build: update gradle dependencies`).
+2. **Guards Protected Base Branches**: If working on `main`/`master`, automatically creates or switches to a clean feature branch (`gha-auto/...`).
+3. **Stages & Saves Work**: Performs `git add -A` and commits local changes so work is never lost.
+4. **Keeps Local 100% Synced**: Performs `git pull --rebase origin <base>` to keep local working copy up-to-date with remote base.
+5. **Pushes to GitHub Remote**: Executes `git push -u origin <headBranch>`.
+6. **Creates/Updates Pull Requests**: Checks for existing open PRs to prevent duplicates or infinite creation loops, creating or updating PRs against protected base branches seamlessly!
+
+---
+
 ## How to Use
 
 ### Option 1: Self-Contained Init Script (Zero Modifications)
