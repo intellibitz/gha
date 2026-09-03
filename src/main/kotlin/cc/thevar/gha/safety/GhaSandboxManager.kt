@@ -19,6 +19,31 @@ object GhaSandboxManager {
     }
 
     /**
+     * Auto-initializes / self-heals the sandbox configuration (.gha/gha.json) if missing.
+     */
+    fun ensureSandbox(rootDir: File, projectName: String): Boolean {
+        val ghaDir = File(rootDir, GHA_DIR)
+        if (!ghaDir.exists()) {
+            ghaDir.mkdirs()
+        }
+        val configFile = File(ghaDir, GHA_JSON)
+        if (!configFile.exists()) {
+            configFile.writeText(
+                """
+                {
+                  "project": "$projectName",
+                  "version": "0.1.0-SNAPSHOT",
+                  "sandboxed": true,
+                  "autoInitialized": true
+                }
+                """.trimIndent() + "\n"
+            )
+            return true
+        }
+        return false
+    }
+
+    /**
      * Checks if gradle.user.home is directed to .gha/gradle-user-home.
      */
     fun checkGradleUserHome(rootDir: File, gradleUserHomeDir: File? = null): Boolean {

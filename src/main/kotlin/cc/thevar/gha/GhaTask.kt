@@ -33,22 +33,31 @@ abstract class GhaTask : DefaultTask() {
     @get:Internal
     abstract val gradleUserHomeDir: DirectoryProperty
 
+    @get:Internal
+    abstract val ghaProjectName: Property<String>
+
     init {
         gitHubToken.convention(
             GhaCredentialsResolver.resolveGitHubToken(project.providers)
         )
         projectRootDir.convention(project.layout.projectDirectory)
+        ghaProjectName.convention(project.name)
         val homeDir = project.gradle.gradleUserHomeDir
         gradleUserHomeDir.convention(project.layout.dir(project.providers.provider { homeDir }))
     }
 
     /**
      * Verifies that the task is running within the GHA Sandbox.
-     * Throws a GradleException if the sandbox is not properly enforced.
+     * Self-heals by auto-creating .gha/gha.json if missing, then verifies sandbox rules.
      */
     fun verifySandbox() {
         val rootDir = projectRootDir.get().asFile
         val userHome = gradleUserHomeDir.get().asFile
+        val pName = ghaProjectName.getOrElse("gha")
+
+        // Self-healing: auto-ensure .gha/gha.json exists
+        GhaSandboxManager.ensureSandbox(rootDir, pName)
+
         val (isHealthy, message) = GhaSandboxManager.healthCheck(rootDir, userHome)
         if (!isHealthy) {
             throw GradleException(
