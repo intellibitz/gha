@@ -78,6 +78,26 @@ For maximum productivity with zero cognitive overhead, developers can simply typ
 
 ---
 
+## ⚡ Ridiculously Easy 0-Effort Installation (1 Second)
+
+Install `gha` into **any repository** instantly with a single command:
+
+```bash
+# Linux, macOS, & WSL (1-Second One-Liner):
+curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh | bash
+
+# Windows PowerShell (1-Second One-Liner):
+iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps1 | iex
+```
+
+Or run `ghaInit` on any cloned project:
+
+```bash
+./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+```
+
+---
+
 ## How to Use
 
 ### Option 1: Self-Contained Init Script (Zero Modifications)
