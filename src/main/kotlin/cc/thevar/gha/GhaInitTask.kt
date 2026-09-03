@@ -70,7 +70,12 @@ abstract class GhaInitTask : GhaTask() {
             )
         }
 
-        // 3. Create top-level ./ghai executable script
+        val installSh = File(initDir, "install.sh")
+        if (installSh.exists()) {
+            installSh.setExecutable(true, false)
+        }
+
+        // 3. Create top-level ./ghai executable script (rwxr-xr-x mode 100755)
         val ghaiScript = File(rootDir, "ghai")
         if (!ghaiScript.exists()) {
             ghaiScript.writeText(
@@ -80,8 +85,8 @@ abstract class GhaInitTask : GhaTask() {
                 ./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
                 """.trimIndent() + "\n"
             )
-            ghaiScript.setExecutable(true)
         }
+        ghaiScript.setExecutable(true, false)
 
         val ghaiBat = File(rootDir, "ghai.bat")
         if (!ghaiBat.exists()) {
@@ -137,7 +142,7 @@ abstract class GhaInitTask : GhaTask() {
         logger.lifecycle("⚡ [gha] Ridiculously Easy 0-Effort Installation Complete!")
         logger.lifecycle("   ├── .gha/ sandbox initialized")
         logger.lifecycle("   ├── init/gha.init.gradle.kts created")
-        logger.lifecycle("   ├── ./ghai & ./ghai.bat runner scripts created")
+        logger.lifecycle("   ├── ./ghai & ./ghai.bat executable runner scripts created (rwxr-xr-x)")
         logger.lifecycle("   └── .github/workflows/gha.yml CI workflow created")
         logger.lifecycle("🎉 gha is ready! Type './ghai' to run autonomous AI automation.")
     }

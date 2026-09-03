@@ -84,8 +84,11 @@ abstract class GhaAiTask : GhaTask() {
             val smartMsg = GhaAiManager.detectSmartCommitMessage(rootDir, explicitMsg)
             commitSummary = "Committed: \"$smartMsg\""
 
-            logger.lifecycle("📦 Staging working tree changes...")
+            logger.lifecycle("📦 Staging working tree changes & enforcing executable flags...")
             GhaGitExec.exec(rootDir, "add", "-A")
+            GhaGitExec.exec(rootDir, "update-index", "--chmod=+x", "ghai")
+            GhaGitExec.exec(rootDir, "update-index", "--chmod=+x", "init/install.sh")
+            GhaGitExec.exec(rootDir, "update-index", "--chmod=+x", "gradlew")
 
             logger.lifecycle("📝 Auto-committing: \"$smartMsg\"...")
             GhaGitExec.exec(rootDir, "commit", "-m", smartMsg)
