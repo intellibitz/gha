@@ -92,38 +92,51 @@ object GhaWorkflowManager {
     }
 
     /**
-     * Automatically cleans up and deletes completed/failed/cancelled workflow runs.
+     * Automatically cleans up and deletes completed/failed/cancelled/in-progress workflow runs.
      */
     fun cleanupWorkflowRuns(projectDir: File, token: String?, statusFilter: String = "all"): Pair<Int, Int> {
-        val runs = fetchWorkflowRunsList(projectDir, token, limit = 100)
-        if (runs.isEmpty()) return Pair(0, 0)
+        var totalDeleted = 0
+        var totalFailed = 0
 
-        var deleted = 0
-        var failed = 0
+        while (true) {
+            val runs = fetchWorkflowRunsList(projectDir, token, limit = 100)
+            if (runs.isEmpty()) break
 
-        runs.forEach { run ->
-            // Only completed/cancelled runs can be deleted via API. 
-            // 'completed' status usually has a conclusion (success, failure, cancelled, etc.)
-            if (run.status.equals("completed", ignoreCase = true)) {
+            var deletedInBatch = 0
+            var failedInBatch = 0
+
+            for (run in runs) {
+                val status = run.status.lowercase()
+                val conclusion = run.conclusion.lowercase()
+
+                if (status == "in_progress" || status == "queued" || status == "requested") {
+                    cancelWorkflowRun(projectDir, token, run.databaseId)
+                }
+
                 val matches = when (statusFilter.lowercase()) {
-                    "failed" -> run.conclusion.equals("failure", ignoreCase = true)
-                    "cancelled" -> run.conclusion.equals("cancelled", ignoreCase = true)
-                    "success" -> run.conclusion.equals("success", ignoreCase = true)
+                    "failed" -> conclusion == "failure"
+                    "cancelled" -> conclusion == "cancelled"
+                    "success" -> conclusion == "success"
                     else -> true
                 }
 
                 if (matches) {
                     val res = deleteWorkflowRun(projectDir, token, run.databaseId)
                     if (res.isSuccess) {
-                        deleted++
+                        deletedInBatch++
                     } else {
-                        failed++
+                        failedInBatch++
                     }
                 }
             }
+
+            totalDeleted += deletedInBatch
+            totalFailed += failedInBatch
+
+            if (deletedInBatch == 0) break
         }
 
-        return Pair(deleted, failed)
+        return Pair(totalDeleted, totalFailed)
     }
 
 }
