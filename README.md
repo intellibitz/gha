@@ -2,7 +2,7 @@
 
 **gha** (`cc.thevar.gha`) is a **100% self-contained, 100% Kotlin** Git and GitHub automation plugin. **gha runs on gha**—automating its own development, testing, dependencies, commits, pulls, PRs, and releases.
 
-GitHub users and Android Studio developers can clone this project and expect **0% system modifications**. All dependencies, Kotlin libraries, Gradle caches, JDK toolchains, and execution state are strictly sandboxed inside the local repository folder (`.gha/`).
+GitHub users and developers across any IDE or terminal can clone this project and expect **0% system modifications**. All dependencies, Kotlin libraries, Gradle caches, JDK toolchains, and execution state are strictly sandboxed inside the local repository folder (`.gha/`).
 
 ## Mission
 
@@ -10,7 +10,7 @@ GitHub users and Android Studio developers can clone this project and expect **0
 
 ## Key Principles
 
-- **Android Studio IDE Sandboxed Integration**: Android Studio project settings ([`.idea/gradle.xml`](file:///home/ramadoss/Projects/AI/gha/.idea/gradle.xml)) explicitly enforce the `.gha/gradle-user-home` service directory and Java 17 toolchain references.
+- **100% IDE-Agnostic & CLI-First**: Supports Android Studio, IntelliJ IDEA, VS Code, Eclipse, Vim/Emacs, and CI pipelines equally. IDE-specific files (`.idea/`, `.vscode/`) are git-ignored.
 - **Strict Official Stable Versions & Trusted Vendors**: `gha` strictly uses official stable releases from verified trusted vendors (`JetBrains`, `Gradle Inc.`, `Eclipse Adoptium`, `Oracle`, `GitHub Inc.`). No alpha, beta, rc, or untrusted third-party repositories.
 - **gha Runs on gha**: Self-testing and self-automating via `.github/workflows/gha.yml`.
 - **Centralized Version Catalog ([`GhaConfig.kt`](file:///home/ramadoss/Projects/AI/gha/src/main/kotlin/cc/thevar/gha/config/GhaConfig.kt))**: Single source of truth for tools, SDKs, frameworks, and plugin versions.
@@ -24,13 +24,13 @@ GitHub users and Android Studio developers can clone this project and expect **0
 
 ---
 
-## Android Studio IDE Integration
+## IDE Independence & Collaboration
 
-Android Studio project configuration files ([`.idea/gradle.xml`](file:///home/ramadoss/Projects/AI/gha/.idea/gradle.xml) and [`.idea/misc.xml`](file:///home/ramadoss/Projects/AI/gha/.idea/misc.xml)) are configured to enforce the sandbox automatically:
+`gha` is **100% IDE-agnostic and CLI-first**. Developers can use any editor or IDE:
 
-- **Gradle Service Directory:** `$PROJECT_DIR$/.gha/gradle-user-home`
-- **Java Language Level & SDK:** Java 17 (Auto-provisioned via Foojay resolver into `.gha/gradle-user-home/jdks/`)
-- **IDE Sync:** Android Studio picks up all symbols, Kotlin DSL sources, and dependencies directly from `.gha/gradle-user-home/` without polluting `~/.gradle/`.
+- **Android Studio / IntelliJ IDEA:** Reads `gradle.properties` (`org.gradle.user.home=.gha/gradle-user-home`) and `settings.gradle.kts` (Foojay toolchain resolver) automatically.
+- **VS Code / Eclipse / Terminal / Vim / Emacs:** Runs seamlessly via standard `./gradlew` commands.
+- **IDE Metadata (`.idea/` & `.vscode/`):** Git-ignored to ensure clean collaboration across different OS environments, IDE versions, and developer preferences without merge conflicts.
 
 ---
 
@@ -114,9 +114,6 @@ plugins {
 gha/
 ├── .github/workflows/
 │   └── gha.yml                                  # Self-testing GHA CI automation workflow
-├── .idea/
-│   ├── gradle.xml                               # Enforces Android Studio .gha/gradle-user-home sandbox
-│   └── misc.xml                                 # Enforces Android Studio Java 17 toolchain
 ├── build.gradle.kts                             # Gradle Plugin build configuration
 ├── settings.gradle.kts                          # Gradle settings with Foojay sandboxed JDK resolver
 ├── gradle.properties                            # Sandboxed org.gradle.user.home=.gha/gradle-user-home
