@@ -13,7 +13,7 @@ import org.gradle.work.DisableCachingByDefault
 /**
  * 0 Effort, 100% Gain Autonomous AI Workflow Task (`ghai`, `ghaAI`, `ghaAuto`, `ghaSync`, `ghaSave`).
  * Intelligently handles both DIRTY (local changes) and CLEAN (post-push / GitHub PR & CI check) workflows,
- * printing a clear execution summary and an actionable one-line next step tip.
+ * ensuring the creator/developer terminal is ALWAYS returned to a clean state on the main base branch.
  */
 @DisableCachingByDefault(because = "Executes autonomous AI context workflow actions")
 abstract class GhaAiTask : GhaTask() {
@@ -129,7 +129,18 @@ abstract class GhaAiTask : GhaTask() {
                 logger.lifecycle("🤖 GitHub Auto-Merge enabled for PR #${prInfo.number}.")
             }
 
-            tipRecommendation = "Run './ghai' after GitHub CI builds finish to verify and complete auto-merge into $base."
+            // Immediately switch creator terminal back to clean base branch if on an auto-created branch
+            if (isAutoBranch && headBranch != base) {
+                logger.lifecycle("🔄 [ghai] Work pushed & PR auto-merge active. Returning terminal to clean '$base' branch...")
+                GhaGitExec.checkout(rootDir, base)
+                GhaGitExec.pullRebase(rootDir, "origin", base)
+                GhaGitExec.deleteLocalBranch(rootDir, headBranch, force = true)
+                activeHeadBranch = base
+                activeBranchCategory = "Base Branch"
+                logger.lifecycle("✅ Creator terminal successfully returned to clean '$base' branch!")
+            }
+
+            tipRecommendation = "Your changes are saved, pushed, and auto-merging on GitHub. Terminal is clean on $base!"
 
         } else {
             // WORKFLOW B: CLEAN WORKING TREE (Post-push or clean local state)
@@ -175,7 +186,7 @@ abstract class GhaAiTask : GhaTask() {
                             logger.lifecycle("✅ Local repository is 100% clean and fully synced with merged origin/$base.")
                             tipRecommendation = "Start your next feature or type './gradlew ghaStatus' to inspect repo health."
                         } else {
-                            tipRecommendation = "Merge requested on GitHub for PR #${openPr.number}. Re-run './ghai' in a moment."
+                            tipRecommendation = "Merge requested on GitHub for PR #${openPr.number}. Terminal is clean on $base."
                         }
                     }
                     GhaAiManager.CiStatus.PENDING -> {
@@ -188,7 +199,17 @@ abstract class GhaAiTask : GhaTask() {
                             timeoutSeconds = 30L,
                         )
                         logger.lifecycle("🤖 Auto-merge enabled on GitHub. PR #${openPr.number} will merge automatically once CI passes.")
-                        tipRecommendation = "CI checks in progress. Run './ghai' in a moment to auto-verify and complete merge."
+
+                        if (isAutoBranch && headBranch != base) {
+                            GhaGitExec.checkout(rootDir, base)
+                            GhaGitExec.pullRebase(rootDir, "origin", base)
+                            GhaGitExec.deleteLocalBranch(rootDir, headBranch, force = true)
+                            activeHeadBranch = base
+                            activeBranchCategory = "Base Branch"
+                            logger.lifecycle("✅ Creator terminal returned to clean '$base' branch!")
+                        }
+
+                        tipRecommendation = "CI checks in progress on GitHub. Terminal is clean on $base."
                     }
                     GhaAiManager.CiStatus.FAILED -> {
                         logger.lifecycle("❌ [ghai] CI checks FAILED for PR #${openPr.number}. Please check build logs at ${openPr.url}")
