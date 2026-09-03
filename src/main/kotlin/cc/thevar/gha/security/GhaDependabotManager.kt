@@ -81,6 +81,40 @@ object GhaDependabotManager {
         )
     }
 
+    /**
+     * Lists all remote dependabot/ branches.
+     */
+    fun listDependabotBranches(projectDir: File, token: String?): List<String> {
+        val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
+        
+        val result = GhaProcessRunner.exec(
+            workingDir = projectDir,
+            command = listOf("gh", "api", "repos/:owner/:repo/git/matching-refs/heads/dependabot/"),
+            extraEnv = env,
+            timeoutSeconds = 30L
+        )
+
+        if (!result.isSuccess || result.stdout.isBlank()) return emptyList()
+
+        // Extract "ref": "refs/heads/dependabot/..."
+        val regex = "\"ref\":\"refs/heads/(dependabot/[^\"]+)\"".toRegex()
+        return regex.findAll(result.stdout).map { it.groupValues[1] }.toList()
+    }
+
+    /**
+     * Deletes a remote branch.
+     */
+    fun deleteRemoteBranch(projectDir: File, token: String?, branch: String): GhaProcessRunner.ProcessResult {
+        val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
+        
+        return GhaProcessRunner.exec(
+            workingDir = projectDir,
+            command = listOf("gh", "api", "-X", "DELETE", "repos/:owner/:repo/git/refs/heads/$branch"),
+            extraEnv = env,
+            timeoutSeconds = 30L
+        )
+    }
+
     private fun parsePrJsonList(json: String): List<DependabotPr> {
         val list = mutableListOf<DependabotPr>()
         val regex = "\\{\"headRefName\":\"([^\"]+)\",\"number\":(\\d+),\"title\":\"([^\"]+)\",\"url\":\"([^\"]+)\"\\}".toRegex()

@@ -24,7 +24,7 @@ abstract class GhaGitCommitTask : GhaTask() {
 
     init {
         repoDir.convention(project.layout.projectDirectory)
-        commitMessage.convention("Automated commit via GHA")
+        commitMessage.convention(project.providers.gradleProperty("commitMessage").orElse("Automated commit via GHA"))
     }
 
     @TaskAction

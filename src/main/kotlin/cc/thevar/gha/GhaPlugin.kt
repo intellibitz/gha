@@ -33,6 +33,7 @@ import cc.thevar.gha.projects.GhaProjectInitTask
 import cc.thevar.gha.projects.GhaProjectListTask
 import cc.thevar.gha.projects.GhaProjectViewTask
 import cc.thevar.gha.security.GhaCodeScanningInitTask
+import cc.thevar.gha.security.GhaDependabotCleanupTask
 import cc.thevar.gha.security.GhaDependabotCloseTask
 import cc.thevar.gha.security.GhaDependabotInitTask
 import cc.thevar.gha.security.GhaDependabotListTask
@@ -165,6 +166,11 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaDependabotClose", GhaDependabotCloseTask::class.java) {
             group = "GitHub Security"
             description = "Closes Dependabot pull requests and deletes remote dependabot/ branches"
+        }
+
+        project.tasks.register("ghaDependabotCleanup", GhaDependabotCleanupTask::class.java) {
+            group = "GitHub Security"
+            description = "Removes stale remote dependabot/ branches that have no open pull requests"
         }
 
         project.tasks.register("ghaDependabotRebase", GhaDependabotRebaseTask::class.java) {
