@@ -4,6 +4,7 @@ import cc.thevar.gha.GhaTask
 import cc.thevar.gha.git.GhaGitExec
 import cc.thevar.gha.safety.GhaProcessRunner
 import cc.thevar.gha.workflow.GhaParallelWorkflowManager
+import cc.thevar.gha.workflow.GhaWorkflowManager
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -14,7 +15,7 @@ import java.io.File
 /**
  * 0 Effort, 100% Gain Autonomous AI Workflow Task (`ghai`, `ghaAI`, `ghaAuto`, `ghaSync`, `ghaSave`).
  * Intelligently handles both DIRTY (local changes) and CLEAN (post-push / GitHub PR & CI check) workflows,
- * sweeping and auto-merging all clean open PRs targeting the base branch automatically.
+ * auto-pruning old GitHub Actions workflow runs and keeping repository history lean.
  */
 @DisableCachingByDefault(because = "Executes autonomous AI context workflow actions")
 abstract class GhaAiTask : GhaTask() {
@@ -258,6 +259,15 @@ abstract class GhaAiTask : GhaTask() {
             activeBranchCategory = "Base Branch"
         }
 
+        // Auto-Prune old GitHub Actions workflow runs to keep GitHub Actions history lean
+        val prunedRuns = try {
+            GhaWorkflowManager.pruneOldWorkflowRuns(rootDir, token, maxKeep = 10)
+        } catch (_: Exception) { 0 }
+
+        if (prunedRuns > 0) {
+            logger.lifecycle("🧹 [ghai] Auto-pruned $prunedRuns old GitHub Actions workflow run(s) from history.")
+        }
+
         // Print Structured Summary & Actionable One-Line Tip
         logger.lifecycle("")
         logger.lifecycle("════════════════════════════════════════════════════════════════════════════════")
@@ -268,6 +278,9 @@ abstract class GhaAiTask : GhaTask() {
         logger.lifecycle("   • GitHub PR      : $prSummary ${if (prUrlSummary != "N/A") "($prUrlSummary)" else ""}")
         logger.lifecycle("   • CI/CD Status   : $ciSummary")
         logger.lifecycle("   • Local Sync     : 100% Synced with origin/$base")
+        if (prunedRuns > 0) {
+            logger.lifecycle("   • CI Auto-Prune  : Removed $prunedRuns old workflow run log(s)")
+        }
         logger.lifecycle("────────────────────────────────────────────────────────────────────────────────")
         logger.lifecycle("💡 Tip: $tipRecommendation")
         logger.lifecycle("════════════════════════════════════════════════════════════════════════════════")
