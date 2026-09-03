@@ -111,13 +111,13 @@ object GhaSecurityManager {
                   uses: actions/checkout@v4
 
                 - name: Set up Java Toolchain
-                  uses: actions/setup-java@v4
+                  uses: actions/setup-java@v6
                   with:
                     distribution: 'temurin'
-                    java-version: '25'
+                    java-version: '21'
 
                 - name: Initialize CodeQL
-                  uses: github/codeql-action/init@v3
+                  uses: github/codeql-action/init@v4
                   with:
                     languages: ${DOLLAR}{{ matrix.language }}
 
@@ -167,13 +167,13 @@ object GhaSecurityManager {
                   uses: actions/checkout@v4
 
                 - name: Set up Java Toolchain
-                  uses: actions/setup-java@v4
+                  uses: actions/setup-java@v6
                   with:
                     distribution: 'temurin'
-                    java-version: '25'
+                    java-version: '21'
 
                 - name: Validate Gradle Wrapper
-                  uses: gradle/actions/wrapper-validation@v4
+                  uses: gradle/actions/wrapper-validation@v6
 
                 - name: Build & Publish Plugin to MavenLocal
                   run: ./gradlew publishToMavenLocal
