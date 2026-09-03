@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# 🚀 gha: 0 Effort, Ridiculously Easy Installer for macOS, Linux, & WSL
+# 🚀 gha: 0 Effort, Ridiculously Easy Installer for Creators & Users
 # Usage: curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh | bash
 
 set -e
 
-echo "🚀 [gha Installer] Installing gha (Git, GitHub & Gradle Automation)..."
+echo "🚀 [gha Installer] Installing gha for Creators & Users..."
 
 # Ensure init directory exists
 mkdir -p init
@@ -36,14 +36,24 @@ EOF
     }
 fi
 
-# Run ghaInit & ghai
+# Create top-level ./ghai executable wrapper script for 0-effort invocation
+cat << 'EOF' > ghai
+#!/usr/bin/env bash
+# 🤖 ghai - Autonomous AI Workflow Execution Script
+./gradlew --init-script init/gha.init.gradle.kts ghai "$@"
+EOF
+chmod +x ghai
+
+# Run ghaInit & ghai immediately
 if [ -f "./gradlew" ]; then
     chmod +x ./gradlew
     echo "⚙️ Initializing gha sandbox..."
-    ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+    ./gradlew --init-script init/gha.init.gradle.kts ghaInit
+    echo "🤖 Executing ghai autonomous AI workflow..."
+    ./ghai
 else
-    echo "ℹ️ ./gradlew wrapper not found in current directory. Creating init script in init/gha.init.gradle.kts."
+    echo "ℹ️ ./gradlew wrapper not found in current directory. Created ./ghai runner script."
 fi
 
-echo "🎉 [gha Installer] gha installed ridiculously easy in 1 second!"
-echo "👉 Type './gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai' to run autonomous AI automation."
+echo "🎉 [gha Installer] gha & ghai installed ridiculously easy in 1 second!"
+echo "👉 Creators & Users: Simply type './ghai' anytime to run autonomous AI automation!"
