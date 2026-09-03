@@ -10,6 +10,13 @@ if [ "$1" = "--version" ] || [ "$1" = "-v" ] || [ "$1" = "version" ]; then
     exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
 fi
 
+# Handle "clone" action: ghai clone intellibitz / ghai clone intellibitz/gha
+if [ "$1" = "clone" ]; then
+    shift
+    chmod +x gradlew 2>/dev/null || true
+    exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaGitClone -PtargetRepo="$1" -Pdir="$2"
+fi
+
 # Handle "update" action: curl 1-step install to fetch latest ghai
 if [ "$1" = "update" ]; then
     echo "🚀 [ghai Update] Fetching and updating gha to latest version..."

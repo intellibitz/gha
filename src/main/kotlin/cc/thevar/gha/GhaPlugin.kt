@@ -4,6 +4,7 @@ import cc.thevar.gha.ai.GhaAiTask
 import cc.thevar.gha.git.GhaGitBranchTask
 import cc.thevar.gha.git.GhaGitCheckinTask
 import cc.thevar.gha.git.GhaGitCheckoutTask
+import cc.thevar.gha.git.GhaGitCloneTask
 import cc.thevar.gha.git.GhaGitCommitTask
 import cc.thevar.gha.git.GhaGitDiffTask
 import cc.thevar.gha.git.GhaGitInitTask
@@ -187,6 +188,11 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaGitCheckout", GhaGitCheckoutTask::class.java) {
             group = GROUP_GIT
             description = "Checks out or creates a Git branch safely with stash support"
+        }
+
+        project.tasks.register("ghaGitClone", GhaGitCloneTask::class.java) {
+            group = GROUP_GIT
+            description = "Clones a Git repository from GitHub (e.g., ./ghai clone intellibitz)"
         }
 
         project.tasks.register("ghaGitCommit", GhaGitCommitTask::class.java) {
@@ -483,19 +489,34 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaHelp", GhaHelpTask::class.java) {
             group = GROUP_GRADLE
             description = "Displays help information for all GHA tasks"
-            taskDetails.set(project.provider {
-                project.tasks.filter { it.name.startsWith("gha") && it.name != "ghaHelp" }
-                    .map { "${it.group ?: "Other"}|${it.name}|${it.description ?: "No description"}" }
-            })
+            val staticDetails = project.tasks
+                .filter { it.name.startsWith("gha") && it.name != "ghaHelp" }
+                .map { "${it.group ?: "Other"}|${it.name}|${it.description ?: "No description"}" }
+            taskDetails.set(staticDetails)
         }
 
-        // Enforce Sandbox for all GhaTasks except ghaInit and ghaHelp
+        // Configure tasks and set properties at configuration time for Configuration Cache support
         project.tasks.withType(GhaTask::class.java).configureEach {
-            if (name != "ghaInit" && name != "ghaHelp") {
-                doFirst {
-                    verifySandbox()
-                }
+            taskRootDirFile = project.layout.projectDirectory.asFile
+            taskProjectNameStr = project.name
+            taskGradleUserHomeDirFile = project.gradle.gradleUserHomeDir
+            taskGitHubToken = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
+        }
+
+        project.tasks.withType(GhaAiTask::class.java).configureEach {
+            baseBranch.convention((project.findProperty("baseBranch") as? String) ?: "main")
+            if (project.hasProperty("userBranch") || project.hasProperty("branch")) {
+                userBranch.convention((project.findProperty("userBranch") as? String) ?: (project.findProperty("branch") as? String))
             }
+            if (project.hasProperty("commitMessage") || project.hasProperty("message") || project.hasProperty("ghaAction")) {
+                commitMessage.convention(
+                    (project.findProperty("commitMessage") as? String)
+                        ?: (project.findProperty("message") as? String)
+                        ?: (project.findProperty("ghaAction") as? String)
+                )
+            }
+            autoMerge.convention((project.findProperty("autoMerge") as? String) ?: "true")
+            mergeMethod.convention((project.findProperty("mergeMethod") as? String) ?: "squash")
         }
     }
 }

@@ -2,17 +2,22 @@
 rem 🤖 ghai - Autonomous AI Workflow Executable Launcher for Windows
 
 if "%1"=="--version" (
-    .\gradlew.bat --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
     exit /b 0
 )
 
 if "%1"=="-v" (
-    .\gradlew.bat --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
     exit /b 0
 )
 
 if "%1"=="version" (
-    .\gradlew.bat --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+    exit /b 0
+)
+
+if "%1"=="clone" (
+    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaGitClone -PtargetRepo="%2" -Pdir="%3"
     exit /b 0
 )
 
@@ -46,17 +51,13 @@ if not exist "init\gha.init.gradle.kts" (
         echo     }
         echo     dependencies {
         echo         classpath^("cc.thevar.gha:gha:0.1.0-SNAPSHOT"^)
-        echo         classpath^("org.gradle.toolchains:foojay-resolver:1.0.0"^)
         echo     }
-        echo }
-        echo settingsEvaluated {
-        echo     try { apply^(plugin = "org.gradle.toolchains.foojay-resolver-convention"^) } catch ^(_: Throwable^) {}
         echo }
         echo allprojects {
         echo     apply^<cc.thevar.gha.GhaPlugin^>^(`)
         echo }
     ) > init\gha.init.gradle.kts
-    .\gradlew.bat --init-script init/gha.init.gradle.kts ghaInit
+    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
 )
 
-.\gradlew.bat --init-script init/gha.init.gradle.kts ghai %*
+.\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai %*
