@@ -23,6 +23,10 @@ import cc.thevar.gha.github.GhaPrReopenTask
 import cc.thevar.gha.github.GhaPrReviewTask
 import cc.thevar.gha.github.GhaPrViewTask
 import cc.thevar.gha.github.GhaReleaseCreateTask
+import cc.thevar.gha.security.GhaCodeScanningInitTask
+import cc.thevar.gha.security.GhaDependabotInitTask
+import cc.thevar.gha.security.GhaSecurityInitTask
+import cc.thevar.gha.security.GhaSecurityStatusTask
 import cc.thevar.gha.wiki.GhaWikiInitTask
 import cc.thevar.gha.wiki.GhaWikiPublishTask
 import cc.thevar.gha.wiki.GhaWikiStatusTask
@@ -51,6 +55,27 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaDependencies", GhaDependenciesTask::class.java) {
             group = "GitHub Automation"
             description = "Prints all GHA dependencies, tools, SDKs, and their current versions"
+        }
+
+        // GitHub Security & Vulnerability Tasks
+        project.tasks.register("ghaSecurityInit", GhaSecurityInitTask::class.java) {
+            group = "GitHub Security"
+            description = "Generates default GitHub security workflows, Dependabot, CodeQL, and SECURITY.md"
+        }
+
+        project.tasks.register("ghaSecurityStatus", GhaSecurityStatusTask::class.java) {
+            group = "GitHub Security"
+            description = "Displays current GitHub security, scanning, and Dependabot status"
+        }
+
+        project.tasks.register("ghaDependabotInit", GhaDependabotInitTask::class.java) {
+            group = "GitHub Security"
+            description = "Generates .github/dependabot.yml for automated dependency updates"
+        }
+
+        project.tasks.register("ghaCodeScanningInit", GhaCodeScanningInitTask::class.java) {
+            group = "GitHub Security"
+            description = "Generates CodeQL code scanning workflow .github/workflows/codeql.yml"
         }
 
         // GitHub Wiki Tasks

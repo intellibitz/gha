@@ -1,0 +1,32 @@
+name: "Security & Vulnerability Audit"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  security-audit:
+    name: Vulnerability & Secret Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Java Toolchain
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '25'
+
+    - name: Validate Gradle Wrapper
+      uses: gradle/actions/wrapper-validation@v4
+
+    - name: Execute GHA Security & Dependency Audit
+      run: ./gradlew --init-script init/gha.init.gradle.kts ghaSecurityStatus ghaDependencies

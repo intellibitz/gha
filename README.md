@@ -87,6 +87,14 @@ plugins {
 | `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions |
 | `./gradlew ghaWorkflow` | Executes platform-independent GitHub automation workflows |
 
+### GitHub Security & Vulnerability Tasks
+| Task | Description |
+| :--- | :--- |
+| `./gradlew ghaSecurityInit` | Generates default security workflows, Dependabot, CodeQL scanning, and `SECURITY.md` |
+| `./gradlew ghaSecurityStatus` | Inspects current GitHub security, scanning, Dependabot, and policy status |
+| `./gradlew ghaDependabotInit` | Generates `.github/dependabot.yml` for automated dependency updates |
+| `./gradlew ghaCodeScanningInit` | Generates `.github/workflows/codeql.yml` for CodeQL code scanning |
+
 ### GitHub Wiki Tasks
 | Task | Description |
 | :--- | :--- |
