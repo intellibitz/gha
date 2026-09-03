@@ -4,10 +4,10 @@ set -e
 
 mkdir -p init gradle/wrapper
 
-# 1. Scaffold minimal settings.gradle.kts if no settings file exists
+# 1. Scaffold or repair settings.gradle.kts with Foojay Toolchain Resolver
 if [ ! -f "settings.gradle.kts" ] && [ ! -f "settings.gradle" ]; then
     PROJECT_NAME="$(basename "$PWD")"
-    echo "📥 Creating settings.gradle.kts (rootProject.name = \"$PROJECT_NAME\")..."
+    echo "📥 Creating settings.gradle.kts with Foojay Toolchain Resolver..."
     cat << 'EOF' > settings.gradle.kts
 pluginManagement {
     repositories {
@@ -21,6 +21,22 @@ plugins {
 }
 EOF
     echo "rootProject.name = \"$PROJECT_NAME\"" >> settings.gradle.kts
+elif [ -f "settings.gradle.kts" ] && ! grep -q "foojay-resolver-convention" settings.gradle.kts; then
+    echo "📥 Injecting Foojay Toolchain Resolver into settings.gradle.kts..."
+    cat << 'EOF' > settings.gradle.kts.tmp
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+EOF
+    cat settings.gradle.kts >> settings.gradle.kts.tmp
+    mv settings.gradle.kts.tmp settings.gradle.kts
 fi
 
 # 2. Scaffold minimal build.gradle.kts if no build file exists
