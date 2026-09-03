@@ -2,11 +2,16 @@ package cc.thevar.gha
 
 import cc.thevar.gha.git.GhaGitBranchTask
 import cc.thevar.gha.git.GhaGitCommitTask
+import cc.thevar.gha.git.GhaGitDiffTask
+import cc.thevar.gha.git.GhaGitInitTask
 import cc.thevar.gha.git.GhaGitLogTask
 import cc.thevar.gha.git.GhaGitPullTask
 import cc.thevar.gha.git.GhaGitPushTask
+import cc.thevar.gha.git.GhaGitResetTask
+import cc.thevar.gha.git.GhaGitStashTask
 import cc.thevar.gha.git.GhaGitStatusTask
 import cc.thevar.gha.git.GhaGitTagTask
+import cc.thevar.gha.github.GhaGistCreateTask
 import cc.thevar.gha.github.GhaIssueCloseTask
 import cc.thevar.gha.github.GhaIssueCommentTask
 import cc.thevar.gha.github.GhaIssueCreateTask
@@ -24,6 +29,8 @@ import cc.thevar.gha.github.GhaPrReopenTask
 import cc.thevar.gha.github.GhaPrReviewTask
 import cc.thevar.gha.github.GhaPrViewTask
 import cc.thevar.gha.github.GhaReleaseCreateTask
+import cc.thevar.gha.github.GhaRepoViewTask
+import cc.thevar.gha.github.GhaSecretSetTask
 import cc.thevar.gha.insights.GhaContributorsTask
 import cc.thevar.gha.insights.GhaInsightsTask
 import cc.thevar.gha.insights.GhaTrafficTask
@@ -101,9 +108,29 @@ class GhaPlugin : Plugin<Project> {
             description = "Alias for ghaAndroidRemove: Converts project to pure Kotlin by removing Android components"
         }
 
+        project.tasks.register("ghaClean", GhaCleanTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Cleans build directory and temporary caches"
+        }
+
+        project.tasks.register("ghaBuild", GhaBuildTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Executes sandboxed Gradle build"
+        }
+
+        project.tasks.register("ghaTest", GhaTestTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Executes project test suite"
+        }
+
         // ---------------------------------------------------------------------
         // 2. Git Automation Tasks
         // ---------------------------------------------------------------------
+        project.tasks.register("ghaGitInit", GhaGitInitTask::class.java) {
+            group = GROUP_GIT
+            description = "Initializes a local Git repository"
+        }
+
         project.tasks.register("ghaGitStatus", GhaGitStatusTask::class.java) {
             group = GROUP_GIT
             description = "Displays current Git repository status"
@@ -139,9 +166,39 @@ class GhaPlugin : Plugin<Project> {
             description = "Displays recent Git commits"
         }
 
+        project.tasks.register("ghaGitReset", GhaGitResetTask::class.java) {
+            group = GROUP_GIT
+            description = "Resets working tree changes (--hard / --soft / --mixed)"
+        }
+
+        project.tasks.register("ghaGitStash", GhaGitStashTask::class.java) {
+            group = GROUP_GIT
+            description = "Stashes working tree changes (push / pop / list / drop)"
+        }
+
+        project.tasks.register("ghaGitDiff", GhaGitDiffTask::class.java) {
+            group = GROUP_GIT
+            description = "Inspects working tree changes"
+        }
+
         // ---------------------------------------------------------------------
         // 3. GitHub Automation Tasks
         // ---------------------------------------------------------------------
+        project.tasks.register("ghaRepoView", GhaRepoViewTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Displays GitHub repository details and metadata"
+        }
+
+        project.tasks.register("ghaGistCreate", GhaGistCreateTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Creates a GitHub Gist from a local file"
+        }
+
+        project.tasks.register("ghaSecretSet", GhaSecretSetTask::class.java) {
+            group = GROUP_GITHUB
+            description = "Configures repository secrets safely"
+        }
+
         project.tasks.register("ghaWorkflow", GhaWorkflowTask::class.java) {
             group = GROUP_GITHUB
             description = "Executes platform-independent GitHub automation workflows"

@@ -80,15 +80,19 @@ plugins {
 ## Complete Suite of GHA Tasks
 
 ### 1. Git Automation Tasks
-| Task | Description |
-| :--- | :--- |
-| `./gradlew ghaGitStatus` | Displays current Git repository status, branch, and working tree changes |
-| `./gradlew ghaGitBranch` | Displays current Git branches and branch status |
-| `./gradlew ghaGitCommit` | Stages and commits working tree changes platform-independently |
-| `./gradlew ghaGitPush` | Pushes current branch to origin remote |
-| `./gradlew ghaGitPull` | Pulls latest changes from remote with rebase |
-| `./gradlew ghaGitTag` | Creates and pushes an annotated Git tag |
-| `./gradlew ghaGitLog` | Displays recent Git commits |
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaGitInit` | Initializes a local Git repository | `./gradlew ghaGitInit` |
+| `./gradlew ghaGitStatus` | Displays current Git repository status, branch, and working tree changes | `./gradlew ghaGitStatus` |
+| `./gradlew ghaGitBranch` | Displays current Git branches and branch status | `./gradlew ghaGitBranch` |
+| `./gradlew ghaGitCommit` | Stages and commits working tree changes platform-independently | `./gradlew ghaGitCommit -PcommitMessage="Message"` |
+| `./gradlew ghaGitPush` | Pushes current branch to origin remote | `./gradlew ghaGitPush` |
+| `./gradlew ghaGitPull` | Pulls latest changes from remote with rebase | `./gradlew ghaGitPull` |
+| `./gradlew ghaGitTag` | Creates and pushes an annotated Git tag | `./gradlew ghaGitTag -PtagName="v1.0.0"` |
+| `./gradlew ghaGitLog` | Displays recent Git commits | `./gradlew ghaGitLog` |
+| `./gradlew ghaGitReset` | Resets working tree changes (`--hard` / `--soft` / `--mixed`) | `./gradlew ghaGitReset [-PresetMode="hard"]` |
+| `./gradlew ghaGitStash` | Stashes working tree changes (`push` / `pop` / `list` / `drop`) | `./gradlew ghaGitStash [-PstashAction="pop"]` |
+| `./gradlew ghaGitDiff` | Inspects working tree changes and diffs | `./gradlew ghaGitDiff` |
 
 ---
 
@@ -129,9 +133,9 @@ plugins {
 #### Projects & Releases
 | Task | Description | Usage Example |
 | :--- | :--- | :--- |
-| `./gradlew ghaProjectInit` | Initializes default GitHub Project boards | `./gradlew ghaProjectInit` |
+| `./gradlew ghaProjectInit` | Initializes default GitHub Project boards (Roadmap, Issue Tracker, Releases) | `./gradlew ghaProjectInit` |
 | `./gradlew ghaProjectCreate` | Creates a new GitHub Project board | `./gradlew ghaProjectCreate -PprojectTitle="My Board"` |
-| `./gradlew ghaProjectList` | Lists GitHub Project boards | `./gradlew ghaProjectList [-PprojectOwner="owner"]` |
+| `./gradlew ghaProjectList` | Lists GitHub Project boards for an owner or repository | `./gradlew ghaProjectList [-PprojectOwner="owner"]` |
 | `./gradlew ghaProjectView` | Displays details and items of a GitHub Project board | `./gradlew ghaProjectView -PprojectNumber=1` |
 | `./gradlew ghaProjectAddItem` | Adds an Issue or Pull Request URL to a project board | `./gradlew ghaProjectAddItem -PprojectNumber=1 -PitemUrl="https://..."` |
 | `./gradlew ghaProjectClose` | Closes or archives a GitHub Project board | `./gradlew ghaProjectClose -PprojectNumber=1` |
@@ -140,24 +144,31 @@ plugins {
 #### Security & Vulnerability
 | Task | Description | Usage Example |
 | :--- | :--- | :--- |
-| `./gradlew ghaSecurityInit` | Generates default security workflows, Dependabot, CodeQL scanning | `./gradlew ghaSecurityInit` |
-| `./gradlew ghaSecurityStatus` | Inspects current GitHub security and Dependabot status | `./gradlew ghaSecurityStatus` |
-| `./gradlew ghaDependabotInit` | Generates `.github/dependabot.yml` for automated updates | `./gradlew ghaDependabotInit` |
-| `./gradlew ghaDependabotList` | Lists active Dependabot pull requests and branches | `./gradlew ghaDependabotList` |
+| `./gradlew ghaSecurityInit` | Generates default security workflows, Dependabot, CodeQL scanning, and `SECURITY.md` | `./gradlew ghaSecurityInit` |
+| `./gradlew ghaSecurityStatus` | Inspects current GitHub security, scanning, Dependabot, and policy status | `./gradlew ghaSecurityStatus` |
+| `./gradlew ghaDependabotInit` | Generates `.github/dependabot.yml` for automated dependency updates | `./gradlew ghaDependabotInit` |
+| `./gradlew ghaDependabotList` | Lists active Dependabot pull requests and remote `dependabot/` branches | `./gradlew ghaDependabotList` |
 | `./gradlew ghaDependabotMerge` | Merges Dependabot PRs and deletes remote branches | `./gradlew ghaDependabotMerge [-PprNumber=123] [-PmergeAll=true]` |
-| `./gradlew ghaDependabotClose` | Closes Dependabot PRs and deletes remote branches | `./gradlew ghaDependabotClose [-PprNumber=123] [-PcloseAll=true]` |
+| `./gradlew ghaDependabotClose` | Closes Dependabot PRs and deletes remote `dependabot/` branches | `./gradlew ghaDependabotClose [-PprNumber=123] [-PcloseAll=true]` |
 | `./gradlew ghaDependabotCleanup` | Cleans up closed or merged Dependabot branches | `./gradlew ghaDependabotCleanup` |
-| `./gradlew ghaDependabotRebase` | Requests Dependabot to rebase or recreate PRs | `./gradlew ghaDependabotRebase [-PprNumber=123]` |
-| `./gradlew ghaCodeScanningInit` | Generates `.github/workflows/codeql.yml` for CodeQL scanning | `./gradlew ghaCodeScanningInit` |
+| `./gradlew ghaDependabotRebase` | Requests Dependabot to `@dependabot rebase` or `@dependabot recreate` | `./gradlew ghaDependabotRebase [-PprNumber=123] [-PrebaseAll=true] [-Precreate=true]` |
+| `./gradlew ghaCodeScanningInit` | Generates `.github/workflows/codeql.yml` for CodeQL code scanning | `./gradlew ghaCodeScanningInit` |
+
+#### Repository, Gists & Secrets
+| Task | Description | Usage Example |
+| :--- | :--- | :--- |
+| `./gradlew ghaRepoView` | Displays GitHub repository details and metadata | `./gradlew ghaRepoView` |
+| `./gradlew ghaGistCreate` | Creates a GitHub Gist from a local file | `./gradlew ghaGistCreate [-PfilePath="README.md"]` |
+| `./gradlew ghaSecretSet` | Configures repository secrets safely | `./gradlew ghaSecretSet -PsecretName="KEY" -PsecretValue="VAL"` |
 
 #### Wiki & Insights
 | Task | Description |
 | :--- | :--- |
-| `./gradlew ghaWikiInit` | Creates local `wiki/` documentation directory and template pages |
+| `./gradlew ghaWikiInit` | Creates local `wiki/` documentation directory and template pages (`Home.md`, `_Sidebar.md`, etc.) |
 | `./gradlew ghaWikiStatus` | Displays local wiki pages, sizes, remote wiki URL, and sync status |
 | `./gradlew ghaWikiSync` | Pulls latest remote GitHub Wiki pages into local `wiki/` directory |
-| `./gradlew ghaWikiPublish` | Commits and pushes local `wiki/` pages to remote GitHub Wiki |
-| `./gradlew ghaInsights` | Displays repository overview, stars, forks, watchers, open issues, and commit metrics |
+| `./gradlew ghaWikiPublish` | Commits and pushes local `wiki/` pages to remote GitHub Wiki repository |
+| `./gradlew ghaInsights` | Displays repository overview, stars, forks, watchers, open issues, and commit counts |
 | `./gradlew ghaContributors` | Displays contributor breakdown, commit counts, and percentage contributions |
 | `./gradlew ghaTraffic` | Displays repository traffic, page views, and clone statistics |
 
@@ -170,6 +181,9 @@ plugins {
 | `./gradlew ghaStatus` | Displays current GitHub Automation project and platform status | `./gradlew ghaStatus` |
 | `./gradlew ghaSandbox` | Displays real-time sandbox status and environment health checks | `./gradlew ghaSandbox` |
 | `./gradlew ghaDependencies` | Prints all GHA dependencies, trusted vendors, and active runtime versions | `./gradlew ghaDependencies` |
+| `./gradlew ghaClean` | Cleans build directory and temporary caches | `./gradlew ghaClean` |
+| `./gradlew ghaBuild` | Executes sandboxed Gradle build | `./gradlew ghaBuild` |
+| `./gradlew ghaTest` | Executes project test suite | `./gradlew ghaTest` |
 | `./gradlew ghaKotlinInit` | Initializes a 100% Kotlin project with Gradle DSL, version catalog, and sandboxed GHA | `./gradlew ghaKotlinInit [-PprojectName="my-app"]` |
 | `./gradlew ghaKotlinProjectCreate` | Creates a new 100% Kotlin project structure platform-independently | `./gradlew ghaKotlinProjectCreate [-PprojectName="my-app"]` |
 | `./gradlew ghaAndroidRemove` | Removes Android manifests, resources, plugins, and dependencies for pure Kotlin dev | `./gradlew ghaAndroidRemove` |
@@ -197,6 +211,9 @@ gha/
 │   ├── GhaInitTask.kt                           # Sandboxed GHA Init Task (.gha/)
 │   ├── GhaKotlinInitTask.kt                     # 100% Kotlin Project Scaffolding Task
 │   ├── GhaAndroidRemoveTask.kt                  # Removes Android components for pure Kotlin dev
+│   ├── GhaCleanTask.kt                          # Cleans build directory and temporary caches
+│   ├── GhaBuildTask.kt                          # Sandboxed Gradle Build Task
+│   ├── GhaTestTask.kt                           # Project Test Execution Task
 │   ├── GhaStatusTask.kt                         # GHA Status Task
 │   ├── GhaSandboxTask.kt                        # GHA Sandbox Health Check Task
 │   ├── GhaDependenciesTask.kt                   # Prints trusted vendors, dependency table, and versions

@@ -1,19 +1,40 @@
 # GHA Tasks Reference
 
-## Core Tasks
+## Gradle Automation Tasks
 - `./gradlew ghaInit`: Initializes sandboxed GitHub Automation environment (`.gha/`).
+- `./gradlew ghaStatus`: Displays current project status and platform details.
+- `./gradlew ghaSandbox`: Displays real-time sandbox status and environment health checks.
+- `./gradlew ghaDependencies`: Prints trusted vendors and dependency versions.
+- `./gradlew ghaClean`: Cleans build directory and temporary caches.
+- `./gradlew ghaBuild`: Executes sandboxed Gradle build.
+- `./gradlew ghaTest`: Executes project test suite.
 - `./gradlew ghaKotlinInit`: Scaffolds a new 100% Kotlin project structure with Gradle DSL, version catalog, and sandboxed GHA.
 - `./gradlew ghaKotlinProjectCreate`: Creates a new 100% Kotlin project structure platform-independently.
 - `./gradlew ghaAndroidRemove`: Removes Android manifests, resources, plugins, and dependencies for pure Kotlin development.
 - `./gradlew ghaAndroidProjectRemove`: Converts an Android project into a pure 100% Kotlin project.
-- `./gradlew ghaStatus`: Displays current project status and platform details.
-- `./gradlew ghaSandbox`: Displays real-time sandbox status and environment health checks.
-- `./gradlew ghaDependencies`: Prints trusted vendors and dependency versions.
+- `./gradlew ghaHelp`: Displays registered GHA tasks and CLI usage instructions.
+
+## Git Automation Tasks
+- `./gradlew ghaGitInit`: Initializes a local Git repository.
+- `./gradlew ghaGitStatus`: Displays Git repository status.
+- `./gradlew ghaGitBranch`: Lists local and remote Git branches.
+- `./gradlew ghaGitCommit`: Stages and commits working tree changes.
+- `./gradlew ghaGitPush`: Pushes current branch to origin.
+- `./gradlew ghaGitPull`: Pulls remote changes with rebase.
+- `./gradlew ghaGitTag`: Tagging and pushing.
+- `./gradlew ghaGitLog`: Displays commit log.
+- `./gradlew ghaGitReset`: Resets working tree changes (--hard / --soft / --mixed).
+- `./gradlew ghaGitStash`: Stashes working tree changes (push / pop / list / drop).
+- `./gradlew ghaGitDiff`: Inspects working tree changes and diffs.
+
+## GitHub Automation Tasks
+- `./gradlew ghaRepoView`: Displays GitHub repository details and metadata.
+- `./gradlew ghaGistCreate`: Creates a GitHub Gist from a local file.
+- `./gradlew ghaSecretSet`: Configures repository secrets safely.
 - `./gradlew ghaWorkflow`: Executes automated workflows.
 - `./gradlew ghaWorkflowList`: Lists GitHub Actions workflow runs.
 - `./gradlew ghaWorkflowCleanup`: Cleans up old or failed workflow runs.
 - `./gradlew ghaWorkflowCancel`: Cancels active workflow runs.
-- `./gradlew ghaHelp`: Displays registered GHA tasks and CLI usage instructions.
 
 ## GitHub Wiki Tasks
 - `./gradlew ghaWikiInit`: Creates local `wiki/` documentation directory and template pages.
