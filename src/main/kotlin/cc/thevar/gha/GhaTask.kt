@@ -14,7 +14,7 @@ import org.gradle.work.DisableCachingByDefault
 
 /**
  * Base task for GitHub Automation.
- * Enforces secure credential handling and non-leaking token policies.
+ * Enforces secure credential handling and non-leaking token policies across single and multi-subproject builds.
  */
 @DisableCachingByDefault(because = "Base task for GitHub Automation")
 abstract class GhaTask : DefaultTask() {
@@ -40,8 +40,9 @@ abstract class GhaTask : DefaultTask() {
         gitHubToken.convention(
             GhaCredentialsResolver.resolveGitHubToken(project.providers)
         )
-        projectRootDir.convention(project.layout.projectDirectory)
-        ghaProjectName.convention(project.name)
+        // Resolves the root project directory for Git & GitHub operations across multi-module subprojects
+        projectRootDir.convention(project.rootProject.layout.projectDirectory)
+        ghaProjectName.convention(project.rootProject.name)
         val homeDir = project.gradle.gradleUserHomeDir
         gradleUserHomeDir.convention(project.layout.dir(project.providers.provider { homeDir }))
     }
