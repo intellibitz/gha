@@ -29,12 +29,12 @@ GitHub users and developers across any IDE or terminal can clone this project an
 For maximum productivity with zero cognitive overhead, developers can run:
 
 ```bash
-./ghai           # Short launcher shortcut
+./ghai           # Short launcher shortcut (supports :version, :status, :clone, etc.)
 # OR
 ./gradlew ghai   # Standard Gradle task
 ```
 
-`ghai` (and aliases `ghaAI`, `ghaAuto`, `ghaSync`, `ghaSave`) adapts autonomously to your repository and GitHub state:
+`ghai` (and aliases `ghaAI`, `ghaAuto`, `ghaSync`, `ghaSave`) adapts autonomously to your repository and GitHub state. It supports standard Gradle task path syntax (prefixed with `:`):
 
 ### 📦 Mode A: Dirty Working Tree (Local Changes Exist)
 1. **Analyzes Diffs & Generates Smart Messages**: Inspects modified/added files and auto-generates semantic commit messages.

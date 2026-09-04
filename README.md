@@ -67,23 +67,23 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ### 🔄 Clone, Version, Update & Uninstall Subcommands
 
-Once `ghai` is installed, managing `gha` is completely zero-effort:
+Once `ghai` is installed, managing `gha` is completely zero-effort. `ghai` supports both plain commands and Gradle task path syntax (prefixed with `:`).
 
 ```bash
-# Smart clone repository (e.g. ./ghai clone intellibitz -> https://github.com/intellibitz/intellibitz):
-./ghai clone intellibitz
-
-# Clone specific owner/repo:
-./ghai clone intellibitz/gha
+# Smart clone repository (e.g. ./ghai :clone intellibitz -> https://github.com/intellibitz/intellibitz):
+./ghai :clone intellibitz
 
 # Print version report & verify engine stability (100% sandboxed):
-./ghai version
+./ghai :version
+
+# Display sandbox health & platform status:
+./ghai :status
 
 # Update gha & ghai to the latest release version:
-./ghai update
+./ghai :update
 
-# Completely uninstall and remove gha (0 lingering system files, 0 user file changes):
-./ghai uninstall
+# Completely uninstall and remove gha (0 side effects to user files):
+./ghai :uninstall
 ```
 
 ---
