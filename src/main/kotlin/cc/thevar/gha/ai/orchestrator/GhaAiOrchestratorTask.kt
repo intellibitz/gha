@@ -8,8 +8,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 
 /**
- * GHA AI Orchestrator Task: The entry point for "Agent of Agents" orchestration.
- * Manages models, hardware profiling, AI engines, MCP hubs, and autonomous missions.
+ * GHA AI Orchestrator Task: Entry point for the Master Agent Manager & MCP Host.
  */
 @DisableCachingByDefault(because = "Executes real-time AI orchestration actions")
 abstract class GhaAiOrchestratorTask : GhaTask() {
@@ -47,7 +46,7 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
         logger.lifecycle("🌌 [GHA AI Orchestrator] Action: '$activeAction'")
 
         when (activeAction) {
-            "status", "orchestrate" -> {
+            "status", "orchestrate", "agent" -> {
                 val orchestrator = GhaAgentOfAgents()
                 val result = orchestrator.solve(goal.getOrElse("status report"), rootDir)
                 result.log.forEach { logger.lifecycle(it) }
@@ -89,13 +88,6 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
                 logger.lifecycle("📥 Downloading AI model '$modelRepo'...")
                 val res = GhaModelManager.downloadModel(rootDir, modelRepo, filter.orNull)
                 logger.lifecycle(res)
-            }
-            "agent" -> {
-                val orchestrator = GhaAgentOfAgents()
-                val res = orchestrator.solve(goal.getOrElse("solve project tasks"), rootDir)
-                res.log.forEach { logger.lifecycle(it) }
-                println("")
-                println(res.output)
             }
             else -> {
                 logger.lifecycle("ℹ️ GHA AI Orchestrator: Unknown action '$activeAction'. Supported: status, models, engines, mcp-hub, download, agent.")

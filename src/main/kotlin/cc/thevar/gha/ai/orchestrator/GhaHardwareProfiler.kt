@@ -22,9 +22,6 @@ object GhaHardwareProfiler {
         val recommendedQuantization: String
     )
 
-    /**
-     * Inspects current system hardware and returns a hardware profile report.
-     */
     fun profile(rootDir: File): HardwareProfile {
         val runtime = Runtime.getRuntime()
         val cpuCores = runtime.availableProcessors()
