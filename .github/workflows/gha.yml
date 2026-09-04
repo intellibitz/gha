@@ -9,6 +9,10 @@ on:
 jobs:
   gha-ci:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
 
     steps:
       - name: Checkout Repository
@@ -21,16 +25,18 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: 'gradle'
 
       - name: Build & Publish Plugin to MavenLocal
-        run: ./gradlew publishToMavenLocal
+        run: ./gradlew publishToMavenLocal --no-daemon
 
       - name: Run ghai Autonomous AI Workflow
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHA_NO_REFRESH: "1"
         run: |
           chmod +x gradlew ghai
           # Use ghai to verify itself, sweep PRs, and prune CI logs
           ./ghai :version
           ./ghai :status
-          ./ghai
+          ./ghai --no-daemon
