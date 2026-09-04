@@ -4,18 +4,30 @@ import java.io.File
 import java.net.URI
 
 /**
- * Manages project versioning and autonomous version bumping.
+ * Manages project versioning and autonomous version bumping with versioned files (e.g. version-0.1.21-SNAPSHOT.txt).
  */
 object GhaVersionManager {
 
-    private const val VERSION_FILE = "version.txt"
-
     /**
-     * Reads the current version from .gha/version.txt (or fallback root version.txt).
+     * Reads the current version from .gha/version-*.txt or .gha/version.txt (or fallback root version files).
      */
     fun readVersion(rootDir: File): String {
-        val sandboxFile = File(rootDir, ".gha/version.txt")
-        if (sandboxFile.exists()) return sandboxFile.readText().trim()
+        val sandboxDir = File(rootDir, ".gha")
+        if (sandboxDir.exists()) {
+            val suffixedFile = sandboxDir.listFiles()?.firstOrNull { it.name.startsWith("version-") && it.name.endsWith(".txt") }
+            if (suffixedFile != null) {
+                val v = suffixedFile.name.removePrefix("version-").removeSuffix(".txt")
+                if (v.isNotBlank()) return v
+            }
+            val sandboxFile = File(sandboxDir, "version.txt")
+            if (sandboxFile.exists()) return sandboxFile.readText().trim()
+        }
+
+        val rootSuffixedFile = rootDir.listFiles()?.firstOrNull { it.name.startsWith("version-") && it.name.endsWith(".txt") }
+        if (rootSuffixedFile != null) {
+            val v = rootSuffixedFile.name.removePrefix("version-").removeSuffix(".txt")
+            if (v.isNotBlank()) return v
+        }
 
         val rootFile = File(rootDir, "version.txt")
         if (rootFile.exists()) return rootFile.readText().trim()
@@ -52,7 +64,6 @@ object GhaVersionManager {
             if (p1 < p2) return -1
         }
         
-        // If versions are same but one is SNAPSHOT, treat SNAPSHOT as older for upgrade purposes
         if (v1.endsWith("-SNAPSHOT") && !v2.endsWith("-SNAPSHOT")) return -1
         if (!v1.endsWith("-SNAPSHOT") && v2.endsWith("-SNAPSHOT")) return 1
         
@@ -60,7 +71,7 @@ object GhaVersionManager {
     }
 
     /**
-     * Bumps the version (patch level) and writes it back to .gha/version.txt and root version.txt (if in gha project).
+     * Bumps the version and creates version-$newVersion.txt files.
      */
     fun bumpVersion(rootDir: File): String {
         val current = readVersion(rootDir)
@@ -68,10 +79,16 @@ object GhaVersionManager {
 
         val sandboxDir = File(rootDir, ".gha")
         if (!sandboxDir.exists()) sandboxDir.mkdirs()
+
+        // Clean up old version-*.txt files in .gha/
+        sandboxDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach { it.delete() }
+        File(sandboxDir, "version-$newVersion.txt").writeText(newVersion + "\n")
         File(sandboxDir, "version.txt").writeText(newVersion + "\n")
 
         val rootVersionFile = File(rootDir, "version.txt")
         if (rootVersionFile.exists()) {
+            rootDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach { it.delete() }
+            File(rootDir, "version-$newVersion.txt").writeText(newVersion + "\n")
             rootVersionFile.writeText(newVersion + "\n")
         }
 

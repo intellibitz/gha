@@ -41,16 +41,15 @@ abstract class GhaInitTask : GhaTask() {
 
         val pName = ghaProjectName.getOrElse("gha")
 
-        // Ensure .gha/version.txt is present inside the sandbox
+        // Ensure .gha/version.txt and .gha/version-$currentVersion.txt are present inside the sandbox
         val sandboxVersionFile = File(ghaDir, "version.txt")
         sandboxVersionFile.writeText(currentVersion + "\n")
+        val sandboxSuffixedFile = File(ghaDir, "version-$currentVersion.txt")
+        sandboxSuffixedFile.writeText(currentVersion + "\n")
 
-        // Clean up root version.txt if not in gha source project
+        // Clean up root version.txt and version-*.txt if not in gha source project
         if (pName != "gha" && rootDir.name != "gha") {
-            val rootVersionFile = File(rootDir, "version.txt")
-            if (rootVersionFile.exists()) {
-                rootVersionFile.delete()
-            }
+            rootDir.listFiles()?.filter { it.name.startsWith("version") && it.name.endsWith(".txt") }?.forEach { it.delete() }
         }
         configFile.writeText(
             """
