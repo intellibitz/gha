@@ -138,6 +138,8 @@ abstract class GhaInitTask : GhaTask() {
                           GITHUB_TOKEN: ${'$'}{{ secrets.GITHUB_TOKEN }}
                         run: |
                           chmod +x gradlew ghai
+                          ./ghai :version
+                          ./ghai :status
                           ./ghai
                 """.trimIndent() + "\n"
             )
