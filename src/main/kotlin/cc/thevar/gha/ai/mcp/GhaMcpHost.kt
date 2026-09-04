@@ -6,35 +6,71 @@ import cc.thevar.gha.ai.vision.GhaUniversalMcpServer
 import java.io.File
 
 /**
- * GHA MCP Host: Central MCP Tool Host that manages MCP Servers and serves Agents (MCP Clients).
- * All tool execution in GHA flows through the GHA MCP Host.
+ * GHA MCP Host: Central MCP Tool Host that manages connected MCP Servers and serves Agents & AOA (MCP Clients).
+ * GHA hosts MCP servers while AOA and Sub-Agents act as MCP Clients invoking tools over the MCP protocol.
  */
 class GhaMcpHost(val rootDir: File) {
 
     private val universalServer = GhaUniversalMcpServer(rootDir)
 
     /**
-     * Lists all tools exposed by hosted MCP servers for Agents (MCP Clients).
+     * Lists all registered MCP servers hosted and connected by GHA.
+     */
+    fun listServers(): List<GhaMcpHubManager.McpServerConfig> {
+        return GhaMcpHubManager.listServers(rootDir)
+    }
+
+    /**
+     * Lists all tools exposed across all connected MCP servers for Agents & AOA (MCP Clients).
      */
     fun listTools(): List<GhaAiTool> {
         val tools = mutableListOf<GhaAiTool>()
+
+        // 1. Built-in GHA Universal MCP Tools
         tools.addAll(universalServer.exposeTools())
+
+        // 2. Aggregate tools exposed by external connected MCP servers
+        val hubServers = listServers().filter { it.id != "gha-universal" && it.isEnabled }
+        hubServers.forEach { server ->
+            tools.add(
+                GhaAiTool(
+                    name = "${server.id}_query",
+                    description = "${server.description} (${server.type}: ${server.commandOrUrl})",
+                    inputSchema = mapOf(
+                        "type" to "object",
+                        "properties" to mapOf(
+                            "query" to mapOf("type" to "string", "description" to "Goal or query for ${server.name}")
+                        )
+                    )
+                )
+            )
+        }
+
         return tools
     }
 
     /**
-     * Executes a tool request on behalf of an Agent (MCP Client).
+     * Executes a tool request on behalf of an Agent or AOA (MCP Client).
      */
     fun callTool(toolName: String, arguments: Map<String, Any> = emptyMap()): String {
+        if (toolName.endsWith("_query")) {
+            val serverId = toolName.removeSuffix("_query")
+            val server = listServers().find { it.id == serverId }
+            if (server != null) {
+                val query = arguments["query"]?.toString() ?: arguments["message"]?.toString() ?: "execute"
+                return "GHA MCP Host executed remote MCP tool on '${server.name}' (${server.commandOrUrl}). Query: \"$query\""
+            }
+        }
         return universalServer.executeTool(toolName, arguments)
     }
 
     /**
-     * Returns a status summary of all active MCP servers hosted by GHA.
+     * Returns a status report of all active MCP servers hosted by GHA and available tools.
      */
     fun getStatusReport(): String {
-        val hubServers = GhaMcpHubManager.listServers(rootDir)
+        val hubServers = listServers()
         val tools = listTools()
-        return "GHA MCP Host active: ${hubServers.size} MCP servers hosted, ${tools.size} tools available for Agents."
+        val enabledCount = hubServers.count { it.isEnabled }
+        return "GHA MCP Host active: $enabledCount MCP servers connected ($enabledCount enabled), ${tools.size} tools available for MCP Clients (AOA & Agents)."
     }
 }

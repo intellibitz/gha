@@ -5,7 +5,7 @@ import java.io.File
 
 /**
  * MCP Hub Manager for GHA AI Orchestrator.
- * Registers, discovers, and manages community MCP (Model Context Protocol) servers.
+ * Registers, discovers, and manages available local and remote Model Context Protocol (MCP) servers on the web and system.
  */
 object GhaMcpHubManager {
 
@@ -13,7 +13,7 @@ object GhaMcpHubManager {
         val id: String,
         val name: String,
         val description: String,
-        val type: String, // BUILT_IN, STDIO, HTTP
+        val type: String, // BUILT_IN, STDIO, HTTP_SSE
         val commandOrUrl: String,
         val isEnabled: Boolean
     )
@@ -25,7 +25,7 @@ object GhaMcpHubManager {
     }
 
     /**
-     * Lists all registered MCP servers in the Hub.
+     * Lists all registered MCP servers hosted and connected by GHA.
      */
     fun listServers(rootDir: File): List<McpServerConfig> {
         val servers = mutableListOf<McpServerConfig>()
@@ -37,7 +37,7 @@ object GhaMcpHubManager {
             McpServerConfig(
                 id = "gha-universal",
                 name = "GHA Universal MCP Server",
-                description = "Built-in GHA automation engine exposing $toolCount Git/GitHub/Build tools",
+                description = "Built-in GHA automation engine exposing $toolCount Git/GitHub/Build/Scaffold tools",
                 type = "BUILT_IN",
                 commandOrUrl = "cc.thevar.gha.ai.vision.GhaUniversalMcpServer",
                 isEnabled = true
@@ -68,14 +68,75 @@ object GhaMcpHubManager {
             )
         )
 
-        // 4. Memory / Context MCP Server
+        // 4. Memory Knowledge Graph MCP Server
         servers.add(
             McpServerConfig(
                 id = "memory-mcp",
-                name = "Memory MCP Server",
+                name = "Memory Knowledge Graph MCP Server",
                 description = "Persistent knowledge graph memory MCP server for local context retention",
                 type = "STDIO",
                 commandOrUrl = "npx -y @modelcontextprotocol/server-memory",
+                isEnabled = true
+            )
+        )
+
+        // 5. Brave Search Web MCP Server
+        servers.add(
+            McpServerConfig(
+                id = "brave-search-mcp",
+                name = "Brave Search Web MCP Server",
+                description = "Web search and real-time online discovery MCP server",
+                type = "STDIO",
+                commandOrUrl = "npx -y @modelcontextprotocol/server-brave-search",
+                isEnabled = true
+            )
+        )
+
+        // 6. Puppeteer Browser Automation MCP Server
+        servers.add(
+            McpServerConfig(
+                id = "puppeteer-mcp",
+                name = "Puppeteer Browser MCP Server",
+                description = "Headless browser automation and web scraping MCP server",
+                type = "STDIO",
+                commandOrUrl = "npx -y @modelcontextprotocol/server-puppeteer",
+                isEnabled = true
+            )
+        )
+
+        // 7. Filesystem Workspace MCP Server
+        servers.add(
+            McpServerConfig(
+                id = "filesystem-mcp",
+                name = "Filesystem Workspace MCP Server",
+                description = "Local workspace filesystem operations MCP server",
+                type = "STDIO",
+                commandOrUrl = "npx -y @modelcontextprotocol/server-filesystem",
+                isEnabled = true
+            )
+        )
+
+        // 8. Fetch Web Scraper MCP Server
+        servers.add(
+            McpServerConfig(
+                id = "fetch-mcp",
+                name = "Fetch Web Scraper MCP Server",
+                description = "HTTP fetch and markdown conversion web scraper MCP server",
+                type = "STDIO",
+                commandOrUrl = "npx -y @modelcontextprotocol/server-fetch",
+                isEnabled = true
+            )
+        )
+
+        // 9. Remote HTTP/SSE Web MCP Server Endpoint
+        val remoteMcpUrl = System.getenv("GHA_REMOTE_MCP_URL") ?: "https://mcp.github.com/sse"
+        servers.add(
+            McpServerConfig(
+                id = "remote-sse-mcp",
+                name = "Remote Web SSE MCP Server",
+                description = "Remote web-hosted Server-Sent Events (SSE) MCP server endpoint",
+                type = "HTTP_SSE",
+                commandOrUrl = remoteMcpUrl,
                 isEnabled = true
             )
         )
