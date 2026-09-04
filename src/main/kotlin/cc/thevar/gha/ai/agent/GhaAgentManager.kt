@@ -35,14 +35,17 @@ object GhaAgentManager {
                     output = "${scaffoldRes.output}\n\n${buildRes.output}"
                 )
             }
-            lowerGoal.contains("fix") || lowerGoal.contains("build") || lowerGoal.contains("test") || lowerGoal.contains("repair") -> {
-                buildTestAgent.solveWithHost(goal, projectDir, mcpHost)
+            lowerGoal.contains("web") || lowerGoal.contains("search") || lowerGoal.contains("fetch") || lowerGoal.contains("huggingface") || lowerGoal.contains("url") -> {
+                GhaWebAgentManager.routeWebMission(goal, projectDir)
             }
             lowerGoal.contains("security") || lowerGoal.contains("audit") || lowerGoal.contains("dependabot") -> {
                 securityAgent.solveWithHost(goal, projectDir, mcpHost)
             }
-            lowerGoal.contains("wiki") || lowerGoal.contains("doc") || lowerGoal.contains("documentation") -> {
+            lowerGoal.contains("wiki") || lowerGoal.contains("documentation") -> {
                 wikiAgent.solveWithHost(goal, projectDir, mcpHost)
+            }
+            "\\b(fix|build|compile|test|repair)\\b".toRegex().containsMatchIn(lowerGoal) -> {
+                buildTestAgent.solveWithHost(goal, projectDir, mcpHost)
             }
             else -> {
                 vcsAgent.solveWithHost(goal, projectDir, mcpHost)
