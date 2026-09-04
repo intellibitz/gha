@@ -1,8 +1,8 @@
 # Ridiculously Easy 0-Effort Installation
 
-Install `gha` into **any repository** in 1 second without modifying global system settings:
+Install `gha` into **any repository** in 1 second without modifying global system settings or existing project files:
 
-## ⚡ 1-Second One-Liner Installers
+## ⚡ 1-Second Universal One-Liner Installers
 
 ### macOS, Linux, & WSL
 ```bash
@@ -16,22 +16,33 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ---
 
-## Option 2: Self-Contained Gradle Init Script
+## 🤖 Executable Launcher Subcommands (`ghai`)
 
-Run `gha` tasks on any cloned project directly:
+Once installed, `./ghai` works anywhere across Linux, macOS, WSL, and Windows. It is **100% sandboxed** and will never modify your existing `build.gradle.kts` or `settings.gradle.kts`.
 
 ```bash
-./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+# 1. Primary Autonomous AI Workflow (Auto-detects diffs, commits, pushes, PRs, auto-merges, prunes CI logs):
+./ghai
+
+# 2. Smart Git Repository Clone (e.g. ./ghai clone intellibitz -> https://github.com/intellibitz/intellibitz):
+./ghai clone intellibitz
+
+# 3. Print Version Report & Verify Engines (100% Sandboxed):
+./ghai version
+
+# 4. Fetch & Update gha to Latest Release:
+./ghai update
+
+# 5. Completely Uninstall & Clean gha (0 side effects to user files):
+./ghai uninstall
 ```
 
 ---
 
-## Option 3: Standard Gradle Plugin
+## The 100% Sandbox Principle
 
-Add `cc.thevar.gha` to your project's `build.gradle.kts`:
+`gha` follows a strict **"Never Touch User Files"** policy:
 
-```kotlin
-plugins {
-    id("cc.thevar.gha") version "0.1.0"
-}
-```
+- **Scenario: Existing Project**: `gha` integrates into your build purely in memory via Gradle's init script flag. Your original source files remain pristine and untouched.
+- **Scenario: Empty Folder**: `gha` creates its own minimal build and settings files with a clear header. These are safely removed by `./ghai uninstall`.
+- **Global Settings**: `gha` uses an isolated Gradle home directory in `.gha/gradle-user-home`, ensuring 0 modifications to your system's `~/.gradle` folder.
