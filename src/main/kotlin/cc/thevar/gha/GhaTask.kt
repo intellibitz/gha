@@ -75,9 +75,9 @@ abstract class GhaTask : DefaultTask() {
         val tokenVal = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
 
         gitHubToken.convention(tokenVal)
-        projectRootDir.convention(project.layout.dir(project.provider { rootFile }))
+        projectRootDir.set(project.layout.projectDirectory)
         ghaProjectName.convention(pName)
-        gradleUserHomeDir.convention(project.layout.dir(project.provider { homeDir }))
+        gradleUserHomeDir.set(homeDir)
 
         taskRootDirFile = rootFile
         taskGitHubToken = tokenVal
