@@ -46,14 +46,26 @@ abstract class GhaTask : DefaultTask() {
     @get:Internal
     var taskProjectNameStr: String = "gha"
 
-    @get:Internal
-    val vcs: GhaVcsProvider by lazy { GhaProviderRegistry.getVcsProvider(taskRootDirFile) }
+    /**
+     * Lazy-initialized Version Control System Provider.
+     */
+    protected fun vcs(): GhaVcsProvider {
+        return GhaProviderRegistry.getVcsProvider(taskRootDirFile)
+    }
 
-    @get:Internal
-    val build: GhaBuildProvider by lazy { GhaProviderRegistry.getBuildProvider(taskRootDirFile) }
+    /**
+     * Lazy-initialized Build System Provider.
+     */
+    protected fun build(): GhaBuildProvider {
+        return GhaProviderRegistry.getBuildProvider(taskRootDirFile)
+    }
 
-    @get:Internal
-    val remote: GhaRemoteProvider by lazy { GhaProviderRegistry.getRemoteProvider(taskRootDirFile, resolveToken()) }
+    /**
+     * Lazy-initialized Remote Platform Provider.
+     */
+    protected fun remote(): GhaRemoteProvider {
+        return GhaProviderRegistry.getRemoteProvider(taskRootDirFile, resolveToken())
+    }
 
     init {
         val rootFile = project.layout.projectDirectory.asFile
