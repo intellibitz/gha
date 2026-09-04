@@ -75,16 +75,17 @@ abstract class GhaTask : DefaultTask() {
         val tokenVal = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
         val cmdTargetDir = project.findProperty("targetDir")?.toString()
         val targetFile = if (!cmdTargetDir.isNullOrBlank()) File(cmdTargetDir) else rootFile
+        val activePName = project.findProperty("projectName")?.toString() ?: targetFile.name
 
         gitHubToken.convention(tokenVal)
         projectRootDir.set(targetFile)
-        ghaProjectName.convention(pName)
+        ghaProjectName.convention(activePName)
         gradleUserHomeDir.set(homeDir)
 
         taskRootDirFile = targetFile
         taskGitHubToken = tokenVal
         taskGradleUserHomeDirFile = homeDir
-        taskProjectNameStr = pName
+        taskProjectNameStr = activePName
     }
 
     /**

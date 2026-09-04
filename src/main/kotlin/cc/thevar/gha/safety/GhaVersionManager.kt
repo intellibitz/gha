@@ -11,15 +11,16 @@ object GhaVersionManager {
     private const val VERSION_FILE = "version.txt"
 
     /**
-     * Reads the current version from version.txt in the project root.
+     * Reads the current version from .gha/version.txt (or fallback root version.txt).
      */
     fun readVersion(rootDir: File): String {
-        val file = File(rootDir, VERSION_FILE)
-        return if (file.exists()) {
-            file.readText().trim()
-        } else {
-            "0.1.0-SNAPSHOT"
-        }
+        val sandboxFile = File(rootDir, ".gha/version.txt")
+        if (sandboxFile.exists()) return sandboxFile.readText().trim()
+
+        val rootFile = File(rootDir, "version.txt")
+        if (rootFile.exists()) return rootFile.readText().trim()
+
+        return "0.1.0-SNAPSHOT"
     }
 
     /**
@@ -59,12 +60,21 @@ object GhaVersionManager {
     }
 
     /**
-     * Bumps the version (patch level) and writes it back to version.txt.
+     * Bumps the version (patch level) and writes it back to .gha/version.txt and root version.txt (if in gha project).
      */
     fun bumpVersion(rootDir: File): String {
         val current = readVersion(rootDir)
         val newVersion = incrementVersion(current)
-        File(rootDir, VERSION_FILE).writeText(newVersion + "\n")
+
+        val sandboxDir = File(rootDir, ".gha")
+        if (!sandboxDir.exists()) sandboxDir.mkdirs()
+        File(sandboxDir, "version.txt").writeText(newVersion + "\n")
+
+        val rootVersionFile = File(rootDir, "version.txt")
+        if (rootVersionFile.exists()) {
+            rootVersionFile.writeText(newVersion + "\n")
+        }
+
         return newVersion
     }
 

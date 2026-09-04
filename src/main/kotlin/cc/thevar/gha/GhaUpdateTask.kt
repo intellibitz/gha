@@ -23,8 +23,13 @@ abstract class GhaUpdateTask : GhaTask() {
         if (comparison > 0) {
             logger.lifecycle("📈 Newer version $remoteVersion found! Performing autonomous upgrade...")
             
-            // 1. Refresh version.txt
-            File(rootDir, "version.txt").writeText(remoteVersion + "\n")
+            // 1. Refresh .gha/version.txt
+            val sandboxDir = File(rootDir, ".gha")
+            if (!sandboxDir.exists()) sandboxDir.mkdirs()
+            File(sandboxDir, "version.txt").writeText(remoteVersion + "\n")
+            if (File(rootDir, "version.txt").exists()) {
+                File(rootDir, "version.txt").writeText(remoteVersion + "\n")
+            }
             
             // 2. Fetch latest install.sh
             val installShRes = GhaProcessRunner.exec(
