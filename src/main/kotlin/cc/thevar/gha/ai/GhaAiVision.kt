@@ -3,18 +3,31 @@ package cc.thevar.gha.ai
 /**
  * gha AI Vision: The bridge between deterministic automation and autonomous intelligence.
  * 
- * gha aims to be the standard automation layer for AI Agents by:
- * 1. Exposing Git, GitHub, and Build tools via Model Context Protocol (MCP).
- * 2. Providing a sandboxed environment for Agents to execute, test, and self-heal code.
- * 3. Automating the lifecycle of AI models within project repositories (fine-tuning, deployment, local LLM orchestration).
+ * "gha: ai, anywhere" Promise:
+ * 0 Effort, 100% Gain for any project, anywhere in the world.
+ * 
+ * Evolutionary Delegation Architecture:
+ * Until gha builds its own native fleet of in-house models, inference engines, agents,
+ * and MCP servers, gha components delegate to established providers from the web
+ * (downloaded locally or accessed directly via web APIs):
+ * 1. AOA Frameworks: Microsoft AutoGen, CrewAI, LangGraph, OpenAI Swarm, Native Kotlin AOA.
+ * 2. Agents: Web Research Agents, Hugging Face Agents, GitHub API Agents, Remote MCP Web Agents.
+ * 3. Inference Engines: Local (Ollama, llama.cpp, Python UV) & Web (OpenRouter, Groq LPU, HF Serverless, Gemini, OpenAI, Claude).
+ * 4. Models: DeepSeek R1, Llama 3.3, Qwen 2.5 Coder, Claude 3.5 Sonnet, GPT-4o.
+ * 5. MCP Servers: Official GitHub, HF Hub, Memory, Brave Search, Puppeteer, Filesystem, Fetch, Remote SSE, Custom System Tools.
+ * 
+ * Continuous Learning:
+ * gha learns from every execution trace, tool invocation, and hardware profile to
+ * continuously build its own native fleet of AI capabilities as usage increases.
  */
 object GhaAiVision {
-    const val MISSION = "0 Effort, 100% Gain for the AI World."
+    const val MISSION = "gha: ai, anywhere — 0 Effort, 100% Gain for the AI World."
     
-    val capabilities = listOf(
-        "MCP Server: Expose gha tasks as tools for LLMs",
-        "Agentic Workflows: Self-healing and autonomous contribution loops",
-        "Model Orchestration: Manage local and remote LLM configurations per project",
-        "Context Intelligence: Feed project-specific VCS and Build metadata into AI context windows"
+    val principles = listOf(
+        "Evolutionary Delegation: Connect to best web/local providers across all 5 tiers",
+        "GHA MCP Host: Host MCP servers while AOA and Sub-Agents act as MCP Clients",
+        "Self-Evolving Fleet: Learn from usage traces to build native in-house AI components",
+        "Hardware Optimization: Profile local CPU/GPU/RAM to select optimal model tiers",
+        "100% Sandboxed & Portable: Complete state encapsulated in single .gha/ directory"
     )
 }
