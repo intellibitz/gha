@@ -1,6 +1,7 @@
 package cc.thevar.gha.safety
 
 import java.io.File
+import java.time.Instant
 
 /**
  * Manages the GHA Sandbox environment and enforces safety constraints.
@@ -27,14 +28,15 @@ object GhaSandboxManager {
             ghaDir.mkdirs()
         }
         val configFile = File(ghaDir, GHA_JSON)
-        if (!configFile.exists()) {
+        // Refresh if missing or invalid JSON
+        if (!configFile.exists() || !configFile.readText().contains("\"sandboxed\": true")) {
             configFile.writeText(
                 """
                 {
                   "project": "$projectName",
                   "version": "0.1.0-SNAPSHOT",
                   "sandboxed": true,
-                  "autoInitialized": true
+                  "lastHealed": "${Instant.now()}"
                 }
                 """.trimIndent() + "\n"
             )
@@ -74,6 +76,7 @@ object GhaSandboxManager {
      */
     fun healthCheck(rootDir: File, gradleUserHomeDir: File? = null): Pair<Boolean, String> {
         val ghaJsonExists = checkIfGhaJsonExists(rootDir)
+        val initScriptExists = File(rootDir, "init/gha.init.gradle.kts").let { it.exists() && it.length() > 0 }
         val gradleHomeCorrect = checkGradleUserHome(rootDir, gradleUserHomeDir)
         val currentHomePath = gradleUserHomeDir?.canonicalPath 
             ?: System.getProperty("gradle.user.home") 
@@ -85,10 +88,21 @@ object GhaSandboxManager {
                 false to "CRITICAL: Sandbox missing (.gha/gha.json not found) and gradle.user.home is NOT directed to .gha/gradle-user-home."
             !ghaJsonExists -> 
                 false to "ERROR: Sandbox configuration missing (.gha/gha.json not found)."
+            !initScriptExists ->
+                false to "ERROR: GHA Init script missing or empty (init/gha.init.gradle.kts)."
             !gradleHomeCorrect -> 
                 false to "ERROR: gradle.user.home is NOT directed to .gha/gradle-user-home. Current: $currentHomePath"
             else -> 
                 true to "HEALTHY: GHA Sandbox is properly enforced."
         }
+    }
+
+    /**
+     * Attempts to self-heal the sandbox by refreshing critical files.
+     */
+    fun selfHeal(rootDir: File, projectName: String) {
+        ensureSandbox(rootDir, projectName)
+        // Note: Full healing of init scripts and launchers is delegated to GhaInitTask 
+        // which has access to the full plugin context and resource templates.
     }
 }

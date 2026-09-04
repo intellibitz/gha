@@ -4,6 +4,7 @@ import cc.thevar.gha.GhaTask
 import cc.thevar.gha.config.GhaConfig
 import cc.thevar.gha.git.GhaGitExec
 import cc.thevar.gha.safety.GhaProcessRunner
+import cc.thevar.gha.safety.GhaVersionManager
 import cc.thevar.gha.workflow.GhaParallelWorkflowManager
 import cc.thevar.gha.workflow.GhaWorkflowManager
 import org.gradle.api.provider.Property
@@ -55,6 +56,7 @@ abstract class GhaAiTask : GhaTask() {
 
     @TaskAction
     fun execute() {
+        verifySandbox()
         val rootDir = projectRootDir.get().asFile
         val token = resolveToken()
         val base = baseBranch.getOrElse("main")
@@ -70,9 +72,10 @@ abstract class GhaAiTask : GhaTask() {
             val gitVersion = if (gitResult.isSuccess) gitResult.stdout else "Not found"
             val ghResult = GhaProcessRunner.exec(rootDir, listOf("gh", "version"))
             val ghVersion = if (ghResult.isSuccess) ghResult.stdout.lines().firstOrNull() ?: "Active" else "Not found"
+            val currentVersion = GhaVersionManager.readVersion(rootDir)
 
             println("🤖 [ghai Version Report]")
-            println("   ├── gha Version     : 0.1.0-SNAPSHOT (cc.thevar.gha)")
+            println("   ├── gha Version     : $currentVersion (cc.thevar.gha)")
             println("   ├── Kotlin Version  : ${KotlinVersion.CURRENT} (${GhaConfig.KOTLIN_VENDOR})")
             println("   ├── Gradle Version  : ${GhaConfig.GRADLE_VERSION} (${GhaConfig.GRADLE_VENDOR})")
             println("   ├── Java JDK        : ${System.getProperty("java.version")} (${GhaConfig.JAVA_VENDOR})")
@@ -109,6 +112,11 @@ abstract class GhaAiTask : GhaTask() {
         if (isDirty) {
             // WORKFLOW A: DIRTY WORKING TREE (Local changes exist)
             println("📦 [ghai] Detected dirty working tree. Executing local checkin & remote push workflow...")
+
+            // Autonomous Version Bump for every push (0 Effort, 100% Gain)
+            val newVersion = GhaVersionManager.bumpVersion(rootDir)
+            println("📈 [ghai Version Bump] Incremented version to $newVersion")
+
             val smartMsg = GhaAiManager.detectSmartCommitMessage(rootDir, explicitMsg)
             commitSummary = "Committed: \"$smartMsg\""
 

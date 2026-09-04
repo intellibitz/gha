@@ -1,6 +1,7 @@
 package cc.thevar.gha
 
 import cc.thevar.gha.safety.GhaSandboxManager
+import cc.thevar.gha.safety.GhaVersionManager
 import cc.thevar.gha.security.GhaCredentialsResolver
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -77,15 +78,19 @@ abstract class GhaTask : DefaultTask() {
         val userHome = gradleUserHomeDir.get().asFile
         val pName = ghaProjectName.getOrElse("gha")
 
-        // Self-healing: auto-ensure .gha/gha.json exists
-        GhaSandboxManager.ensureSandbox(rootDir, pName)
+        // Print GHA Version Header for every run (0 Effort, 100% Gain)
+        val version = GhaVersionManager.readVersion(rootDir)
+        logger.lifecycle("🤖 [gha] Engine Version: $version (Sandboxed)")
+
+        // Self-healing: auto-ensure sandbox integrity
+        GhaSandboxManager.selfHeal(rootDir, pName)
 
         val (isHealthy, message) = GhaSandboxManager.healthCheck(rootDir, userHome)
         if (!isHealthy) {
             throw GradleException(
                 "$message\n\n" +
                 "To fix this:\n" +
-                "1. Run './gradlew ghaInit' to initialize the sandbox.\n" +
+                "1. Run './ghai' to trigger autonomous self-healing.\n" +
                 "2. Ensure you are running Gradle with '-Dgradle.user.home=.gha/gradle-user-home'."
             )
         }

@@ -66,6 +66,33 @@ abstract class GhaUninstallTask : GhaTask() {
             logger.lifecycle("   🗑️ Removed gha-generated build.gradle.kts")
         }
 
+        // 7. Cleanup .gitignore entries
+        val gitignore = File(rootDir, ".gitignore")
+        if (gitignore.exists()) {
+            val content = gitignore.readText()
+            if (content.contains("# gha: Git, GitHub & Gradle Automation")) {
+                val lines = gitignore.readLines()
+                val newLines = mutableListOf<String>()
+                var skip = false
+                for (line in lines) {
+                    if (line.contains("# gha: Git, GitHub & Gradle Automation")) {
+                        skip = true
+                        continue
+                    }
+                    if (skip) {
+                        if (line.isBlank() || line.startsWith(".gha/") || line.startsWith("ghai") || line.startsWith("ghai.bat") || line.startsWith("init/gha.init.gradle.kts")) {
+                            continue
+                        } else {
+                            skip = false
+                        }
+                    }
+                    newLines.add(line)
+                }
+                gitignore.writeText(newLines.joinToString("\n") + "\n")
+                logger.lifecycle("   🗑️ Removed gha entries from .gitignore")
+            }
+        }
+
         logger.lifecycle("✨ [GHA Uninstall] gha removed completely with 0 side effects to user files!")
     }
 }
