@@ -361,7 +361,15 @@ abstract class GhaAiTask : GhaTask() {
         }
 
         // Step 2: Proactively sweep GitHub Actions workflows every run
-        println("🧹 [ghai Workflow Sweeper] Sweeping GitHub Actions workflows at https://github.com/intellibitz/gha/actions...")
+        val remoteUrl = GhaGitExec.exec(rootDir, "remote", "get-url", "origin").stdout.trim()
+        val actionsUrlDisplay = if (remoteUrl.contains("github.com")) {
+            val repoSlug = remoteUrl.substringAfter("github.com/").substringAfter("github.com:").removeSuffix(".git")
+            "https://github.com/$repoSlug/actions"
+        } else {
+            "repository '${rootDir.name}'"
+        }
+
+        println("🧹 [ghai Workflow Sweeper] Sweeping GitHub Actions workflows at $actionsUrlDisplay...")
         val prunedRuns = try {
             GhaWorkflowManager.pruneOldWorkflowRuns(rootDir, token, maxKeep = 5)
         } catch (_: Exception) { 0 }
@@ -393,7 +401,7 @@ abstract class GhaAiTask : GhaTask() {
         println("   • Remote Push    : $pushSummary")
         println("   • GitHub PR      : $prSummary ${if (prUrlSummary != "N/A") "($prUrlSummary)" else ""}")
         println("   • CI/CD Status   : $ciSummary")
-        println("   • CI Workflows   : Swept https://github.com/intellibitz/gha/actions ${if (prunedRuns > 0) "($prunedRuns pruned)" else "(Lean)"}")
+        println("   • CI Workflows   : Swept $actionsUrlDisplay ${if (prunedRuns > 0) "($prunedRuns pruned)" else "(Lean)"}")
         println("   • Remote Branches: Swept origin/gha-auto/* ${if (prunedBranches > 0) "($prunedBranches pruned)" else "(Clean)"}")
         println("   • Local Sync     : 100% Synced with origin/$base")
         println("────────────────────────────────────────────────────────────────────────────────")
