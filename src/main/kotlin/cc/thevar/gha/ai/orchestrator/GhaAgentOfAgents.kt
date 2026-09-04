@@ -29,6 +29,24 @@ class GhaAgentOfAgents(
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
+        val requestedAoaEnv = System.getenv("GHA_AOA") ?: System.getenv("GHA_AOA_FRAMEWORK")
+        if (!requestedAoaEnv.isNullOrBlank()) {
+            val requestedFramework = GhaAoaManager.parseFramework(requestedAoaEnv)
+            if (requestedFramework != GhaAoaManager.Framework.BUILT_IN) {
+                val topLog = mutableListOf<String>()
+                topLog.add("🌌 [GHA Master Orchestrator] Agent of Agents initialized for GHA User.")
+                topLog.add("🎯 Mission Objective: \"$goal\"")
+                topLog.add("🌐 [Top-Level Delegation] Master Orchestrator delegating mission from the TOP to reliable Web AOA Framework: ${requestedFramework.displayName}")
+                
+                val delegateResult = GhaAoaManager.executeMission(requestedFramework, goal, rootDir)
+                return GhaAgentResult(
+                    success = delegateResult.success,
+                    log = topLog + delegateResult.log,
+                    output = delegateResult.output
+                )
+            }
+        }
+
         val log = mutableListOf<String>()
         log.add("🌌 [GHA Master Orchestrator] Agent of Agents initialized for GHA User.")
         log.add("🎯 Mission Objective: \"$goal\"")
