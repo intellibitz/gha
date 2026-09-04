@@ -86,14 +86,16 @@ abstract class GhaTask : DefaultTask() {
      * Verifies that the task is running within the GHA Sandbox.
      * Self-heals by auto-creating .gha/gha.json if missing, then verifies sandbox rules.
      */
-    fun verifySandbox() {
+    fun verifySandbox(silent: Boolean = false) {
         val rootDir = projectRootDir.get().asFile
         val userHome = gradleUserHomeDir.get().asFile
         val pName = ghaProjectName.getOrElse("gha")
 
         // Print GHA Version Header for every run (0 Effort, 100% Gain)
-        val version = GhaVersionManager.readVersion(rootDir)
-        logger.lifecycle("🤖 [gha] Engine Version: $version (Sandboxed)")
+        if (!silent) {
+            val version = GhaVersionManager.readVersion(rootDir)
+            logger.lifecycle("🤖 [gha] Engine Version: $version (Sandboxed)")
+        }
 
         // Self-healing: auto-ensure sandbox integrity
         GhaSandboxManager.selfHeal(rootDir, pName)
