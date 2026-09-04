@@ -1,11 +1,25 @@
 #!/usr/bin/env bash
 # 🤖 ghai - Autonomous AI Workflow Execution Script
 # 100% Sandboxed & Self-Healing - 0% Modifications to user files.
+
 INIT_SCRIPT=".gha/init.gradle.kts"
 if [ ! -f "$INIT_SCRIPT" ] && [ -f "init/gha.init.gradle.kts" ]; then
     INIT_SCRIPT="init/gha.init.gradle.kts"
 fi
+
+# On-Demand Gradle Wrapper Bootstrap
+if [ ! -f "gradlew" ] || [ ! -s "gradlew" ]; then
+    echo "📥 [ghai On-Demand] Bootstrapping Gradle wrapper..."
+    mkdir -p "gradle/wrapper"
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew" -o "gradlew" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew.bat" -o "gradlew.bat" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.properties" -o "gradle/wrapper/gradle-wrapper.properties" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.jar" -o "gradle/wrapper/gradle-wrapper.jar" 2>/dev/null || true
+    chmod +x "gradlew" 2>/dev/null || true
+fi
+
 if [ "$1" = "--version" ] || [ "$1" = "-v" ] || [ "$1" = "version" ] || [ "$1" = ":version" ]; then
     exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghai -Pmessage="--version"
 fi
+
 exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghai "$@"
