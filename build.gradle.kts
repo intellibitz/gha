@@ -12,13 +12,21 @@ tasks.register("syncInitScript") {
     val projectDir = project.layout.projectDirectory
     val v = projectVersion
     doLast {
-        val initScriptFile = projectDir.file("init/gha.init.gradle.kts").asFile
+        val initScriptFile = projectDir.file(".gha/init.gradle.kts").asFile
         if (initScriptFile.exists()) {
             val content = initScriptFile.readText()
             val newContent = content.replace(Regex("""classpath\("cc.thevar.gha:gha:.*"\)"""), "classpath(\"cc.thevar.gha:gha:$v\")")
             if (content != newContent) {
                 initScriptFile.writeText(newContent)
-                println("✅ Updated init/gha.init.gradle.kts to version $v")
+                println("✅ Updated .gha/init.gradle.kts to version $v")
+            }
+        }
+        val legacyInitFile = projectDir.file("init/gha.init.gradle.kts").asFile
+        if (legacyInitFile.exists()) {
+            val content = legacyInitFile.readText()
+            val newContent = content.replace(Regex("""classpath\("cc.thevar.gha:gha:.*"\)"""), "classpath(\"cc.thevar.gha:gha:$v\")")
+            if (content != newContent) {
+                legacyInitFile.writeText(newContent)
             }
         }
     }

@@ -41,14 +41,8 @@ abstract class GhaInitTask : GhaTask() {
             """.trimIndent() + "\n"
         )
 
-        // 2. Create init/ directory and gha.init.gradle.kts
-        val initDir = File(rootDir, "init")
-        if (!initDir.exists()) initDir.mkdirs()
-
-        val initScript = File(initDir, "gha.init.gradle.kts")
-        // Always refresh init script to ensure it points to the correct plugin version
-        initScript.writeText(
-            """
+        // 2. Create .gha/init.gradle.kts (Single Sandbox File)
+        val initScriptText = """
             // Self-contained Gradle Init Script for GitHub Automation (GHA)
             // 100% Sandboxed - 0% Modifications to existing project files.
             initscript {
@@ -65,25 +59,31 @@ abstract class GhaInitTask : GhaTask() {
             allprojects {
                 apply<cc.thevar.gha.GhaPlugin>()
             }
-            """.trimIndent() + "\n"
-        )
+        """.trimIndent() + "\n"
 
-        val installSh = File(initDir, "install.sh")
-        if (installSh.exists()) {
-            installSh.setExecutable(true, false)
+        val ghaInitScript = File(ghaDir, "init.gradle.kts")
+        ghaInitScript.writeText(initScriptText)
+
+        // Backwards compatibility for existing legacy init/ directory
+        val legacyInitDir = File(rootDir, "init")
+        if (legacyInitDir.exists()) {
+            File(legacyInitDir, "gha.init.gradle.kts").writeText(initScriptText)
         }
 
         // 3. Create top-level ./ghai executable launcher (rwxr-xr-x mode 100755)
         val ghaiScript = File(rootDir, "ghai")
-        // Self-heal launcher: Always write it if it's missing or significantly different
         val ghaiContent = """
             #!/usr/bin/env bash
             # 🤖 ghai - Autonomous AI Workflow Execution Script
             # 100% Sandboxed & Self-Healing - 0% Modifications to user files.
-            if [ "${'$'}1" = "--version" ] || [ "${'$'}1" = "-v" ] || [ "${'$'}1" = "version" ] || [ "${'$'}1" = ":version" ]; then
-                exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+            INIT_SCRIPT=".gha/init.gradle.kts"
+            if [ ! -f "${'$'}INIT_SCRIPT" ] && [ -f "init/gha.init.gradle.kts" ]; then
+                INIT_SCRIPT="init/gha.init.gradle.kts"
             fi
-            exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "${'$'}@"
+            if [ "${'$'}1" = "--version" ] || [ "${'$'}1" = "-v" ] || [ "${'$'}1" = "version" ] || [ "${'$'}1" = ":version" ]; then
+                exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghai -Pmessage="--version"
+            fi
+            exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghai "${'$'}@"
         """.trimIndent() + "\n"
 
         if (!ghaiScript.exists() || ghaiScript.readText() != ghaiContent) {
@@ -91,27 +91,31 @@ abstract class GhaInitTask : GhaTask() {
             ghaiScript.setExecutable(true, false)
         }
 
-        val ghaiBat = File(rootDir, "ghai.bat")
         val ghaiBatContent = """
             @echo off
             set "CMD=%~1"
             if defined CMD if "%CMD:~0,1%"==":" set "CMD=%CMD:~1%"
+            set "INIT_SCRIPT=.gha\init.gradle.kts"
+            if not exist "%INIT_SCRIPT%" if exist "init\gha.init.gradle.kts" set "INIT_SCRIPT=init\gha.init.gradle.kts"
             if /i "%CMD%"=="version" (
-                .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+                .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script "%INIT_SCRIPT%" ghai -Pmessage="--version"
                 exit /b 0
             )
-            .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai %*
+            .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script "%INIT_SCRIPT%" ghai %*
         """.trimIndent() + "\n"
 
-        if (!ghaiBat.exists() || ghaiBat.readText() != ghaiBatContent) {
-            ghaiBat.writeText(ghaiBatContent)
+        val ghaBatInSandbox = File(ghaDir, "ghai.bat")
+        ghaBatInSandbox.writeText(ghaiBatContent)
+
+        val ghaiBatRoot = File(rootDir, "ghai.bat")
+        if (!ghaiBatRoot.exists() || ghaiBatRoot.readText() != ghaiBatContent) {
+            ghaiBatRoot.writeText(ghaiBatContent)
         }
 
         // 3a. Self-Heal: Ensure Gradle wrapper and settings files are present and valid
         val gradlew = File(rootDir, "gradlew")
         if (!gradlew.exists() || gradlew.length() == 0L) {
             logger.lifecycle("   📥 [Self-Heal] Restoring broken or missing Gradle wrapper...")
-            // We use curl via ProcessRunner to avoid keeping binary blobs in Kotlin code
             GhaProcessRunner.exec(
                 rootDir,
                 listOf(
@@ -166,7 +170,7 @@ abstract class GhaInitTask : GhaTask() {
                 // Generated by gha - Safe to delete during uninstall
                 pluginManagement {
                     repositories {
-                        mavenLocal()
+                        google()
                         mavenCentral()
                         gradlePluginPortal()
                     }
@@ -223,7 +227,6 @@ abstract class GhaInitTask : GhaTask() {
         }
 
         // 5. Update .gitignore for Invisible Integration (0 side effects)
-        // Skip updating .gitignore if we are in the gha project itself to avoid ignoring its own source launcher
         if (projectName.get() != "gha") {
             val gitignore = File(rootDir, ".gitignore")
             val ghaIgnoreSection = """
@@ -232,7 +235,6 @@ abstract class GhaInitTask : GhaTask() {
                 .gha/
                 ghai
                 ghai.bat
-                init/gha.init.gradle.kts
             """.trimIndent()
 
             if (gitignore.exists()) {
@@ -248,8 +250,7 @@ abstract class GhaInitTask : GhaTask() {
         }
 
         logger.lifecycle("⚡ [gha] 100% Sandboxed 0-Effort Installation Complete!")
-        logger.lifecycle("   ├── .gha/ sandbox initialized")
-        logger.lifecycle("   ├── init/gha.init.gradle.kts refreshed")
+        logger.lifecycle("   ├── .gha/ sandbox initialized (.gha/init.gradle.kts)")
         logger.lifecycle("   ├── ./ghai & ./ghai.bat executable runner scripts created (rwxr-xr-x)")
         logger.lifecycle("   └── .github/workflows/gha.yml CI workflow created")
         logger.lifecycle("🎉 gha is ready! Type './ghai' to run autonomous AI automation.")

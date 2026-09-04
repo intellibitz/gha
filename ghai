@@ -11,6 +11,11 @@ if [ "$GHA_NO_REFRESH" = "1" ]; then
     REFRESH_FLAG=""
 fi
 
+INIT_SCRIPT=".gha/init.gradle.kts"
+if [ ! -f "$INIT_SCRIPT" ] && [ -f "init/gha.init.gradle.kts" ]; then
+    INIT_SCRIPT="init/gha.init.gradle.kts"
+fi
+
 # Support Gradle task path syntax (e.g. :version -> version)
 RAW_ARG="$1"
 CMD="${RAW_ARG#:}"
@@ -19,34 +24,34 @@ CMD="${RAW_ARG#:}"
 case "$CMD" in
     version|--version|-v)
         chmod +x gradlew 2>/dev/null || true
-        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghai -Pmessage="--version"
         ;;
     status)
         chmod +x gradlew 2>/dev/null || true
-        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaStatus
+        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaStatus
         ;;
     clone)
         shift
         chmod +x gradlew 2>/dev/null || true
-        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaGitClone -PtargetRepo="$1" -Pdir="$2"
+        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaGitClone -PtargetRepo="$1" -Pdir="$2"
         ;;
     help)
         chmod +x gradlew 2>/dev/null || true
-        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaHelp
+        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaHelp
         ;;
     install)
         chmod +x gradlew 2>/dev/null || true
-        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaInit
         ;;
     reinstall)
         chmod +x gradlew 2>/dev/null || true
         echo "🧹 [ghai Reinstall] Performing clean removal..."
-        ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaUninstall
+        ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaUninstall
         echo "⚡ [ghai Reinstall] Restoring sandbox..."
-        mkdir -p init
-        curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" 2>/dev/null || true
+        mkdir -p .gha
+        curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o ".gha/init.gradle.kts" 2>/dev/null || true
         curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/version.txt" -o "version.txt" 2>/dev/null || true
-        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaInit
         ;;
     update)
         echo "🚀 [ghai Update] Fetching and updating gha to latest version..."
@@ -56,7 +61,7 @@ case "$CMD" in
         ;;
     uninstall)
         echo "🧹 [ghai Uninstall] Completely removing gha sandbox, runner scripts, and workflows..."
-        ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaUninstall
+        ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaUninstall
         echo "✨ [ghai Uninstall] gha removed completely with 0 lingering system modifications!"
         exit 0
         ;;
@@ -65,9 +70,9 @@ case "$CMD" in
         chmod +x gradlew 2>/dev/null || true
         SUBMODE="$1"
         if [ "$SUBMODE" = "orchestrate" ] || [ "$SUBMODE" = "models" ] || [ "$SUBMODE" = "engines" ] || [ "$SUBMODE" = "mcp-hub" ] || [ "$SUBMODE" = "download" ]; then
-            exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaAiOrchestrate -Paction="$1" -Pmodel="$2" -Pfilter="$3" -Pgoal="$2"
+            exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaAiOrchestrate -Paction="$1" -Pmodel="$2" -Pfilter="$3" -Pgoal="$2"
         else
-            exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaAiVision -Pmode="$1" -Pgoal="$2"
+            exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaAiVision -Pmode="$1" -Pgoal="$2"
         fi
         ;;
 esac
@@ -75,7 +80,7 @@ esac
 # 2. GRADLE TASK DETECTION
 if [[ "$RAW_ARG" == ":"* ]]; then
     chmod +x gradlew 2>/dev/null || true
-    exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts "$@"
+    exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" "$@"
 fi
 
 PROJECT_ROOT="$PWD"
@@ -101,12 +106,12 @@ if [ ! -f "gradlew" ] || [ ! -s "gradlew" ]; then
     chmod +x "gradlew" 2>/dev/null || true
 fi
 
-if [ ! -f "init/gha.init.gradle.kts" ] || [ ! -d ".gha" ]; then
+if [ ! -f "$INIT_SCRIPT" ] || [ ! -d ".gha" ]; then
     echo "⚡ [ghai Self-Heal] Restoring gha sandbox..."
-    mkdir -p init
-    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" 2>/dev/null || true
+    mkdir -p .gha
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o ".gha/init.gradle.kts" 2>/dev/null || true
     curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/version.txt" -o "version.txt" 2>/dev/null || true
-    ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+    ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaInit
 fi
 
 # 4. GITHUB CLI (gh) MAPPING
@@ -114,13 +119,13 @@ fi
 GH_COMMANDS="pr issue repo gist release workflow secret project run auth browse codespace variable api auth"
 if [[ " $GH_COMMANDS " =~ " $CMD " ]]; then
     # Execute via GitHub CLI in the sandboxed environment
-    export GITHUB_TOKEN=$(./gradlew -q $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts :ghai -Pmessage="--token-only" 2>/dev/null || echo "")
+    export GITHUB_TOKEN=$(./gradlew -q $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" :ghai -Pmessage="--token-only" 2>/dev/null || echo "")
     if command -v gh >/dev/null 2>&1; then
         exec gh "$@"
     else
         echo "⚠️  GitHub CLI (gh) not found in PATH. Attempting via Gradle task..."
         # Fallback to gha tasks if possible or error
-        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
+        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghai "$@"
     fi
 fi
 
@@ -146,12 +151,12 @@ if [ -n "$RAW_ARG" ]; then
     done
 
     if [ "$IS_GRADLE" = "1" ]; then
-        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
+        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghai "$@"
     fi
 
     # Check if it's a known Gradle task (starts with gha)
     if [[ "$CMD" == gha* ]]; then
-        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts "$@"
+        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" "$@"
     fi
 
     # Check if the command is a known Git subcommand
@@ -170,8 +175,8 @@ if [ -n "$RAW_ARG" ]; then
     # Natural Language English Instruction detected!
     # Route to GHA Agent of Agents Orchestrator
     echo "🤖 [ghai Orchestrator] Natural Language Instruction detected: \"$*\""
-    exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaAiOrchestrate -Paction="agent" -Pgoal="$*"
+    exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaAiOrchestrate -Paction="agent" -Pgoal="$*"
 fi
 
 # Default (no arguments): Run autonomous AI workflow
-exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai
+exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghai

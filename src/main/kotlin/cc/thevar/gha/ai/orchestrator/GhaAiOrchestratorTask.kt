@@ -6,6 +6,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
+import java.io.File
 
 /**
  * GHA AI Orchestrator Task: Entry point for the Master Agent Manager & MCP Host.
@@ -29,21 +30,28 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
     @get:Optional
     abstract val goal: Property<String>
 
+    @get:Input
+    @get:Optional
+    abstract val targetDirProperty: Property<String>
+
     init {
         val prov = project.providers
+        val cmdTargetDir = project.findProperty("targetDir")?.toString()
         action.convention(prov.gradleProperty("action").orElse("status"))
         model.convention(prov.gradleProperty("model"))
         filter.convention(prov.gradleProperty("filter"))
         goal.convention(prov.gradleProperty("goal").orElse("health check and orchestrate"))
+        targetDirProperty.convention(prov.gradleProperty("targetDir").orElse(prov.provider { cmdTargetDir }))
     }
 
     @TaskAction
     fun execute() {
         verifySandbox()
-        val rootDir = taskRootDirFile
+        val targetDirStr = targetDirProperty.orNull
+        val rootDir = if (!targetDirStr.isNullOrBlank()) File(targetDirStr) else taskRootDirFile
         val activeAction = action.getOrElse("status").lowercase()
 
-        logger.lifecycle("🌌 [GHA AI Orchestrator] Action: '$activeAction'")
+        logger.lifecycle("🌌 [GHA AI Orchestrator] Action: '$activeAction', Target Directory: ${rootDir.absolutePath}")
 
         when (activeAction) {
             "status", "orchestrate", "agent" -> {

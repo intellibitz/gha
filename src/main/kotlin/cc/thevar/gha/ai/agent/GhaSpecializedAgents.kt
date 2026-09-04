@@ -35,7 +35,7 @@ class GhaScaffoldingAgent(
 
         val toolName = if (lowerGoal.contains("android")) "scaffold_android" else "scaffold_kotlin"
         log.add("   ► [MCP Client] Calling MCP Tool '$toolName' on GHA MCP Host...")
-        val output = mcpHost.callTool(toolName, mapOf("projectName" to rootDir.name))
+        val output = mcpHost.callTool(toolName, mapOf("projectName" to rootDir.name, "targetDir" to rootDir.absolutePath))
         log.add("   ✅ [MCP Response] $output")
 
         return GhaAgentResult(true, log, output)

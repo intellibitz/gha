@@ -180,14 +180,18 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
 
         return when (toolName.lowercase()) {
             "scaffold_kotlin" -> {
-                val pName = arguments["projectName"]?.toString() ?: rootDir.name
+                val tDirStr = arguments["targetDir"]?.toString()
+                val targetFile = if (!tDirStr.isNullOrBlank()) File(tDirStr) else rootDir
+                val pName = arguments["projectName"]?.toString() ?: targetFile.name
                 val pkg = arguments["packageName"]?.toString() ?: "com.example.app"
-                scaffoldKotlinProject(rootDir, pName, pkg)
+                scaffoldKotlinProject(targetFile, pName, pkg)
             }
             "scaffold_android" -> {
-                val pName = arguments["projectName"]?.toString() ?: rootDir.name
+                val tDirStr = arguments["targetDir"]?.toString()
+                val targetFile = if (!tDirStr.isNullOrBlank()) File(tDirStr) else rootDir
+                val pName = arguments["projectName"]?.toString() ?: targetFile.name
                 val pkg = arguments["packageName"]?.toString() ?: "com.example.androidapp"
-                scaffoldAndroidProject(rootDir, pName, pkg)
+                scaffoldAndroidProject(targetFile, pName, pkg)
             }
             "sync" -> {
                 val msg = arguments["message"]?.toString()
@@ -377,10 +381,14 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
     }
 
     private fun scaffoldAndroidProject(rootDir: File, name: String, pkg: String): String {
-        File(rootDir, "src/main/kotlin/com").deleteRecursively()
-        File(rootDir, "src/test/kotlin/com").deleteRecursively()
+        System.err.println("DEBUG scaffoldAndroidProject rootDir=${rootDir.absolutePath}")
+        val isGhaSelfRepo = File(rootDir, "build.gradle.kts").exists() && File(rootDir, "src/main/kotlin/cc/thevar/gha").exists()
+        if (isGhaSelfRepo) {
+            File(rootDir, "src/main/kotlin/com").deleteRecursively()
+            File(rootDir, "src/test/kotlin/com").deleteRecursively()
+        }
 
-        val targetDir = if (File(rootDir, "build.gradle.kts").exists() && File(rootDir, "src/main/kotlin/cc/thevar/gha").exists()) {
+        val targetDir = if (isGhaSelfRepo) {
             File(rootDir, name.replace(" ", "_").lowercase()).apply { mkdirs() }
         } else {
             rootDir
@@ -398,6 +406,15 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
                 <?xml version="1.0" encoding="utf-8"?>
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="$pkg">
+
+                    <uses-permission android:name="android.permission.BLUETOOTH" />
+                    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+                    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+                    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+                    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+                    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+                    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
                     <application
                         android:allowBackup="true"
                         android:label="$name"
@@ -426,21 +443,147 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
                 import android.os.Bundle
                 import androidx.activity.ComponentActivity
                 import androidx.activity.compose.setContent
-                import androidx.compose.material3.Text
-                import androidx.compose.runtime.Composable
+                import androidx.compose.foundation.background
+                import androidx.compose.foundation.layout.*
+                import androidx.compose.foundation.lazy.LazyColumn
+                import androidx.compose.foundation.lazy.items
+                import androidx.compose.foundation.shape.RoundedCornerShape
+                import androidx.compose.material3.*
+                import androidx.compose.runtime.*
+                import androidx.compose.ui.Alignment
+                import androidx.compose.ui.Modifier
+                import androidx.compose.ui.graphics.Color
+                import androidx.compose.ui.unit.dp
+                import androidx.compose.ui.unit.sp
+
+                data class ChatMessage(
+                    val sender: String,
+                    val text: String,
+                    val timestamp: String,
+                    val isFromMe: Boolean
+                )
 
                 class MainActivity : ComponentActivity() {
                     override fun onCreate(savedInstanceState: Bundle?) {
                         super.onCreate(savedInstanceState)
                         setContent {
-                            Greeting("$name")
+                            MaterialTheme {
+                                Surface(
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = MaterialTheme.colorScheme.background
+                                ) {
+                                    BluetoothChatApp()
+                                }
+                            }
+                        }
+                    }
+                }
+
+                @OptIn(ExperimentalMaterial3Api::class)
+                @Composable
+                fun BluetoothChatApp() {
+                    var messageText by remember { mutableStateOf("") }
+                    val messages = remember {
+                        mutableStateListOf(
+                            ChatMessage("System", "Bluetooth Chat Engine Initialized (Offline Mode)", "10:00 AM", false),
+                            ChatMessage("Living Room Device", "Hello! Connected via Local Bluetooth.", "10:01 AM", false),
+                            ChatMessage("Me", "Awesome! Zero internet required.", "10:02 AM", true)
+                        )
+                    }
+
+                    Scaffold(
+                        topBar = {
+                            TopAppBar(
+                                title = { Text("📡 Home Bluetooth Offline Chat") },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                )
+                            )
+                        }
+                    ) { innerPadding ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                text = "Status: Bluetooth Active • 2 Devices Connected",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+
+                            LazyColumn(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(messages) { msg ->
+                                    ChatMessageBubble(msg)
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedTextField(
+                                    value = messageText,
+                                    onValueChange = { messageText = it },
+                                    placeholder = { Text("Type bluetooth message...") },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = {
+                                        if (messageText.isNotBlank()) {
+                                            messages.add(
+                                                ChatMessage("Me", messageText, "Now", true)
+                                            )
+                                            messageText = ""
+                                        }
+                                    }
+                                ) {
+                                    Text("Send")
+                                }
+                            }
                         }
                     }
                 }
 
                 @Composable
-                fun Greeting(name: String) {
-                    Text(text = "Hello, $name from GHA Android!")
+                fun ChatMessageBubble(message: ChatMessage) {
+                    val alignment = if (message.isFromMe) Alignment.End else Alignment.Start
+                    val bgColor = if (message.isFromMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                    val textColor = if (message.isFromMe) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = alignment
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = bgColor,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = message.sender,
+                                    fontSize = 10.sp,
+                                    color = textColor.copy(alpha = 0.7f)
+                                )
+                                Text(
+                                    text = message.text,
+                                    fontSize = 14.sp,
+                                    color = textColor
+                                )
+                            }
+                        }
+                    }
                 }
                 """.trimIndent() + "\n"
             )
@@ -497,12 +640,12 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
             )
         }
 
-        val gitDir = File(rootDir, ".git")
+        val gitDir = File(targetDir, ".git")
         if (!gitDir.exists()) {
-            GhaGitExec.exec(rootDir, "init")
+            GhaGitExec.exec(targetDir, "init")
         }
 
-        return "✅ Android Jetpack Compose application '$name' ($pkg) scaffolded successfully in ${rootDir.absolutePath}"
+        return "✅ Android Jetpack Compose application '$name' ($pkg) scaffolded successfully in ${targetDir.absolutePath}"
     }
 
     private fun createSchema(
