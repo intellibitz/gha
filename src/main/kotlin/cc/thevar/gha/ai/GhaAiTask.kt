@@ -60,7 +60,9 @@ abstract class GhaAiTask : GhaTask() {
         val isTokenOnly = explicitMsg == "--token-only"
         
         if (isTokenOnly) {
-            print(resolveToken())
+            val token = resolveToken()
+            // Use quiet logger to ensure NO other output is present for the ghai launcher
+            project.logger.quiet(token)
             return
         }
 
