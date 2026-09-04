@@ -304,4 +304,36 @@ object GhaParallelWorkflowManager {
 
         return mergeRes.isSuccess
     }
+
+    /**
+     * Sweeps and deletes stale remote auto-branches that have no open Pull Request.
+     */
+    fun sweepStaleRemoteBranches(projectDir: File, token: String?, baseBranch: String = "main"): Int {
+        GhaGitExec.fetch(projectDir, "origin", prune = true)
+
+        val remoteResult = GhaGitExec.exec(projectDir, "branch", "-r")
+        if (!remoteResult.isSuccess || remoteResult.stdout.isBlank()) return 0
+
+        val remoteBranches = remoteResult.stdout.lines()
+            .map { it.trim() }
+            .filter { it.startsWith("origin/") }
+            .map { it.substringAfter("origin/") }
+            .filter { isAutoCreatedBranch(it) && it != baseBranch }
+
+        if (remoteBranches.isEmpty()) return 0
+
+        val openPrs = listOpenPrsTargetingBase(projectDir, token, baseBranch)
+        val openPrHeadBranches = openPrs.map { it.headBranch }.toSet()
+
+        var deletedCount = 0
+        for (branch in remoteBranches) {
+            if (!openPrHeadBranches.contains(branch)) {
+                val delRes = GhaGitExec.deleteRemoteBranch(projectDir, "origin", branch)
+                if (delRes.isSuccess) {
+                    deletedCount++
+                }
+            }
+        }
+        return deletedCount
+    }
 }

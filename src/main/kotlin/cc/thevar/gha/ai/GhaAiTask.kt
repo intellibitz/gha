@@ -293,6 +293,18 @@ abstract class GhaAiTask : GhaTask() {
             println("✅ [ghai Workflow Sweeper] GitHub Actions history is lean and clean (Top 5 active runs kept).")
         }
 
+        // Step 3: Sweep stale remote auto-branches
+        println("🧹 [ghai Branch Sweeper] Sweeping stale remote auto-branches...")
+        val prunedBranches = try {
+            GhaParallelWorkflowManager.sweepStaleRemoteBranches(rootDir, token, base)
+        } catch (_: Exception) { 0 }
+
+        if (prunedBranches > 0) {
+            println("✅ [ghai Branch Sweeper] Auto-pruned $prunedBranches stale remote auto-branch(es)!")
+        } else {
+            println("✅ [ghai Branch Sweeper] Remote branches are clean.")
+        }
+
         // Print Structured Summary & Actionable One-Line Tip
         println("")
         println("════════════════════════════════════════════════════════════════════════════════")
@@ -303,6 +315,7 @@ abstract class GhaAiTask : GhaTask() {
         println("   • GitHub PR      : $prSummary ${if (prUrlSummary != "N/A") "($prUrlSummary)" else ""}")
         println("   • CI/CD Status   : $ciSummary")
         println("   • CI Workflows   : Swept https://github.com/intellibitz/gha/actions ${if (prunedRuns > 0) "($prunedRuns pruned)" else "(Lean)"}")
+        println("   • Remote Branches: Swept origin/gha-auto/* ${if (prunedBranches > 0) "($prunedBranches pruned)" else "(Clean)"}")
         println("   • Local Sync     : 100% Synced with origin/$base")
         println("────────────────────────────────────────────────────────────────────────────────")
         println("💡 Tip: $tipRecommendation")
