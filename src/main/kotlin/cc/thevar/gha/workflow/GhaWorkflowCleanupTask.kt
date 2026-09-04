@@ -6,6 +6,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
+import java.io.File
 
 @DisableCachingByDefault(because = "Cleans up and deletes old/failed/cancelled GitHub Actions workflow runs")
 abstract class GhaWorkflowCleanupTask : GhaTask() {
@@ -35,6 +36,12 @@ abstract class GhaWorkflowCleanupTask : GhaTask() {
         val runId = deleteRunId.orNull
         val filter = statusFilter.get()
         val isCleanupAll = cleanupAll.get().lowercase() == "true"
+
+        val localWorkflowFile = File(rootDir, ".github/workflows/gha.yml")
+        if (localWorkflowFile.exists()) {
+            localWorkflowFile.delete()
+            logger.lifecycle("🧹 [GHA Workflow Cleanup] Deleted local .github/workflows/gha.yml")
+        }
 
         if (!runId.isNullOrBlank()) {
             logger.lifecycle("🧹 [GHA Workflow Cleanup] Deleting workflow run #$runId...")

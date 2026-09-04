@@ -73,10 +73,18 @@ abstract class GhaInitTask : GhaTask() {
         val ghaInitScript = File(ghaDir, "init.gradle.kts")
         ghaInitScript.writeText(initScriptText)
 
-        // Backwards compatibility for existing legacy init/ directory
+        // Migration: Clean up legacy init/ directory in favor of unified .gha/
         val legacyInitDir = File(rootDir, "init")
         if (legacyInitDir.exists()) {
-            File(legacyInitDir, "gha.init.gradle.kts").writeText(initScriptText)
+            val legacyScript = File(legacyInitDir, "gha.init.gradle.kts")
+            if (legacyScript.exists()) {
+                legacyScript.delete()
+            }
+            val remainingFiles = legacyInitDir.listFiles()?.filter { !it.name.startsWith(".") } ?: emptyList()
+            if (remainingFiles.isEmpty() || (remainingFiles.size == 1 && remainingFiles[0].name == "install.sh")) {
+                legacyInitDir.deleteRecursively()
+                logger.lifecycle("   🧹 [GHA Migration] Cleaned up legacy init/ directory in favor of unified .gha/ sandbox.")
+            }
         }
 
         // 3. Create top-level ./ghai executable launcher (rwxr-xr-x mode 100755)
@@ -192,50 +200,7 @@ abstract class GhaInitTask : GhaTask() {
             )
         }
 
-        // 4. Create GitHub Actions Workflow (.github/workflows/gha.yml)
-        val workflowsDir = File(rootDir, ".github/workflows")
-        if (!workflowsDir.exists()) workflowsDir.mkdirs()
-
-        val workflowFile = File(workflowsDir, "gha.yml")
-        if (!workflowFile.exists()) {
-            workflowFile.writeText(
-                """
-                name: gha Automation CI
-
-                on:
-                  push:
-                    branches: [ main, master ]
-                  pull_request:
-                    branches: [ main, master ]
-
-                jobs:
-                  gha-ci:
-                    runs-on: ubuntu-latest
-                    steps:
-                      - name: Checkout Repository
-                        uses: actions/checkout@v4
-                        with:
-                          fetch-depth: 0
-
-                      - name: Set up JDK 21
-                        uses: actions/setup-java@v4
-                        with:
-                          distribution: 'temurin'
-                          java-version: '21'
-
-                      - name: Run ghai Autonomous Workflow
-                        env:
-                          GITHUB_TOKEN: ${'$'}{{ secrets.GITHUB_TOKEN }}
-                        run: |
-                          chmod +x gradlew ghai
-                          ./ghai :version
-                          ./ghai :status
-                          ./ghai
-                """.trimIndent() + "\n"
-            )
-        }
-
-        // 5. Update .gitignore for Invisible Integration (0 side effects)
+        // 4. Update .gitignore for Invisible Integration (0 side effects)
         if (projectName.get() != "gha") {
             val gitignore = File(rootDir, ".gitignore")
             val ghaIgnoreSection = """

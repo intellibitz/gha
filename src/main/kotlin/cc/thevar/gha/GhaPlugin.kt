@@ -63,6 +63,7 @@ import cc.thevar.gha.wiki.GhaWikiSyncTask
 import cc.thevar.gha.workflow.GhaParallelWorkflowTask
 import cc.thevar.gha.workflow.GhaWorkflowCancelTask
 import cc.thevar.gha.workflow.GhaWorkflowCleanupTask
+import cc.thevar.gha.workflow.GhaWorkflowInitTask
 import cc.thevar.gha.workflow.GhaWorkflowListTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -146,7 +147,13 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaInit", GhaInitTask::class.java) {
             group = GROUP_GRADLE
             description =
-                "Initializes sandboxed GitHub Automation workflows for any project automatically"
+                "Initializes sandboxed GitHub Automation environment for any project automatically"
+        }
+
+        project.tasks.register("ghaWorkflowInit", GhaWorkflowInitTask::class.java) {
+            group = GROUP_GRADLE
+            description =
+                "Initializes GitHub Actions CI workflow files (.github/workflows/gha.yml) on demand"
         }
 
         project.tasks.register("ghaUpdate", GhaUpdateTask::class.java) {
