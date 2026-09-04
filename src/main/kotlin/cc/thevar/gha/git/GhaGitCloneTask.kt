@@ -2,6 +2,7 @@ package cc.thevar.gha.git
 
 import cc.thevar.gha.GhaInitTask
 import cc.thevar.gha.GhaTask
+import cc.thevar.gha.projects.GhaProjectManager
 import cc.thevar.gha.safety.GhaProcessRunner
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -48,7 +49,7 @@ abstract class GhaGitCloneTask : GhaTask() {
             return
         }
 
-        val resolvedUrl = resolveRepoUrl(repoInput)
+        val resolvedUrl = resolveRepoUrl(repoInput, rootDir)
         val targetDirectory = cloneDir.orNull?.trim()
 
         // Safety Guard: If target directory is "." inside gha engine directory, clone into default subfolder
@@ -153,13 +154,48 @@ abstract class GhaGitCloneTask : GhaTask() {
     }
 
     companion object {
-        fun resolveRepoUrl(input: String): String {
+        fun resolveRepoUrl(input: String, rootDir: File? = null): String {
             val trimmed = input.trim()
             return when {
                 trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("git@") -> trimmed
                 trimmed.contains("/") -> "https://github.com/$trimmed"
-                else -> "https://github.com/$trimmed/$trimmed"
+                else -> {
+                    val resolvedOwner = resolveDefaultOwner(rootDir)
+                    if (!resolvedOwner.isNullOrBlank()) {
+                        "https://github.com/$resolvedOwner/$trimmed"
+                    } else {
+                        "https://github.com/$trimmed/$trimmed"
+                    }
+                }
             }
+        }
+
+        private fun resolveDefaultOwner(rootDir: File?): String? {
+            // 1. Environment variables
+            val envOwner = System.getenv("GHA_DEFAULT_OWNER") ?: System.getenv("GHA_OWNER")
+            if (!envOwner.isNullOrBlank()) return envOwner.trim()
+
+            // 2. Local git remote origin owner (if working in an existing project)
+            if (rootDir != null) {
+                val owner = GhaProjectManager.resolveOwner(rootDir)
+                if (!owner.isNullOrBlank()) return owner.trim()
+            }
+
+            // 3. GitHub CLI authenticated user fallback
+            if (rootDir != null) {
+                try {
+                    val ghUserRes = GhaProcessRunner.exec(
+                        workingDir = rootDir,
+                        command = listOf("gh", "api", "user", "--jq", ".login"),
+                        timeoutSeconds = 5L
+                    )
+                    if (ghUserRes.isSuccess && ghUserRes.stdout.trim().isNotBlank()) {
+                        return ghUserRes.stdout.trim()
+                    }
+                } catch (_: Exception) {}
+            }
+
+            return null
         }
     }
 }

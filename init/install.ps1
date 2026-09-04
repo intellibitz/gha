@@ -35,22 +35,29 @@ plugins {
 '@ | Out-File -Encoding utf8 "build.gradle.kts"
 }
 
+if (-not $env:GHA_REPO) {
+    $GHA_REPO = try { git config gha.repo } catch { $null }
+    if (-not $GHA_REPO) { $GHA_REPO = "intellibitz/gha" }
+} else {
+    $GHA_REPO = $env:GHA_REPO
+}
+
 # 3. Download or refresh init script
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -OutFile "init\gha.init.gradle.kts" -ErrorAction SilentlyContinue
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$GHA_REPO/main/init/gha.init.gradle.kts" -OutFile "init\gha.init.gradle.kts" -ErrorAction SilentlyContinue
 
 # 4. Bootstrap Gradle wrapper if missing
 if (-not (Test-Path ".\gradlew.bat")) {
     Write-Host "📥 Bootstrapping Gradle wrapper..." -ForegroundColor Cyan
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew" -OutFile "gradlew" -ErrorAction SilentlyContinue
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew.bat" -OutFile "gradlew.bat" -ErrorAction SilentlyContinue
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.properties" -OutFile "gradle\wrapper\gradle-wrapper.properties" -ErrorAction SilentlyContinue
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.jar" -OutFile "gradle\wrapper\gradle-wrapper.jar" -ErrorAction SilentlyContinue
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$GHA_REPO/main/gradlew" -OutFile "gradlew" -ErrorAction SilentlyContinue
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$GHA_REPO/main/gradlew.bat" -OutFile "gradlew.bat" -ErrorAction SilentlyContinue
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$GHA_REPO/main/gradle/wrapper/gradle-wrapper.properties" -OutFile "gradle\wrapper\gradle-wrapper.properties" -ErrorAction SilentlyContinue
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$GHA_REPO/main/gradle/wrapper/gradle-wrapper.jar" -OutFile "gradle\wrapper\gradle-wrapper.jar" -ErrorAction SilentlyContinue
 }
 
 # 5. Fetch latest ghai launchers
 Write-Host "📥 Fetching latest ghai launcher script..." -ForegroundColor Cyan
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/ghai.bat" -OutFile "ghai.bat" -ErrorAction SilentlyContinue
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intellibitz/gha/main/ghai" -OutFile "ghai" -ErrorAction SilentlyContinue
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$GHA_REPO/main/ghai.bat" -OutFile "ghai.bat" -ErrorAction SilentlyContinue
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/$GHA_REPO/main/ghai" -OutFile "ghai" -ErrorAction SilentlyContinue
 
 # 6. Delegate to ghaInit
 .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit $args

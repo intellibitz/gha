@@ -13,10 +13,11 @@ abstract class GhaUpdateTask : GhaTask() {
     fun execute() {
         verifySandbox()
         val rootDir = projectRootDir.get().asFile
+        val engineRepo = GhaVersionManager.resolveEngineRepo(rootDir)
         val localVersion = GhaVersionManager.readVersion(rootDir)
-        val remoteVersion = GhaVersionManager.fetchRemoteVersion()
+        val remoteVersion = GhaVersionManager.fetchRemoteVersion(rootDir)
 
-        logger.lifecycle("🚀 [GHA Update] Local Version: $localVersion, Remote Version: $remoteVersion")
+        logger.lifecycle("🚀 [GHA Update] Engine Repo: $engineRepo, Local Version: $localVersion, Remote Version: $remoteVersion")
 
         val comparison = GhaVersionManager.compareVersions(remoteVersion, localVersion)
 
@@ -34,7 +35,7 @@ abstract class GhaUpdateTask : GhaTask() {
             // 2. Fetch latest install.sh
             val installShRes = GhaProcessRunner.exec(
                 workingDir = rootDir,
-                command = listOf("curl", "-sSL", "https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh"),
+                command = listOf("curl", "-sSL", "https://raw.githubusercontent.com/$engineRepo/main/init/install.sh"),
                 timeoutSeconds = 30L
             )
             if (installShRes.isSuccess && installShRes.stdout.isNotBlank()) {
@@ -48,7 +49,7 @@ abstract class GhaUpdateTask : GhaTask() {
             // 3. Fetch latest ghai launcher
             val ghaiRes = GhaProcessRunner.exec(
                 workingDir = rootDir,
-                command = listOf("curl", "-sSL", "https://raw.githubusercontent.com/intellibitz/gha/main/ghai"),
+                command = listOf("curl", "-sSL", "https://raw.githubusercontent.com/$engineRepo/main/ghai"),
                 timeoutSeconds = 30L
             )
             if (ghaiRes.isSuccess && ghaiRes.stdout.isNotBlank()) {

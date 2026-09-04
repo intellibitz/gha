@@ -1,5 +1,6 @@
 package cc.thevar.gha.safety
 
+import cc.thevar.gha.insights.GhaInsightsManager
 import java.io.File
 import java.net.URI
 
@@ -41,11 +42,29 @@ object GhaVersionManager {
     fun readVersion(rootDir: File): String = readProjectVersion(rootDir)
 
     /**
+     * Resolves the upstream GHA Engine repository slug dynamically (e.g. "intellibitz/gha" or custom fork/mirror).
+     */
+    fun resolveEngineRepo(rootDir: File? = null): String {
+        val envRepo = System.getenv("GHA_REPO") ?: System.getenv("GHA_ENGINE_REPO")
+        if (!envRepo.isNullOrBlank()) return envRepo.trim()
+
+        if (rootDir != null) {
+            val gitRepo = GhaInsightsManager.resolveOwnerAndRepo(rootDir)
+            if (!gitRepo.isNullOrBlank() && (rootDir.name == "gha" || File(rootDir, "src/main/kotlin/cc/thevar/gha").exists())) {
+                return gitRepo.trim()
+            }
+        }
+
+        return "intellibitz/gha"
+    }
+
+    /**
      * Fetches the latest remote GHA Engine version from GitHub source.
      */
-    fun fetchRemoteVersion(): String {
+    fun fetchRemoteVersion(rootDir: File? = null): String {
         return try {
-            val url = URI("https://raw.githubusercontent.com/intellibitz/gha/main/version.txt").toURL()
+            val engineRepo = resolveEngineRepo(rootDir)
+            val url = URI("https://raw.githubusercontent.com/$engineRepo/main/version.txt").toURL()
             url.readText().trim()
         } catch (_: Exception) {
             "unknown"

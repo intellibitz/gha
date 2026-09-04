@@ -2,6 +2,7 @@ package cc.thevar.gha.wiki
 
 import cc.thevar.gha.git.GhaGitExec
 import cc.thevar.gha.safety.GhaProcessRunner
+import cc.thevar.gha.safety.GhaVersionManager
 import java.io.File
 
 /**
@@ -86,10 +87,11 @@ object GhaWikiManager {
         // Ensure _Footer.md exists
         val footerFile = File(wikiDir, "_Footer.md")
         if (!footerFile.exists()) {
+            val engineRepo = GhaVersionManager.resolveEngineRepo(projectDir)
             footerFile.writeText(
                 """
                 ---
-                *Powered by [gha](https://github.com/intellibitz/gha) — 100% Kotlin Git, GitHub & Gradle Automation.*
+                *Powered by [gha](https://github.com/$engineRepo) — 100% Kotlin Git, GitHub & Gradle Automation.*
                 """.trimIndent()
             )
         }
