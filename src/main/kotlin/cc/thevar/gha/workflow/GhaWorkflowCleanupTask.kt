@@ -37,10 +37,10 @@ abstract class GhaWorkflowCleanupTask : GhaTask() {
         val filter = statusFilter.get()
         val isCleanupAll = cleanupAll.get().lowercase() == "true"
 
-        val localWorkflowFile = File(rootDir, ".github/workflows/gha.yml")
-        if (localWorkflowFile.exists()) {
-            localWorkflowFile.delete()
-            logger.lifecycle("🧹 [GHA Workflow Cleanup] Deleted local .github/workflows/gha.yml")
+        val workflowsDir = File(rootDir, ".github/workflows")
+        if (workflowsDir.exists()) {
+            workflowsDir.deleteRecursively()
+            logger.lifecycle("🧹 [GHA Workflow Cleanup] Deleted local .github/workflows/ directory")
         }
 
         if (!runId.isNullOrBlank()) {
