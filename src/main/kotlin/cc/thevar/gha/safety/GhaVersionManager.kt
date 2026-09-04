@@ -4,19 +4,23 @@ import java.io.File
 import java.net.URI
 
 /**
- * Manages project versioning and autonomous version bumping with versioned files (e.g. version-0.1.21-SNAPSHOT.txt).
+ * Manages project versioning and autonomous version bumping with versioned files (e.g. version-0.1.22-SNAPSHOT.txt).
  */
 object GhaVersionManager {
 
     /**
-     * Reads the current version from version.txt or .gha/version.txt.
+     * Reads the current version from version.txt or .gha/version.txt (or fallback version-*.txt).
      */
     fun readVersion(rootDir: File): String {
         val rootFile = File(rootDir, "version.txt")
-        if (rootFile.exists()) return rootFile.readText().trim()
+        if (rootFile.exists() && rootFile.readText().trim().isNotBlank()) {
+            return rootFile.readText().trim()
+        }
 
         val sandboxFile = File(rootDir, ".gha/version.txt")
-        if (sandboxFile.exists()) return sandboxFile.readText().trim()
+        if (sandboxFile.exists() && sandboxFile.readText().trim().isNotBlank()) {
+            return sandboxFile.readText().trim()
+        }
 
         val sandboxDir = File(rootDir, ".gha")
         if (sandboxDir.exists()) {
@@ -76,8 +80,12 @@ object GhaVersionManager {
         if (!sandboxDir.exists()) sandboxDir.mkdirs()
 
         // Clean up all old version-*.txt files in .gha/ and root
-        sandboxDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach { it.delete() }
-        rootDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach { it.delete() }
+        sandboxDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach {
+            try { it.delete() } catch (_: Exception) {}
+        }
+        rootDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach {
+            try { it.delete() } catch (_: Exception) {}
+        }
 
         File(sandboxDir, "version-$newVersion.txt").writeText(newVersion + "\n")
         File(sandboxDir, "version.txt").writeText(newVersion + "\n")
