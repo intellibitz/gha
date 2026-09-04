@@ -77,9 +77,13 @@ class GhaAgentOfAgents(
             log.add("   ├── $statusSymbol ${engine.name} [${engine.type}]: ${engine.version}")
         }
 
-        // 4. Agent Manager Dispatch (GHA communicates ONLY with Agents)
-        log.add("🤖 [Phase 4: Agent Manager Dispatch]")
-        log.add("   ► Dispatching goal to specialized Agent(s) (acting as MCP Clients)...")
+        // 3.5 Web AI Models Resolution
+        val webModels = GhaModelManager.listWebModels(rootDir)
+        log.add("🧠 [Phase 3.5: AI Web Models Resolved] (${webModels.size} Models available across web registries)")
+
+        // 4. Agent Manager Dispatch (Full Top-to-Bottom Delegation)
+        log.add("🤖 [Phase 4: Top-to-Bottom Multi-Agent Delegation Dispatch]")
+        log.add("   ► Delegating goal down through Agents, Engines, Models, and MCP Servers...")
         val agentResult = GhaAgentManager.dispatchMission(goal, rootDir, mcpHost)
         agentResult.log.forEach { log.add("     $it") }
 
