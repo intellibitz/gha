@@ -86,9 +86,9 @@ plugins {
 EOF
 fi
 
-# Auto-bootstrap Gradle wrapper in project root if missing
-if [ ! -f "$PROJECT_ROOT/gradlew" ]; then
-    echo "📥 [ghai] Bootstrapping Gradle wrapper in $PROJECT_ROOT..."
+# Auto-bootstrap Gradle wrapper in project root if missing or broken
+if [ ! -f "$PROJECT_ROOT/gradlew" ] || [ ! -s "$PROJECT_ROOT/gradlew" ]; then
+    echo "📥 [ghai Self-Heal] Bootstrapping missing or broken Gradle wrapper in $PROJECT_ROOT..."
     mkdir -p "$PROJECT_ROOT/gradle/wrapper"
     curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew" -o "$PROJECT_ROOT/gradlew" 2>/dev/null || true
     curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew.bat" -o "$PROJECT_ROOT/gradlew.bat" 2>/dev/null || true
@@ -100,13 +100,27 @@ fi
 cd "$PROJECT_ROOT"
 chmod +x gradlew ghai 2>/dev/null || true
 
-if [ ! -f "init/gha.init.gradle.kts" ] || [ ! -d ".gha" ]; then
-    echo "⚡ [ghai] Initializing gha sandbox..."
+# Self-healing: Ensure init script and sandbox exist
+if [ ! -f "init/gha.init.gradle.kts" ] || [ ! -s "init/gha.init.gradle.kts" ] || [ ! -d ".gha" ]; then
+    echo "⚡ [ghai Self-Heal] Restoring gha sandbox & init scripts..."
     mkdir -p init
-    if [ ! -f "init/gha.init.gradle.kts" ]; then
-        curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" 2>/dev/null || true
-    fi
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" 2>/dev/null || true
     ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+fi
+
+# Update .gitignore for Invisible Integration (0 side effects)
+if [ -f ".gitignore" ] && [ "$(basename "$PROJECT_ROOT")" != "gha" ]; then
+    if ! grep -q "# gha: Git, GitHub & Gradle Automation" ".gitignore"; then
+        echo "   ➕ Updating .gitignore for invisible gha integration..."
+        cat << 'EOF' >> .gitignore
+
+# gha: Git, GitHub & Gradle Automation (Invisible Sandbox)
+.gha/
+ghai
+ghai.bat
+init/gha.init.gradle.kts
+EOF
+    fi
 fi
 
 exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"

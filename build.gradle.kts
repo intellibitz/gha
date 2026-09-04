@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "cc.thevar.gha"
-version = "0.1.0-SNAPSHOT"
+version = file("version.txt").readText().trim()
 
 java {
     toolchain {
