@@ -1,5 +1,6 @@
 package cc.thevar.gha.git
 
+import cc.thevar.gha.GhaInitTask
 import cc.thevar.gha.GhaTask
 import cc.thevar.gha.safety.GhaProcessRunner
 import org.gradle.api.provider.Property
@@ -7,8 +8,15 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
+import java.io.File
 
-@DisableCachingByDefault(because = "Clones a remote Git repository")
+/**
+ * Smart Git Clone / Sync Task.
+ * Supports "0 effort" setup for two major scenarios:
+ * 1. Empty folder -> Install gha -> Clone into '.' -> Project is ready.
+ * 2. Existing folder -> Install gha -> Work.
+ */
+@DisableCachingByDefault(because = "Clones or syncs a remote Git repository")
 abstract class GhaGitCloneTask : GhaTask() {
 
     @get:Input
@@ -35,19 +43,86 @@ abstract class GhaGitCloneTask : GhaTask() {
 
         if (repoInput.isNullOrBlank()) {
             println("❌ [gha Git Clone] Repository parameter required.")
-            println("   Usage: ./ghai clone intellibitz")
+            println("   Usage: ./ghai clone intellibitz [dir]")
             println("   or:    ./gradlew ghaGitClone -PtargetRepo=intellibitz/gha")
             return
         }
 
         val resolvedUrl = resolveRepoUrl(repoInput)
-        val targetDirectory = cloneDir.orNull
+        val targetDirectory = cloneDir.orNull?.trim()
 
-        println("🚀 [gha Git Clone] Cloning repository from '$resolvedUrl'...")
+        // Safety Guard: If target directory is "." inside gha engine directory, clone into default subfolder
+        val effectiveDir = if (targetDirectory == "." || targetDirectory == "./") {
+            val defaultFolderName = resolvedUrl.substringAfterLast('/').removeSuffix(".git")
+            if (rootDir.name == "gha" && defaultFolderName != "gha") {
+                println("⚠️ [gha Git Clone] Target folder '.' is the gha engine directory. Cloning into './$defaultFolderName' instead...")
+                defaultFolderName
+            } else {
+                "."
+            }
+        } else {
+            targetDirectory
+        }
+
+        if (effectiveDir == "." || effectiveDir == "./") {
+            println("🚀 [gha Git Clone] Setting up and syncing current directory with '$resolvedUrl'...")
+            
+            // 1. Ensure Git initialized
+            val gitDir = File(rootDir, ".git")
+            if (!gitDir.exists()) {
+                println("📦 Initializing local Git repository...")
+                GhaGitExec.exec(rootDir, "init")
+            }
+
+            // 2. Configure remote origin
+            val remoteRes = GhaGitExec.exec(rootDir, "remote", "get-url", "origin")
+            if (!remoteRes.isSuccess || remoteRes.stdout.isBlank()) {
+                GhaGitExec.exec(rootDir, "remote", "add", "origin", resolvedUrl)
+            } else {
+                GhaGitExec.exec(rootDir, "remote", "set-url", "origin", resolvedUrl)
+            }
+
+            // 3. Fetch remote
+            println("🔄 Fetching latest changes from '$resolvedUrl'...")
+            GhaGitExec.fetch(rootDir, "origin", prune = true)
+
+            // 4. Force sync with remote main (Safe for Scenario 1: Empty folder placeholders)
+            println("🔀 Syncing workspace with 'origin/main'...")
+            val currentBranch = GhaGitExec.currentBranch(rootDir)
+            
+            // If we are in Scenario 1 (brand new init), we must force set the HEAD to remote main
+            val syncRes = if (currentBranch == "master" || currentBranch == "main" || currentBranch == "unknown") {
+                // Attempt hard reset to remote main to handle scaffolded placeholders cleanly
+                val res = GhaGitExec.exec(rootDir, "reset", "--hard", "origin/main")
+                if (!res.isSuccess) {
+                    // Fallback to standard checkout if origin/main doesn't exist yet
+                    GhaGitExec.exec(rootDir, "checkout", "-b", "main", "origin/main")
+                } else res
+            } else {
+                // If on a feature branch, just pull --rebase
+                GhaGitExec.pullRebase(rootDir, "origin", "main")
+            }
+
+            if (syncRes.isSuccess) {
+                println("🎉 [gha Git Clone] Successfully configured and synced current directory with '$resolvedUrl'!")
+                println("⚡ Finalizing gha integration...")
+                
+                // Directly call the task logic helper to avoid Configuration Cache violations
+                val task = project.tasks.getByName("ghaInit") as GhaInitTask
+                task.execute()
+                
+                println("💡 Tip: Type './ghai' to auto-save and push changes to GitHub.")
+            } else {
+                println("❌ Sync failed: ${syncRes.stderr.ifEmpty { syncRes.stdout }}")
+            }
+            return
+        }
+
+        println("🚀 [gha Git Clone] Cloning repository from '$resolvedUrl' into '${effectiveDir ?: resolvedUrl.substringAfterLast('/').removeSuffix(".git")}'...")
 
         val cmd = mutableListOf("git", "clone", resolvedUrl)
-        if (!targetDirectory.isNullOrBlank()) {
-            cmd.add(targetDirectory)
+        if (!effectiveDir.isNullOrBlank()) {
+            cmd.add(effectiveDir)
         }
 
         val result = GhaProcessRunner.exec(
@@ -57,8 +132,20 @@ abstract class GhaGitCloneTask : GhaTask() {
         )
 
         if (result.isSuccess) {
-            val folderName = targetDirectory ?: resolvedUrl.substringAfterLast('/').removeSuffix(".git")
+            val folderName = effectiveDir ?: resolvedUrl.substringAfterLast('/').removeSuffix(".git")
             println("🎉 [gha Git Clone] Cloned '$repoInput' into '$folderName' successfully!")
+            
+            // Final integration in the new subfolder
+            val subDir = File(rootDir, folderName)
+            if (subDir.exists()) {
+                println("⚡ Initializing gha sandbox in '$folderName'...")
+                // We run ghaInit in the target directory using shell to ensure context is correct
+                GhaProcessRunner.exec(
+                    workingDir = subDir,
+                    command = listOf("./gradlew", "--init-script", "init/gha.init.gradle.kts", "ghaInit"),
+                    timeoutSeconds = 60L
+                )
+            }
             println("💡 Tip: cd $folderName && ./ghai")
         } else {
             println("❌ Git clone failed: ${result.stderr.ifEmpty { result.stdout }}")
