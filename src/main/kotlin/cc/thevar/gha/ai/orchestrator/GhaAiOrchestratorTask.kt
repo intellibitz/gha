@@ -32,6 +32,10 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
 
     @get:Input
     @get:Optional
+    abstract val aoaFramework: Property<String>
+
+    @get:Input
+    @get:Optional
     abstract val targetDirProperty: Property<String>
 
     init {
@@ -41,6 +45,7 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
         model.convention(prov.gradleProperty("model"))
         filter.convention(prov.gradleProperty("filter"))
         goal.convention(prov.gradleProperty("goal").orElse("health check and orchestrate"))
+        aoaFramework.convention(prov.gradleProperty("aoa").orElse(prov.gradleProperty("framework")).orElse("builtin"))
         targetDirProperty.convention(prov.gradleProperty("targetDir").orElse(prov.provider { cmdTargetDir }))
     }
 
@@ -55,8 +60,8 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
 
         when (activeAction) {
             "status", "orchestrate", "agent" -> {
-                val orchestrator = GhaAgentOfAgents()
-                val result = orchestrator.solve(goal.getOrElse("status report"), rootDir)
+                val framework = GhaAoaManager.parseFramework(aoaFramework.orNull ?: System.getenv("GHA_AOA"))
+                val result = GhaAoaManager.executeMission(framework, goal.getOrElse("status report"), rootDir)
                 result.log.forEach { logger.lifecycle(it) }
                 println("")
                 println(result.output)

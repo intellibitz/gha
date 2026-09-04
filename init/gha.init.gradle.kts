@@ -7,7 +7,7 @@ initscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath("cc.thevar.gha:gha:0.1.35-SNAPSHOT")
+        classpath("cc.thevar.gha:gha:0.1.36-SNAPSHOT")
     }
 }
 
