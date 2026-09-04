@@ -1,5 +1,6 @@
 package cc.thevar.gha.ai.orchestrator
 
+import cc.thevar.gha.ai.mcp.GhaSystemMcpServer
 import cc.thevar.gha.ai.vision.GhaUniversalMcpServer
 import java.io.File
 
@@ -40,6 +41,20 @@ object GhaMcpHubManager {
                 description = "Built-in GHA automation engine exposing $toolCount Git/GitHub/Build/Scaffold tools",
                 type = "BUILT_IN",
                 commandOrUrl = "cc.thevar.gha.ai.vision.GhaUniversalMcpServer",
+                isEnabled = true
+            )
+        )
+
+        // 2. Custom GHA System Tools MCP Server
+        val sysServer = GhaSystemMcpServer(rootDir)
+        val sysToolCount = sysServer.exposeTools().size
+        servers.add(
+            McpServerConfig(
+                id = "gha-system-tools",
+                name = "GHA Custom System Tools MCP Server",
+                description = "Custom MCP server created by GHA exposing $sysToolCount user system tools (ADB, Docker, UV, Node, System CLIs)",
+                type = "BUILT_IN",
+                commandOrUrl = "cc.thevar.gha.ai.mcp.GhaSystemMcpServer",
                 isEnabled = true
             )
         )

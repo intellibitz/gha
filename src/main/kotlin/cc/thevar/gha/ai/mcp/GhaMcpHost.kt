@@ -12,6 +12,7 @@ import java.io.File
 class GhaMcpHost(val rootDir: File) {
 
     private val universalServer = GhaUniversalMcpServer(rootDir)
+    private val systemServer = GhaSystemMcpServer(rootDir)
 
     /**
      * Lists all registered MCP servers hosted and connected by GHA.
@@ -29,8 +30,11 @@ class GhaMcpHost(val rootDir: File) {
         // 1. Built-in GHA Universal MCP Tools
         tools.addAll(universalServer.exposeTools())
 
-        // 2. Aggregate tools exposed by external connected MCP servers
-        val hubServers = listServers().filter { it.id != "gha-universal" && it.isEnabled }
+        // 2. Custom GHA System Tools MCP Server Tools
+        tools.addAll(systemServer.exposeTools())
+
+        // 3. Aggregate tools exposed by external connected MCP servers
+        val hubServers = listServers().filter { it.id != "gha-universal" && it.id != "gha-system-tools" && it.isEnabled }
         hubServers.forEach { server ->
             tools.add(
                 GhaAiTool(
@@ -53,6 +57,9 @@ class GhaMcpHost(val rootDir: File) {
      * Executes a tool request on behalf of an Agent or AOA (MCP Client).
      */
     fun callTool(toolName: String, arguments: Map<String, Any> = emptyMap()): String {
+        if (toolName.lowercase().startsWith("sys_")) {
+            return systemServer.executeTool(toolName, arguments)
+        }
         if (toolName.endsWith("_query")) {
             val serverId = toolName.removeSuffix("_query")
             val server = listServers().find { it.id == serverId }
