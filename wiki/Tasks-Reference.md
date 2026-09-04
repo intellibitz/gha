@@ -1,8 +1,14 @@
 # GHA Tasks Reference
 
-## 🤖 GHA Autonomous AI Tasks (0 Effort, 100% Gain)
+## 🌌 GHA AI Orchestrator & Natural Language Commands
+- `./ghai "<english instruction>"`: Natural English language interface. Executes user instructions via the Master AI Orchestrator (e.g. `./ghai "create a kotlin app"`, `./ghai "create an android app"`, `./ghai "fix build"`).
 - `./ghai`: Primary zero-effort AI task: auto-detects diffs, commits with AI messages, rebase-syncs, pushes, opens PRs, checks CI status, auto-merges into main, and auto-prunes old CI logs!
-- `./ghai ai agent "<goal>"`: Triggers an autonomous GHA Agent to achieve a project goal (e.g., "fix build", "sync work").
+- `./ghai ai orchestrate`: Runs Master Agent Manager & MCP Host status report.
+- `./ghai ai models`: Inspects local AI model cache (`.gha/models/`) and verifies hardware RAM compatibility.
+- `./ghai ai engines`: Detects installed local AI execution engines (Ollama, Hugging Face CLI `hf`, llama.cpp, Python UV).
+- `./ghai ai mcp-hub`: Lists registered community MCP Tool Hub servers (`.gha/mcp/`).
+- `./ghai ai download "<repoId>"`: Downloads AI model files freely available on Hugging Face Hub.
+- `./ghai ai agent "<goal>"`: Triggers an autonomous GHA Agent to achieve a project goal.
 - `./ghai ai mcp`: Exposes GHA tasks as Model Context Protocol (MCP) tools for external AI models.
 - `./ghai :clone <repo>`: Smart Git clone (e.g. `./ghai :clone intellibitz` -> `https://github.com/intellibitz/intellibitz`). Supports Scenario 1 (sync into `.`) with safety guards.
 - `./ghai :version`: Displays `ghai` Version Report and verifies 100% engine stability and sandbox health.
@@ -15,16 +21,19 @@
 
 ## ⚡ Universal Power Mapping
 The `ghai` launcher intelligently routes commands to the right engine:
-1. **GHA Subcommands**: `install`, `status`, `version`, `update`, `uninstall`, `ai`, `clone`.
-2. **Gradle Tasks**: Prefix with `:` (e.g., `./ghai :assemble`, `./ghai :ghaBuild`).
+1. **GHA Subcommands & AI Instructions**: `install`, `status`, `version`, `update`, `uninstall`, `ai`, `clone`, or natural English instructions (`"create a kotlin app"`).
+2. **Gradle Tasks**: Prefix with `:` (e.g., `./ghai :assemble`, `./ghai :ghaBuild`, `./ghai :ghaAiOrchestrate`).
 3. **GitHub CLI (gh)**: Map directly to `gh` subcommands (e.g., `./ghai pr list`, `./ghai repo view`).
 4. **Git Engine**: Universal fallback (e.g., `./ghai log`, `./ghai diff`, `./ghai checkout`).
 
 ## Gradle Automation Tasks
+- `./gradlew ghaAiOrchestrate`: Master Agent Manager & Universal MCP Host Orchestrator.
+- `./gradlew ghaModels`: List or download AI models optimized for system hardware.
+- `./gradlew ghaEngines`: Detect and inspect local AI inference engines.
+- `./gradlew ghaMcpHub`: List and discover registered MCP Tool Hub servers.
 - `./gradlew ghaInit`: Initializes sandboxed GitHub Automation environment (`.gha/`).
 - `./gradlew ghaStatus`: Displays current project status and platform details.
 - `./gradlew ghaSandbox`: Displays real-time sandbox status and environment health checks.
-- `./gradlew ghaDependencies`: Prints trusted vendors and dependency versions.
 - `./gradlew ghaClean`: Cleans build directory and temporary caches.
 - `./gradlew ghaBuild`: Executes sandboxed Gradle build.
 - `./gradlew ghaTest`: Executes project test suite.
