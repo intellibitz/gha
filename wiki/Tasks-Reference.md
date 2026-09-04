@@ -2,10 +2,12 @@
 
 ## 🤖 GHA Autonomous AI Tasks (0 Effort, 100% Gain)
 - `./ghai`: Primary zero-effort AI task: auto-detects diffs, commits with AI messages, rebase-syncs, pushes, opens PRs, checks CI status, auto-merges into main, and auto-prunes old CI logs!
-- `./ghai clone <repo>`: Smart Git clone (e.g. `./ghai clone intellibitz` -> `https://github.com/intellibitz/intellibitz`).
-- `./ghai version`: Displays `ghai` Version Report and verifies engine stability.
-- `./ghai update`: Fetches and updates `gha` & `ghai` to the latest release in 1 second.
-- `./ghai uninstall`: Completely removes `.gha` sandbox, runner scripts, and CI workflows with 0 lingering system files.
+- `./ghai :clone <repo>`: Smart Git clone (e.g. `./ghai :clone intellibitz` -> `https://github.com/intellibitz/intellibitz`). Supports Scenario 1 (sync into `.`) with safety guards.
+- `./ghai :version`: Displays `ghai` Version Report and verifies 100% engine stability and sandbox health.
+- `./ghai :status`: Displays current project status, platform details, and sandbox health.
+- `./ghai :help`: Displays all registered GHA tasks grouped by domain and CLI usage instructions.
+- `./ghai :update`: Fetches and updates `gha` & `ghai` to the latest release in 1 second.
+- `./ghai :uninstall`: Completely removes `.gha` sandbox, runner scripts, and CI workflows with 0 lingering system files and 0 modifications to original project files.
 - `./gradlew ghaAI`: Alias for `ghai`.
 - `./gradlew ghaAuto`: Alias for `ghai`.
 - `./gradlew ghaSync`: Alias for `ghai`: Keeps local working branch 100% synced with remote base branch via rebase and push.
@@ -27,16 +29,17 @@
 
 ## Git Automation Tasks
 - `./gradlew ghaGitInit`: Initializes a local Git repository.
-- `./gradlew ghaGitStatus`: Displays Git repository status.
+- `./gradlew ghaGitStatus`: Displays current Git repository status, branch, and working tree changes.
 - `./gradlew ghaGitBranch`: Lists, creates (`-PcreateBranch=...`), or deletes (`-PdeleteBranch=...`) Git branches.
 - `./gradlew ghaGitCheckout`: Checks out or creates a Git branch safely with stash support (`-PbranchName=...`).
-- `./gradlew ghaGitCommit`: Stages and commits working tree changes.
+- `./gradlew ghaGitClone`: Clones or syncs a Git repository from GitHub (`-PtargetRepo=...` `-Pdir=...`). Supports smart shorthand resolution.
+- `./gradlew ghaGitCommit`: Stages and commits working tree changes platform-independently.
 - `./gradlew ghaGitCheckin`: Stages and checks in/commits working tree changes safely (`-PcommitMessage=...`).
-- `./gradlew ghaGitPush`: Pushes current branch to origin.
-- `./gradlew ghaGitPull`: Pulls remote changes with rebase.
-- `./gradlew ghaGitTag`: Tagging and pushing.
-- `./gradlew ghaGitLog`: Displays commit log.
-- `./gradlew ghaGitReset`: Resets working tree changes (--hard / --soft / --mixed).
+- `./gradlew ghaGitPush`: Pushes current branch to origin remote.
+- `./gradlew ghaGitPull`: Pulls latest changes from remote with rebase.
+- `./gradlew ghaGitTag`: Creates and pushes an annotated Git tag (`-PtagName=...`).
+- `./gradlew ghaGitLog`: Displays recent Git commits for a target reference (`-PtargetRef=...` `-PmaxCount=...`).
+- `./gradlew ghaGitReset`: Resets working tree changes (`--hard` / `--soft` / `--mixed`).
 - `./gradlew ghaGitStash`: Stashes working tree changes (push / pop / list / drop).
 - `./gradlew ghaGitDiff`: Inspects working tree changes and diffs.
 
