@@ -78,6 +78,9 @@ object GhaSandboxManager {
         val ghaJsonExists = checkIfGhaJsonExists(rootDir)
         val initScriptExists = File(rootDir, "init/gha.init.gradle.kts").let { it.exists() && it.length() > 0 }
         val gradleHomeCorrect = checkGradleUserHome(rootDir, gradleUserHomeDir)
+        val gradlewExists = File(rootDir, "gradlew").exists()
+        val settingsExists = File(rootDir, "settings.gradle.kts").exists() || File(rootDir, "settings.gradle").exists()
+        
         val currentHomePath = gradleUserHomeDir?.canonicalPath 
             ?: System.getProperty("gradle.user.home") 
             ?: System.getProperty("org.gradle.user.home") 
@@ -90,6 +93,10 @@ object GhaSandboxManager {
                 false to "ERROR: Sandbox configuration missing (.gha/gha.json not found)."
             !initScriptExists ->
                 false to "ERROR: GHA Init script missing or empty (init/gha.init.gradle.kts)."
+            !gradlewExists ->
+                false to "ERROR: Gradle wrapper missing (gradlew)."
+            !settingsExists ->
+                false to "ERROR: Gradle settings file missing (settings.gradle.kts)."
             !gradleHomeCorrect -> 
                 false to "ERROR: gradle.user.home is NOT directed to .gha/gradle-user-home. Current: $currentHomePath"
             else -> 

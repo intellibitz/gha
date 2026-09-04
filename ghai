@@ -1,126 +1,129 @@
 #!/usr/bin/env bash
-# 🤖 ghai - Autonomous AI Workflow Executable Launcher
+# 🤖 ghai - Autonomous AI Workflow & Universal Command Processor
 # 100% Sandboxed - 0% Modifications to existing project files.
+# Any project, anywhere. 0 Effort, 100% Gain.
 
 set -e
 
-# Strip leading colon ':' if present to support Gradle task path syntax (e.g. :version -> version)
+# Support Gradle task path syntax (e.g. :version -> version)
 RAW_ARG="$1"
 CMD="${RAW_ARG#:}"
 
-# Handle "version" / ":version" / "--version" / "-v" sanity check
-if [ "$CMD" = "version" ] || [ "$RAW_ARG" = "--version" ] || [ "$RAW_ARG" = "-v" ]; then
+# 1. CORE GHA SUBCOMMANDS (Priority)
+case "$CMD" in
+    version|--version|-v)
+        chmod +x gradlew 2>/dev/null || true
+        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+        ;;
+    status)
+        chmod +x gradlew 2>/dev/null || true
+        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaStatus
+        ;;
+    clone)
+        shift
+        chmod +x gradlew 2>/dev/null || true
+        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaGitClone -PtargetRepo="$1" -Pdir="$2"
+        ;;
+    help)
+        chmod +x gradlew 2>/dev/null || true
+        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaHelp
+        ;;
+    install)
+        chmod +x gradlew 2>/dev/null || true
+        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+        ;;
+    reinstall)
+        chmod +x gradlew 2>/dev/null || true
+        echo "🧹 [ghai Reinstall] Performing clean removal..."
+        ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaUninstall
+        echo "⚡ [ghai Reinstall] Restoring sandbox..."
+        mkdir -p init
+        curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" 2>/dev/null || true
+        curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/version.txt" -o "version.txt" 2>/dev/null || true
+        exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+        ;;
+    update)
+        echo "🚀 [ghai Update] Fetching and updating gha to latest version..."
+        curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh | bash
+        echo "🎉 [ghai Update] Updated gha & ghai to latest version successfully!"
+        exit 0
+        ;;
+    uninstall)
+        echo "🧹 [ghai Uninstall] Completely removing gha sandbox, runner scripts, and workflows..."
+        ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaUninstall
+        echo "✨ [ghai Uninstall] gha removed completely with 0 lingering system modifications!"
+        exit 0
+        ;;
+    ai)
+        shift
+        chmod +x gradlew 2>/dev/null || true
+        exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaAiVision -Pmode="$1" -Pgoal="$2"
+        ;;
+esac
+
+# 2. GRADLE TASK DETECTION
+if [[ "$RAW_ARG" == ":"* ]]; then
     chmod +x gradlew 2>/dev/null || true
-    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
-fi
-
-# Handle "clone" / ":clone" action: ghai clone intellibitz / ghai :clone intellibitz
-if [ "$CMD" = "clone" ]; then
-    shift
-    chmod +x gradlew 2>/dev/null || true
-    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaGitClone -PtargetRepo="$1" -Pdir="$2"
-fi
-
-# Handle "status" / ":status" action
-if [ "$CMD" = "status" ]; then
-    chmod +x gradlew 2>/dev/null || true
-    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaStatus
-fi
-
-# Handle "help" / ":help" action
-if [ "$CMD" = "help" ]; then
-    chmod +x gradlew 2>/dev/null || true
-    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaHelp
-fi
-
-# Handle "update" / ":update" action: curl 1-step install to fetch latest ghai
-if [ "$CMD" = "update" ]; then
-    echo "🚀 [ghai Update] Fetching and updating gha to latest version..."
-    curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh | bash
-    echo "🎉 [ghai Update] Updated gha & ghai to latest version successfully!"
-    exit 0
-fi
-
-# Handle "uninstall" / ":uninstall" action: completely remove gha and self-clean
-if [ "$CMD" = "uninstall" ]; then
-    echo "🧹 [ghai Uninstall] Completely removing gha sandbox, runner scripts, and workflows..."
-    # Delegate to GHA Uninstall task to handle file logic safely
-    ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaUninstall
-    echo "✨ [ghai Uninstall] gha removed completely with 0 lingering system modifications!"
-    exit 0
+    exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts "$@"
 fi
 
 PROJECT_ROOT="$PWD"
-while [ "$PROJECT_ROOT" != "/" ]; do
+while [ "$PROJECT_ROOT" != "/" ] && [ "$PROJECT_ROOT" != "." ]; do
     if [ -f "$PROJECT_ROOT/gradlew" ] || [ -d "$PROJECT_ROOT/.git" ]; then
         break
     fi
     PROJECT_ROOT="$(dirname "$PROJECT_ROOT")"
 done
-
-# Auto-scaffold minimal Gradle settings and build files ONLY IF MISSING (Scenario 1)
-if [ ! -f "$PROJECT_ROOT/settings.gradle.kts" ] && [ ! -f "$PROJECT_ROOT/settings.gradle" ]; then
-    PROJECT_NAME="$(basename "$PROJECT_ROOT")"
-    cat << 'EOF' > "$PROJECT_ROOT/settings.gradle.kts"
-// Generated by gha - Safe to delete during uninstall
-pluginManagement {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-}
-EOF
-    echo "rootProject.name = \"$PROJECT_NAME\"" >> "$PROJECT_ROOT/settings.gradle.kts"
+if [ "$PROJECT_ROOT" = "/" ] || [ "$PROJECT_ROOT" = "." ]; then
+    PROJECT_ROOT="$PWD"
 fi
-
-if [ ! -f "$PROJECT_ROOT/build.gradle.kts" ] && [ ! -f "$PROJECT_ROOT/build.gradle" ]; then
-    cat << 'EOF' > "$PROJECT_ROOT/build.gradle.kts"
-// Generated by gha - Safe to delete during uninstall
-plugins {
-    `kotlin-dsl`
-}
-EOF
-fi
-
-# Auto-bootstrap Gradle wrapper in project root if missing or broken
-if [ ! -f "$PROJECT_ROOT/gradlew" ] || [ ! -s "$PROJECT_ROOT/gradlew" ]; then
-    echo "📥 [ghai Self-Heal] Bootstrapping missing or broken Gradle wrapper in $PROJECT_ROOT..."
-    mkdir -p "$PROJECT_ROOT/gradle/wrapper"
-    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew" -o "$PROJECT_ROOT/gradlew" 2>/dev/null || true
-    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew.bat" -o "$PROJECT_ROOT/gradlew.bat" 2>/dev/null || true
-    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.properties" -o "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.properties" 2>/dev/null || true
-    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.jar" -o "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.jar" 2>/dev/null || true
-    chmod +x "$PROJECT_ROOT/gradlew" 2>/dev/null || true
-fi
-
 cd "$PROJECT_ROOT"
-chmod +x gradlew ghai 2>/dev/null || true
 
-# Self-healing: Ensure init script and sandbox exist
-if [ ! -f "init/gha.init.gradle.kts" ] || [ ! -s "init/gha.init.gradle.kts" ] || [ ! -d ".gha" ]; then
-    echo "⚡ [ghai Self-Heal] Restoring gha sandbox & init scripts..."
+# 3. SELF-HEALING BOOTSTRAP (If needed)
+if [ ! -f "gradlew" ] || [ ! -s "gradlew" ]; then
+    echo "📥 [ghai Self-Heal] Bootstrapping missing or broken Gradle wrapper..."
+    mkdir -p "gradle/wrapper"
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew" -o "gradlew" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradlew.bat" -o "gradlew.bat" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.properties" -o "gradle/wrapper/gradle-wrapper.properties" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/gradle/wrapper/gradle-wrapper.jar" -o "gradle/wrapper/gradle-wrapper.jar" 2>/dev/null || true
+    chmod +x "gradlew" 2>/dev/null || true
+fi
+
+if [ ! -f "init/gha.init.gradle.kts" ] || [ ! -d ".gha" ]; then
+    echo "⚡ [ghai Self-Heal] Restoring gha sandbox..."
     mkdir -p init
     curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/init/gha.init.gradle.kts" -o "init/gha.init.gradle.kts" 2>/dev/null || true
+    curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/version.txt" -o "version.txt" 2>/dev/null || true
     ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
 fi
 
-# Update .gitignore for Invisible Integration (0 side effects)
-if [ -f ".gitignore" ] && [ "$(basename "$PROJECT_ROOT")" != "gha" ]; then
-    if ! grep -q "# gha: Git, GitHub & Gradle Automation" ".gitignore"; then
-        echo "   ➕ Updating .gitignore for invisible gha integration..."
-        cat << 'EOF' >> .gitignore
-
-# gha: Git, GitHub & Gradle Automation (Invisible Sandbox)
-.gha/
-ghai
-ghai.bat
-init/gha.init.gradle.kts
-EOF
+# 4. GITHUB CLI (gh) MAPPING
+# Detect if the command is a GitHub CLI subcommand
+GH_COMMANDS="pr issue repo gist release workflow secret project run auth browse codespace variable"
+if [[ " $GH_COMMANDS " =~ " $CMD " ]]; then
+    # Execute via GitHub CLI in the sandboxed environment
+    export GITHUB_TOKEN=$(./gradlew -q -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts :ghai -Pmessage="--token-only" 2>/dev/null || echo "")
+    if command -v gh >/dev/null 2>&1; then
+        exec gh "$@"
+    else
+        echo "⚠️  GitHub CLI (gh) not found in PATH. Attempting via Gradle task..."
+        # Fallback to gha tasks if possible or error
+        exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
     fi
 fi
 
-exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
+# 5. UNIVERSAL GIT FALLBACK
+# If no arguments, run the autonomous AI workflow
+if [ -z "$RAW_ARG" ]; then
+    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai
+fi
+
+# If it's a known Gradle task (check for gha* prefix)
+if [[ "$CMD" == gha* ]]; then
+    exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts "$@"
+fi
+
+# Everything else goes to Git
+echo "🛠️  [ghai] Command not recognized. Passing to Git engine..."
+exec git "$@"

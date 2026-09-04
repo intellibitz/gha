@@ -22,8 +22,18 @@ object GhaGitExec {
     }
 
     fun isClean(workingDir: File): Boolean {
+        if (!isGitRepo(workingDir)) return true
         val result = exec(workingDir, "status", "--porcelain")
         return result.isSuccess && result.stdout.isBlank()
+    }
+
+    fun isGitRepo(workingDir: File): Boolean {
+        val gitDir = File(workingDir, ".git")
+        return gitDir.exists() && gitDir.isDirectory
+    }
+
+    fun init(workingDir: File): GhaProcessRunner.ProcessResult {
+        return exec(workingDir, "init")
     }
 
     fun localBranchExists(workingDir: File, branchName: String): Boolean {

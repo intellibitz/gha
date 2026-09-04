@@ -32,8 +32,11 @@ object GhaAiManager {
 
         val statusResult = GhaGitExec.exec(projectDir, "status", "--porcelain")
         if (!statusResult.isSuccess || statusResult.stdout.isBlank()) {
-            return "chore: automated sync via ghai"
+            val localFiles = projectDir.listFiles()?.filter { !it.name.startsWith(".") && it.name != "ghai" } ?: emptyList()
+            return if (localFiles.isEmpty()) "chore: initialize project with gha automation" else "chore: automated sync via ghai"
         }
+        
+        // ...
 
         val changedFiles = statusResult.stdout.lines().mapNotNull { line ->
             if (line.length > 3) line.substring(3).trim() else null
@@ -112,5 +115,33 @@ object GhaAiManager {
     fun isBranchAheadOfRemote(projectDir: File, baseBranch: String): Boolean {
         val res = GhaGitExec.exec(projectDir, "log", "origin/$baseBranch..HEAD", "--oneline")
         return res.isSuccess && res.stdout.isNotBlank()
+    }
+
+    /**
+     * Detects the type and state of the project for better automation decisions.
+     */
+    fun detectProjectContext(projectDir: File): String {
+        val buildKts = File(projectDir, "build.gradle.kts")
+        val buildGroovy = File(projectDir, "build.gradle")
+        val settingsKts = File(projectDir, "settings.gradle.kts")
+        val hasGradle = buildKts.exists() || buildGroovy.exists() || settingsKts.exists()
+        
+        val srcDir = File(projectDir, "src")
+        val hasSrc = srcDir.exists() && srcDir.isDirectory
+        
+        val hasKotlin = hasSrc && projectDir.walk().any { it.extension == "kt" }
+        val hasAndroid = projectDir.walk().any { it.name == "AndroidManifest.xml" }
+        
+        val localFiles = projectDir.listFiles()?.filter { 
+            !it.name.startsWith(".") && it.name != "ghai" && it.name != "init" && it.name != "gradlew"
+        } ?: emptyList()
+
+        return when {
+            hasAndroid -> "Android Mobile Project"
+            hasKotlin -> "Kotlin Multiplatform/JVM Project"
+            hasGradle -> "Gradle Automation Project"
+            localFiles.isEmpty() -> "Empty Folder (New Project Seed)"
+            else -> "Generic File Project"
+        }
     }
 }
