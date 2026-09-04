@@ -9,9 +9,15 @@ import java.net.URI
 object GhaVersionManager {
 
     /**
-     * Reads the current version from .gha/version-*.txt or .gha/version.txt (or fallback root version files).
+     * Reads the current version from version.txt or .gha/version.txt.
      */
     fun readVersion(rootDir: File): String {
+        val rootFile = File(rootDir, "version.txt")
+        if (rootFile.exists()) return rootFile.readText().trim()
+
+        val sandboxFile = File(rootDir, ".gha/version.txt")
+        if (sandboxFile.exists()) return sandboxFile.readText().trim()
+
         val sandboxDir = File(rootDir, ".gha")
         if (sandboxDir.exists()) {
             val suffixedFile = sandboxDir.listFiles()?.firstOrNull { it.name.startsWith("version-") && it.name.endsWith(".txt") }
@@ -19,18 +25,7 @@ object GhaVersionManager {
                 val v = suffixedFile.name.removePrefix("version-").removeSuffix(".txt")
                 if (v.isNotBlank()) return v
             }
-            val sandboxFile = File(sandboxDir, "version.txt")
-            if (sandboxFile.exists()) return sandboxFile.readText().trim()
         }
-
-        val rootSuffixedFile = rootDir.listFiles()?.firstOrNull { it.name.startsWith("version-") && it.name.endsWith(".txt") }
-        if (rootSuffixedFile != null) {
-            val v = rootSuffixedFile.name.removePrefix("version-").removeSuffix(".txt")
-            if (v.isNotBlank()) return v
-        }
-
-        val rootFile = File(rootDir, "version.txt")
-        if (rootFile.exists()) return rootFile.readText().trim()
 
         return "0.1.0-SNAPSHOT"
     }
@@ -80,16 +75,17 @@ object GhaVersionManager {
         val sandboxDir = File(rootDir, ".gha")
         if (!sandboxDir.exists()) sandboxDir.mkdirs()
 
-        // Clean up old version-*.txt files in .gha/
+        // Clean up all old version-*.txt files in .gha/ and root
         sandboxDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach { it.delete() }
+        rootDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach { it.delete() }
+
         File(sandboxDir, "version-$newVersion.txt").writeText(newVersion + "\n")
         File(sandboxDir, "version.txt").writeText(newVersion + "\n")
 
         val rootVersionFile = File(rootDir, "version.txt")
-        if (rootVersionFile.exists()) {
-            rootDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach { it.delete() }
+        if (rootVersionFile.exists() || rootDir.name == "gha") {
             File(rootDir, "version-$newVersion.txt").writeText(newVersion + "\n")
-            rootVersionFile.writeText(newVersion + "\n")
+            File(rootDir, "version.txt").writeText(newVersion + "\n")
         }
 
         return newVersion
