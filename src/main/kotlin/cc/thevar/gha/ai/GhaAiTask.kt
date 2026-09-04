@@ -202,39 +202,44 @@ abstract class GhaAiTask : GhaTask() {
             val pushRes = GhaGitExec.push(rootDir, "origin", headBranch, setUpstream = true)
             pushSummary = if (pushRes.isSuccess) "Pushed to origin/$headBranch" else "Push attempted"
 
-            println("🔀 Managing Pull Request against protected '$base'...")
-            val (prOk, prInfo) = GhaParallelWorkflowManager.createOrUpdatePr(
-                projectDir = rootDir,
-                token = token,
-                baseBranch = base,
-                headBranch = headBranch,
-                title = smartMsg,
-                body = "Automated contribution created by ghai.",
-            )
-
-            if (prOk && (prInfo != null)) {
-                prSummary = "PR #${prInfo.number} active"
-                prUrlSummary = prInfo.url
-                ciSummary = "PENDING / AUTO-MERGE"
-
-                println("✅ Pull Request #${prInfo.number} active on GitHub: ${prInfo.url}")
-                val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
-                GhaProcessRunner.exec(
-                    workingDir = rootDir,
-                    command = listOf("gh", "pr", "merge", prInfo.number.toString(), "--squash", "--delete-branch", "--auto"),
-                    extraEnv = env,
-                    timeoutSeconds = 30L,
+            if (headBranch != base) {
+                println("🔀 Managing Pull Request against protected '$base'...")
+                val (prOk, prInfo) = GhaParallelWorkflowManager.createOrUpdatePr(
+                    projectDir = rootDir,
+                    token = token,
+                    baseBranch = base,
+                    headBranch = headBranch,
+                    title = smartMsg,
+                    body = "Automated contribution created by ghai.",
                 )
-                println("🤖 GitHub Auto-Merge enabled for PR #${prInfo.number}.")
-            }
 
-            // Immediately switch creator terminal back to clean base branch if on an auto-created branch
-            if (isAutoBranch && headBranch != base) {
-                println("🔄 [ghai] Work pushed & PR auto-merge active. Returning terminal to clean '$base' branch...")
-                forceReturnToBaseBranch(rootDir, base, headBranch)
-                activeHeadBranch = base
-                activeBranchCategory = "Base Branch"
-                println("✅ Creator terminal successfully returned to clean '$base' branch!")
+                if (prOk && (prInfo != null)) {
+                    prSummary = "PR #${prInfo.number} active"
+                    prUrlSummary = prInfo.url
+                    ciSummary = "PENDING / AUTO-MERGE"
+
+                    println("✅ Pull Request #${prInfo.number} active on GitHub: ${prInfo.url}")
+                    val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
+                    GhaProcessRunner.exec(
+                        workingDir = rootDir,
+                        command = listOf("gh", "pr", "merge", prInfo.number.toString(), "--squash", "--delete-branch", "--auto"),
+                        extraEnv = env,
+                        timeoutSeconds = 30L,
+                    )
+                    println("🤖 GitHub Auto-Merge enabled for PR #${prInfo.number}.")
+                }
+
+                if (isAutoBranch) {
+                    println("🔄 [ghai] Work pushed & PR auto-merge active. Returning terminal to clean '$base' branch...")
+                    forceReturnToBaseBranch(rootDir, base, headBranch)
+                    activeHeadBranch = base
+                    activeBranchCategory = "Base Branch"
+                    println("✅ Creator terminal successfully returned to clean '$base' branch!")
+                }
+            } else {
+                prSummary = "Direct main push (No PR required)"
+                ciSummary = "PASSED / DIRECT"
+                println("✅ Direct push to '$base' completed. Version $newVersion is live on GitHub $base!")
             }
 
             tipRecommendation = "Your changes are saved, pushed, and auto-merging on GitHub. Terminal is clean on $base!"

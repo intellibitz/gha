@@ -62,7 +62,7 @@ abstract class GhaUpdateTask : GhaTask() {
             logger.lifecycle("⚡ Finalizing upgrade via ghaInit...")
             val initRes = GhaProcessRunner.exec(
                 workingDir = rootDir,
-                command = listOf("./gradlew", "-Dgradle.user.home=.gha/gradle-user-home", "--init-script", "init/gha.init.gradle.kts", "ghaInit"),
+                command = listOf("./gradlew", "-Dgradle.user.home=.gha/gradle-user-home", "--init-script", ".gha/init.gradle.kts", "ghaInit"),
                 timeoutSeconds = 60L
             )
             

@@ -142,7 +142,7 @@ abstract class GhaGitCloneTask : GhaTask() {
                 // We run ghaInit in the target directory using shell to ensure context is correct
                 GhaProcessRunner.exec(
                     workingDir = subDir,
-                    command = listOf("./gradlew", "--init-script", "init/gha.init.gradle.kts", "ghaInit"),
+                    command = listOf("./gradlew", "--init-script", ".gha/init.gradle.kts", "ghaInit"),
                     timeoutSeconds = 60L
                 )
             }

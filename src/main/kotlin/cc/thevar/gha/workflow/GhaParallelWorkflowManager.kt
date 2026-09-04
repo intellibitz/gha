@@ -113,10 +113,15 @@ object GhaParallelWorkflowManager {
         }
 
         // We are on a protected branch (e.g., main).
+        // If user explicit branch or default main mode is active, stay on targetBase (direct main sync)
         val targetBranch = if (!customUserBranch.isNullOrBlank()) {
             customUserBranch
         } else {
-            generateAutoBranchName()
+            targetBase
+        }
+
+        if (targetBranch == targetBase) {
+            return Pair(targetBase, false)
         }
 
         val isAuto = isAutoCreatedBranch(targetBranch)

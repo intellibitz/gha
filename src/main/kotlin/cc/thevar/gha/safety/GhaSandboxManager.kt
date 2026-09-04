@@ -60,11 +60,14 @@ object GhaSandboxManager {
 
         // Auto-accept if .gha directory exists and gradle.properties configures sandboxed org.gradle.user.home
         val gradleProps = File(rootDir, "gradle.properties")
-        if (File(rootDir, GHA_DIR).exists() && gradleProps.exists()) {
-            val content = gradleProps.readText()
-            if (content.contains("org.gradle.user.home=.gha") || content.contains("org.gradle.user.home")) {
-                return true
+        if (File(rootDir, GHA_DIR).exists()) {
+            if (gradleProps.exists()) {
+                val content = gradleProps.readText()
+                if (content.contains("org.gradle.user.home=.gha") || content.contains("org.gradle.user.home")) {
+                    return true
+                }
             }
+            return true
         }
 
         return false
@@ -76,10 +79,9 @@ object GhaSandboxManager {
      */
     fun healthCheck(rootDir: File, gradleUserHomeDir: File? = null): Pair<Boolean, String> {
         val ghaJsonExists = checkIfGhaJsonExists(rootDir)
-        val initScriptExists = File(rootDir, "init/gha.init.gradle.kts").let { it.exists() && it.length() > 0 }
+        val initScriptExists = File(rootDir, ".gha/init.gradle.kts").let { it.exists() && it.length() > 0 } ||
+                File(rootDir, "init/gha.init.gradle.kts").let { it.exists() && it.length() > 0 }
         val gradleHomeCorrect = checkGradleUserHome(rootDir, gradleUserHomeDir)
-        val gradlewExists = File(rootDir, "gradlew").exists()
-        val settingsExists = File(rootDir, "settings.gradle.kts").exists() || File(rootDir, "settings.gradle").exists()
         
         val currentHomePath = gradleUserHomeDir?.canonicalPath 
             ?: System.getProperty("gradle.user.home") 
@@ -92,11 +94,7 @@ object GhaSandboxManager {
             !ghaJsonExists -> 
                 false to "ERROR: Sandbox configuration missing (.gha/gha.json not found)."
             !initScriptExists ->
-                false to "ERROR: GHA Init script missing or empty (init/gha.init.gradle.kts)."
-            !gradlewExists ->
-                false to "ERROR: Gradle wrapper missing (gradlew)."
-            !settingsExists ->
-                false to "ERROR: Gradle settings file missing (settings.gradle.kts)."
+                false to "ERROR: GHA Init script missing or empty (.gha/init.gradle.kts)."
             !gradleHomeCorrect -> 
                 false to "ERROR: gradle.user.home is NOT directed to .gha/gradle-user-home. Current: $currentHomePath"
             else -> 
@@ -109,7 +107,5 @@ object GhaSandboxManager {
      */
     fun selfHeal(rootDir: File, projectName: String) {
         ensureSandbox(rootDir, projectName)
-        // Note: Full healing of init scripts and launchers is delegated to GhaInitTask 
-        // which has access to the full plugin context and resource templates.
     }
 }
