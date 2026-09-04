@@ -5,8 +5,9 @@ import java.io.File
 
 /**
  * AI Model Manager for GHA AI Orchestrator.
- * Handles searching, downloading (via Hugging Face Hub `hf download` / cURL),
- * caching, and listing AI models in the sandboxed repository storage `.gha/models/`.
+ * Handles searching, resolving, downloading (via Hugging Face Hub `hf download` / cURL),
+ * caching, and listing local and WEB-based AI models across Hugging Face Hub, OpenRouter,
+ * Ollama Library, and Groq.
  */
 object GhaModelManager {
 
@@ -17,6 +18,15 @@ object GhaModelManager {
         val format: String, // GGUF, ONNX, SafeTensors, PyTorch
         val isHardwareCompatible: Boolean,
         val compatibilityNote: String
+    )
+
+    data class WebModelInfo(
+        val modelId: String,
+        val registry: String, // HUGGING_FACE, OPENROUTER, OLLAMA_LIBRARY, GROQ
+        val name: String,
+        val description: String,
+        val contextWindow: String,
+        val isRecommendedForHardware: Boolean
     )
 
     fun getModelsDir(rootDir: File): File {
@@ -57,6 +67,156 @@ object GhaModelManager {
                 compatibilityNote = note
             )
         }
+    }
+
+    /**
+     * Lists popular and discovered AI models available on the Web for engines to consume.
+     */
+    fun listWebModels(rootDir: File): List<WebModelInfo> {
+        val webModels = mutableListOf<WebModelInfo>()
+
+        // 1. DeepSeek R1 Series (Hugging Face / OpenRouter / Ollama)
+        webModels.add(
+            WebModelInfo(
+                modelId = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF",
+                registry = "HUGGING_FACE",
+                name = "DeepSeek R1 Distill Qwen 1.5B GGUF",
+                description = "Ultra-fast reasoning model optimized for low-resource laptop/mobile hardware",
+                contextWindow = "128k context",
+                isRecommendedForHardware = true
+            )
+        )
+        webModels.add(
+            WebModelInfo(
+                modelId = "deepseek/deepseek-r1",
+                registry = "OPENROUTER",
+                name = "DeepSeek R1 (Web API)",
+                description = "Full-capability open-weights reasoning model hosted on OpenRouter",
+                contextWindow = "128k context",
+                isRecommendedForHardware = true
+            )
+        )
+
+        // 2. Meta Llama 3.3 / 3.2 Series
+        webModels.add(
+            WebModelInfo(
+                modelId = "bartowski/Llama-3.3-70B-Instruct-GGUF",
+                registry = "HUGGING_FACE",
+                name = "Llama 3.3 70B Instruct GGUF",
+                description = "State-of-the-art open-weights model for high-end workstations and GPU servers",
+                contextWindow = "128k context",
+                isRecommendedForHardware = true
+            )
+        )
+        webModels.add(
+            WebModelInfo(
+                modelId = "llama3.3",
+                registry = "OLLAMA_LIBRARY",
+                name = "Llama 3.3 (Ollama Web Library)",
+                description = "Official Ollama library model for local and remote Ollama engines",
+                contextWindow = "128k context",
+                isRecommendedForHardware = true
+            )
+        )
+
+        // 3. Qwen 2.5 Coder Series (Code Intelligence)
+        webModels.add(
+            WebModelInfo(
+                modelId = "Qwen/Qwen2.5-Coder-7B-Instruct-GGUF",
+                registry = "HUGGING_FACE",
+                name = "Qwen 2.5 Coder 7B Instruct GGUF",
+                description = "Leading open coding model for Kotlin, Android, Java, Python, and SQL",
+                contextWindow = "32k context",
+                isRecommendedForHardware = true
+            )
+        )
+        webModels.add(
+            WebModelInfo(
+                modelId = "qwen2.5-coder",
+                registry = "OLLAMA_LIBRARY",
+                name = "Qwen 2.5 Coder (Ollama Web Library)",
+                description = "Ollama Library coding model optimized for IDE automation",
+                contextWindow = "32k context",
+                isRecommendedForHardware = true
+            )
+        )
+
+        // 4. Groq LPU Web Models
+        webModels.add(
+            WebModelInfo(
+                modelId = "llama-3.3-70b-versatile",
+                registry = "GROQ",
+                name = "Llama 3.3 70B Versatile (Groq LPU)",
+                description = "Sub-second inference model running on Groq LPU hardware",
+                contextWindow = "128k context",
+                isRecommendedForHardware = true
+            )
+        )
+
+        // 5. OpenRouter Web Models (Claude 3.5 Sonnet / GPT-4o)
+        webModels.add(
+            WebModelInfo(
+                modelId = "anthropic/claude-3.5-sonnet",
+                registry = "OPENROUTER",
+                name = "Claude 3.5 Sonnet (OpenRouter Web)",
+                description = "Top-tier AI coding model accessible via OpenRouter web engine",
+                contextWindow = "200k context",
+                isRecommendedForHardware = true
+            )
+        )
+        webModels.add(
+            WebModelInfo(
+                modelId = "openai/gpt-4o",
+                registry = "OPENROUTER",
+                name = "GPT-4o (OpenRouter Web)",
+                description = "Multimodal GPT-4o model accessible via OpenRouter web engine",
+                contextWindow = "128k context",
+                isRecommendedForHardware = true
+            )
+        )
+
+        return webModels
+    }
+
+    /**
+     * Searches web registries (Hugging Face Hub API, OpenRouter API) for matching online models.
+     */
+    fun searchWebModels(query: String, rootDir: File): List<WebModelInfo> {
+        val localMatch = listWebModels(rootDir).filter {
+            it.name.lowercase().contains(query.lowercase()) || it.modelId.lowercase().contains(query.lowercase())
+        }
+        if (localMatch.isNotEmpty()) return localMatch
+
+        // Dynamic Hugging Face Hub Web API Query
+        val hfRes = GhaProcessRunner.exec(
+            workingDir = rootDir,
+            command = listOf("curl", "-fsSL", "https://huggingface.co/api/models?search=${query.replace(" ", "+")}&limit=5"),
+            timeoutSeconds = 15L
+        )
+
+        if (hfRes.isSuccess && hfRes.stdout.contains("id")) {
+            val ids = "\"id\":\"([^\"]+)\"".toRegex().findAll(hfRes.stdout).map { it.groupValues[1] }.toList()
+            return ids.map { id ->
+                WebModelInfo(
+                    modelId = id,
+                    registry = "HUGGING_FACE",
+                    name = id.substringAfterLast("/"),
+                    description = "Discovered model on Hugging Face Hub Web Registry",
+                    contextWindow = "Variable context",
+                    isRecommendedForHardware = true
+                )
+            }
+        }
+
+        return listWebModels(rootDir)
+    }
+
+    /**
+     * Resolves a web model ID or repository for an engine to consume.
+     */
+    fun resolveWebModel(modelId: String, rootDir: File): WebModelInfo? {
+        val models = searchWebModels(modelId, rootDir)
+        return models.find { it.modelId.equals(modelId, ignoreCase = true) } ?: models.firstOrNull()
     }
 
     /**

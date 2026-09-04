@@ -68,13 +68,19 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
             }
             "models" -> {
                 val models = GhaModelManager.listLocalModels(rootDir)
-                logger.lifecycle("📦 Cached AI Models in '.gha/models/' (${models.size}):")
+                logger.lifecycle("📦 Cached Local AI Models in '.gha/models/' (${models.size}):")
                 if (models.isEmpty()) {
-                    logger.lifecycle("   └── No models currently cached. Download models via './ghai ai orchestrate -Paction=download -Pmodel=<repoId>'")
+                    logger.lifecycle("   └── No local models cached. Download models via './ghai ai orchestrate -Paction=download -Pmodel=<repoId>'")
                 } else {
                     models.forEach { m ->
                         logger.lifecycle("   ├── ${m.repoId} (${String.format("%.1f", m.sizeMb)}MB, ${m.format}) -> ${m.compatibilityNote}")
                     }
+                }
+
+                val webModels = GhaModelManager.listWebModels(rootDir)
+                logger.lifecycle("\n🌐 Available AI Models on the Web for Engines (${webModels.size}):")
+                webModels.forEach { wm ->
+                    logger.lifecycle("   ├── [${wm.registry}] ${wm.name} ('${wm.modelId}') - ${wm.description} (${wm.contextWindow})")
                 }
             }
             "engines" -> {
