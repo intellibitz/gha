@@ -108,7 +108,7 @@ abstract class GhaTask : DefaultTask() {
 
         // Print GHA Version Header for every run (0 Effort, 100% Gain)
         if (!silent) {
-            val version = GhaVersionManager.readVersion(rootDir)
+            val version = GhaVersionManager.getEngineVersion(rootDir)
             logger.lifecycle("🤖 [gha] Engine Version: $version (Sandboxed)")
         }
 

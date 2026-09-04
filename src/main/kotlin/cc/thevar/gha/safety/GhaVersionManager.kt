@@ -4,14 +4,27 @@ import java.io.File
 import java.net.URI
 
 /**
- * Manages project versioning and autonomous version bumping with versioned files (e.g. version-0.1.22-SNAPSHOT.txt).
+ * Manages GHA Engine versioning and User Project versioning cleanly separated.
  */
 object GhaVersionManager {
 
     /**
-     * Reads the current version from version.txt or .gha/version.txt (or fallback version-*.txt).
+     * Returns the installed GHA Engine version (e.g. 0.1.26-SNAPSHOT).
      */
-    fun readVersion(rootDir: File): String {
+    fun getEngineVersion(rootDir: File): String {
+        val engineFile = File(rootDir, ".gha/gha-engine-version.txt")
+        if (engineFile.exists()) return engineFile.readText().trim()
+
+        val rootVersionFile = File(rootDir, "version.txt")
+        if (rootVersionFile.exists() && rootDir.name == "gha") return rootVersionFile.readText().trim()
+
+        return readProjectVersion(rootDir)
+    }
+
+    /**
+     * Reads the User Project's version (defaults to "0.1.0" for new user projects).
+     */
+    fun readProjectVersion(rootDir: File): String {
         val rootFile = File(rootDir, "version.txt")
         if (rootFile.exists() && rootFile.readText().trim().isNotBlank()) {
             return rootFile.readText().trim()
@@ -22,20 +35,13 @@ object GhaVersionManager {
             return sandboxFile.readText().trim()
         }
 
-        val sandboxDir = File(rootDir, ".gha")
-        if (sandboxDir.exists()) {
-            val suffixedFile = sandboxDir.listFiles()?.firstOrNull { it.name.startsWith("version-") && it.name.endsWith(".txt") }
-            if (suffixedFile != null) {
-                val v = suffixedFile.name.removePrefix("version-").removeSuffix(".txt")
-                if (v.isNotBlank()) return v
-            }
-        }
-
-        return "0.1.0-SNAPSHOT"
+        return if (rootDir.name == "gha") "0.1.0-SNAPSHOT" else "0.1.0"
     }
 
+    fun readVersion(rootDir: File): String = readProjectVersion(rootDir)
+
     /**
-     * Fetches the latest version from the GitHub source.
+     * Fetches the latest remote GHA Engine version from GitHub source.
      */
     fun fetchRemoteVersion(): String {
         return try {
@@ -70,16 +76,16 @@ object GhaVersionManager {
     }
 
     /**
-     * Bumps the version and creates version-$newVersion.txt files.
+     * Bumps the User Project version (patch level) and writes to .gha/version.txt (and root version.txt if in gha project).
      */
     fun bumpVersion(rootDir: File): String {
-        val current = readVersion(rootDir)
+        val current = readProjectVersion(rootDir)
         val newVersion = incrementVersion(current)
 
         val sandboxDir = File(rootDir, ".gha")
         if (!sandboxDir.exists()) sandboxDir.mkdirs()
 
-        // Clean up all old version-*.txt files in .gha/ and root
+        // Clean up old version-*.txt files in .gha/ and root
         sandboxDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }?.forEach {
             try { it.delete() } catch (_: Exception) {}
         }
@@ -90,18 +96,16 @@ object GhaVersionManager {
         File(sandboxDir, "version-$newVersion.txt").writeText(newVersion + "\n")
         File(sandboxDir, "version.txt").writeText(newVersion + "\n")
 
-        val rootVersionFile = File(rootDir, "version.txt")
-        if (rootVersionFile.exists() || rootDir.name == "gha") {
+        val isGhaRepo = rootDir.name == "gha" || File(rootDir, "src/main/kotlin/cc/thevar/gha").exists()
+        if (isGhaRepo) {
             File(rootDir, "version-$newVersion.txt").writeText(newVersion + "\n")
             File(rootDir, "version.txt").writeText(newVersion + "\n")
+            File(sandboxDir, "gha-engine-version.txt").writeText(newVersion + "\n")
         }
 
         return newVersion
     }
 
-    /**
-     * Simple semantic version incrementer (supports 0.1.0 and 0.1.0-SNAPSHOT).
-     */
     private fun incrementVersion(version: String): String {
         val isSnapshot = version.endsWith("-SNAPSHOT")
         val base = if (isSnapshot) version.removeSuffix("-SNAPSHOT") else version

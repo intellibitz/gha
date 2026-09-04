@@ -81,53 +81,6 @@ abstract class GhaAiTask : GhaTask() {
             println("✅ [ghai] ${vcsProvider.name} repository initialized.")
         }
 
-        // 0a. Auto-Init GitHub Remote if missing (0 Effort, 100% Gain)
-        val remoteCheck = GhaGitExec.exec(rootDir, "remote")
-        if (remoteCheck.isSuccess && remoteCheck.stdout.isBlank() && !token.isNullOrBlank()) {
-            val repoName = rootDir.name
-            val env = mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token)
-            
-            // Check if repository already exists on GitHub for the user
-            println("🔍 [ghai] No remote 'origin' detected. Checking GitHub for '$repoName'...")
-            val viewRes = GhaProcessRunner.exec(
-                workingDir = rootDir,
-                command = listOf("gh", "repo", "view", repoName, "--json", "url", "--template", "{{.url}}"),
-                extraEnv = env,
-                timeoutSeconds = 30L
-            )
-
-            if (viewRes.isSuccess && viewRes.stdout.isNotBlank()) {
-                val existingUrl = viewRes.stdout.trim()
-                println("🌐 [ghai] Found existing GitHub repository: $existingUrl")
-                println("🔗 [ghai] Linking 'origin' to existing repository...")
-                GhaGitExec.exec(rootDir, "remote", "add", "origin", existingUrl)
-                println("🔄 [ghai] Fetching and syncing with origin...")
-                GhaGitExec.fetch(rootDir, "origin")
-                
-                // If local repo is empty (except for gha scaffolding), attempt to sync with remote main
-                val localFiles = rootDir.listFiles()?.filter { 
-                    it.name != ".git" && it.name != ".gha" && it.name != "ghai" && it.name != "init" 
-                } ?: emptyList()
-                
-                if (localFiles.isEmpty() || (localFiles.size == 2 && localFiles.any { it.name == "settings.gradle.kts" } && localFiles.any { it.name == "build.gradle.kts" })) {
-                    println("🔀 [ghai] Workspace is empty. Restoring project from 'origin/main'...")
-                    GhaGitExec.exec(rootDir, "reset", "--hard", "origin/main")
-                }
-            } else {
-                println("✨ [ghai] No existing repository found. Creating new GitHub repository '$repoName'...")
-                val createRes = GhaProcessRunner.exec(
-                    workingDir = rootDir,
-                    command = listOf("gh", "repo", "create", repoName, "--source=.", "--public", "--push"),
-                    extraEnv = env,
-                    timeoutSeconds = 60L
-                )
-                if (createRes.isSuccess) {
-                    println("✅ [ghai] GitHub repository '$repoName' created and linked as 'origin'.")
-                } else {
-                    println("⚠️ [ghai] Could not auto-create GitHub repository: ${createRes.stderr}")
-                }
-            }
-        }
         val isVersionQuery = explicitMsg == "--version" || explicitMsg == "-v" || explicitMsg == "version"
 
         if (isVersionQuery) {
@@ -194,6 +147,9 @@ abstract class GhaAiTask : GhaTask() {
 
             println("📝 Auto-committing: \"$smartMsg\"...")
             GhaGitExec.exec(rootDir, "commit", "-m", smartMsg)
+
+            // Ensure remote origin exists (runs after local commit so git has a valid commit to push)
+            ensureRemoteOrigin(rootDir, token)
 
             println("🔄 Rebase sync with 'origin/$base'...")
             GhaParallelWorkflowManager.syncWithRemoteBase(rootDir, base)
@@ -431,6 +387,44 @@ abstract class GhaAiTask : GhaTask() {
 
         if (GhaGitExec.currentBranch(rootDir) != baseBranch) {
             GhaGitExec.exec(rootDir, "checkout", "-f", baseBranch)
+        }
+    }
+
+    private fun ensureRemoteOrigin(rootDir: File, token: String?) {
+        val remoteCheck = GhaGitExec.exec(rootDir, "remote")
+        if (remoteCheck.isSuccess && remoteCheck.stdout.isBlank() && !token.isNullOrBlank()) {
+            val repoName = rootDir.name
+            val env = mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token)
+
+            println("🔍 [ghai] No remote 'origin' detected. Checking GitHub for '$repoName'...")
+            val viewRes = GhaProcessRunner.exec(
+                workingDir = rootDir,
+                command = listOf("gh", "repo", "view", repoName, "--json", "url", "--template", "{{.url}}"),
+                extraEnv = env,
+                timeoutSeconds = 30L
+            )
+
+            if (viewRes.isSuccess && viewRes.stdout.isNotBlank()) {
+                val existingUrl = viewRes.stdout.trim()
+                println("🌐 [ghai] Found existing GitHub repository: $existingUrl")
+                println("🔗 [ghai] Linking 'origin' to existing repository...")
+                GhaGitExec.exec(rootDir, "remote", "add", "origin", existingUrl)
+                println("🔄 [ghai] Fetching and syncing with origin...")
+                GhaGitExec.fetch(rootDir, "origin")
+            } else {
+                println("✨ [ghai] No existing repository found. Creating new GitHub repository '$repoName'...")
+                val createRes = GhaProcessRunner.exec(
+                    workingDir = rootDir,
+                    command = listOf("gh", "repo", "create", repoName, "--source=.", "--public", "--push"),
+                    extraEnv = env,
+                    timeoutSeconds = 60L
+                )
+                if (createRes.isSuccess) {
+                    println("✅ [ghai] GitHub repository '$repoName' created and linked as 'origin'.")
+                } else {
+                    println("⚠️ [ghai] Could not auto-create GitHub repository: ${createRes.stderr}")
+                }
+            }
         }
     }
 }

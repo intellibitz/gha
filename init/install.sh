@@ -14,9 +14,9 @@ curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/ghai" -o "ghai
 curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/ghai.bat" -o ".gha/ghai.bat" 2>/dev/null || true
 chmod +x ghai 2>/dev/null || true
 
-# 3. Fetch latest version.txt into .gha/ sandbox
-echo "📥 Syncing version info..."
-curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/version.txt" -o ".gha/version.txt" 2>/dev/null || true
+# 3. Fetch latest GHA Engine version.txt into .gha/ sandbox
+echo "📥 Syncing GHA engine version info..."
+curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/version.txt" -o ".gha/gha-engine-version.txt" 2>/dev/null || true
 
 # 4. Update .gitignore for Invisible Integration (0 side effects)
 if [ -f ".gitignore" ]; then

@@ -43,8 +43,8 @@ abstract class GhaGitCloneTask : GhaTask() {
 
         if (repoInput.isNullOrBlank()) {
             println("❌ [gha Git Clone] Repository parameter required.")
-            println("   Usage: ./ghai clone intellibitz [dir]")
-            println("   or:    ./gradlew ghaGitClone -PtargetRepo=intellibitz/gha")
+            println("   Usage: ./ghai clone owner/repo [dir]")
+            println("   or:    ./gradlew ghaGitClone -PtargetRepo=owner/repo")
             return
         }
 
