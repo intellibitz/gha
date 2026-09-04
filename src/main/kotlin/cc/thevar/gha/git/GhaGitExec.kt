@@ -36,8 +36,11 @@ object GhaGitExec {
         return result.isSuccess
     }
 
-    fun fetch(workingDir: File, remoteName: String = "origin"): GhaProcessRunner.ProcessResult {
-        return exec(workingDir, "fetch", remoteName, timeoutSeconds = 45L)
+    fun fetch(workingDir: File, remoteName: String = "origin", prune: Boolean = false): GhaProcessRunner.ProcessResult {
+        val args = mutableListOf("fetch")
+        if (prune) args.add("--prune")
+        args.add(remoteName)
+        return exec(workingDir, *args.toTypedArray(), timeoutSeconds = 45L)
     }
 
     fun checkout(
