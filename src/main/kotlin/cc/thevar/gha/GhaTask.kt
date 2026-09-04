@@ -1,5 +1,9 @@
 package cc.thevar.gha
 
+import cc.thevar.gha.provider.GhaBuildProvider
+import cc.thevar.gha.provider.GhaProviderRegistry
+import cc.thevar.gha.provider.GhaRemoteProvider
+import cc.thevar.gha.provider.GhaVcsProvider
 import cc.thevar.gha.safety.GhaSandboxManager
 import cc.thevar.gha.safety.GhaVersionManager
 import cc.thevar.gha.security.GhaCredentialsResolver
@@ -41,6 +45,15 @@ abstract class GhaTask : DefaultTask() {
 
     @get:Internal
     var taskProjectNameStr: String = "gha"
+
+    @get:Internal
+    val vcs: GhaVcsProvider by lazy { GhaProviderRegistry.getVcsProvider(taskRootDirFile) }
+
+    @get:Internal
+    val build: GhaBuildProvider by lazy { GhaProviderRegistry.getBuildProvider(taskRootDirFile) }
+
+    @get:Internal
+    val remote: GhaRemoteProvider by lazy { GhaProviderRegistry.getRemoteProvider(taskRootDirFile, resolveToken()) }
 
     init {
         val rootFile = project.layout.projectDirectory.asFile
@@ -89,9 +102,10 @@ abstract class GhaTask : DefaultTask() {
         if (!isHealthy) {
             throw GradleException(
                 "$message\n\n" +
-                "To fix this:\n" +
-                "1. Run './ghai' to trigger autonomous self-healing.\n" +
-                "2. Ensure you are running Gradle with '-Dgradle.user.home=.gha/gradle-user-home'."
+                "🤖 [gha Portability Guard] gha is designed to be 100% portable.\n" +
+                "To restore its promised '0 effort, 100% gain' state:\n" +
+                "1. Run './ghai' to trigger autonomous self-healing and sandbox restoration.\n" +
+                "2. Ensure you are executing via the './ghai' launcher which enforces the sandbox."
             )
         }
     }

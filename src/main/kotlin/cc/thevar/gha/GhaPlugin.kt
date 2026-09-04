@@ -1,6 +1,8 @@
 package cc.thevar.gha
 
+import cc.thevar.gha.ai.GhaAiContextTask
 import cc.thevar.gha.ai.GhaAiTask
+import cc.thevar.gha.ai.mcp.GhaMcpTask
 import cc.thevar.gha.git.GhaGitBranchTask
 import cc.thevar.gha.git.GhaGitCheckinTask
 import cc.thevar.gha.git.GhaGitCheckoutTask
@@ -76,12 +78,14 @@ class GhaPlugin : Plugin<Project> {
         // ---------------------------------------------------------------------
         project.tasks.register("ghai", GhaAiTask::class.java) {
             group = GROUP_AI
-            description = "0 Effort, 100% Gain: Autonomous AI task for instant local checkin or GitHub PR/CI auto-merge & sync"
+            description =
+                "0 Effort, 100% Gain: Autonomous AI task for instant local checkin or GitHub PR/CI auto-merge & sync"
         }
 
         project.tasks.register("ghaAI", GhaAiTask::class.java) {
             group = GROUP_AI
-            description = "Alias for ghai: Autonomous AI task that auto-detects context, commits, syncs rebase, pushes, and manages PRs"
+            description =
+                "Alias for ghai: Autonomous AI task that auto-detects context, commits, syncs rebase, pushes, and manages PRs"
         }
 
         project.tasks.register("ghaAuto", GhaAiTask::class.java) {
@@ -91,7 +95,8 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaSync", GhaAiTask::class.java) {
             group = GROUP_AI
-            description = "Alias for ghai: Syncs local working branch 100% with remote base via rebase and push"
+            description =
+                "Alias for ghai: Syncs local working branch 100% with remote base via rebase and push"
         }
 
         project.tasks.register("ghaSave", GhaAiTask::class.java) {
@@ -99,22 +104,40 @@ class GhaPlugin : Plugin<Project> {
             description = "Alias for ghai: Saves and pushes all local work to GitHub automatically"
         }
 
+        project.tasks.register("ghaAiContext", GhaAiContextTask::class.java) {
+            group = GROUP_AI
+            description = "Generates a comprehensive AI Context report for LLMs and Agents"
+        }
+
+        project.tasks.register("ghaMcp", GhaMcpTask::class.java) {
+            group = GROUP_AI
+            description = "Exposes gha tasks as Model Context Protocol (MCP) tools for AI Agents"
+        }
+
+        project.tasks.register("ghaAiVision", cc.thevar.gha.ai.vision.GhaAiTask::class.java) {
+            group = GROUP_AI
+            description = "GHA AI Vision: Execute autonomous agents or start an MCP bridge for AI models"
+        }
+
         // ---------------------------------------------------------------------
         // 1. Gradle Automation Tasks
         // ---------------------------------------------------------------------
         project.tasks.register("ghaInit", GhaInitTask::class.java) {
             group = GROUP_GRADLE
-            description = "Initializes sandboxed GitHub Automation workflows for any project automatically"
+            description =
+                "Initializes sandboxed GitHub Automation workflows for any project automatically"
         }
 
         project.tasks.register("ghaUpdate", GhaUpdateTask::class.java) {
             group = GROUP_GRADLE
-            description = "Updates gha init scripts, version configurations, and runner wrappers (100% Kotlin)"
+            description =
+                "Updates gha init scripts, version configurations, and runner wrappers (100% Kotlin)"
         }
 
         project.tasks.register("ghaUninstall", GhaUninstallTask::class.java) {
             group = GROUP_GRADLE
-            description = "Completely removes gha sandbox, runner scripts, and workflows (100% Kotlin)"
+            description =
+                "Completely removes gha sandbox, runner scripts, and workflows (100% Kotlin)"
         }
 
         project.tasks.register("ghaStatus", GhaStatusTask::class.java) {
@@ -134,22 +157,26 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaKotlinInit", GhaKotlinInitTask::class.java) {
             group = GROUP_GRADLE
-            description = "Initializes a 100% Kotlin project structure with sandboxed GHA automation"
+            description =
+                "Initializes a 100% Kotlin project structure with sandboxed GHA automation"
         }
 
         project.tasks.register("ghaKotlinProjectCreate", GhaKotlinInitTask::class.java) {
             group = GROUP_GRADLE
-            description = "Creates a new 100% Kotlin project with Gradle DSL, version catalog, and sandboxed GHA"
+            description =
+                "Creates a new 100% Kotlin project with Gradle DSL, version catalog, and sandboxed GHA"
         }
 
         project.tasks.register("ghaAndroidRemove", GhaAndroidRemoveTask::class.java) {
             group = GROUP_GRADLE
-            description = "Removes Android project files, plugins, and dependencies to convert to a pure Kotlin project"
+            description =
+                "Removes Android project files, plugins, and dependencies to convert to a pure Kotlin project"
         }
 
         project.tasks.register("ghaAndroidProjectRemove", GhaAndroidRemoveTask::class.java) {
             group = GROUP_GRADLE
-            description = "Alias for ghaAndroidRemove: Converts project to pure Kotlin by removing Android components"
+            description =
+                "Alias for ghaAndroidRemove: Converts project to pure Kotlin by removing Android components"
         }
 
         project.tasks.register("ghaClean", GhaCleanTask::class.java) {
@@ -245,12 +272,14 @@ class GhaPlugin : Plugin<Project> {
         // ---------------------------------------------------------------------
         project.tasks.register("ghaParallelWorkflow", GhaParallelWorkflowTask::class.java) {
             group = GROUP_GITHUB
-            description = "Executes enterprise parallel collaboration workflow (pull -> branch -> checkin -> push -> PR -> merge -> auto-cleanup)"
+            description =
+                "Executes enterprise parallel collaboration workflow (pull -> branch -> checkin -> push -> PR -> merge -> auto-cleanup)"
         }
 
         project.tasks.register("ghaDevWorkflow", GhaParallelWorkflowTask::class.java) {
             group = GROUP_GITHUB
-            description = "Alias for ghaParallelWorkflow: Executes end-to-end parallel developer contribution workflow on protected branches"
+            description =
+                "Alias for ghaParallelWorkflow: Executes end-to-end parallel developer contribution workflow on protected branches"
         }
 
         project.tasks.register("ghaRepoView", GhaRepoViewTask::class.java) {
@@ -280,7 +309,8 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaWorkflowCleanup", GhaWorkflowCleanupTask::class.java) {
             group = GROUP_GITHUB
-            description = "Cleans up and deletes old, failed, or cancelled GitHub Actions workflow runs"
+            description =
+                "Cleans up and deletes old, failed, or cancelled GitHub Actions workflow runs"
         }
 
         project.tasks.register("ghaWorkflowCancel", GhaWorkflowCancelTask::class.java) {
@@ -290,7 +320,8 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaProjectInit", GhaProjectInitTask::class.java) {
             group = GROUP_GITHUB
-            description = "Initializes default GitHub Project boards (Roadmap, Issue Tracker, Releases) automatically"
+            description =
+                "Initializes default GitHub Project boards (Roadmap, Issue Tracker, Releases) automatically"
         }
 
         project.tasks.register("ghaProjectCreate", GhaProjectCreateTask::class.java) {
@@ -320,7 +351,8 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaInsights", GhaInsightsTask::class.java) {
             group = GROUP_GITHUB
-            description = "Displays GitHub repository overview, stars, forks, issues, and commit metrics"
+            description =
+                "Displays GitHub repository overview, stars, forks, issues, and commit metrics"
         }
 
         project.tasks.register("ghaContributors", GhaContributorsTask::class.java) {
@@ -335,7 +367,8 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaSecurityInit", GhaSecurityInitTask::class.java) {
             group = GROUP_GITHUB
-            description = "Generates default GitHub security workflows, Dependabot, CodeQL, and SECURITY.md"
+            description =
+                "Generates default GitHub security workflows, Dependabot, CodeQL, and SECURITY.md"
         }
 
         project.tasks.register("ghaSecurityStatus", GhaSecurityStatusTask::class.java) {
@@ -365,12 +398,14 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaDependabotCleanup", GhaDependabotCleanupTask::class.java) {
             group = GROUP_GITHUB
-            description = "Removes stale remote dependabot/ branches that have no open pull requests"
+            description =
+                "Removes stale remote dependabot/ branches that have no open pull requests"
         }
 
         project.tasks.register("ghaDependabotRebase", GhaDependabotRebaseTask::class.java) {
             group = GROUP_GITHUB
-            description = "Requests Dependabot to rebase or recreate pull requests to resolve conflicts"
+            description =
+                "Requests Dependabot to rebase or recreate pull requests to resolve conflicts"
         }
 
         project.tasks.register("ghaCodeScanningInit", GhaCodeScanningInitTask::class.java) {
@@ -506,9 +541,15 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.withType(GhaAiTask::class.java).configureEach {
             baseBranch.convention((project.findProperty("baseBranch") as? String) ?: "main")
             if (project.hasProperty("userBranch") || project.hasProperty("branch")) {
-                userBranch.convention((project.findProperty("userBranch") as? String) ?: (project.findProperty("branch") as? String))
+                userBranch.convention(
+                    (project.findProperty("userBranch") as? String)
+                        ?: (project.findProperty("branch") as? String)
+                )
             }
-            if (project.hasProperty("commitMessage") || project.hasProperty("message") || project.hasProperty("ghaAction")) {
+            if (project.hasProperty("commitMessage") || project.hasProperty("message") || project.hasProperty(
+                    "ghaAction"
+                )
+            ) {
                 commitMessage.convention(
                     (project.findProperty("commitMessage") as? String)
                         ?: (project.findProperty("message") as? String)

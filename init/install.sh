@@ -56,7 +56,11 @@ curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/ghai" -o "ghai
 curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/ghai.bat" -o "ghai.bat" 2>/dev/null || true
 chmod +x ghai 2>/dev/null || true
 
-# 6. Update .gitignore for Invisible Integration (0 side effects)
+# 6. Fetch latest version.txt
+echo "📥 Syncing version info..."
+curl -sSL "https://raw.githubusercontent.com/intellibitz/gha/main/version.txt" -o "version.txt" 2>/dev/null || true
+
+# 7. Update .gitignore for Invisible Integration (0 side effects)
 if [ -f ".gitignore" ]; then
     if ! grep -q "# gha: Git, GitHub & Gradle Automation" ".gitignore"; then
         echo "   ➕ Updating .gitignore for invisible gha integration..."
@@ -71,5 +75,5 @@ EOF
     fi
 fi
 
-# 7. Delegate to ghaInit to finalize the sandbox
+# 8. Delegate to ghaInit to finalize the sandbox
 exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit "$@"

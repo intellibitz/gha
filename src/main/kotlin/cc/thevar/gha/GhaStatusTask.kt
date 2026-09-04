@@ -16,6 +16,7 @@ abstract class GhaStatusTask : GhaTask() {
 
     @TaskAction
     fun execute() {
+        verifySandbox()
         val rootDir = taskRootDirFile
         val userHome = taskGradleUserHomeDirFile
         val (isHealthy, _) = GhaSandboxManager.healthCheck(rootDir, userHome)
@@ -23,6 +24,7 @@ abstract class GhaStatusTask : GhaTask() {
         println("📊 [GHA Status] Project: $taskProjectNameStr $taskSubprojectsSummary")
         println("   RootDir: ${rootDir.absolutePath}")
         println("   Sandbox: ${if (isHealthy) "✅ HEALTHY" else "❌ UNHEALTHY"}")
+        println("   Portability: ✅ 100% SELF-CONTAINED (All tools & caches in .gha/)")
         println("   Platform: ${System.getProperty("os.name")} (${System.getProperty("os.arch")})")
         println("   Gradle Engine: $taskGradleVersionStr (Delegating to official Gradle Engine)")
         println("   Git Engine: Official Git VCS CLI (Delegating to GhaGitExec)")

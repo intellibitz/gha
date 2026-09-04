@@ -9,6 +9,7 @@ abstract class GhaSandboxTask : GhaTask() {
 
     @TaskAction
     fun execute() {
+        verifySandbox()
         val rootDir = projectRootDir.get().asFile
         val userHome = gradleUserHomeDir.get().asFile
         val (isHealthy, message) = GhaSandboxManager.healthCheck(rootDir, userHome)
