@@ -17,19 +17,20 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v4
 
     - name: Set up Java Toolchain
-      uses: actions/setup-java@v6
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '21'
+        cache: 'gradle'
 
     - name: Validate Gradle Wrapper
-      uses: gradle/actions/wrapper-validation@v6
+      uses: gradle/actions/wrapper-validation@v4
 
     - name: Build & Publish Plugin to MavenLocal
-      run: ./gradlew publishToMavenLocal
+      run: ./gradlew publishToMavenLocal --no-daemon
 
     - name: Execute GHA Security & Dependency Audit
-      run: ./gradlew --init-script init/gha.init.gradle.kts ghaSecurityStatus ghaDependencies
+      run: ./gradlew --no-daemon --init-script init/gha.init.gradle.kts ghaSecurityStatus ghaDependencies
