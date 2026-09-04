@@ -1,5 +1,5 @@
 // Self-contained Gradle Init Script for GitHub Automation (GHA)
-// 100% Sandboxed - 0% System Modifications.
+// 100% Sandboxed - 0% Modifications to existing project files.
 initscript {
     repositories {
         mavenLocal()

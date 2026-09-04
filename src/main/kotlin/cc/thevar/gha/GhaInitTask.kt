@@ -46,7 +46,7 @@ abstract class GhaInitTask : GhaTask() {
             initScript.writeText(
                 """
                 // Self-contained Gradle Init Script for GitHub Automation (GHA)
-                // 100% Sandboxed - 0% System Modifications.
+                // 100% Sandboxed - 0% Modifications to existing project files.
                 initscript {
                     repositories {
                         mavenLocal()
@@ -70,14 +70,14 @@ abstract class GhaInitTask : GhaTask() {
             installSh.setExecutable(true, false)
         }
 
-        // 3. Create top-level ./ghai executable script (rwxr-xr-x mode 100755)
+        // 3. Create top-level ./ghai executable launcher (rwxr-xr-x mode 100755)
         val ghaiScript = File(rootDir, "ghai")
         if (!ghaiScript.exists()) {
             ghaiScript.writeText(
                 """
                 #!/usr/bin/env bash
                 # 🤖 ghai - Autonomous AI Workflow Execution Script
-                if [ "${'$'}1" = "--version" ] || [ "${'$'}1" = "-v" ] || [ "${'$'}1" = "version" ]; then
+                if [ "${'$'}1" = "--version" ] || [ "${'$'}1" = "-v" ] || [ "${'$'}1" = "version" ] || [ "${'$'}1" = ":version" ]; then
                     exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
                 fi
                 exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "${'$'}@"
@@ -91,15 +91,9 @@ abstract class GhaInitTask : GhaTask() {
             ghaiBat.writeText(
                 """
                 @echo off
-                if "%1"=="--version" (
-                    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
-                    exit /b 0
-                )
-                if "%1"=="-v" (
-                    .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
-                    exit /b 0
-                )
-                if "%1"=="version" (
+                set "CMD=%~1"
+                if defined CMD if "%CMD:~0,1%"==":" set "CMD=%CMD:~1%"
+                if /i "%CMD%"=="version" (
                     .\gradlew.bat -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
                     exit /b 0
                 )
@@ -149,9 +143,9 @@ abstract class GhaInitTask : GhaTask() {
             )
         }
 
-        logger.lifecycle("⚡ [gha] Ridiculously Easy 0-Effort Installation Complete!")
+        logger.lifecycle("⚡ [gha] 100% Sandboxed 0-Effort Installation Complete!")
         logger.lifecycle("   ├── .gha/ sandbox initialized")
-        logger.lifecycle("   ├── init/gha.init.gradle.kts created")
+        logger.lifecycle("   ├── init/gha.init.gradle.kts refreshed")
         logger.lifecycle("   ├── ./ghai & ./ghai.bat executable runner scripts created (rwxr-xr-x)")
         logger.lifecycle("   └── .github/workflows/gha.yml CI workflow created")
         logger.lifecycle("🎉 gha is ready! Type './ghai' to run autonomous AI automation.")
