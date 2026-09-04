@@ -1,4 +1,4 @@
-name: GHA Automation Workflow
+name: GHA Automation CI
 
 on:
   push:
@@ -7,24 +7,30 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-automate:
+  gha-ci:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@v4
         with:
-          java-version: '21'
           distribution: 'temurin'
+          java-version: '21'
 
       - name: Build & Publish Plugin to MavenLocal
         run: ./gradlew publishToMavenLocal
 
-      - name: Run GHA Automation Tasks
+      - name: Run ghai Autonomous AI Workflow
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./gradlew --init-script init/gha.init.gradle.kts ghaInit ghaStatus ghaDependencies ghaGitStatus ghaGitLog ghaWorkflow ghaWorkflowList
+          chmod +x gradlew ghai
+          # Use ghai to verify itself, sweep PRs, and prune CI logs
+          ./ghai :version
+          ./ghai :status
+          ./ghai
