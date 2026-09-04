@@ -3,6 +3,7 @@ package cc.thevar.gha
 import cc.thevar.gha.ai.GhaAiContextTask
 import cc.thevar.gha.ai.GhaAiTask
 import cc.thevar.gha.ai.mcp.GhaMcpTask
+import cc.thevar.gha.ai.orchestrator.GhaAiOrchestratorTask
 import cc.thevar.gha.git.GhaGitBranchTask
 import cc.thevar.gha.git.GhaGitCheckinTask
 import cc.thevar.gha.git.GhaGitCheckoutTask
@@ -117,6 +118,26 @@ class GhaPlugin : Plugin<Project> {
         project.tasks.register("ghaAiVision", cc.thevar.gha.ai.vision.GhaAiTask::class.java) {
             group = GROUP_AI
             description = "GHA AI Vision: Execute autonomous agents or start an MCP bridge for AI models"
+        }
+
+        project.tasks.register("ghaAiOrchestrate", GhaAiOrchestratorTask::class.java) {
+            group = GROUP_AI
+            description = "GHA Agent of Agents & Universal AI Orchestrator: Manage models, engines, MCP hubs, and hardware-optimized AI"
+        }
+
+        project.tasks.register("ghaModels", GhaAiOrchestratorTask::class.java) {
+            group = GROUP_AI
+            description = "List or download AI models optimized for your hardware"
+        }
+
+        project.tasks.register("ghaEngines", GhaAiOrchestratorTask::class.java) {
+            group = GROUP_AI
+            description = "Detect and inspect local AI execution engines (Ollama, Hugging Face CLI, llama.cpp, PyTorch)"
+        }
+
+        project.tasks.register("ghaMcpHub", GhaAiOrchestratorTask::class.java) {
+            group = GROUP_AI
+            description = "List and discover registered MCP Tool Hub servers"
         }
 
         // ---------------------------------------------------------------------

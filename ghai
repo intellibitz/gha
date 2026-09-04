@@ -63,7 +63,12 @@ case "$CMD" in
     ai)
         shift
         chmod +x gradlew 2>/dev/null || true
-        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaAiVision -Pmode="$1" -Pgoal="$2"
+        SUBMODE="$1"
+        if [ "$SUBMODE" = "orchestrate" ] || [ "$SUBMODE" = "models" ] || [ "$SUBMODE" = "engines" ] || [ "$SUBMODE" = "mcp-hub" ] || [ "$SUBMODE" = "download" ]; then
+            exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaAiOrchestrate -Paction="$1" -Pmodel="$2" -Pfilter="$3" -Pgoal="$2"
+        else
+            exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaAiVision -Pmode="$1" -Pgoal="$2"
+        fi
         ;;
 esac
 
@@ -120,41 +125,53 @@ if [[ " $GH_COMMANDS " =~ " $CMD " ]]; then
 fi
 
 # 5. UNIVERSAL COMMAND ROUTING
-# If no recognized command was executed yet, decide based on arguments:
-# - If no arguments: Run autonomous AI workflow
-# - If arguments contain Gradle flags or properties: Run AI workflow with those args
-# - If it's a known GHA task: Run it
-# - Otherwise: Fallback to Git
+# Standard Git commands list:
+GIT_COMMANDS="add commit push pull diff log status branch checkout stash tag reset fetch rebase merge init clone config remote show rm mv bisect notes worktree shortlog filter-branch cherry-pick"
 
-GRADLE_FLAGS="--no-daemon --offline --stacktrace --info --debug --quiet --warn --scan --parallel --max-workers --configuration-cache --project-cache-dir --gradle-user-home"
-
-if [ -z "$RAW_ARG" ]; then
-    exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai
-fi
-
-# Detect if any argument is a Gradle flag or property
-IS_GRADLE=0
-for arg in "$@"; do
-    if [[ "$arg" == "-P"* ]] || [[ "$arg" == "-D"* ]]; then
-        IS_GRADLE=1
-        break
-    fi
-    for flag in $GRADLE_FLAGS; do
-        if [ "$arg" = "$flag" ]; then
+if [ -n "$RAW_ARG" ]; then
+    # Check if any argument is a Gradle flag or property
+    IS_GRADLE=0
+    GRADLE_FLAGS="--no-daemon --offline --stacktrace --info --debug --quiet --warn --scan --parallel --max-workers --configuration-cache --project-cache-dir --gradle-user-home"
+    for arg in "$@"; do
+        if [[ "$arg" == "-P"* ]] || [[ "$arg" == "-D"* ]]; then
             IS_GRADLE=1
-            break 2
+            break
+        fi
+        for flag in $GRADLE_FLAGS; do
+            if [ "$arg" = "$flag" ]; then
+                IS_GRADLE=1
+                break 2
+            fi
+        done
+    done
+
+    if [ "$IS_GRADLE" = "1" ]; then
+        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
+    fi
+
+    # Check if it's a known Gradle task (starts with gha)
+    if [[ "$CMD" == gha* ]]; then
+        exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts "$@"
+    fi
+
+    # Check if the command is a known Git subcommand
+    IS_GIT=0
+    for gitCmd in $GIT_COMMANDS; do
+        if [ "$CMD" = "$gitCmd" ]; then
+            IS_GIT=1
+            break
         fi
     done
-done
 
-if [ "$IS_GRADLE" = "1" ]; then
-    exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
+    if [ "$IS_GIT" = "1" ]; then
+        exec git "$@"
+    fi
+
+    # Natural Language English Instruction detected!
+    # Route to GHA Agent of Agents Orchestrator
+    echo "🤖 [ghai Orchestrator] Natural Language Instruction detected: \"$*\""
+    exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaAiOrchestrate -Paction="agent" -Pgoal="$*"
 fi
 
-# If it's a known Gradle task (check for gha* prefix)
-if [[ "$CMD" == gha* ]]; then
-    exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts "$@"
-fi
-
-echo "🛠️  [ghai] Command not recognized. Passing to Git engine..."
-exec git "$@"
+# Default (no arguments): Run autonomous AI workflow
+exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai
