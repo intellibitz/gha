@@ -24,6 +24,47 @@ GitHub users and developers across any IDE or terminal can clone or install this
 
 ---
 
+### 🔄 Top-to-Bottom Cascade Delegation Flow
+
+Every user instruction (e.g. `./ghai "build an os"`) delegates top-down through all 5 layers:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. AOA Framework Delegation (GhaAoaManager)                                 │
+│ - Delegates top-level mission to AutoGen | CrewAI | LangGraph | Swarm | Native│
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. Sub-Agent & Web Agent Delegation (GhaAgentManager & GhaWebAgent)         │
+│ - Delegates tasks down to specialized agents (GhaScaffolder, GhaBuilder,    │
+│   GhaVcsAgent, GhaWebResearchAgent, GhaHfWebAgent, GhaGitHubWebAgent, etc.) │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 3. AI Inference Engine Delegation (GhaEngineManager)                        │
+│ - Delegates reasoning queries to active cloud/web engines (OpenRouter, Groq,│
+│   HF Serverless, Gemini, Claude, OpenAI) or local engines (Ollama, UV).     │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 4. Web Model Discovery & Resolution (GhaModelManager)                       │
+│ - Resolves/downloads model specifications (DeepSeek R1, Llama 3.3, Qwen 2.5, │
+│   Claude 3.5 Sonnet, GPT-4o) from Hugging Face Hub, OpenRouter, and Groq.   │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 5. MCP Server & Tool Execution (GhaMcpHost & GhaSystemMcpServer)             │
+│ - Delegates tool execution to 10 connected MCP servers exposing 33+ tools   │
+│   (System CLIs, ADB, Docker, Python UV, Node, Git, GitHub, Scaffolding, Build).│
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 📦 Universal Auto-Installer & Bootstrapper (`GhaBootstrapManager`)
 
 * **Zero-Setup On-Demand Bootstrap**: Automatically detects and installs missing AOA Python packages, engines, GGUF models, and MCP servers on-demand when a mission is received.

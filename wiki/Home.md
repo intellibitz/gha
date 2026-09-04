@@ -24,6 +24,14 @@ GitHub users and developers across any IDE or terminal can clone or install this
 
 ---
 
+### 🔄 Top-to-Bottom Cascade Delegation Flow
+
+```
+[1. AOA Framework] ──► [2. Web & Custom Agents] ──► [3. AI Engines] ──► [4. AI Models] ──► [5. MCP Tool Execution]
+```
+
+---
+
 ## 📦 Universal Auto-Installer & Bootstrapper (`GhaBootstrapManager`)
 
 * **Zero-Setup On-Demand Bootstrap**: Automatically detects and installs missing AOA Python packages, engines, GGUF models, and MCP servers on-demand when a mission is received.
