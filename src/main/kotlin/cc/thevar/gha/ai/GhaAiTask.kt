@@ -61,8 +61,8 @@ abstract class GhaAiTask : GhaTask() {
         
         if (isTokenOnly) {
             val token = resolveToken()
-            // Use quiet logger to ensure NO other output is present for the ghai launcher
-            project.logger.quiet(token)
+            // Use task logger quiet to ensure NO other output is present for the ghai launcher
+            logger.quiet(token)
             return
         }
 
