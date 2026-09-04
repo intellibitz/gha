@@ -34,6 +34,14 @@ java {
     }
 }
 
+dependencies {
+    testImplementation(kotlin("test"))
+}
+
+tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>("compileKotlin") {
+    exclude("**/com/example/**")
+}
+
 gradlePlugin {
     website = "https://github.com/intellibitz/gha"
     vcsUrl = "https://github.com/intellibitz/gha.git"

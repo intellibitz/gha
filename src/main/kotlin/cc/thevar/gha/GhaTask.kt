@@ -46,14 +46,26 @@ abstract class GhaTask : DefaultTask() {
     @get:Internal
     var taskProjectNameStr: String = "gha"
 
-    @get:Internal
-    val vcs: GhaVcsProvider by lazy { GhaProviderRegistry.getVcsProvider(taskRootDirFile) }
+    /**
+     * Lazy-initialized Version Control System Provider.
+     */
+    protected fun vcs(): GhaVcsProvider {
+        return GhaProviderRegistry.getVcsProvider(taskRootDirFile)
+    }
 
-    @get:Internal
-    val build: GhaBuildProvider by lazy { GhaProviderRegistry.getBuildProvider(taskRootDirFile) }
+    /**
+     * Lazy-initialized Build System Provider.
+     */
+    protected fun build(): GhaBuildProvider {
+        return GhaProviderRegistry.getBuildProvider(taskRootDirFile)
+    }
 
-    @get:Internal
-    val remote: GhaRemoteProvider by lazy { GhaProviderRegistry.getRemoteProvider(taskRootDirFile, resolveToken()) }
+    /**
+     * Lazy-initialized Remote Platform Provider.
+     */
+    protected fun remote(): GhaRemoteProvider {
+        return GhaProviderRegistry.getRemoteProvider(taskRootDirFile, resolveToken())
+    }
 
     init {
         val rootFile = project.layout.projectDirectory.asFile
@@ -63,9 +75,9 @@ abstract class GhaTask : DefaultTask() {
         val tokenVal = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
 
         gitHubToken.convention(tokenVal)
-        projectRootDir.convention(project.layout.dir(project.provider { rootFile }))
+        projectRootDir.set(project.layout.projectDirectory)
         ghaProjectName.convention(pName)
-        gradleUserHomeDir.convention(project.layout.dir(project.provider { homeDir }))
+        gradleUserHomeDir.set(homeDir)
 
         taskRootDirFile = rootFile
         taskGitHubToken = tokenVal

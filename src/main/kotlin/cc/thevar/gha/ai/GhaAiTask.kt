@@ -74,10 +74,11 @@ abstract class GhaAiTask : GhaTask() {
         val method = mergeMethod.getOrElse("squash")
 
         // 0. Auto-Init VCS if not present (Universal Vision)
-        if (!vcs.isAvailable(rootDir)) {
-            println("🌱 [ghai] No ${vcs.name} repository detected. Initializing new ${vcs.name} repository...")
-            vcs.init(rootDir)
-            println("✅ [ghai] ${vcs.name} repository initialized.")
+        val vcsProvider = vcs()
+        if (!vcsProvider.isAvailable(rootDir)) {
+            println("🌱 [ghai] No ${vcsProvider.name} repository detected. Initializing new ${vcsProvider.name} repository...")
+            vcsProvider.init(rootDir)
+            println("✅ [ghai] ${vcsProvider.name} repository initialized.")
         }
 
         // 0a. Auto-Init GitHub Remote if missing (0 Effort, 100% Gain)

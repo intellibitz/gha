@@ -38,12 +38,12 @@ interface GhaMcpServer {
 }
 
 /**
- * Definition of a tool that can be used by an AI Agent.
+ * Definition of a tool that can be used by an AI Agent or MCP Client.
  */
 data class GhaAiTool(
     val name: String,
     val description: String,
-    val inputSchema: Map<String, String>
+    val inputSchema: Map<String, Any> = mapOf("type" to "object", "properties" to emptyMap<String, Any>())
 )
 
 /**
