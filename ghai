@@ -120,8 +120,11 @@ if [[ " $GH_COMMANDS " =~ " $CMD " ]]; then
 fi
 
 # 5. UNIVERSAL GIT FALLBACK
-# If no arguments OR property-only arguments (e.g. -Pmessage), run the autonomous AI workflow
-if [ -z "$RAW_ARG" ] || [[ "$RAW_ARG" == "-P"* ]]; then
+# If no recognized command was executed yet:
+# - If it looks like a Gradle flag or property, run AI workflow
+# - Otherwise, fallback to Git
+
+if [ -z "$RAW_ARG" ] || [[ "$RAW_ARG" == "-"* ]]; then
     exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
 fi
 
@@ -130,6 +133,5 @@ if [[ "$CMD" == gha* ]]; then
     exec ./gradlew $REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts "$@"
 fi
 
-# Everything else goes to Git
 echo "🛠️  [ghai] Command not recognized. Passing to Git engine..."
 exec git "$@"
