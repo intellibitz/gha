@@ -25,12 +25,15 @@ abstract class GhaAiContextTask : GhaTask() {
         context.append("- Path: ${rootDir.absolutePath}\n")
         context.append("- GHA Version: ${GhaVersionManager.readVersion(rootDir)}\n\n")
 
-        context.append("## VCS Context (${vcs.name})\n")
-        context.append("- Branch: ${vcs.currentBranch(rootDir)}\n")
-        context.append("- Dirty: ${vcs.isDirty(rootDir)}\n\n")
+        val vcsProvider = vcs()
+        val buildProvider = build()
 
-        context.append("## Build Context (${build.name})\n")
-        context.append("- Version: ${build.version}\n")
+        context.append("## VCS Context (${vcsProvider.name})\n")
+        context.append("- Branch: ${vcsProvider.currentBranch(rootDir)}\n")
+        context.append("- Dirty: ${vcsProvider.isDirty(rootDir)}\n\n")
+
+        context.append("## Build Context (${buildProvider.name})\n")
+        context.append("- Version: ${buildProvider.version}\n")
         context.append("- Healthy: ${GhaAiManager.detectProjectContext(rootDir)}\n\n")
 
         context.append("## Directory Structure\n")
