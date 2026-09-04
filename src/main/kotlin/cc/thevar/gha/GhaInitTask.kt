@@ -85,19 +85,11 @@ abstract class GhaInitTask : GhaTask() {
         val ghaInitScript = File(ghaDir, "init.gradle.kts")
         ghaInitScript.writeText(initScriptText)
 
-        // Migration: Clean up legacy init/ directory in favor of unified .gha/
-        val legacyInitDir = File(rootDir, "init")
-        if (legacyInitDir.exists()) {
-            val legacyScript = File(legacyInitDir, "gha.init.gradle.kts")
-            if (legacyScript.exists()) {
-                legacyScript.delete()
-            }
-            val remainingFiles = legacyInitDir.listFiles()?.filter { !it.name.startsWith(".") } ?: emptyList()
-            if (remainingFiles.isEmpty() || (remainingFiles.size == 1 && remainingFiles[0].name == "install.sh")) {
-                legacyInitDir.deleteRecursively()
-                logger.lifecycle("   🧹 [GHA Migration] Cleaned up legacy init/ directory in favor of unified .gha/ sandbox.")
-            }
-        }
+        // Always generate/maintain init/gha.init.gradle.kts for remote installer/curl support
+        val initDir = File(rootDir, "init")
+        if (!initDir.exists()) initDir.mkdirs()
+        val repoInitScript = File(initDir, "gha.init.gradle.kts")
+        repoInitScript.writeText(initScriptText)
 
         // 3. Create top-level ./ghai executable launcher (rwxr-xr-x mode 100755)
         val ghaiScript = File(rootDir, "ghai")
@@ -106,8 +98,11 @@ abstract class GhaInitTask : GhaTask() {
             # 🤖 ghai - Autonomous AI Workflow Execution Script
             # 100% Sandboxed & Self-Healing - 0% Modifications to user files.
             INIT_SCRIPT=".gha/init.gradle.kts"
-            if [ ! -f "${'$'}INIT_SCRIPT" ] && [ -f "init/gha.init.gradle.kts" ]; then
-                INIT_SCRIPT="init/gha.init.gradle.kts"
+            if [ ! -f "${'$'}INIT_SCRIPT" ] || grep -q "404" "${'$'}INIT_SCRIPT" 2>/dev/null; then
+                if [ -f "init/gha.init.gradle.kts" ] && ! grep -q "404" "init/gha.init.gradle.kts"; then
+                    mkdir -p .gha
+                    cp "init/gha.init.gradle.kts" "${'$'}INIT_SCRIPT"
+                fi
             fi
             if [ "${'$'}1" = "--version" ] || [ "${'$'}1" = "-v" ] || [ "${'$'}1" = "version" ] || [ "${'$'}1" = ":version" ]; then
                 exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghai -Pmessage="--version"

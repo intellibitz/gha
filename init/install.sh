@@ -9,17 +9,22 @@ mkdir -p .gha
 GHA_REPO="${GHA_REPO:-$(git config gha.repo 2>/dev/null || echo "intellibitz/gha")}"
 
 # 1. Download or refresh init script (Single .gha/ Sandbox Init Script)
-curl -sSL "https://raw.githubusercontent.com/$GHA_REPO/main/init/gha.init.gradle.kts" -o ".gha/init.gradle.kts" 2>/dev/null || true
+curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/init/gha.init.gradle.kts" -o ".gha/init.gradle.kts" 2>/dev/null || true
+
+# Self-healing check: remove invalid 404 or zero-byte init script
+if grep -q "404" ".gha/init.gradle.kts" 2>/dev/null || [ ! -s ".gha/init.gradle.kts" ]; then
+    rm -f ".gha/init.gradle.kts"
+fi
 
 # 2. Fetch and update ./ghai executable launcher & batch scripts
 echo "📥 Fetching latest ghai launcher script..."
-curl -sSL "https://raw.githubusercontent.com/$GHA_REPO/main/ghai" -o "ghai" 2>/dev/null || true
-curl -sSL "https://raw.githubusercontent.com/$GHA_REPO/main/ghai.bat" -o ".gha/ghai.bat" 2>/dev/null || true
+curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/ghai" -o "ghai" 2>/dev/null || true
+curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/ghai.bat" -o ".gha/ghai.bat" 2>/dev/null || true
 chmod +x ghai 2>/dev/null || true
 
 # 3. Fetch latest GHA Engine version.txt into .gha/ sandbox
 echo "📥 Syncing GHA engine version info..."
-curl -sSL "https://raw.githubusercontent.com/$GHA_REPO/main/version.txt" -o ".gha/gha-engine-version.txt" 2>/dev/null || true
+curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/version.txt" -o ".gha/gha-engine-version.txt" 2>/dev/null || true
 
 # 4. Update .gitignore for Invisible Integration (0 side effects)
 if [ -f ".gitignore" ]; then

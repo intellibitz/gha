@@ -2,8 +2,11 @@
 # 🤖 ghai - Autonomous AI Workflow Execution Script
 # 100% Sandboxed & Self-Healing - 0% Modifications to user files.
 INIT_SCRIPT=".gha/init.gradle.kts"
-if [ ! -f "$INIT_SCRIPT" ] && [ -f "init/gha.init.gradle.kts" ]; then
-    INIT_SCRIPT="init/gha.init.gradle.kts"
+if [ ! -f "$INIT_SCRIPT" ] || grep -q "404" "$INIT_SCRIPT" 2>/dev/null; then
+    if [ -f "init/gha.init.gradle.kts" ] && ! grep -q "404" "init/gha.init.gradle.kts"; then
+        mkdir -p .gha
+        cp "init/gha.init.gradle.kts" "$INIT_SCRIPT"
+    fi
 fi
 if [ "$1" = "--version" ] || [ "$1" = "-v" ] || [ "$1" = "version" ] || [ "$1" = ":version" ]; then
     exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghai -Pmessage="--version"
