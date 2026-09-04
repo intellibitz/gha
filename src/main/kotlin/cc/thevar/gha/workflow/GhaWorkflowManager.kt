@@ -32,17 +32,14 @@ object GhaWorkflowManager {
     }
 
     /**
-     * Deletes a specific completed or cancelled workflow run by databaseId via REST API.
+     * Deletes a specific completed or cancelled workflow run by databaseId.
      */
     fun deleteWorkflowRun(projectDir: File, token: String?, runId: String): GhaProcessRunner.ProcessResult {
-        val ownerRepo = GhaInsightsManager.resolveOwnerAndRepo(projectDir)
-            ?: return GhaProcessRunner.ProcessResult(-1, "", "Could not resolve owner/repo for workflow cleanup.")
-
         val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
 
         return GhaProcessRunner.exec(
             workingDir = projectDir,
-            command = listOf("gh", "api", "-X", "DELETE", "repos/$ownerRepo/actions/runs/$runId"),
+            command = listOf("gh", "run", "delete", runId),
             extraEnv = env,
             timeoutSeconds = 30L,
         )
@@ -64,6 +61,7 @@ object GhaWorkflowManager {
 
     /**
      * Fetches workflow runs list using gh template for robust parsing.
+     * Enforces numeric formatting for databaseId to avoid scientific notation.
      */
     fun fetchWorkflowRunsList(projectDir: File, token: String?, limit: Int = 1000): List<WorkflowRun> {
         val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
@@ -95,12 +93,14 @@ object GhaWorkflowManager {
      * Automatically prunes older completed/failed/cancelled workflow runs across the entire repository history.
      * Keeps the most recent `maxKeep` runs intact.
      */
-    fun pruneOldWorkflowRuns(projectDir: File, token: String?, maxKeep: Int = 10): Int {
+    fun pruneOldWorkflowRuns(projectDir: File, token: String?, maxKeep: Int = 5): Int {
         val runs = fetchWorkflowRunsList(projectDir, token, limit = 1000)
+        if (runs.isEmpty()) return 0
+
         val completedRuns = runs.filter { run ->
             val status = run.status.lowercase()
             val conclusion = run.conclusion.lowercase()
-            status == "completed" || conclusion in listOf("success", "failure", "cancelled")
+            status == "completed" || conclusion in listOf("success", "failure", "cancelled", "startup_failure", "skipped", "action_required")
         }
 
         if (completedRuns.size <= maxKeep) return 0
