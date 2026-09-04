@@ -33,6 +33,10 @@ class GhaAgentOfAgents(
         log.add("🌌 [GHA Master Orchestrator] Agent of Agents initialized for GHA User.")
         log.add("🎯 Mission Objective: \"$goal\"")
 
+        // 0. Auto-Installer & Bootstrapper Phase
+        val bootstrapLogs = GhaBootstrapManager.autoBootstrapEnvironment(rootDir)
+        bootstrapLogs.forEach { log.add(it) }
+
         // 1. Initialize GHA MCP Host
         val mcpHost = GhaMcpHost(rootDir)
         log.add("🔌 [Phase 1: GHA MCP Host Initialized] ${mcpHost.getStatusReport()}")
