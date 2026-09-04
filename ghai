@@ -1,32 +1,49 @@
 #!/usr/bin/env bash
 # 🤖 ghai - Autonomous AI Workflow Executable Launcher
 # 0 Effort, 100% Gain: Works Anywhere, Everywhere.
+# Supports both plain commands (version, clone) and Gradle task path syntax (:version, :clone).
 
 set -e
 
-# Handle "version" / "--version" / "-v" sanity check
-if [ "$1" = "--version" ] || [ "$1" = "-v" ] || [ "$1" = "version" ]; then
+# Strip leading colon ':' if present to support Gradle task path syntax (e.g. :version -> version)
+RAW_ARG="$1"
+CMD="${RAW_ARG#:}"
+
+# Handle "version" / ":version" / "--version" / "-v" sanity check
+if [ "$CMD" = "version" ] || [ "$RAW_ARG" = "--version" ] || [ "$RAW_ARG" = "-v" ]; then
     chmod +x gradlew 2>/dev/null || true
-    exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
+    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai -Pmessage="--version"
 fi
 
-# Handle "clone" action: ghai clone intellibitz / ghai clone intellibitz/gha
-if [ "$1" = "clone" ]; then
+# Handle "clone" / ":clone" action: ghai clone intellibitz / ghai :clone intellibitz
+if [ "$CMD" = "clone" ]; then
     shift
     chmod +x gradlew 2>/dev/null || true
-    exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaGitClone -PtargetRepo="$1" -Pdir="$2"
+    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaGitClone -PtargetRepo="$1" -Pdir="$2"
 fi
 
-# Handle "update" action: curl 1-step install to fetch latest ghai
-if [ "$1" = "update" ]; then
+# Handle "status" / ":status" action
+if [ "$CMD" = "status" ]; then
+    chmod +x gradlew 2>/dev/null || true
+    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaStatus
+fi
+
+# Handle "help" / ":help" action
+if [ "$CMD" = "help" ]; then
+    chmod +x gradlew 2>/dev/null || true
+    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaHelp
+fi
+
+# Handle "update" / ":update" action: curl 1-step install to fetch latest ghai
+if [ "$CMD" = "update" ]; then
     echo "🚀 [ghai Update] Fetching and updating gha to latest version..."
     curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh | bash
     echo "🎉 [ghai Update] Updated gha & ghai to latest version successfully!"
     exit 0
 fi
 
-# Handle "uninstall" action: completely remove gha and self-clean
-if [ "$1" = "uninstall" ]; then
+# Handle "uninstall" / ":uninstall" action: completely remove gha and self-clean
+if [ "$CMD" = "uninstall" ]; then
     echo "🧹 [ghai Uninstall] Completely removing gha sandbox, runner scripts, and workflows..."
     rm -rf .gha
     rm -f init/gha.init.gradle.kts
@@ -105,7 +122,7 @@ allprojects {
 }
 FALLBACK_EOF
     fi
-    ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
+    ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghaInit
 fi
 
-exec ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
+exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script init/gha.init.gradle.kts ghai "$@"
