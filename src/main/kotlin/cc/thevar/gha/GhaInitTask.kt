@@ -30,7 +30,7 @@ abstract class GhaInitTask : GhaTask() {
     @TaskAction
     fun execute() {
         val targetDirStr = targetDirProperty.orNull
-        val rootDir = if (!targetDirStr.isNullOrBlank()) File(targetDirStr) else projectRootDir.get().asFile
+        val rootDir = (if (!targetDirStr.isNullOrBlank()) File(targetDirStr) else projectRootDir.get().asFile).canonicalFile
 
         // 1. Create .gha sandbox directory
         val ghaDir = File(rootDir, ".gha")
@@ -141,7 +141,28 @@ abstract class GhaInitTask : GhaTask() {
             ghaiBatRoot.writeText(ghaiBatContent)
         }
 
-        // 4. Update .gitignore for Invisible Integration (0 side effects)
+        // 4. Configure Git pre-push hook for automatic version bumping on every push
+        val gitDir = File(rootDir, ".git")
+        val gitHooksDir = File(gitDir, "hooks")
+        if (gitDir.exists()) {
+            if (!gitHooksDir.exists()) gitHooksDir.mkdirs()
+            val prePushHook = File(gitHooksDir, "pre-push")
+            val prePushContent = """
+                #!/usr/bin/env bash
+                # GHA Pre-Push Hook: Bump version for every GitHub push
+                if [ -d ".gha" ] && [ -f "./ghai" ]; then
+                    ./gradlew -q -Dgradle.user.home=.gha/gradle-user-home --init-script .gha/init.gradle.kts ghaBumpVersion 2>/dev/null || true
+                fi
+            """.trimIndent() + "\n"
+
+            if (!prePushHook.exists() || !prePushHook.readText().contains("ghaBumpVersion")) {
+                prePushHook.writeText(prePushContent)
+                prePushHook.setExecutable(true, false)
+                logger.lifecycle("   ⚡ Installed Git pre-push hook (.git/hooks/pre-push) for automatic version bumping on push")
+            }
+        }
+
+        // 5. Update .gitignore for Invisible Integration (0 side effects)
         if (pName != "gha" && rootDir.name != "gha") {
             val gitignore = File(rootDir, ".gitignore")
             val ghaIgnoreSection = """

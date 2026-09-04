@@ -47,6 +47,7 @@ import cc.thevar.gha.projects.GhaProjectCreateTask
 import cc.thevar.gha.projects.GhaProjectInitTask
 import cc.thevar.gha.projects.GhaProjectListTask
 import cc.thevar.gha.projects.GhaProjectViewTask
+import cc.thevar.gha.safety.GhaBumpVersionTask
 import cc.thevar.gha.security.GhaCodeScanningInitTask
 import cc.thevar.gha.security.GhaDependabotCleanupTask
 import cc.thevar.gha.security.GhaDependabotCloseTask
@@ -160,6 +161,11 @@ class GhaPlugin : Plugin<Project> {
             group = GROUP_GRADLE
             description =
                 "Updates gha init scripts, version configurations, and runner wrappers (100% Kotlin)"
+        }
+
+        project.tasks.register("ghaBumpVersion", GhaBumpVersionTask::class.java) {
+            group = GROUP_GRADLE
+            description = "Bumps project version and commits changes prior to push"
         }
 
         project.tasks.register("ghaUninstall", GhaUninstallTask::class.java) {

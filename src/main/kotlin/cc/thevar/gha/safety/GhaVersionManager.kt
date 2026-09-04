@@ -1,5 +1,6 @@
 package cc.thevar.gha.safety
 
+import cc.thevar.gha.git.GhaGitExec
 import cc.thevar.gha.insights.GhaInsightsManager
 import java.io.File
 import java.net.URI
@@ -122,6 +123,18 @@ object GhaVersionManager {
             File(sandboxDir, "gha-engine-version.txt").writeText(newVersion + "\n")
         }
 
+        return newVersion
+    }
+
+    /**
+     * Bumps version and automatically stages/commits version files if git working tree has changed.
+     */
+    fun bumpAndCommitVersion(rootDir: File): String {
+        val newVersion = bumpVersion(rootDir)
+        if (GhaGitExec.isGitRepo(rootDir) && !GhaGitExec.isClean(rootDir)) {
+            GhaGitExec.exec(rootDir, "add", "-A")
+            GhaGitExec.exec(rootDir, "commit", "-m", "chore: bump version to $newVersion")
+        }
         return newVersion
     }
 

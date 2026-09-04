@@ -2,6 +2,7 @@ package cc.thevar.gha.workflow
 
 import cc.thevar.gha.GhaTask
 import cc.thevar.gha.git.GhaGitExec
+import cc.thevar.gha.safety.GhaVersionManager
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -119,6 +120,9 @@ abstract class GhaParallelWorkflowTask : GhaTask() {
         }
 
         // Step 4: Push head branch to remote
+        val newVersion = GhaVersionManager.bumpAndCommitVersion(rootDir)
+        logger.lifecycle("📈 [GHA Version Bump] Incremented version to $newVersion for push.")
+
         logger.lifecycle("🚀 [GHA Push] Pushing branch '$headBranch' to origin...")
         val pushRes = GhaGitExec.push(rootDir, "origin", headBranch, setUpstream = true)
         if (!pushRes.isSuccess) {

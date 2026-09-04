@@ -1,6 +1,7 @@
 package cc.thevar.gha.provider
 
 import cc.thevar.gha.git.GhaGitExec
+import cc.thevar.gha.safety.GhaVersionManager
 import java.io.File
 
 class GitVcsProvider : GhaVcsProvider {
@@ -24,6 +25,7 @@ class GitVcsProvider : GhaVcsProvider {
     }
 
     override fun push(rootDir: File, remote: String, branch: String) {
+        GhaVersionManager.bumpAndCommitVersion(rootDir)
         GhaGitExec.push(rootDir, remote, branch)
     }
 

@@ -1,6 +1,7 @@
 package cc.thevar.gha.git
 
 import cc.thevar.gha.GhaTask
+import cc.thevar.gha.safety.GhaVersionManager
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -22,8 +23,12 @@ abstract class GhaGitPushTask : GhaTask() {
     fun execute() {
         val dir = projectRootDir.get().asFile
         val remote = remoteName.get()
-        val branch = GhaGitExec.currentBranch(dir)
 
+        // Rule: Bump version for every GitHub push
+        val newVersion = GhaVersionManager.bumpAndCommitVersion(dir)
+        logger.lifecycle("📈 [GHA Version Bump] Version incremented to $newVersion for push.")
+
+        val branch = GhaGitExec.currentBranch(dir)
         logger.lifecycle("🚀 [GHA Git Push] Pushing $branch to $remote...")
         val pushResult = GhaGitExec.exec(dir, "push", remote, branch)
         if (pushResult.isSuccess) {
