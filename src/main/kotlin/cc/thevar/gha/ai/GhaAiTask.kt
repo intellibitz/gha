@@ -59,18 +59,17 @@ abstract class GhaAiTask : GhaTask() {
         val explicitMsg = commitMessage.orNull
         val isTokenOnly = explicitMsg == "--token-only"
         
-        verifySandbox(silent = isTokenOnly)
+        if (isTokenOnly) {
+            print(resolveToken())
+            return
+        }
+
+        verifySandbox()
         val rootDir = projectRootDir.get().asFile
         val token = resolveToken()
         val base = baseBranch.getOrElse("main")
         val customBranch = userBranch.orNull
         val method = mergeMethod.getOrElse("squash")
-
-        // Handle internal token query for ghai launcher
-        if (isTokenOnly) {
-            print(token)
-            return
-        }
 
         // 0. Auto-Init VCS if not present (Universal Vision)
         if (!vcs.isAvailable(rootDir)) {
