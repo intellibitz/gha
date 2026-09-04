@@ -68,7 +68,11 @@ object GhaAiManager {
 
         val result = GhaProcessRunner.exec(
             workingDir = projectDir,
-            command = listOf("gh", "pr", "view", prNumber.toString(), "--json", "state,mergeable,statusCheckRollup"),
+            command = listOf(
+                "gh", "pr", "view", prNumber.toString(),
+                "--json", "state,mergeable,statusCheckRollup",
+                "--template", "{{.state}}|{{.mergeable}}|{{range .statusCheckRollup}}{{.conclusion}}|{{.status}},{{end}}",
+            ),
             extraEnv = env,
             timeoutSeconds = 30L,
         )
@@ -83,22 +87,23 @@ object GhaAiManager {
             )
         }
 
-        val json = result.stdout
-        val stateMatch = "\"state\":\"([^\"]+)\"".toRegex().find(json)?.groupValues?.get(1) ?: "OPEN"
-        val mergeable = json.contains("\"mergeable\":\"MERGEABLE\"") || !json.contains("\"mergeable\":\"CONFLICTING\"")
+        val parts = result.stdout.trim().split("|")
+        val state = parts.getOrNull(0) ?: "OPEN"
+        val mergeableStr = parts.getOrNull(1) ?: "MERGEABLE"
+        val checksStr = parts.getOrNull(2) ?: ""
 
-        val hasFailure = json.contains("\"state\":\"FAILURE\"") || json.contains("\"conclusion\":\"FAILURE\"")
-        val hasPending = json.contains("\"state\":\"PENDING\"") || json.contains("\"status\":\"IN_PROGRESS\"") || json.contains("\"status\":\"QUEUED\"")
-        val hasSuccess = json.contains("\"state\":\"SUCCESS\"") || json.contains("\"conclusion\":\"SUCCESS\"")
+        val isMergeable = mergeableStr == "MERGEABLE"
+        val checkEntries = checksStr.split(",").filter { it.isNotBlank() }
 
-        val ci = when {
-            hasFailure -> CiStatus.FAILED
-            hasPending -> CiStatus.PENDING
-            hasSuccess -> CiStatus.PASSED
-            else -> CiStatus.NO_CHECKS
+        val ciStatus = when {
+            checkEntries.isEmpty() -> CiStatus.NO_CHECKS
+            checkEntries.any { it.startsWith("FAILURE") || it.startsWith("CANCELLED") || it.startsWith("STARTUP_FAILURE") } -> CiStatus.FAILED
+            checkEntries.any { it.endsWith("IN_PROGRESS") || it.endsWith("QUEUED") || it.endsWith("PENDING") } -> CiStatus.PENDING
+            checkEntries.all { it.startsWith("SUCCESS") || it.startsWith("NEUTRAL") || it.startsWith("SKIPPED") } -> CiStatus.PASSED
+            else -> CiStatus.PENDING
         }
 
-        return PrCiStatus(prNumber, stateMatch, mergeable, ci, "State: $stateMatch, CI: $ci, Mergeable: $mergeable")
+        return PrCiStatus(prNumber, state, isMergeable, ciStatus, "State: $state, CI: $ciStatus, Mergeable: $isMergeable")
     }
 
     /**

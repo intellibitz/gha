@@ -156,20 +156,28 @@ object GhaParallelWorkflowManager {
 
         val result = GhaProcessRunner.exec(
             workingDir = projectDir,
-            command = listOf("gh", "pr", "list", "--head", headBranch, "--base", baseBranch, "--state", "open", "--json", "number,title,state,url"),
+            command = listOf(
+                "gh", "pr", "list",
+                "--head", headBranch,
+                "--base", baseBranch,
+                "--state", "open",
+                "--json", "number,title,state,url",
+                "--template", "{{range .}}{{.number}}|{{.state}}|{{.title}}|{{.url}}{{\"\\n\"}}{{end}}",
+            ),
             extraEnv = env,
             timeoutSeconds = 30L,
         )
 
         if (!result.isSuccess || result.stdout.isBlank()) return null
 
-        val regex = "\\{\"number\":(\\d+),\"state\":\"([^\"]+)\",\"title\":\"([^\"]+)\",\"url\":\"([^\"]+)\"\\}".toRegex()
-        val match = regex.find(result.stdout) ?: return null
+        val line = result.stdout.lines().firstOrNull { it.isNotBlank() } ?: return null
+        val parts = line.split("|")
+        if (parts.size < 4) return null
 
-        val num = match.groupValues[1].toIntOrNull() ?: return null
-        val state = match.groupValues[2]
-        val title = match.groupValues[3]
-        val url = match.groupValues[4]
+        val num = parts[0].toIntOrNull() ?: return null
+        val state = parts[1]
+        val title = parts[2]
+        val url = parts[3]
 
         return ExistingPrInfo(num, title, state, url)
     }
@@ -182,27 +190,28 @@ object GhaParallelWorkflowManager {
 
         val result = GhaProcessRunner.exec(
             workingDir = projectDir,
-            command = listOf("gh", "pr", "list", "--base", baseBranch, "--state", "open", "--json", "number,headRefName,baseRefName,title,url"),
+            command = listOf(
+                "gh", "pr", "list",
+                "--base", baseBranch,
+                "--state", "open",
+                "--json", "number,headRefName,baseRefName,title,url",
+                "--template", "{{range .}}{{.number}}|{{.headRefName}}|{{.baseRefName}}|{{.title}}|{{.url}}{{\"\\n\"}}{{end}}",
+            ),
             extraEnv = env,
             timeoutSeconds = 30L,
         )
 
         if (!result.isSuccess || result.stdout.isBlank()) return emptyList()
 
-        val prs = mutableListOf<OpenPrDetails>()
-        val regex = "\\{\"baseRefName\":\"([^\"]+)\",\"headRefName\":\"([^\"]+)\",\"number\":(\\d+),\"title\":\"([^\"]+)\",\"url\":\"([^\"]+)\"\\}".toRegex()
-
-        regex.findAll(result.stdout).forEach { match ->
-            val baseRef = match.groupValues[1]
-            val headRef = match.groupValues[2]
-            val num = match.groupValues[3].toIntOrNull() ?: 0
-            val title = match.groupValues[4]
-            val url = match.groupValues[5]
-            if (num > 0) {
-                prs.add(OpenPrDetails(num, headRef, baseRef, title, url))
-            }
+        return result.stdout.lines().filter { it.isNotBlank() }.mapNotNull { line ->
+            val parts = line.split("|")
+            if (parts.size >= 5) {
+                val num = parts[0].toIntOrNull() ?: 0
+                if (num > 0) {
+                    OpenPrDetails(num, parts[1], parts[2], parts[3], parts[4])
+                } else null
+            } else null
         }
-        return prs
     }
 
     /**
