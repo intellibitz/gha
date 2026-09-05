@@ -82,6 +82,10 @@ CMD="${RAW_ARG#:}"
 
 # Define execution helper for consistency
 run_gha() {
+    # If in standalone mode, run from the global directory to avoid local Gradle missing errors
+    if [ -z "$PROJECT_ROOT" ]; then
+        cd "$GLOBAL_GHA_DIR"
+    fi
     exec "$GRADLEW" $REFRESH_FLAG -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" "$@"
 }
 
