@@ -33,7 +33,7 @@ if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
     EXPORT_CMD="export PATH=\"\$HOME/.gha/bin:\$PATH\""
 
     # Target common shell config files
-    CONFIG_FILES=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile" "$HOME/.bash_profile")
+    CONFIG_FILES=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile" "$HOME/.bash_profile" "$HOME/.config/fish/config.fish")
 
     ADDED=0
     for config in "${CONFIG_FILES[@]}"; do
@@ -41,7 +41,11 @@ if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
             if ! grep -q ".gha/bin" "$config"; then
                 echo "" >> "$config"
                 echo "# gha: Global Master Agent Launcher" >> "$config"
-                echo "$EXPORT_CMD" >> "$config"
+                if [[ "$config" == *"fish"* ]]; then
+                    echo "fish_add_path \$HOME/.gha/bin" >> "$config"
+                else
+                    echo "$EXPORT_CMD" >> "$config"
+                fi
                 ADDED=1
                 echo "   ✅ Added to $config"
             fi

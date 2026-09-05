@@ -163,15 +163,17 @@ object GhaSandboxManager {
 
         val userHome = System.getProperty("user.home")
         val exportCmd = "export PATH=\"\$HOME/.gha/bin:\$PATH\""
+        val fishCmd = "fish_add_path \$HOME/.gha/bin"
         
-        val configs = listOf(".bashrc", ".zshrc", ".profile", ".bash_profile")
+        val configs = listOf(".bashrc", ".zshrc", ".profile", ".bash_profile", ".config/fish/config.fish")
         configs.forEach { name ->
             val file = File(userHome, name)
             if (file.exists()) {
                 val content = file.readText()
                 if (!content.contains(".gha/bin")) {
                     println("🚀 [GHA Onboarding] Adding global launcher to PATH in $name...")
-                    file.appendText("\n# gha: Global Master Agent Launcher\n$exportCmd\n")
+                    val cmd = if (name.contains("fish")) fishCmd else exportCmd
+                    file.appendText("\n# gha: Global Master Agent Launcher\n$cmd\n")
                 }
             }
         }
