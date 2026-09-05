@@ -93,66 +93,96 @@ abstract class GhaInitTask : GhaTask() {
             # 100% Sandboxed - Any project, anywhere. 0 Effort, 100% Gain.
 
             set -e
+            
+            # 🌌 Global GHA Context & Project Discovery
+            GLOBAL_GHA_DIR="${'$'}HOME/.gha"
+            GLOBAL_BIN_DIR="${'$'}GLOBAL_GHA_DIR/bin"
+            CWD=${'$'}(pwd)
+
+            # Function to find project root (walking up from CWD)
+            find_project_root() {
+                local dir="${'$'}1"
+                while [ "${'$'}dir" != "/" ] && [ "${'$'}dir" != "${'$'}HOME" ]; do
+                    if [ -d "${'$'}dir/.gha" ]; then
+                        echo "${'$'}dir"
+                        return
+                    fi
+                    dir=${'$'}(dirname "${'$'}dir")
+                done
+                echo ""
+            }
+
+            PROJECT_ROOT=${'$'}(find_project_root "${'$'}CWD")
             GHA_REPO="${'$'}{GHA_REPO:-${'$'}(git config gha.repo 2>/dev/null || echo "intellibitz/gha")}"
+            
+            if [ -n "${'$'}PROJECT_ROOT" ]; then
+                INIT_SCRIPT="${'$'}PROJECT_ROOT/.gha/init.gradle.kts"
+                GRADLEW="${'$'}PROJECT_ROOT/gradlew"
+                cd "${'$'}PROJECT_ROOT"
+            else
+                INIT_SCRIPT="${'$'}GLOBAL_GHA_DIR/init.gradle.kts"
+                GRADLEW="${'$'}GLOBAL_GHA_DIR/gradlew"
+            fi
+
             REFRESH_FLAG="--refresh-dependencies"
             if [ "${'$'}GHA_NO_REFRESH" = "1" ]; then REFRESH_FLAG=""; fi
 
-            INIT_SCRIPT=".gha/init.gradle.kts"
-            if [ ! -f "${'$'}INIT_SCRIPT" ]; then
-                if [ -f "init/gha.init.gradle.kts" ]; then
-                    mkdir -p .gha; cp "init/gha.init.gradle.kts" "${'$'}INIT_SCRIPT"
-                fi
-            fi
-
-            if [ ! -f "gradlew" ]; then
+            if [ ! -f "${'$'}GRADLEW" ]; then
                 echo "📥 [ghai On-Demand] Bootstrapping Gradle wrapper..."
-                mkdir -p "gradle/wrapper"
-                curl -fsSL "https://raw.githubusercontent.com/${'$'}GHA_REPO/main/gradlew" -o "gradlew" 2>/dev/null || true
-                chmod +x "gradlew" 2>/dev/null || true
+                mkdir -p "${'$'}(dirname "${'$'}GRADLEW")/gradle/wrapper"
+                curl -fsSL "https://raw.githubusercontent.com/${'$'}GHA_REPO/main/gradlew" -o "${'$'}GRADLEW" 2>/dev/null || true
+                chmod +x "${'$'}GRADLEW" 2>/dev/null || true
             fi
 
-            # Keep GMA/GMCP ready: Auto-install if sandbox missing
-            if [ ! -d ".gha" ] || [ ! -f ".gha/gha.json" ]; then
-                echo "🔄 [ghai] Initializing GHA environment..."
-                ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home ghaInit -PtargetDir="." > /dev/null 2>&1 || true
+            # 🌌 GMA Master Daemon Auto-Start
+            GMA_LOCK="${'$'}GLOBAL_GHA_DIR/gma.lock"
+            DAEMON_RUNNING=0
+            if [ -f "${'$'}GMA_LOCK" ]; then
+                GMA_PID=${'$'}(cat "${'$'}GMA_LOCK")
+                if [ -n "${'$'}GMA_PID" ] && ps -p "${'$'}GMA_PID" > /dev/null 2>&1; then DAEMON_RUNNING=1; fi
+            fi
+
+            if [ "${'$'}DAEMON_RUNNING" = "0" ] && [ "${'$'}1" != ":daemon" ]; then
+                if [[ "${'$'}1" != ":uninstall" && "${'$'}1" != ":ghaUninstall" ]]; then
+                    echo "🚀 [ghai] Priming GMA Master Daemon..."
+                    mkdir -p "${'$'}GLOBAL_GHA_DIR"
+                    nohup "${'$'}GRADLEW" -Dgradle.user.home="${'$'}GLOBAL_GHA_DIR/gradle-user-home" --init-script "${'$'}INIT_SCRIPT" ghaAiOrchestrate -Paction=daemon > "${'$'}GLOBAL_GHA_DIR/gma-daemon.log" 2>&1 &
+                fi
             fi
 
             RAW_ARG="${'$'}1"
             CMD="${'$'}{RAW_ARG#:}"
 
-            if [ -z "${'$'}RAW_ARG" ]; then
-                exec ./gradlew ${'$'}REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghai
-            fi
+            run_gha() {
+                exec "${'$'}GRADLEW" ${'$'}REFRESH_FLAG -Dgradle.user.home="${'$'}GLOBAL_GHA_DIR/gradle-user-home" --init-script "${'$'}INIT_SCRIPT" "${'$'}@"
+            }
+
+            if [ -z "${'$'}RAW_ARG" ]; then run_gha ghai; fi
 
             case "${'$'}CMD" in
-                version|--version|-v)
-                    exec ./gradlew ${'$'}REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghai -Pmessage="--version report"
-                    ;;
-                gmcp|mcp)
-                    exec ./gradlew ${'$'}REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" gmcp
-                    ;;
-                help)
-                    exec ./gradlew ${'$'}REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghaHelp
-                    ;;
+                version|--version|-v) run_gha ghai -Pmessage="--version"; ;;
+                gmcp|mcp) run_gha gmcp; ;;
+                help) run_gha ghaHelp; ;;
+                status) run_gha ghaStatus; ;;
                 install)
-                    exec ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghaInit
+                    echo "🚀 [ghai] Initializing GHA environment..."
+                    mkdir -p .gha
+                    if [ ! -f "settings.gradle.kts" ] && [ ! -f "settings.gradle" ]; then
+                        echo "rootProject.name = \"${'$'}(basename ${'$'}(pwd))\"" > settings.gradle.kts
+                    fi
+                    run_gha ghaInit
                     ;;
-                uninstall)
-                    ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghaUninstall
-                    exit 0
-                    ;;
+                uninstall) run_gha ghaUninstall; exit 0; ;;
             esac
 
-            # Delegate known Gradle tasks directly for speed
             KNOWN_GRADLE_TASKS="build test clean assemble check compileKotlin ghaInit ghaStatus ghaBuild ghaTest ghaClean ghaWorkflow ghaUpdate ghaUninstall ghaHelp ghaGitClone ghaGitStatus ghaGitCommit ghaGitPush ghaGitPull ghaGitBranch ghaGitCheckout ghaGitTag ghaGitLog ghaGitReset ghaGitStash ghaGitDiff ghaPrCreate ghaPrList ghaPrView ghaPrMerge ghaPrClose ghaPrReopen ghaPrEdit ghaPrCheckout ghaPrReview ghaIssueCreate ghaIssueList ghaIssueView ghaIssueClose ghaIssueReopen ghaIssueComment ghaIssueEdit ghaReleaseCreate ghaRepoView ghaGistCreate ghaSecretSet ghaProjectInit ghaProjectCreate ghaProjectList ghaProjectView ghaProjectAddItem ghaProjectClose ghaInsights ghaContributors ghaTraffic ghaSecurityInit ghaSecurityStatus ghaDependabotInit ghaDependabotList ghaDependabotMerge ghaDependabotClose ghaDependabotCleanup ghaDependabotRebase ghaCodeScanningInit ghaWikiInit ghaWikiStatus ghaWikiSync ghaWikiPublish ghaParallelWorkflow ghaDevWorkflow ghaAiContext ghaMcp ghaAiVision ghaAiOrchestrate ghaModels ghaEngines ghaMcpHub ghaBumpVersion"
 
             if [[ "${'$'}RAW_ARG" == ":"* ]] || [[ "${'$'}RAW_ARG" == "-"* ]] || [[ " ${'$'}KNOWN_GRADLE_TASKS " =~ " ${'$'}CMD " ]]; then
-                exec ./gradlew ${'$'}REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" "${'$'}@"
+                run_gha "${'$'}@"
             fi
 
-            # Default: Pass as Goal to GMA
-            echo "🤖 [GMA Master Interactor] Processing Goal: \"${'$'}*\""
-            exec ./gradlew ${'$'}REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghai -Pmessage="${'$'}*"
+            echo "🤖 [ghai Orchestrator] Natural Language Instruction: \"${'$'}*\""
+            run_gha ghaAiOrchestrate -Paction="agent" -Pgoal="${'$'}*"
         """.trimIndent() + "\n"
 
         ghaiScript.writeText(ghaiContent)
