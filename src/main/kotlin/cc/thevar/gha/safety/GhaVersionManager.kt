@@ -31,7 +31,7 @@ object GhaVersionManager {
         }
 
         // 4. Final Fallback for GHA Engine (Always use latest known if nothing else found)
-        val engineFallback = if (rootDir.name == "gha") "0.1.0-SNAPSHOT" else "0.1.51-SNAPSHOT"
+        val engineFallback = if (rootDir.name == "gha") "0.1.0-SNAPSHOT" else "0.1.54-SNAPSHOT"
         
         // 5. Fallback for self-repo
         val rootVersionFile = File(rootDir, "version.txt")

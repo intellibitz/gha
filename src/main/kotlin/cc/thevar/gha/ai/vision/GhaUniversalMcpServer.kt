@@ -198,6 +198,13 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
                 val msg = arguments["message"]?.toString()
                 val base = arguments["baseBranch"]?.toString() ?: "main"
                 val token = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
+                
+                // Lazy Git Scaffolding
+                if (!GhaGitExec.isGitRepo(rootDir)) {
+                    println("🔄 [Lazy Scaffolding] Initializing Git repository in ${rootDir.absolutePath}...")
+                    GhaGitExec.exec(rootDir, "init")
+                }
+
                 GhaParallelWorkflowManager.executeAutonomousWorkflow(
                     rootDir = rootDir,
                     token = token,
@@ -206,11 +213,14 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
                 )
             }
             "status" -> {
+                val isGhaProject = File(rootDir, ".gha").exists()
+                val vcs = GhaProviderRegistry.getVcsProvider(rootDir)
                 val branch = vcs.currentBranch(rootDir)
                 val dirty = vcs.isDirty(rootDir)
                 val ver = GhaVersionManager.readVersion(rootDir)
                 val context = GhaAiManager.detectProjectContext(rootDir)
-                "GHA Project Report: Name=${rootDir.name}, GHA Ver=$ver, Context=$context, VCS=${vcs.name}, Branch=$branch, Dirty=$dirty"
+                val mode = if (isGhaProject) "PROJECT" else "STANDALONE (Global GHA)"
+                "GHA Project Report [$mode]: Name=${rootDir.name}, GHA Ver=$ver, Context=$context, VCS=${vcs.name}, Branch=$branch, Dirty=$dirty"
             }
             "build" -> {
                 build.build(rootDir)
