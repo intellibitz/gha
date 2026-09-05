@@ -14,22 +14,20 @@ GitHub users and developers across any IDE or terminal can clone or install this
 
 ---
 
-## 🌌 GMA 4-Tier Coordinated Intelligence
+## 🌌 GHA 3-Tier Coordinated Intelligence Architecture
 
-`gha` is a 4-tier coordinated ecosystem where each layer possesses custom intelligence adhering to standard industry protocols, communicating with each other and external systems:
+`gha` is a 3-tier coordinated ecosystem where each layer possesses custom intelligence adhering to standard industry protocols, communicating seamlessly with each other and external systems:
 
-1. **🏛️ Tier 1: GHA Master Agent (GMA) & GMA Supervisor (GMAS)**:
-   - **GMA (GHA Master Agent)**: The **Master**. The Orchestrator. The One. GMA sits in front as the singular **Sole Interactor** for the GHA user, operating as an Agent, Agent of Agents (AOA), Engine, and MCP Client/Host.
-   - **GMAS (GMA Supervisor)**: The dedicated AOA Supervisor sitting below GMA at Tier 1. GMAS follows standard AOA protocol (`aoa/init`, `aoa/supervise`, `aoa/plugin/download`) to supervise internal GAWD workers and downloaded web/AOA plugins, reporting directly to GMA.
-2. **🤖 Tier 2: GHA Agents Web & Domain (GAWD)**:
-   - **Custom GAWD Agent**: Implements standard **Agent Task & Step Execution Protocol** and **Agent-to-Agent (A2A)** communication protocol (`A2AMessage` with FIPA performatives `REQUEST`, `INFORM`, `DELEGATE`, `RESPONSE`).
-   - **Worker Fleet**: Gradle, Git, GitHub, System, and Web agents executing domain missions using Tier 3 (GEMI) for reasoning and Tier 4 (GMCP) for tools.
-3. **🧠 Tier 3: GHA Engines & Models AI Inference (GEMI)**:
-   - **GHA Native Engine**: High-performance local inference coordinator loading `.gguf` models directly in `~/.gha/models`. Implements OpenAI Chat Completions API (`chatCompletion`) and MCP reasoning tools (`gemi_reason`).
+1. **🤖 Tier 1: GAWD (GHA Agents Web & Domain)**:
+   - **GMA (GHA Master Agent)**: The Master, The One, and Sole Interactor for the user. Operates as an Autonomous Agent, Agent of Agents (AOA), Engine, and MCP Client/Host.
+   - **GMAS (GMA Supervisor)**: AOA Protocol Supervisor sitting inside Tier 1. Follows standard AOA protocol (`aoa/init`, `aoa/supervise`, `aoa/plugin/download`) to supervise GAWD worker agents and web plugins, reporting directly to GMA.
+   - **Domain & Web Worker Fleet**: Specialized agents implementing A2A (`A2AMessage`) protocol for Gradle, Git, GitHub, System (ADB, Docker, Python UV, Rust, Go, Node), Security, Dependabot, and Web Research.
+2. **🧠 Tier 2: GEMI (GHA Engines & Models AI Inference)**:
+   - **AI Inference Engine Coordinator**: High-performance local inference coordinator loading `.gguf` models directly from `~/.gha/models`. Serves OpenAI Chat Completions API (`chatCompletion`) and MCP reasoning tools (`gemi_reason`).
    - **Autonomous Hardware Optimization**: Profiles CPU cores and GPU capabilities (Metal/CUDA) to automatically configure threading and GPU layer offloading (`-ngl 99`).
-4. **🔌 Tier 4: GMA Master MCP Engine (GMCP)**:
+3. **🔌 Tier 3: GMCP (GMA Master MCP Infrastructure)**:
    - **Full MCP Host, Client & Server**: JSON-RPC 2.0 MCP implementation (`GhaGmcpEngine` / `GhaGmcpClient`) over stdio and background TCP sockets (Port 9090).
-   - **Tools Registry**: Exposes 20+ GHA tools and system capability servers (`gmcp-tools-user` for ADB, Docker, Python UV, System CLI) to external IDEs, LLMs, and agents.
+   - **Universal Tool Registry**: Exposes 39+ GHA tools and system capability servers (ADB, Docker, Python UV, Rust, Go, System CLI) to external IDEs, LLMs, and agents.
 
 ---
 
@@ -39,20 +37,13 @@ GitHub users and developers across any IDE or terminal can clone or install this
    GHA User Prompt / Command (CLI: ./ghai "my goal")
                        │
                        ▼
-    [GhaAiTask.kt] / [GhaAiOrchestratorTask.kt]
-                       │
-                       ▼
- 🌌 Tier 1: GHA Master Agent (GMA / GhaAgentOfAgents.kt)
+ 🤖 Tier 1: GAWD (GMA Master Agent & GMAS Supervisor)
  └── Sole Interactor for User & Top-Level Master Governor
                        │
      ┌─────────────────┴─────────────────┐
      ▼                                   ▼
- [GMAS Supervisor]                [GEMI Engines]
- [GhaGmasAgent.kt]               [GhaGemiEngine.kt]
-     │                                   │
-     ▼                                   ▼
- [GAWD Workers]                   [GMCP Tools]
- [GhaGawdAgent.kt]               [GhaGmcpEngine.kt]
+ 🧠 Tier 2: GEMI Intelligence       🔌 Tier 3: GMCP Infrastructure
+ (Local GGUF Engines & Models)      (MCP Host, Client & 39+ Tools)
      │                                   │
      └─────────────────┬─────────────────┘
                        │
