@@ -16,7 +16,7 @@ The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA Use
 
 `gha` brings the power of AI to **every user, anywhere, even on limited home hardware**, through a 4-tier coordinated system:
 
-1. **🏛️ Tier 1: GHA Master Agent (GMA)**: The **Master**. The Orchestrator. The One. GMA sits in the front as the singular Sole Interactor for the user. It takes user queries, coordinates GAWD, GEMI, and GMCP to complete work in the best possible execution, and reports back while awaiting the next command.
+1. **🏛️ Tier 1: GHA Master Agent (GMA)**: The **Master**. The Orchestrator. The One. GMA is a **fully AOA Standard Protocol compliant** interactor. It coordinates GAWD, GEMI, and GMCP, and possesses built-in intelligence to discover, download, and manage other Agent of Agents (AOAs) worldwide.
 2. **🤖 Tier 2: GHA Agents Web & Domain (GAWD)**: The **Workers** that execute missions. GAWD makes use of GEMI (Tier 3) for reasoning and thinking, and GMCP (Tier 4) for skills, tools, and capabilities. Includes Gradle, Git, GitHub, System, and Web fleet agents.
 3. **🧠 Tier 3: GHA Engines & Models AI Inference (GEMI)**: The **Intelligence** layer. GEMI coordinates all AI inference engines (Ollama, Groq, OpenAI) and autonomous models (DeepSeek R1, Llama 3.3). GEMI provides pure reasoning and reports back to agents without interacting with the infrastructure layer (unless an engine is also an agent).
 4. **🔌 Tier 4: Model Context Protocol (GMCP)**: The **Infrastructure** layer. Full MCP implementation (Host, Client, Server) exposing hardware, system tools, and registries. Only Agents (Tier 2 and agent-capable engines) talk to GMCP.
@@ -44,7 +44,8 @@ The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA Use
 ```bash
 ./ghai                                           # Autonomous AI Workflow (Sync, Commit, Push, PR)
 ./ghai "build an os"                            # GMA Mission: execute natural instruction
-./ghai "create a kotlin app"                     # GMA Mission: application scaffolding
+./ghai "use aoa Public-AOA-01 to review code"   # Inter-AOA Delegation mission
+./ghai "download aoa http://registry.ai/p.zip"  # Download and install AOA standard plugin
 ./ghai gmcp                                      # Start GMA Master MCP Server (stdio)
 ./ghai ai orchestrate                            # GMA Master Interactor coordination report
 ./ghai ai models                                 # Inspect coordinated local & web AI models

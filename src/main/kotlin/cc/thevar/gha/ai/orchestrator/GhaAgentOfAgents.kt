@@ -16,6 +16,9 @@ import java.io.File
  * Tier 1: The Master. The Orchestrator. The One.
  * GMA sits in the front as the singular Sole Interactor for the GHA User.
  * 
+ * Compliance:
+ * Fully AOA Standard Protocol compliant via GhaAoaComplianceEngine.
+ * 
  * Coordinates the 4-tier GHA architecture:
  * 1. Tier 1: GMA Master Agent (Sole Interactor, Orchestrator & One-Point Manager)
  * 2. Tier 2: GAWD (GHA Agents Web & Domain) - Specialized workers.
@@ -27,6 +30,8 @@ class GhaAgentOfAgents(
     override val name: String = "GHA Master Agent (GMA)",
     override val role: String = "Sole Interactor for GHA User & Singular Master Orchestrator"
 ) : GhaAiAgent, GhaAgent {
+
+    private val aoaCompliance = GhaAoaComplianceEngine(File(".")) // Root context
 
     data class CoordinationReport(
         val targetDir: File,
@@ -116,6 +121,18 @@ class GhaAgentOfAgents(
      * Master Orchestration Entry Point: Coordinates every tier from T1 to T4.
      */
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
+        // 0. AOA Protocol Interceptor (Handles external standard protocol requests)
+        if (goal.startsWith("{") && goal.contains("jsonrpc")) {
+            val response = aoaCompliance.handleAoaRequest(goal, this)
+            if (response != null) {
+                return GhaAgentResult(true, listOf("AOA Protocol Request Handled"), response)
+            }
+        }
+
+        // Tier 1 Custom Intelligence: Decide if we should delegate to another AOA
+        val aoaIntelligenceResult = manageOtherAoas(goal, rootDir)
+        if (aoaIntelligenceResult != null) return aoaIntelligenceResult
+
         val requestedAoaEnv = System.getenv("GHA_AOA") ?: System.getenv("GHA_AOA_FRAMEWORK")
         if (!requestedAoaEnv.isNullOrBlank()) {
             val requestedFramework = GhaAoaManager.parseFramework(requestedAoaEnv)
@@ -206,5 +223,33 @@ class GhaAgentOfAgents(
             log = log,
             output = summary.toString()
         )
+    }
+
+    /**
+     * GMA Custom Built-in Intelligence: Manages and decides when to use other AOAs.
+     */
+    private fun manageOtherAoas(goal: String, rootDir: File): GhaAgentResult? {
+        val lowerGoal = goal.lowercase()
+        val aoaClient = GhaAoaClient(rootDir)
+
+        // Rule-based custom intelligence for inter-AOA interaction
+        return when {
+            lowerGoal.contains("use aoa") || lowerGoal.contains("delegate to") -> {
+                val targetAoa = goal.split(" ").find { it.contains("-aoa") }?.removeSuffix("-aoa") ?: "Public-AOA-01"
+                val cleanedGoal = goal.replace("use aoa", "").replace(targetAoa, "").trim()
+                
+                val log = mutableListOf<String>()
+                log.add("🧠 [GMA Intelligence] Decision: Delegating to external AOA '$targetAoa'")
+                
+                val res = aoaClient.delegateToOtherAoa(targetAoa, cleanedGoal)
+                GhaAgentResult(res.success, log + res.log, res.output)
+            }
+            lowerGoal.contains("download aoa") || lowerGoal.contains("install aoa") -> {
+                val url = goal.split(" ").find { it.startsWith("http") } ?: "https://registry.gha.ai/plugins/standard-aoa.zip"
+                val output = aoaClient.downloadAoaPlugin(url)
+                GhaAgentResult(true, listOf("GMA Intelligence: Plugin installation triggered"), output)
+            }
+            else -> null // GMA handles it locally
+        }
     }
 }
