@@ -40,11 +40,13 @@ impl GmaDaemon {
             return;
         }
 
+        let current_exe = std::env::current_exe().ok();
         let global_bin = global_dir.join("bin/ghai-engine");
-        let bin_to_run = if global_bin.exists() {
+
+        let bin_to_run = if let Some(ref exe) = current_exe {
+            exe.clone()
+        } else if global_bin.exists() {
             global_bin
-        } else if let Ok(exe) = std::env::current_exe() {
-            exe
         } else {
             PathBuf::from("ghai")
         };

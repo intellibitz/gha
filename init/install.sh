@@ -14,6 +14,9 @@ echo "⚡ [gha] Initializing 100% Sandboxed Native AI Runtime..."
 
 INSTALLED=0
 
+# Unlink running binaries if present (prevents "Text file busy" error on Linux)
+rm -f "$GLOBAL_BIN_DIR/ghai" "$GLOBAL_BIN_DIR/ghai-engine" 2>/dev/null || true
+
 # 1. Install compiled native binary
 if [ -f "$SCRIPT_DIR/target/release/gha" ]; then
     cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/ghai-engine"
