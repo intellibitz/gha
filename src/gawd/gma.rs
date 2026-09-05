@@ -41,7 +41,7 @@ impl GmaMasterAgent {
         }
 
         let lower_goal = goal.to_lowercase();
-        if lower_goal.contains("list directory") || lower_goal.contains("list dir") || lower_goal == "ls" || lower_goal == "dir" {
+        if lower_goal.contains("dir") || lower_goal.contains("ls") || lower_goal.contains("files") {
             let mut file_list = String::new();
             let mut count = 0;
             if let Ok(entries) = std::fs::read_dir(workspace) {
