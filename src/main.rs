@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 
 use daemon::GmaDaemon;
 use gawd::GmaMasterAgent;
-use gemi::{GemiEngine, ModelManager};
+use gemi::{GemiEngine, GemiServer, ModelManager};
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
@@ -55,13 +55,15 @@ fn print_help() {
     println!("  :install                 Initialize sandboxed .gha environment offline");
     println!("  :uninstall               Clean up sandboxed .gha environment");
     println!("  :daemon                  Inspect or manage GHA Master Daemon");
-    println!("  gmcp, mcp                Start native GMA Master MCP Server over stdio\n");
+    println!("  gmcp, mcp                Start native GMA Master MCP Server over stdio");
+    println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (http://127.0.0.1:8080/v1)\n");
     println!("GMA Master Interactor Native Missions & Multi-Tier AI Tasks:");
     println!("  ghai \"<instruction>\"     Execute natural language AI mission via GMA");
     println!("  ghai ai orchestrate      Inspect 3-tier GMA coordination report across tiers");
     println!("  ghai ai models           Inspect GGUF & web AI models");
     println!("  ghai ai engines          Inspect local & web AI inference engines");
     println!("  ghai ai mcp-hub          Inspect coordinated MCP tool servers");
+    println!("  ghai ai server           Start GEMI OpenAI-compatible HTTP REST server");
 }
 
 fn print_status(workspace: &Path, global_dir: &Path) {
@@ -89,20 +91,20 @@ fn print_status(workspace: &Path, global_dir: &Path) {
 }
 
 fn run_install(workspace: &Path, global_dir: &Path) {
-    println!("🚀 [gha Native] Initializing offline GHA AI environment at {}...", workspace.display());
+    println!("🚀 [ghai Native] Initializing offline GHA AI environment at {}...", workspace.display());
     let _ = SandboxManager::ensure_sandbox(workspace);
     let _ = SandboxManager::ensure_sandbox(global_dir);
-    println!("✅ [gha Native] Sandbox environment initialized in < 1ms!");
+    println!("✅ [ghai Native] Sandbox environment initialized in < 1ms!");
 }
 
 fn run_uninstall(workspace: &Path) {
     if SandboxManager::clean_sandbox(workspace) {
-        println!("✅ [gha Native] Cleaned .gha sandbox build directory.");
+        println!("✅ [ghai Native] Cleaned .gha sandbox build directory.");
     } else {
         let sandbox_dir = workspace.join(".gha");
         if sandbox_dir.exists() {
             let _ = std::fs::remove_dir_all(&sandbox_dir);
-            println!("✅ [gha Native] Removed .gha sandbox directory.");
+            println!("✅ [ghai Native] Removed .gha sandbox directory.");
         } else {
             println!("ℹ️  No .gha sandbox directory found.");
         }
@@ -144,6 +146,9 @@ fn main() {
         "gmcp" | "mcp" => {
             GmcpServer::run_stdio(&workspace, GHA_VERSION);
         }
+        "gemi" | "gemi-server" => {
+            GemiServer::start_http_server(workspace, 8080);
+        }
         "daemon" => {
             match GmaDaemon::check_status(&global_dir) {
                 Some(pid) => println!("🚀 [GMA Daemon] Status: RUNNING (PID {})", pid),
@@ -160,6 +165,10 @@ fn main() {
             if cmd == "ai" && args.len() > 1 {
                 let sub = &args[1];
                 match sub.as_str() {
+                    "server" => {
+                        GemiServer::start_http_server(workspace, 8080);
+                        return;
+                    }
                     "models" => {
                         let models = ModelManager::list_models(&workspace);
                         println!("📦 GHA Coordinated Models ({} Total):", models.len());
@@ -171,7 +180,7 @@ fn main() {
                     "engines" => {
                         println!("⚡ GEMI Coordinated Inference Engines:");
                         println!("   ├── [NATIVE] Embedded GGUF Engine: ACTIVE (Metal/CUDA enabled)");
-                        println!("   ├── [WEB] OpenAI ChatCompletions API Endpoint: ACTIVE");
+                        println!("   ├── [WEB] OpenAI ChatCompletions API Endpoint: ACTIVE (http://127.0.0.1:8080/v1)");
                         println!("   └── [MCP] GMCP Tool Reasoning Engine: ACTIVE");
                         return;
                     }
