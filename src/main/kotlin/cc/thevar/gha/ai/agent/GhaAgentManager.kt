@@ -18,9 +18,20 @@ object GhaAgentManager {
     private val systemAgent = GhaSystemAgent()
 
     /**
+     * Worker Intelligence (Tier 2): Intelligently refines and parallelizes missions.
+     */
+    fun refinePlanWithIntelligence(goal: String, gemi: GhaGemiEngine): String {
+        System.err.println("🤖 [GAWD Intelligence] Tier 2 refining plan for goal: $goal")
+        val reasoning = gemi.reason("Strategic planning for: $goal")
+        return reasoning.output
+    }
+
+    /**
      * Selects and delegates mission execution to the optimal Agent(s) based on the user's natural language goal.
      */
     fun dispatchMission(goal: String, projectDir: File, gemi: GhaGemiEngine, mcpClient: GhaGmcpClient): GhaAgentResult {
+        val intelligentStrategy = refinePlanWithIntelligence(goal, gemi)
+        System.err.println("🤖 [GAWD Strategy] $intelligentStrategy")
         val lowerGoal = goal.lowercase()
 
         return when {

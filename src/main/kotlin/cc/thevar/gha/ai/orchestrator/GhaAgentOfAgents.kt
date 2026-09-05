@@ -25,13 +25,26 @@ import java.io.File
  * 3. Tier 3: GEMI (GHA Engines & Models AI Inference) - Pure Intelligence Layer.
  * 4. Tier 4: GMCP (GHA Model Context Protocol) - Infrastructure, Hardware & Tools Layer.
  */
+/**
+ * GMA: Tier 1 - The Master.
+ * Stands tall as the singular one-point manager and worker.
+ * GMA coordinates and governs the custom intelligence of every tier (GAWD, GEMI, GMCP).
+ */
 class GhaAgentOfAgents(
     override val identity: String = "GMA-Master-Orchestrator",
     override val name: String = "GHA Master Agent (GMA)",
     override val role: String = "Sole Interactor for GHA User & Singular Master Orchestrator"
 ) : GhaAiAgent, GhaAgent {
 
-    private val aoaCompliance = GhaAoaComplianceEngine(File(".")) // Root context
+    private val aoaCompliance = GhaAoaComplianceEngine(File(".")) 
+
+    /**
+     * Master Coordination Intelligence (Tier 1): Governs the entire 4-tier ecosystem.
+     */
+    fun completeUserWorkWithExecution(goal: String, rootDir: File): GhaAgentResult {
+        System.err.println("🌌 [GMA Master Intelligence] Tier 1 governing the 4-tier cascade...")
+        return solve(goal, rootDir)
+    }
 
     data class CoordinationReport(
         val targetDir: File,
@@ -49,7 +62,7 @@ class GhaAgentOfAgents(
     )
 
     override fun executeMission(projectDir: File, prompt: String): String {
-        val res = solve(prompt, projectDir)
+        val res = completeUserWorkWithExecution(prompt, projectDir)
         return """
             |🌌 [GMA Master Interactor] Mission Status: ${if (res.success) "SUCCESS" else "FAILED"}
             |

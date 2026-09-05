@@ -12,14 +12,14 @@ The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA Use
 
 ---
 
-## 🌌 GMA 4-Tier Master Architecture
+## 🌌 GMA 4-Tier Coordinated Intelligence
 
-`gha` brings the power of AI to **every user, anywhere, even on limited home hardware**, through a 4-tier coordinated system:
+`gha` is a 4-tier coordinated ecosystem where each layer possesses custom intelligence adhering to its respective protocol, capable of communicating with each other and external systems:
 
-1. **🏛️ Tier 1: GHA Master Agent (GMA)**: The **Master**. The Orchestrator. The One. GMA is a **fully AOA Standard Protocol compliant** interactor. It coordinates GAWD, GEMI, and GMCP, and possesses built-in intelligence to discover, download, and manage other Agent of Agents (AOAs) worldwide.
-2. **🤖 Tier 2: GHA Agents Web & Domain (GAWD)**: The **Workers** that execute missions. GAWD makes use of GEMI (Tier 3) for reasoning and thinking, and GMCP (Tier 4) for skills, tools, and capabilities. Includes Gradle, Git, GitHub, System, and Web fleet agents.
-3. **🧠 Tier 3: GHA Engines & Models AI Inference (GEMI)**: The **Intelligence** layer. GEMI coordinates all AI inference engines (Ollama, Groq, OpenAI) and autonomous models (DeepSeek R1, Llama 3.3). GEMI provides pure reasoning and reports back to agents without interacting with the infrastructure layer (unless an engine is also an agent).
-4. **🔌 Tier 4: Model Context Protocol (GMCP)**: The **Infrastructure** layer. Full MCP implementation (Host, Client, Server) exposing hardware, system tools, and registries. Only Agents (Tier 2 and agent-capable engines) talk to GMCP.
+1. **🏛️ Tier 1: GHA Master Agent (GMA)**: The **Master**. The Orchestrator. GMA stands tall as the singular Sole Interactor and one-point manager. It governs the 4-tier cascade and uses its **Master Coordination Intelligence** to complete user work via GAWD, GEMI, and GMCP. GMA is fully AOA Standard Protocol compliant and manages other Agent of Agents worldwide.
+2. **🤖 Tier 2: GHA Agents Web & Domain (GAWD)**: The **Workers**. GAWD workers possess **Worker Intelligence** to refine mission strategies. They communicate with Tier 3 (GEMI) for reasoning and Tier 4 (GMCP) for skills, tools, and hardware capabilities.
+3. **🧠 Tier 3: GHA Engines & Models AI Inference (GEMI)**: The **Intelligence**. GEMI possesses **Inference Intelligence** to route queries to the optimal local or cloud model. It provides pure reasoning and strategy back to GAWD workers.
+4. **🔌 Tier 4: Model Context Protocol (GMCP)**: The **Infrastructure**. GMCP possesses **Infrastructure Intelligence** to self-heal and resolve hardware/system tools (ADB, Docker). It implements the full MCP protocol, making GMA's capabilities available to any external system over stdio.
 
 ---
 

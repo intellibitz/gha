@@ -28,19 +28,31 @@ class GhaGemiEngine(val rootDir: File) {
     )
 
     /**
+     * Intelligence Layer (Tier 3): Intelligently routes inference to the best model.
+     */
+    fun getOptimalEngine(prompt: String): GhaEngineManager.EngineInfo? {
+        val engines = GhaEngineManager.detectEngines(rootDir).filter { it.isAvailable }
+        if (engines.isEmpty()) return null
+
+        return when {
+            prompt.length > 1000 -> engines.find { it.name.contains("OpenAI") || it.name.contains("Claude") }
+            prompt.contains("code") -> engines.find { it.name.contains("Groq") || it.name.contains("Ollama") }
+            else -> engines.first()
+        } ?: engines.first()
+    }
+
+    /**
      * Executes an autonomous reasoning mission.
-     * This is the pure intelligence phase - no tool execution happens here.
      */
     fun reason(prompt: String, preferredEngine: String? = null): GhaAgentResult {
         val log = mutableListOf<String>()
         log.add("🧠 [GEMI Intelligence] Tier 3 Inference Engine active.")
         
-        // 1. Resolve Engines (Available & Custom GHA Engine)
-        val engines = GhaEngineManager.detectEngines(rootDir)
+        // 1. Resolve Engines via T3 Intelligence
         val targetEngine = if (preferredEngine != null) {
-            engines.find { it.name.lowercase().contains(preferredEngine.lowercase()) }
+            GhaEngineManager.detectEngines(rootDir).find { it.name.lowercase().contains(preferredEngine.lowercase()) }
         } else {
-            engines.firstOrNull { it.isAvailable }
+            getOptimalEngine(prompt)
         }
 
         if (targetEngine == null) {
