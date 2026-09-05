@@ -1,16 +1,20 @@
 // 🌌 gha: Pure AI for AI Runtime — GAWD, GEMI & GMCP Multi-Agent Engine
-// 100% Standalone Native Executable
+// 100% Standalone Native Executable — 0 JVM, 0 Git, 0 Gradle Dependency
 
+mod daemon;
 mod gawd;
 mod gemi;
 mod gmcp;
+mod sandbox;
 
 use std::env;
-use std::fs;
 use std::path::{Path, PathBuf};
+
+use daemon::GmaDaemon;
 use gawd::GmaMasterAgent;
-use gemi::GemiEngine;
-use gmcp::GmcpServer;
+use gemi::{GemiEngine, ModelManager};
+use gmcp::{GmcpClient, GmcpServer};
+use sandbox::SandboxManager;
 
 const GHA_VERSION: &str = "0.1.67-SNAPSHOT";
 
@@ -35,23 +39,10 @@ fn find_workspace(cwd: &Path) -> PathBuf {
     cwd.to_path_buf()
 }
 
-fn check_daemon_status(global_dir: &Path) -> Option<u32> {
-    let lock_file = global_dir.join("gma.lock");
-    if let Ok(content) = fs::read_to_string(&lock_file) {
-        if let Ok(pid) = content.trim().parse::<u32>() {
-            let proc_path = PathBuf::from(format!("/proc/{}", pid));
-            if proc_path.exists() {
-                return Some(pid);
-            }
-        }
-    }
-    None
-}
-
 fn print_version() {
     println!("⚡ gha (GHA Native AI Runtime) v{}", GHA_VERSION);
     println!("   ├── Architecture : Pure AI for AI (GAWD, GEMI & GMCP)");
-    println!("   └── Runtime      : 100% Standalone Native Executable");
+    println!("   └── Runtime      : 100% Standalone Native Executable (100% Rust Engine)");
 }
 
 fn print_help() {
@@ -76,16 +67,22 @@ fn print_help() {
 fn print_status(workspace: &Path, global_dir: &Path) {
     println!("🌌 [gha Native AI Status Report]");
     println!("   ├── Target Workspace : {}", workspace.display());
-    let sandbox = workspace.join(".gha");
-    let sandbox_status = if sandbox.is_dir() { "ACTIVE (.gha/ present)" } else { "NOT INITIALIZED (run 'ghai :install')" };
+    let sandbox_status = if SandboxManager::is_sandbox_active(workspace) {
+        "ACTIVE (.gha/ present)"
+    } else {
+        "NOT INITIALIZED (run 'ghai :install')"
+    };
     println!("   ├── Sandbox Status   : {}", sandbox_status);
     println!("   ├── Engine Version   : {}", GHA_VERSION);
 
-    let (cpus, gpu) = GemiEngine::profile_hardware();
+    let (cpus, gpu, models) = GemiEngine::get_intelligence_report(workspace);
+    let tools = GmcpClient::list_tools();
     println!("   ├── Hardware Profile : {} CPU Cores | {}", cpus, gpu);
     println!("   ├── Coordinated Tiers: Tier 1 (GAWD) | Tier 2 (GEMI) | Tier 3 (GMCP)");
+    println!("   ├── Active Models    : {} GGUF/Web Models Registered", models.len());
+    println!("   ├── MCP Tools Hub    : {} Tools Exposed over JSON-RPC 2.0", tools.len());
 
-    match check_daemon_status(global_dir) {
+    match GmaDaemon::check_status(global_dir) {
         Some(pid) => println!("   └── GMA Daemon       : RUNNING (PID {})", pid),
         None => println!("   └── GMA Daemon       : INACTIVE"),
     }
@@ -93,20 +90,22 @@ fn print_status(workspace: &Path, global_dir: &Path) {
 
 fn run_install(workspace: &Path, global_dir: &Path) {
     println!("🚀 [gha Native] Initializing offline GHA AI environment at {}...", workspace.display());
-    let gha_dir = workspace.join(".gha");
-    let _ = fs::create_dir_all(&gha_dir);
-    let _ = fs::create_dir_all(&gha_dir.join("models"));
-    let _ = fs::create_dir_all(global_dir);
+    let _ = SandboxManager::ensure_sandbox(workspace);
+    let _ = SandboxManager::ensure_sandbox(global_dir);
     println!("✅ [gha Native] Sandbox environment initialized in < 1ms!");
 }
 
 fn run_uninstall(workspace: &Path) {
-    let gha_dir = workspace.join(".gha");
-    if gha_dir.exists() {
-        let _ = fs::remove_dir_all(&gha_dir);
-        println!("✅ [gha Native] Removed .gha sandbox directory.");
+    if SandboxManager::clean_sandbox(workspace) {
+        println!("✅ [gha Native] Cleaned .gha sandbox build directory.");
     } else {
-        println!("ℹ️  No .gha sandbox directory found.");
+        let sandbox_dir = workspace.join(".gha");
+        if sandbox_dir.exists() {
+            let _ = std::fs::remove_dir_all(&sandbox_dir);
+            println!("✅ [gha Native] Removed .gha sandbox directory.");
+        } else {
+            println!("ℹ️  No .gha sandbox directory found.");
+        }
     }
 }
 
@@ -146,9 +145,15 @@ fn main() {
             GmcpServer::run_stdio(&workspace, GHA_VERSION);
         }
         "daemon" => {
-            match check_daemon_status(&global_dir) {
+            match GmaDaemon::check_status(&global_dir) {
                 Some(pid) => println!("🚀 [GMA Daemon] Status: RUNNING (PID {})", pid),
-                None => println!("🚀 [GMA Daemon] Status: INACTIVE (Native AI Engine Active)"),
+                None => {
+                    if let Ok(pid) = GmaDaemon::start_daemon(&global_dir) {
+                        println!("🚀 [GMA Daemon] Started background daemon (PID {})", pid);
+                    } else {
+                        println!("🚀 [GMA Daemon] Status: INACTIVE (Native AI Engine Active)");
+                    }
+                }
             }
         }
         _ => {
@@ -156,7 +161,7 @@ fn main() {
                 let sub = &args[1];
                 match sub.as_str() {
                     "models" => {
-                        let models = GemiEngine::list_models(&workspace);
+                        let models = ModelManager::list_models(&workspace);
                         println!("📦 GHA Coordinated Models ({} Total):", models.len());
                         for m in models {
                             println!("   ├── [{}] {} ('{}') - {}", m.registry, m.name, m.model_id, m.description);
@@ -171,9 +176,13 @@ fn main() {
                         return;
                     }
                     "mcp-hub" => {
-                        println!("🔌 GMCP Coordinated Tool Servers:");
+                        let tools = GmcpClient::list_tools();
+                        println!("🔌 GMCP Coordinated Tool Servers ({} Tools Active):", tools.len());
                         println!("   ├── [STDIO] Native GMCP Server: ACTIVE (Port 9090 / stdio)");
-                        println!("   └── [HOST] Universal AI Tool Registry: ACTIVE (39+ Tools)");
+                        for t in tools {
+                            println!("   │   ├── Tool: '{}' - {}", t.name, t.description);
+                        }
+                        println!("   └── [HOST] Universal AI Tool Registry: ACTIVE");
                         return;
                     }
                     _ => {}
