@@ -20,7 +20,7 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ---
 
-## 🌟 Component Architecture & Port Mapping
+## 🌟 Dual-Port Native Architecture & Component Overview
 
 `gha` operates a dual-port native architecture for tools and AI inference:
 
@@ -47,12 +47,12 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
   ```
 
 ### 2. 🧠 Tier 2: GEMI (GHA Engines & Models AI Inference) — Unique Port 9091
-* **What it does**: Coordinates local GGUF (`.gguf`) models in `~/.gha/models`, exposes a unique OpenAI-compatible ChatCompletions endpoint (`http://127.0.0.1:9091/v1`), and profiles hardware (CPU cores, Metal/CUDA GPU offloading `-ngl 99`).
-* **How to use it**:
+* **What it does**: Coordinates local GGUF (`.gguf`) models in `~/.gha/models`, exposes a unique OpenAI-compatible ChatCompletions REST endpoint (`http://127.0.0.1:9091/v1`), and profiles hardware (CPU cores, Metal/CUDA GPU offloading `-ngl 99`).
+* **How to start GEMI Server**:
   ```bash
   ghai ai server                                 # Start GEMI REST Server on Port 9091
-  ghai ai models                                 # Catalog local GGUF & cloud AI models
-  ghai ai engines                                # Inspect embedded GGUF & cloud inference engines
+  # Or
+  ghai gemi-server
   ```
 
 ### 3. 🔌 Tier 3: GMCP (GMA Master MCP Infrastructure) — Port 9090 / Stdio
@@ -65,12 +65,79 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ---
 
-## 🔌 Connecting Android Studio / Custom LLM Clients to GEMI (Port 9091)
+## 🌍 How the World Can Use GEMI (Tier 2 AI Inference Engine)
 
-In Android Studio, JetBrains AI Assistant, Cursor, or Python OpenAI SDK:
+Because GEMI implements the universal OpenAI REST specification (`/v1/chat/completions` and `/v1/models`), **any AI client, IDE, or framework in the world** can use GEMI as its hardware-accelerated local LLM provider:
+
+### 1. Android Studio / Gemini / JetBrains AI / Cursor / VS Code
+Set custom OpenAI-compatible endpoint in your IDE settings or AI plugin:
 * **Base URL**: `http://127.0.0.1:9091/v1`
 * **API Key**: `gha-native-key` (any string)
 * **Model**: `deepseek-r1` or `llama-3.3-70b`
+
+### 2. cURL / Terminal HTTP Requests
+```bash
+# List Available GGUF & Cloud Models
+curl -s http://127.0.0.1:9091/v1/models
+
+# Execute ChatCompletions Prompt
+curl -s http://127.0.0.1:9091/v1/chat/completions \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-r1",
+    "messages": [{"role": "user", "content": "Explain GHA GEMI architecture."}]
+  }'
+```
+
+### 3. Python (OpenAI SDK / LangChain / AutoGen / LlamaIndex)
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://127.0.0.1:9091/v1",
+    api_key="gha-native-key"
+)
+
+response = client.chat.completions.create(
+    model="deepseek-r1",
+    messages=[{"role": "user", "content": "Optimize this Rust function."}]
+)
+
+print(response.choices[0].message.content)
+```
+
+---
+
+## 🔌 IDE Setup for GMCP (Tier 3 MCP Server over Stdio / Port 9090)
+
+To connect IDEs to `gha`'s **Tools Engine (GMCP)**:
+
+### Android Studio / JetBrains IDEs (`.idea/mcp.json` or `~/.config/Google/AndroidStudio*/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "gha": {
+      "command": "ghai",
+      "args": ["mcp"],
+      "enabled": true,
+      "trust": true
+    }
+  }
+}
+```
+
+### VS Code / Cursor / Claude Desktop (`mcp.json`)
+```json
+{
+  "mcpServers": {
+    "gha": {
+      "command": "ghai",
+      "args": ["mcp"]
+    }
+  }
+}
+```
 
 ---
 
