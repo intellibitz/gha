@@ -18,23 +18,33 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ---
 
-## 🌟 The 3-Tier Coordinated Intelligence Architecture
+## 🌟 The GMA "Sole Interactor" Architecture
 
 ```text
- 🤖 Tier 1: GAWD (GMA Master Agent & GMAS Supervisor)  : Multi-Agent AOA / A2A Orchestration
- 🧠 Tier 2: GEMI (AI Inference REST Server)           : Port 9091 (http://127.0.0.1:9091/v1)
- 🔌 Tier 3: GMCP (MCP Infrastructure Server)           : Port 9090 / Stdio
+ 👤 GHA USER / IDE / CLIENT ──► 🤖 GMA Master Agent (Sole Interactor)
+                                        │
+             ┌──────────────────────────┼──────────────────────────┐
+             ▼                          ▼                          ▼
+   🤖 Tier 1: GAWD             🧠 Tier 2: GEMI           🔌 Tier 3: GMCP
+   (A2A Worker Agent Fleet)    (Port 9091 REST API)      (Port 9090 / Stdio MCP)
 ```
 
-### 1. 🤖 Tier 1: GAWD (Multi-Agent Orchestration)
-- **GMA Master Agent (Sole Interactor)** & **GMAS Supervisor** govern worker agent fleets (`GhaContextAgent`, `GhaReasoningAgent`, `GhaSystemExecutionAgent`, `GhaWebResearchAgent`, `GhaAutonomousAgent`).
-- **Usage in Android Studio**: Type goals into Agents Tab; Gemini delegates to GMA via MCP tool (`orchestrate`). GMA synthesizes the Master Report in < 2ms.
-- **Usage in Multi-Agent Frameworks**: AutoGen, CrewAI, LangGraph send A2A messages (`{"sender": "...", "recipient": "GMA-Master", "action": "SUPERVISE"}`).
+---
 
-### 2. 🧠 Tier 2: GEMI (AI Inference Engine — Port 9091)
-- **OpenAI-Compatible REST API**: `http://127.0.0.1:9091/v1/chat/completions`.
-- **Usage**: Android Studio, Gemini, Cursor, Python OpenAI SDK, cURL.
+## 📖 Integration Summary
 
-### 3. 🔌 Tier 3: GMCP (MCP Server — Port 9090 / Stdio)
-- **JSON-RPC 2.0 MCP Server**: Exposes 39+ tools (`status`, `reason`, `orchestrate`, `list_models`, `profile_hardware`).
-- **Usage**: Android Studio, VS Code, Cursor, Claude Desktop (`mcp.json`).
+### 1. Terminal CLI (`ghai`)
+- `ghai "natural language goal"` — GMA Master Interactor goal execution.
+- `ghai :status` — Workspace health, hardware profile & daemon status.
+- `ghai ai server` — Start GEMI OpenAI REST server on Port 9091.
+- `ghai mcp` — Start GMCP stdio MCP server for IDEs.
+
+### 2. IDE Integration (`mcp.json`)
+- Android Studio / JetBrains: `~/.config/Google/AndroidStudio*/mcp.json`.
+- VS Code / Cursor: `.vscode/mcp.json`.
+- Claude Desktop: `claude_desktop_config.json`.
+- Trigger tools in IDE chat: `@gha status`, `@gha reason`, `@gha orchestrate`.
+
+### 3. External LLM & Frameworks (Port 9091)
+- Base URL: `http://127.0.0.1:9091/v1`
+- Compatible with OpenAI Python SDK, LangChain, AutoGen, LlamaIndex, cURL.
