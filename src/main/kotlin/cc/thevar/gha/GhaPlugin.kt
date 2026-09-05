@@ -68,6 +68,7 @@ import cc.thevar.gha.workflow.GhaWorkflowInitTask
 import cc.thevar.gha.workflow.GhaWorkflowListTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
 
 class GhaPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -571,20 +572,51 @@ class GhaPlugin : Plugin<Project> {
 
         // Configure tasks and set properties at configuration time for Configuration Cache support
         project.tasks.withType(GhaTask::class.java).configureEach {
-            taskRootDirFile = project.layout.projectDirectory.asFile
-            taskProjectNameStr = project.name
-            taskGradleUserHomeDirFile = project.gradle.gradleUserHomeDir
-            taskGitHubToken = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
+            val rootFile = project.layout.projectDirectory.asFile
+            val homeDir = project.gradle.gradleUserHomeDir
+            val tokenVal = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
+            val cmdTargetDir = project.findProperty("targetDir")?.toString()
+            val targetFile = if (!cmdTargetDir.isNullOrBlank()) File(cmdTargetDir) else rootFile
+            val activePName = project.findProperty("projectName")?.toString() ?: targetFile.name
+
+            gitHubToken.convention(tokenVal)
+            projectRootDir.set(targetFile)
+            ghaProjectName.convention(activePName)
+            gradleUserHomeDir.set(homeDir)
+
+            taskRootDirFile = targetFile
+            taskGitHubToken = tokenVal
+            taskGradleUserHomeDirFile = homeDir
+            taskProjectNameStr = activePName
         }
 
         project.tasks.withType(GhaAiTask::class.java).configureEach {
-            if (project.hasProperty("commitMessage") || project.hasProperty("message") || project.hasProperty("ghaAction")) {
-                commitMessage.convention(
-                    (project.findProperty("commitMessage") as? String)
-                        ?: (project.findProperty("message") as? String)
-                        ?: (project.findProperty("ghaAction") as? String)
-                )
-            }
+            val prov = project.providers
+            commitMessage.convention(
+                prov.gradleProperty("commitMessage")
+                    .orElse(prov.gradleProperty("message"))
+                    .orElse(prov.gradleProperty("ghaAction"))
+            )
+            targetDir.convention(
+                prov.gradleProperty("targetDir")
+                    .orElse(prov.gradleProperty("dir"))
+            )
+        }
+
+        project.tasks.withType(GhaAiOrchestratorTask::class.java).configureEach {
+            val prov = project.providers
+            val cmdTargetDir = (project.findProperty("targetDir") ?: project.findProperty("dir"))?.toString()
+            
+            action.convention(prov.gradleProperty("action").orElse("status"))
+            model.convention(prov.gradleProperty("model"))
+            filter.convention(prov.gradleProperty("filter"))
+            goal.convention(prov.gradleProperty("goal").orElse("health check and orchestrate"))
+            aoaFramework.convention(prov.gradleProperty("aoa").orElse(prov.gradleProperty("framework")).orElse("builtin"))
+            targetDirProperty.convention(
+                prov.gradleProperty("targetDir")
+                    .orElse(prov.gradleProperty("dir"))
+                    .orElse(prov.provider { cmdTargetDir })
+            )
         }
     }
 }

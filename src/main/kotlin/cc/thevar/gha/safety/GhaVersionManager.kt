@@ -14,13 +14,30 @@ object GhaVersionManager {
      * Returns the installed GHA Engine version (e.g. 0.1.26-SNAPSHOT).
      */
     fun getEngineVersion(rootDir: File): String {
+        // 1. Check local project sandbox
         val engineFile = File(rootDir, ".gha/gha-engine-version.txt")
-        if (engineFile.exists()) return engineFile.readText().trim()
+        if (engineFile.exists() && engineFile.readText().trim().isNotBlank()) return engineFile.readText().trim()
 
+        // 2. Check global home sandbox (Hardcoded path for reliability)
+        val userHome = System.getProperty("user.home")
+        val globalEngineFile = File(userHome, ".gha/gha-engine-version.txt")
+        if (globalEngineFile.exists() && globalEngineFile.readText().trim().isNotBlank()) return globalEngineFile.readText().trim()
+
+        // 3. Check for specific version file in global dir
+        val globalDir = File(userHome, ".gha")
+        val versionFiles = globalDir.listFiles()?.filter { it.name.startsWith("version-") && it.name.endsWith(".txt") }
+        if (!versionFiles.isNullOrEmpty()) {
+            return versionFiles.first().readText().trim()
+        }
+
+        // 4. Final Fallback for GHA Engine (Always use latest known if nothing else found)
+        val engineFallback = if (rootDir.name == "gha") "0.1.0-SNAPSHOT" else "0.1.51-SNAPSHOT"
+        
+        // 5. Fallback for self-repo
         val rootVersionFile = File(rootDir, "version.txt")
         if (rootVersionFile.exists() && rootDir.name == "gha") return rootVersionFile.readText().trim()
 
-        return readProjectVersion(rootDir)
+        return readProjectVersion(rootDir).let { if (it == "0.1.0") engineFallback else it }
     }
 
     /**

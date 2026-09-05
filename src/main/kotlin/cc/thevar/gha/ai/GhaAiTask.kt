@@ -25,15 +25,7 @@ abstract class GhaAiTask : GhaTask() {
     abstract val targetDir: Property<String>
 
     init {
-        val prov = project.providers
-        commitMessage.convention(
-            prov.gradleProperty("commitMessage")
-                .orElse(prov.gradleProperty("message")),
-        )
-        targetDir.convention(
-            prov.gradleProperty("targetDir")
-                .orElse(prov.gradleProperty("dir"))
-        )
+        // Properties configured via GhaPlugin.configureEach for Configuration Cache safety
     }
 
     @TaskAction

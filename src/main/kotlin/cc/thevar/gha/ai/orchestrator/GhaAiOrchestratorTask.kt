@@ -39,18 +39,7 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
     abstract val targetDirProperty: Property<String>
 
     init {
-        val prov = project.providers
-        val cmdTargetDir = (project.findProperty("targetDir") ?: project.findProperty("dir"))?.toString()
-        action.convention(prov.gradleProperty("action").orElse("status"))
-        model.convention(prov.gradleProperty("model"))
-        filter.convention(prov.gradleProperty("filter"))
-        goal.convention(prov.gradleProperty("goal").orElse("health check and orchestrate"))
-        aoaFramework.convention(prov.gradleProperty("aoa").orElse(prov.gradleProperty("framework")).orElse("builtin"))
-        targetDirProperty.convention(
-            prov.gradleProperty("targetDir")
-                .orElse(prov.gradleProperty("dir"))
-                .orElse(prov.provider { cmdTargetDir })
-        )
+        // Properties configured via GhaPlugin.configureEach for Configuration Cache safety
     }
 
     @TaskAction

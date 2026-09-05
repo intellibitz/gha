@@ -117,8 +117,12 @@ case "$CMD" in
         run_gha ghaHelp
         ;;
     install)
-        # Ensure directory is ready for installation
+        # Ensure directory is ready for installation (GHA Scaffolding)
+        echo "🚀 [ghai] Initializing GHA environment in $(pwd)..."
         mkdir -p .gha
+        if [ ! -f "settings.gradle.kts" ] && [ ! -f "settings.gradle" ]; then
+            echo "rootProject.name = \"$(basename $(pwd))\"" > settings.gradle.kts
+        fi
         run_gha ghaInit
         ;;
     reinstall)

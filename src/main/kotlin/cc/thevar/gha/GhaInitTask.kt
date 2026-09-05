@@ -38,11 +38,15 @@ abstract class GhaInitTask : GhaTask() {
 
         val configFile = File(ghaDir, "gha.json")
         val currentVersion = GhaVersionManager.readVersion(rootDir)
+        val engineVersion = GhaVersionManager.getEngineVersion(rootDir)
         val pName = ghaProjectName.getOrElse("gha")
-
+        
         // Ensure version info in sandbox
         File(ghaDir, "version.txt").writeText(currentVersion + "\n")
         File(ghaDir, "version-$currentVersion.txt").writeText(currentVersion + "\n")
+        if (!File(ghaDir, "gha-engine-version.txt").exists()) {
+             File(ghaDir, "gha-engine-version.txt").writeText(engineVersion + "\n")
+        }
 
         if (pName != "gha" && rootDir.name != "gha") {
             rootDir.listFiles()?.filter { it.name.startsWith("version") && it.name.endsWith(".txt") }?.forEach { it.delete() }
@@ -68,7 +72,7 @@ abstract class GhaInitTask : GhaTask() {
                     gradlePluginPortal()
                 }
                 dependencies {
-                    classpath("cc.thevar.gha:gha:$currentVersion")
+                    classpath("cc.thevar.gha:gha:$engineVersion")
                 }
             }
             allprojects {
