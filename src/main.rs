@@ -16,7 +16,7 @@ use gemi::{GemiEngine, GemiServer, ModelManager};
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.67-SNAPSHOT";
+const GHA_VERSION: &str = "0.1.68";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -75,7 +75,7 @@ fn print_status(workspace: &Path, global_dir: &Path) {
         "NOT INITIALIZED (run 'ghai :install')"
     };
     println!("   ├── Sandbox Status   : {}", sandbox_status);
-    println!("   ├── Engine Version   : {}", GHA_VERSION);
+    println!("   ├── Engine Version   : v{}", GHA_VERSION);
 
     let (cpus, gpu, models) = GemiEngine::get_intelligence_report(workspace);
     let tools = GmcpClient::list_tools();
@@ -123,12 +123,18 @@ fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
+        println!("⚡ gha v{} (100% Native Rust AI Engine)", GHA_VERSION);
         print_help();
         return;
     }
 
     let first_arg = &args[0];
     let cmd = first_arg.strip_prefix(':').unwrap_or(first_arg.as_str());
+
+    // Print Version Header for all interactive CLI runs (except raw stdio MCP pipe and daemon loop)
+    if cmd != "mcp" && cmd != "gmcp" && cmd != "daemon-start" {
+        println!("⚡ gha v{} (100% Native Rust AI Engine)", GHA_VERSION);
+    }
 
     match cmd {
         "version" | "--version" | "-v" => {
