@@ -41,7 +41,23 @@ impl GmaMasterAgent {
         }
 
         let lower_goal = goal.to_lowercase();
-        if lower_goal.contains("disk usage") || lower_goal.contains("disk space") || lower_goal.contains("df") {
+        if lower_goal.contains("list directory") || lower_goal.contains("list dir") || lower_goal == "ls" || lower_goal == "dir" {
+            let mut file_list = String::new();
+            let mut count = 0;
+            if let Ok(entries) = std::fs::read_dir(workspace) {
+                for entry in entries.flatten() {
+                    if let Ok(file_name) = entry.file_name().into_string() {
+                        let ftype = if entry.path().is_dir() { "📁 Directory" } else { "📄 File" };
+                        file_list.push_str(&format!("| `{}` | {} |\n", file_name, ftype));
+                        count += 1;
+                    }
+                }
+            }
+            report.push_str(&format!("\n### 📂 Workspace Directory Listing (`{}` - {} entries)\n\n", workspace.display(), count));
+            report.push_str("| Entry Name | Type |\n");
+            report.push_str("| :--- | :--- |\n");
+            report.push_str(&file_list);
+        } else if lower_goal.contains("disk usage") || lower_goal.contains("disk space") || lower_goal.contains("df") {
             let df_out = Command::new("df")
                 .args(["-h", workspace.to_str().unwrap_or(".")])
                 .output()
@@ -54,7 +70,7 @@ impl GmaMasterAgent {
             report.push_str("```\n");
         }
 
-        report.push_str("✅ [GMA Executive Intelligence] Executed natively in < 2ms (100% Rust Engine)!\n");
+        report.push_str("\n✅ [GMA Executive Intelligence] Executed natively in < 2ms (100% Rust Engine)!\n");
 
         report
     }

@@ -1,7 +1,6 @@
 // 🧠 GEMI REST Server: OpenAI-Compatible Streaming & Non-Streaming REST Server
 // 100% Rust implementation supporting text/event-stream SSE for Android Studio / IDEs
 
-use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
 use std::path::PathBuf;
@@ -86,25 +85,12 @@ impl GemiServer {
                         "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF"
                     };
 
-                    // Extract actual user prompt from JSON payload (handles both string and array content blocks)
-                    let user_prompt = extract_prompt_from_json(&body_str).unwrap_or_else(|| "print disk usage".to_string());
-                    let lower_prompt = user_prompt.to_lowercase();
+                    // Extract actual user prompt from JSON payload
+                    let user_prompt = extract_prompt_from_json(&body_str).unwrap_or_else(|| "list directory".to_string());
 
-                    let content = if lower_prompt.contains("list dir") || lower_prompt.contains("list directory") || lower_prompt == "ls" || lower_prompt == "dir" {
-                        let mut file_list = String::new();
-                        if let Ok(entries) = fs::read_dir(&workspace) {
-                            for entry in entries.flatten() {
-                                if let Ok(file_name) = entry.file_name().into_string() {
-                                    let ftype = if entry.path().is_dir() { "📁 [DIR]" } else { "📄 [FILE]" };
-                                    file_list.push_str(&format!("{} {}\n", ftype, file_name));
-                                }
-                            }
-                        }
-                        format!("📂 Workspace Directory Listing (`{}`):\n\n{}", workspace.display(), file_list)
-                    } else {
-                        let gma = GmaMasterAgent::new();
-                        gma.solve(&user_prompt, &workspace, "0.1.68")
-                    };
+                    // Execute goal via GMA Master Agent to generate full formatted report
+                    let gma = GmaMasterAgent::new();
+                    let content = gma.solve(&user_prompt, &workspace, "0.1.68");
 
                     if is_streaming {
                         // Server-Sent Events (SSE) text/event-stream
