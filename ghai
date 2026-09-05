@@ -32,6 +32,7 @@ if [ -n "$PROJECT_ROOT" ]; then
 else
     INIT_SCRIPT="$GLOBAL_GHA_DIR/init.gradle.kts"
     GRADLEW="$GLOBAL_GHA_DIR/gradlew"
+    cd "$GLOBAL_GHA_DIR"
 fi
 
 REFRESH_FLAG="--refresh-dependencies"
@@ -64,7 +65,11 @@ RAW_ARG="$1"
 CMD="${RAW_ARG#:}"
 
 run_gha() {
-    exec "$GRADLEW" $REFRESH_FLAG -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" "$@"
+    if [ -z "$PROJECT_ROOT" ]; then
+        exec "$GRADLEW" -p "$GLOBAL_GHA_DIR" $REFRESH_FLAG -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" "$@"
+    else
+        exec "$GRADLEW" $REFRESH_FLAG -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" "$@"
+    fi
 }
 
 if [ -z "$RAW_ARG" ]; then run_gha ghai; fi
