@@ -5,12 +5,17 @@ import cc.thevar.gha.ai.mcp.GhaMcpHost
 import cc.thevar.gha.ai.vision.GhaAgentResult
 import cc.thevar.gha.ai.vision.GhaAiAgent
 import cc.thevar.gha.safety.GhaProcessRunner
+import cc.thevar.gha.safety.GhaSandboxManager
 import java.io.File
 
 object GhaBootstrapManager {
 
     fun autoBootstrapEnvironment(rootDir: File): List<String> {
         val installationLog = mutableListOf<String>()
+
+        // 0. Ensure Global Sandbox
+        val globalDir = GhaSandboxManager.ensureGlobalSandbox()
+        installationLog.add("🏠 [Auto-Installer] Global GHA Sandbox initialized at ${globalDir.absolutePath}")
 
         val uvCheck = GhaProcessRunner.exec(rootDir, listOf("uv", "--version"))
         if (!uvCheck.isSuccess) {

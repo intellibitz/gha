@@ -1,5 +1,6 @@
 package cc.thevar.gha
 
+import cc.thevar.gha.ai.orchestrator.GhaDaemonManager
 import cc.thevar.gha.safety.GhaSandboxManager
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
@@ -24,6 +25,7 @@ abstract class GhaStatusTask : GhaTask() {
         println("📊 [GHA Status] Project: $taskProjectNameStr $taskSubprojectsSummary")
         println("   RootDir: ${rootDir.absolutePath}")
         println("   Sandbox: ${if (isHealthy) "✅ HEALTHY" else "❌ UNHEALTHY"}")
+        println("   Master Interactor: ${GhaDaemonManager.getStatus()}")
         println("   Portability: ✅ 100% SELF-CONTAINED (All tools & caches in .gha/)")
         println("   Platform: ${System.getProperty("os.name")} (${System.getProperty("os.arch")})")
         println("   Gradle Engine: $taskGradleVersionStr (Delegating to official Gradle Engine)")

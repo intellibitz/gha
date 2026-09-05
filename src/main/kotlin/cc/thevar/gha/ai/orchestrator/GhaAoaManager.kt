@@ -42,6 +42,16 @@ object GhaAoaManager {
     fun executeMission(framework: Framework, goal: String, rootDir: File): GhaAgentResult {
         return when (framework) {
             Framework.BUILT_IN -> {
+                // Tier 1 Check: If GMA Daemon is running, delegate mission to it via Socket/GMCP
+                if (GhaDaemonManager.isRunning()) {
+                    val log = mutableListOf<String>()
+                    log.add("🌌 [GMA Master Interactor] Delegating mission to background GMA Daemon...")
+                    val client = GhaDaemonClient()
+                    val result = client.sendMission(goal, rootDir)
+                    return GhaAgentResult(true, log + listOf("   └── [Daemon Response] Mission Accepted"), result)
+                }
+
+                // Fallback: Execute locally if daemon is not running
                 GhaAgentOfAgents().solve(goal, rootDir)
             }
             Framework.AUTOGEN -> executePythonAoa(framework, goal, rootDir, generateAutoGenAdapter(rootDir))

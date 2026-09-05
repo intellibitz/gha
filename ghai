@@ -33,6 +33,25 @@ if [ ! -f "gradlew" ] || [ ! -s "gradlew" ]; then
     chmod +x "gradlew" 2>/dev/null || true
 fi
 
+# 🌌 GMA Master Daemon Auto-Start (Always-On Architecture)
+GMA_LOCK="$HOME/.gha/gma.lock"
+DAEMON_RUNNING=0
+if [ -f "$GMA_LOCK" ]; then
+    GMA_PID=$(cat "$GMA_LOCK")
+    if [ -n "$GMA_PID" ] && ps -p "$GMA_PID" > /dev/null 2>&1; then
+        DAEMON_RUNNING=1
+    fi
+fi
+
+if [ "$DAEMON_RUNNING" = "0" ] && [ "$1" != ":daemon" ]; then
+    # Don't auto-start if we are explicitly trying to run the daemon or uninstall
+    if [[ "$1" != ":uninstall" && "$1" != ":ghaUninstall" ]]; then
+        echo "🚀 [ghai] Priming GMA Master Daemon..."
+        mkdir -p "$HOME/.gha"
+        nohup ./gradlew -Dgradle.user.home=.gha/gradle-user-home --init-script "$INIT_SCRIPT" ghaAiOrchestrate -Paction=daemon > "$HOME/.gha/gma-daemon.log" 2>&1 &
+    fi
+fi
+
 RAW_ARG="$1"
 CMD="${RAW_ARG#:}"
 

@@ -1,7 +1,7 @@
 package cc.thevar.gha.ai.mcp
 
+import cc.thevar.gha.ai.orchestrator.GhaAgentOfAgents
 import cc.thevar.gha.ai.vision.GhaAiTool
-import cc.thevar.gha.safety.GhaProcessRunner
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.io.File
@@ -27,7 +27,7 @@ class GhaGmcpEngine(val rootDir: File) {
      */
     fun resolveWithIntelligence(toolName: String, arguments: Map<String, Any>): String {
         System.err.println("🔧 [GMCP Intelligence] Tier 4 resolving tool: $toolName")
-        
+
         // Tier 4 logic: If a tool fails or is missing, try to auto-discover/install it
         val tools = mcpHost.listTools()
         if (tools.none { it.name == toolName }) {
@@ -75,55 +75,87 @@ class GhaGmcpEngine(val rootDir: File) {
                         "version" to "0.1.0"
                     )
                 )
+
                 "notifications/initialized" -> return null
                 "tools/list" -> {
                     val tools = mcpHost.listTools().map { renderTool(it) }
                     mapOf("tools" to tools)
                 }
+
                 "tools/call" -> {
                     val toolName = params["name"] as? String ?: ""
                     val toolArgs = params["arguments"] as? Map<String, Any> ?: emptyMap()
-                    val output = resolveWithIntelligence(toolName, toolArgs)
+
+                    if (toolName == "agent") {
+                        val goal = toolArgs["goal"]?.toString() ?: ""
+                        val rootDirStr = toolArgs["rootDir"]?.toString()
+                        val rootDir =
+                            if (!rootDirStr.isNullOrBlank()) File(rootDirStr) else this.rootDir
+                        val agentRes = GhaAgentOfAgents().solve(goal, rootDir)
+                        mapOf(
+                            "content" to listOf(mapOf("type" to "text", "text" to agentRes.output)),
+                            "isError" to !agentRes.success
+                        )
+                    } else {
+                        val output = resolveWithIntelligence(toolName, toolArgs)
+                        mapOf(
+                            "content" to listOf(mapOf("type" to "text", "text" to output)),
+                            "isError" to false
+                        )
+                    }
+                }
+
+                "resources/list" -> {
                     mapOf(
-                        "content" to listOf(mapOf("type" to "text", "text" to output)),
-                        "isError" to false
+                        "resources" to listOf(
+                            mapOf(
+                                "uri" to "gha://project/context",
+                                "name" to "GHA AI Project Context",
+                                "description" to "Comprehensive metadata and structure of the current project",
+                                "mimeType" to "text/markdown"
+                            )
+                        )
                     )
                 }
-                "resources/list" -> {
-                    mapOf("resources" to listOf(
-                        mapOf(
-                            "uri" to "gha://project/context",
-                            "name" to "GHA AI Project Context",
-                            "description" to "Comprehensive metadata and structure of the current project",
-                            "mimeType" to "text/markdown"
-                        )
-                    ))
-                }
+
                 "resources/read" -> {
                     val uri = params["uri"] as? String ?: ""
                     if (uri == "gha://project/context") {
                         val contextFile = File(rootDir, ".gha/ai-context.artifact.md")
-                        val content = if (contextFile.exists()) contextFile.readText() else "Context not generated. Run './ghai :aiContext' first."
-                        mapOf("contents" to listOf(mapOf(
-                            "uri" to uri,
-                            "mimeType" to "text/markdown",
-                            "text" to content
-                        )))
+                        val content =
+                            if (contextFile.exists()) contextFile.readText() else "Context not generated. Run './ghai :aiContext' first."
+                        mapOf(
+                            "contents" to listOf(
+                                mapOf(
+                                    "uri" to uri,
+                                    "mimeType" to "text/markdown",
+                                    "text" to content
+                                )
+                            )
+                        )
                     } else {
                         return createError(id, -32602, "Invalid resource URI: $uri")
                     }
                 }
+
                 "prompts/list" -> {
-                    mapOf("prompts" to listOf(
-                        mapOf(
-                            "name" to "autonomous_sync",
-                            "description" to "Triggers an autonomous GHA sync (commit, push, PR)",
-                            "arguments" to listOf(
-                                mapOf("name" to "message", "description" to "Commit message", "required" to false)
+                    mapOf(
+                        "prompts" to listOf(
+                            mapOf(
+                                "name" to "autonomous_sync",
+                                "description" to "Triggers an autonomous GHA sync (commit, push, PR)",
+                                "arguments" to listOf(
+                                    mapOf(
+                                        "name" to "message",
+                                        "description" to "Commit message",
+                                        "required" to false
+                                    )
+                                )
                             )
                         )
-                    ))
+                    )
                 }
+
                 "ping" -> mapOf<String, Any>()
                 else -> return createError(id, -32601, "Method not found: $method")
             }

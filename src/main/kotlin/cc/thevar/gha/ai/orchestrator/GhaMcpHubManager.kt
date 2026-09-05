@@ -45,13 +45,13 @@ object GhaMcpHubManager {
             )
         )
 
-        // 2. Custom GHA System Tools MCP Server
+        // 2. Custom GHA System Tools MCP Server (gmcp-tools-user)
         val sysServer = GhaSystemMcpServer(rootDir)
         val sysToolCount = sysServer.exposeTools().size
         servers.add(
             McpServerConfig(
-                id = "gha-system-tools",
-                name = "GHA Custom System Tools MCP Server",
+                id = "gmcp-tools-user",
+                name = "GHA Custom System Tools MCP Server (gmcp-tools-user)",
                 description = "Custom MCP server created by GHA exposing $sysToolCount user system tools (ADB, Docker, UV, Node, System CLIs)",
                 type = "BUILT_IN",
                 commandOrUrl = "cc.thevar.gha.ai.mcp.GhaSystemMcpServer",

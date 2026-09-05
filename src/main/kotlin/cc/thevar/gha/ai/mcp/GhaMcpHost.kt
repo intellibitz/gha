@@ -34,7 +34,7 @@ class GhaMcpHost(val rootDir: File) {
         tools.addAll(systemServer.exposeTools())
 
         // 3. Aggregate tools exposed by external connected MCP servers
-        val hubServers = listServers().filter { it.id != "gha-universal" && it.id != "gha-system-tools" && it.isEnabled }
+        val hubServers = listServers().filter { it.id != "gha-universal" && it.id != "gmcp-tools-user" && it.isEnabled }
         hubServers.forEach { server ->
             tools.add(
                 GhaAiTool(

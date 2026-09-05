@@ -19,15 +19,13 @@ The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA Use
 1. **🏛️ Tier 1: GHA Master Agent (GMA)**: The **Master**. The Orchestrator. GMA stands tall as the singular Sole Interactor and one-point manager. It governs the 4-tier cascade and uses its **Master Coordination Intelligence** to complete user work via GAWD, GEMI, and GMCP. GMA is fully AOA Standard Protocol compliant and manages other Agent of Agents worldwide.
 2. **🤖 Tier 2: GHA Agents Web & Domain (GAWD)**: The **Workers**. GAWD workers possess **Worker Intelligence** to refine mission strategies. They communicate with Tier 3 (GEMI) for reasoning and Tier 4 (GMCP) for skills, tools, and hardware capabilities.
 3. **🧠 Tier 3: GHA Engines & Models AI Inference (GEMI)**: The **Intelligence**. GEMI possesses **Inference Intelligence** to route queries to the optimal local or cloud model. It provides pure reasoning and strategy back to GAWD workers.
-4. **🔌 Tier 4: Model Context Protocol (GMCP)**: The **Infrastructure**. GMCP possesses **Infrastructure Intelligence** to self-heal and resolve hardware/system tools (ADB, Docker). It implements the full MCP protocol, making GMA's capabilities available to any external system over stdio.
+4. **🔌 Tier 4: Model Context Protocol (GMCP)**: The **Infrastructure**. GMCP possesses **Infrastructure Intelligence** to self-heal and resolve hardware/system tools (ADB, Docker). It implements the full MCP protocol, hosting core servers like `gmcp-tools-user` to expose system capabilities to any external system over stdio or sockets.
 
 ---
 
-### 🔄 GMA Delegation Cascade
+### 🔄 GMA Delegation Cascade & Always-On Architecture
 
-```
-[Tier 1: GMA Master] ──► [Tier 2: GAWD Agents] ──► [Tier 3: GEMI Reasoning] & [Tier 4: GMCP Skills]
-```
+Every user instruction starts with the GMA and cascades through the 4 tiers. GMA runs as a **persistent background daemon** in the global sandbox (`~/.gha`), providing parallel coordination across many projects at once with 0% system modifications.
 
 ---
 

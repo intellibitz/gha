@@ -112,6 +112,9 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
                 val res = GhaModelManager.downloadModel(rootDir, modelRepo, filter.orNull)
                 logger.lifecycle(res)
             }
+            "daemon" -> {
+                GhaDaemon.main(emptyArray())
+            }
             else -> {
                 logger.lifecycle("ℹ️ GMA Master Interactor: Unknown action '$activeAction'. Supported: status, orchestrate, agent, models, engines, mcp-hub, download.")
             }

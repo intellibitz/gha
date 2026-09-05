@@ -13,6 +13,34 @@ object GhaSandboxManager {
     private const val GRADLE_USER_HOME_REL = ".gha/gradle-user-home"
 
     /**
+     * Returns the global GHA directory in the user's home folder.
+     */
+    fun getGlobalGhaDir(): File {
+        val userHome = System.getProperty("user.home")
+        return File(userHome, GHA_DIR).apply { if (!exists()) mkdirs() }
+    }
+
+    /**
+     * Ensures the global sandbox environment is initialized.
+     */
+    fun ensureGlobalSandbox(): File {
+        val globalDir = getGlobalGhaDir()
+        val configFile = File(globalDir, GHA_JSON)
+        if (!configFile.exists()) {
+            configFile.writeText(
+                """
+                {
+                  "type": "global",
+                  "sandboxed": true,
+                  "lastHealed": "${Instant.now()}"
+                }
+                """.trimIndent() + "\n"
+            )
+        }
+        return globalDir
+    }
+
+    /**
      * Checks if .gha/gha.json exists in the project root.
      */
     fun checkIfGhaJsonExists(rootDir: File): Boolean {
