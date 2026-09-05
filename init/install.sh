@@ -8,36 +8,39 @@ GLOBAL_BIN_DIR="$GLOBAL_GHA_DIR/bin"
 mkdir -p "$GLOBAL_BIN_DIR"
 mkdir -p "$GLOBAL_GHA_DIR/models"
 
-GHA_REPO="${GHA_REPO:-intellibitz/gha}"
-GHA_RAW_URL="${GHA_RAW_URL:-https://raw.githubusercontent.com/$GHA_REPO/main}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "⚡ [gha] Initializing 100% Sandboxed Native AI Runtime..."
 
-# 1. Install or update ghai native binary
-if [ -f "target/release/gha" ]; then
-    cp "target/release/gha" "$GLOBAL_BIN_DIR/ghai"
-    chmod +x "$GLOBAL_BIN_DIR/ghai"
-    echo "   └── Installed local release binary to $GLOBAL_BIN_DIR/ghai (< 2ms startup)"
-elif command -v cargo >/dev/null 2>&1 && [ -f "Cargo.toml" ]; then
+INSTALLED=0
+
+# 1. Install compiled native binary
+if [ -f "$SCRIPT_DIR/target/release/gha" ]; then
+    cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/ghai-engine"
+    cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/ghai"
+    chmod +x "$GLOBAL_BIN_DIR/ghai-engine" "$GLOBAL_BIN_DIR/ghai"
+    INSTALLED=1
+    echo "   └── Installed native binary engine to $GLOBAL_BIN_DIR/ghai (< 2ms startup)"
+elif command -v cargo >/dev/null 2>&1 && [ -f "$SCRIPT_DIR/Cargo.toml" ]; then
     echo "⚡ [gha Native] Compiling standalone Rust AI engine..."
-    cargo build --release >/dev/null 2>&1 || true
-    if [ -f "target/release/gha" ]; then
-        cp "target/release/gha" "$GLOBAL_BIN_DIR/ghai"
-        chmod +x "$GLOBAL_BIN_DIR/ghai"
-        echo "   └── Compiled & installed native binary to $GLOBAL_BIN_DIR/ghai (< 2ms startup)"
+    (cd "$SCRIPT_DIR" && cargo build --release >/dev/null 2>&1) || true
+    if [ -f "$SCRIPT_DIR/target/release/gha" ]; then
+        cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/ghai-engine"
+        cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/ghai"
+        chmod +x "$GLOBAL_BIN_DIR/ghai-engine" "$GLOBAL_BIN_DIR/ghai"
+        INSTALLED=1
+        echo "   └── Compiled & installed native binary engine to $GLOBAL_BIN_DIR/ghai (< 2ms startup)"
     fi
-else
-    # Fetch pre-compiled binary launcher or script
-    echo "📥 Fetching latest ghai launcher to $GLOBAL_BIN_DIR/ghai..."
-    curl -fsSL "$GHA_RAW_URL/ghai" -o "$GLOBAL_BIN_DIR/ghai" 2>/dev/null || true
-    chmod +x "$GLOBAL_BIN_DIR/ghai" 2>/dev/null || true
+fi
+
+if [ "$INSTALLED" = "0" ] && [ -f "$SCRIPT_DIR/ghai" ]; then
+    cp "$SCRIPT_DIR/ghai" "$GLOBAL_BIN_DIR/ghai"
+    chmod +x "$GLOBAL_BIN_DIR/ghai"
 fi
 
 # 2. Sync version info
-if [ -f "version.txt" ]; then
-    cp "version.txt" "$GLOBAL_GHA_DIR/gha-engine-version.txt"
-else
-    curl -fsSL "$GHA_RAW_URL/version.txt" -o "$GLOBAL_GHA_DIR/gha-engine-version.txt" 2>/dev/null || true
+if [ -f "$SCRIPT_DIR/version.txt" ]; then
+    cp "$SCRIPT_DIR/version.txt" "$GLOBAL_GHA_DIR/gha-engine-version.txt"
 fi
 
 echo "⚡ [gha] Standalone Native Engine Installation Complete!"
