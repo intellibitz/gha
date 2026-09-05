@@ -8,6 +8,20 @@ group = "cc.thevar.gha"
 val projectVersion = file("version.txt").readText().trim()
 version = projectVersion
 
+tasks.register("pushDocs") {
+    doLast {
+        providers.exec {
+            commandLine("git", "add", "-A")
+        }.result.get()
+        providers.exec {
+            commandLine("git", "commit", "-m", "docs: update architecture documentation for GMA, GMAS, GAWD, GEMI, and GMCP")
+        }.result.get()
+        providers.exec {
+            commandLine("git", "push", "origin", "main")
+        }.result.get()
+    }
+}
+
 tasks.register("syncInitScript") {
     val projectDir = project.layout.projectDirectory
     val v = projectVersion

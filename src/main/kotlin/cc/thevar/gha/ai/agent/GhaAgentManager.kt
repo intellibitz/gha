@@ -16,6 +16,14 @@ object GhaAgentManager {
     private val gitAgent = GhaGitAgent()
     private val githubAgent = GhaGitHubAgent()
     private val systemAgent = GhaSystemAgent()
+    val gawdAgent = GhaGawdAgent()
+
+    /**
+     * Executes a GAWD Agent task using the standard Agent-to-Agent (A2A) protocol.
+     */
+    fun dispatchA2AMessage(message: GhaGawdAgent.A2AMessage, projectDir: File): GhaGawdAgent.A2AMessage {
+        return gawdAgent.handleA2AMessage(message, projectDir)
+    }
 
     /**
      * Worker Intelligence (Tier 2): Intelligently refines and parallelizes missions.

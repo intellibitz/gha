@@ -1,6 +1,9 @@
 package cc.thevar.gha.ai.vision
 
 import cc.thevar.gha.ai.GhaAiManager
+import cc.thevar.gha.ai.agent.GhaGawdAgent
+import cc.thevar.gha.ai.orchestrator.GhaGemiEngine
+import cc.thevar.gha.ai.orchestrator.GhaGmasAgent
 import cc.thevar.gha.git.GhaGitExec
 import cc.thevar.gha.provider.GhaProviderRegistry
 import cc.thevar.gha.safety.GhaProcessRunner
@@ -163,6 +166,49 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
                 inputSchema = createSchema()
             ),
             GhaAiTool(
+                name = "gemi_reason",
+                description = "Execute Tier 3 AI reasoning mission using the GHA Native Engine or selected providers.",
+                inputSchema = createSchema(
+                    properties = mapOf(
+                        "prompt" to mapOf("type" to "string", "description" to "The instruction or goal for the AI to reason about"),
+                        "engine" to mapOf("type" to "string", "description" to "Preferred engine name (optional)")
+                    ),
+                    required = listOf("prompt")
+                )
+            ),
+            GhaAiTool(
+                name = "gawd_agent_execute",
+                description = "Execute a mission with the custom GAWD agent following standard Agent Protocol.",
+                inputSchema = createSchema(
+                    properties = mapOf(
+                        "goal" to mapOf("type" to "string", "description" to "Goal or prompt for GAWD agent to execute")
+                    ),
+                    required = listOf("goal")
+                )
+            ),
+            GhaAiTool(
+                name = "gawd_agent_a2a",
+                description = "Send a standard Agent-to-Agent (A2A) message to GAWD Agent.",
+                inputSchema = createSchema(
+                    properties = mapOf(
+                        "sender" to mapOf("type" to "string", "description" to "Sender agent name"),
+                        "performative" to mapOf("type" to "string", "description" to "A2A performative (REQUEST, INFORM, DELEGATE)"),
+                        "content" to mapOf("type" to "string", "description" to "Message content or task goal")
+                    ),
+                    required = listOf("content")
+                )
+            ),
+            GhaAiTool(
+                name = "gmas_supervisor_execute",
+                description = "Invoke Tier 1 GMA Supervisor (GMAS) to supervise agents under standard AOA protocol.",
+                inputSchema = createSchema(
+                    properties = mapOf(
+                        "goal" to mapOf("type" to "string", "description" to "Goal for GMAS to supervise and coordinate")
+                    ),
+                    required = listOf("goal")
+                )
+            ),
+            GhaAiTool(
                 name = "wiki_sync",
                 description = "Synchronize documentation files with GitHub Wiki.",
                 inputSchema = createSchema()
@@ -294,6 +340,49 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
                 val wikiDir = File(rootDir, "wiki")
                 val exists = wikiDir.exists()
                 "GHA Wiki Sync: Repository wiki directory ${if (exists) "present (${wikiDir.listFiles()?.size ?: 0} files)" else "ready to initialize"}."
+            }
+            "gemi_reason" -> {
+                val prompt = arguments["prompt"]?.toString() ?: return "Error: 'prompt' argument is required for gemi_reason."
+                val engine = arguments["engine"]?.toString()
+                val gemi = GhaGemiEngine(rootDir)
+                val res = gemi.reason(prompt, engine)
+                if (res.success) {
+                    "GHA GEMI Reasoning Success:\n${res.output}\n\nLog:\n${res.log.joinToString("\n")}"
+                } else {
+                    "GHA GEMI Reasoning Error:\n${res.output}\n\nLog:\n${res.log.joinToString("\n")}"
+                }
+            }
+            "gawd_agent_execute" -> {
+                val goal = arguments["goal"]?.toString() ?: return "Error: 'goal' argument is required for gawd_agent_execute."
+                val gawd = GhaGawdAgent()
+                val res = gawd.solve(goal, rootDir)
+                if (res.success) {
+                    "GAWD Agent Protocol Execution Success:\n${res.output}\n\nTrace:\n${res.log.joinToString("\n")}"
+                } else {
+                    "GAWD Agent Protocol Execution Failed:\n${res.output}\n\nTrace:\n${res.log.joinToString("\n")}"
+                }
+            }
+            "gawd_agent_a2a" -> {
+                val sender = arguments["sender"]?.toString() ?: "ExternalAgent"
+                val content = arguments["content"]?.toString() ?: return "Error: 'content' argument is required for gawd_agent_a2a."
+                val perfStr = arguments["performative"]?.toString() ?: "REQUEST"
+                val perf = try { GhaGawdAgent.A2APerformative.valueOf(perfStr.uppercase()) } catch (_: Exception) { GhaGawdAgent.A2APerformative.REQUEST }
+
+                val gawd = GhaGawdAgent()
+                val req = GhaGawdAgent.A2AMessage(sender = sender, recipient = gawd.identity, performative = perf, content = content)
+                val resp = gawd.handleA2AMessage(req, rootDir)
+
+                "GAWD A2A Response [${resp.performative}]:\n${resp.content}"
+            }
+            "gmas_supervisor_execute" -> {
+                val goal = arguments["goal"]?.toString() ?: return "Error: 'goal' argument is required for gmas_supervisor_execute."
+                val gmas = GhaGmasAgent()
+                val report = gmas.superviseMission(goal, rootDir)
+                if (report.executionSuccess) {
+                    "GMAS AOA Supervision Success:\n${report.summary}\n\nSupervised Agents:\n${report.supervisedAgents.joinToString("\n")}"
+                } else {
+                    "GMAS AOA Supervision Failed:\n${report.summary}\n\nSupervised Agents:\n${report.supervisedAgents.joinToString("\n")}"
+                }
             }
             "uninstall" -> {
                 "GHA Tool 'uninstall': Execution requires manual invocation of './ghai :uninstall' or 'ghaUninstall' task for safety."

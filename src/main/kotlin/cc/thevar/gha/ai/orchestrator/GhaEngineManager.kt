@@ -37,6 +37,18 @@ object GhaEngineManager {
         // 1. LOCAL INFERENCE ENGINES
         // ---------------------------------------------------------------------
 
+        // GHA Native GEMI Engine
+        val nativeEngine = GhaNativeGemiEngine(rootDir)
+        engines.add(
+            EngineInfo(
+                name = "GHA Native Engine",
+                type = "EMBEDDED",
+                isAvailable = nativeEngine.isAvailable(),
+                version = "GHA 1.0 (Managed llama.cpp)",
+                description = "Managed native GHA engine for local GGUF models downloaded from the web"
+            )
+        )
+
         // Local / Remote Ollama Engine
         val ollamaHost = System.getenv("OLLAMA_HOST") ?: "http://localhost:11434"
         val ollamaRes = GhaProcessRunner.exec(rootDir, listOf("ollama", "--version"))

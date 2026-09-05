@@ -16,12 +16,20 @@ GitHub users and developers across any IDE or terminal can clone or install this
 
 ## 🌌 GMA 4-Tier Coordinated Intelligence
 
-`gha` is a 4-tier coordinated ecosystem where each layer possesses custom intelligence adhering to its respective protocol, capable of communicating with each other and external systems:
+`gha` is a 4-tier coordinated ecosystem where each layer possesses custom intelligence adhering to standard industry protocols, communicating with each other and external systems:
 
-1. **🏛️ Tier 1: GHA Master Agent (GMA)**: The **Master**. The Orchestrator. GMA stands tall as the singular Sole Interactor and one-point manager. It governs the 4-tier cascade and uses its **Master Coordination Intelligence** to complete user work via GAWD, GEMI, and GMCP. GMA is fully AOA Standard Protocol compliant and manages other Agent of Agents worldwide.
-2. **🤖 Tier 2: GHA Agents Web & Domain (GAWD)**: The **Workers**. GAWD workers possess **Worker Intelligence** to refine mission strategies. They communicate with Tier 3 (GEMI) for reasoning and Tier 4 (GMCP) for skills, tools, and hardware capabilities.
-3. **🧠 Tier 3: GHA Engines & Models AI Inference (GEMI)**: The **Intelligence**. GEMI possesses **Inference Intelligence** to route queries to the optimal local or cloud model. It provides pure reasoning and strategy back to GAWD workers.
-4. **🔌 Tier 4: Model Context Protocol (GMCP)**: The **Infrastructure**. GMCP possesses **Infrastructure Intelligence** to self-heal and resolve hardware/system tools (ADB, Docker). It implements the full MCP protocol, hosting core servers like `gmcp-tools-user` to expose system capabilities to any external system over stdio or sockets.
+1. **🏛️ Tier 1: GHA Master Agent (GMA) & GMA Supervisor (GMAS)**:
+   - **GMA (GHA Master Agent)**: The **Master**. The Orchestrator. The One. GMA sits in front as the singular **Sole Interactor** for the GHA user, operating as an Agent, Agent of Agents (AOA), Engine, and MCP Client/Host.
+   - **GMAS (GMA Supervisor)**: The dedicated AOA Supervisor sitting below GMA at Tier 1. GMAS follows standard AOA protocol (`aoa/init`, `aoa/supervise`, `aoa/plugin/download`) to supervise internal GAWD workers and downloaded web/AOA plugins, reporting directly to GMA.
+2. **🤖 Tier 2: GHA Agents Web & Domain (GAWD)**:
+   - **Custom GAWD Agent**: Implements standard **Agent Task & Step Execution Protocol** and **Agent-to-Agent (A2A)** communication protocol (`A2AMessage` with FIPA performatives `REQUEST`, `INFORM`, `DELEGATE`, `RESPONSE`).
+   - **Worker Fleet**: Gradle, Git, GitHub, System, and Web agents executing domain missions using Tier 3 (GEMI) for reasoning and Tier 4 (GMCP) for tools.
+3. **🧠 Tier 3: GHA Engines & Models AI Inference (GEMI)**:
+   - **GHA Native Engine**: High-performance local inference coordinator loading `.gguf` models directly in `~/.gha/models`. Implements OpenAI Chat Completions API (`chatCompletion`) and MCP reasoning tools (`gemi_reason`).
+   - **Autonomous Hardware Optimization**: Profiles CPU cores and GPU capabilities (Metal/CUDA) to automatically configure threading and GPU layer offloading (`-ngl 99`).
+4. **🔌 Tier 4: GMA Master MCP Engine (GMCP)**:
+   - **Full MCP Host, Client & Server**: JSON-RPC 2.0 MCP implementation (`GhaGmcpEngine` / `GhaGmcpClient`) over stdio and background TCP sockets (Port 9090).
+   - **Tools Registry**: Exposes 20+ GHA tools and system capability servers (`gmcp-tools-user` for ADB, Docker, Python UV, System CLI) to external IDEs, LLMs, and agents.
 
 ---
 

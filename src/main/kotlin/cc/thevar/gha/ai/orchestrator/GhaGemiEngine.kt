@@ -49,13 +49,23 @@ class GhaGemiEngine(val rootDir: File) {
         log.add("🧠 [GEMI Intelligence] Tier 3 Inference Engine active.")
         
         // 1. Resolve Engines via T3 Intelligence
+        val engines = GhaEngineManager.detectEngines(rootDir)
         val targetEngine = if (preferredEngine != null) {
-            GhaEngineManager.detectEngines(rootDir).find { it.name.lowercase().contains(preferredEngine.lowercase()) }
+            engines.find { it.name.lowercase().contains(preferredEngine.lowercase()) }
         } else {
-            getOptimalEngine(prompt)
+            // Prioritize GHA Native Engine if available and models exist
+            val native = engines.find { it.name == "GHA Native Engine" && it.isAvailable }
+            native ?: getOptimalEngine(prompt)
         }
 
         if (targetEngine == null) {
+            val localModels = GhaModelManager.listLocalModels(rootDir)
+            if (localModels.isNotEmpty()) {
+                log.add("⚡ [GEMI] Selected Engine: GHA Native Engine [EMBEDDED]")
+                val nativeRes = GhaNativeGemiEngine(rootDir).reasonLocal(prompt)
+                return GhaAgentResult(nativeRes.success, log + nativeRes.log, nativeRes.output)
+            }
+
             log.add("⚠️ [GEMI] No active inference engine detected. Using GHA Custom Mock Engine.")
             return GhaAgentResult(
                 success = true,
@@ -66,7 +76,13 @@ class GhaGemiEngine(val rootDir: File) {
 
         log.add("⚡ [GEMI] Selected Engine: ${targetEngine.name} [${targetEngine.type}]")
 
-        // 2. Resolve Model
+        // 2. Handle GHA Native Engine Execution
+        if (targetEngine.name == "GHA Native Engine") {
+            val nativeRes = GhaNativeGemiEngine(rootDir).reasonLocal(prompt)
+            return GhaAgentResult(nativeRes.success, log + nativeRes.log, nativeRes.output)
+        }
+
+        // 3. Resolve Model for other engines
         val webModels = GhaModelManager.listWebModels(rootDir)
         val selectedModel = webModels.firstOrNull { it.isRecommendedForHardware } ?: webModels.first()
         log.add("🧠 [GEMI] Collaborating with Autonomous Model: ${selectedModel.name} ('${selectedModel.modelId}')")

@@ -2,12 +2,10 @@ package cc.thevar.gha.ai.orchestrator
 
 import cc.thevar.gha.ai.GhaAiManager
 import cc.thevar.gha.ai.agent.GhaAgent
-import cc.thevar.gha.ai.agent.GhaAgentManager
 import cc.thevar.gha.ai.agent.GhaWebAgentManager
 import cc.thevar.gha.ai.mcp.GhaGmcpClient
 import cc.thevar.gha.ai.vision.GhaAgentResult
 import cc.thevar.gha.ai.vision.GhaAiAgent
-import cc.thevar.gha.ai.vision.GhaAutonomousAgent
 import cc.thevar.gha.safety.GhaSandboxManager
 import java.io.File
 
@@ -190,24 +188,19 @@ class GhaAgentOfAgents(
         log.add("🔌 [Phase 3: GMCP Infrastructure Coordinated] (${mcpServers.size} Servers, ${exposedTools.size} Tools active)")
         log.add("   └── GMCP Server/Client/Host active. Infrastructure decoupled from Intelligence (except for Agent-engines).")
 
-        // 4. Agent Manager Dispatch (Tier 2 Workers)
-        log.add("🤖 [Phase 4: Agent Manager & Worker Dispatch]")
-        log.add("   ► GMA delegating goal to Workers using GEMI reasoning and GMCP tools...")
+        // 4. GMAS Supervisor & Agent Dispatch (Tier 1 Supervisor & Tier 2 Workers)
+        log.add("🏛️ [Phase 4: GMAS Supervisor & Worker Dispatch]")
+        log.add("   ► GMA delegating supervision to GMAS (GMA Supervisor)...")
 
-        val lowerGoal = goal.lowercase()
-        val agentResult = when {
-            lowerGoal.contains("web") || lowerGoal.contains("search") || lowerGoal.contains("huggingface") || lowerGoal.contains("fetch") -> {
-                GhaWebAgentManager.routeWebMission(goal, rootDir, gemi, gmcpClient)
-            }
-            lowerGoal.contains("autonomous") || lowerGoal.contains("auto") -> {
-                GhaAutonomousAgent().solveWithT3T4(goal, rootDir, gemi, gmcpClient)
-            }
-            else -> {
-                GhaAgentManager.dispatchMission(goal, rootDir, gemi, gmcpClient)
-            }
-        }
+        val gmas = GhaGmasAgent()
+        val supervisorReport = gmas.superviseMission(goal, rootDir)
+        supervisorReport.rawLog.forEach { log.add("     $it") }
 
-        agentResult.log.forEach { log.add("     $it") }
+        val agentResult = GhaAgentResult(
+            success = supervisorReport.executionSuccess,
+            log = supervisorReport.rawLog,
+            output = supervisorReport.summary
+        )
 
         // Synthesize Master Report
         val report = getCoordinationReport(rootDir)
