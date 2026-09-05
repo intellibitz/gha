@@ -10,15 +10,9 @@ version = projectVersion
 
 tasks.register("pushDocs") {
     doLast {
-        providers.exec {
-            commandLine("git", "add", "-A")
-        }.result.get()
-        providers.exec {
-            commandLine("git", "commit", "-m", "docs: update architecture documentation for GMA, GMAS, GAWD, GEMI, and GMCP")
-        }.result.get()
-        providers.exec {
-            commandLine("git", "push", "origin", "main")
-        }.result.get()
+        ProcessBuilder("git", "add", "-A").directory(file(".")).start().waitFor()
+        ProcessBuilder("git", "commit", "-m", "docs: update architecture documentation for GMA, GMAS, GAWD, GEMI, and GMCP").directory(file(".")).start().waitFor()
+        ProcessBuilder("git", "push", "origin", "main").directory(file(".")).start().waitFor()
     }
 }
 
