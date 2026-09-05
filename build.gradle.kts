@@ -8,13 +8,26 @@ group = "cc.thevar.gha"
 val projectVersion = file("version.txt").readText().trim()
 version = projectVersion
 
-tasks.register("pushDocs") {
-    doLast {
-        ProcessBuilder("git", "add", "-A").directory(file(".")).start().waitFor()
-        ProcessBuilder("git", "commit", "-m", "docs: update architecture documentation for GMA, GMAS, GAWD, GEMI, and GMCP").directory(file(".")).start().waitFor()
-        ProcessBuilder("git", "push", "origin", "main").directory(file(".")).start().waitFor()
+@DisableCachingByDefault(because = "Runs git commands")
+abstract class PushDocsTask : DefaultTask() {
+    @get:Internal
+    abstract val rootDirProp: DirectoryProperty
+
+    init {
+        rootDirProp.convention(project.layout.projectDirectory)
+    }
+
+    @TaskAction
+    fun run() {
+        val root = rootDirProp.get().asFile
+        ProcessBuilder("git", "add", "-A").directory(root).start().waitFor()
+        ProcessBuilder("git", "commit", "-m", "docs: update architecture documentation for GMA, GMAS, GAWD, GEMI, and GMCP").directory(root).start().waitFor()
+        val pushProc = ProcessBuilder("git", "push", "origin", "main").directory(root).start()
+        val exitCode = pushProc.waitFor()
+        println("✅ Git push completed with exit code: $exitCode")
     }
 }
+tasks.register("pushDocs", PushDocsTask::class.java)
 
 tasks.register("syncInitScript") {
     val projectDir = project.layout.projectDirectory
