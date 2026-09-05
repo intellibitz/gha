@@ -16,7 +16,7 @@ use gemi::{GemiEngine, GemiServer, ModelManager};
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.68";
+const GHA_VERSION: &str = "0.1.69";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -151,6 +151,9 @@ fn main() {
         }
         "uninstall" => {
             run_uninstall(&workspace);
+        }
+        "ghaBumpVersion" | "bump-version" | "bump" => {
+            SandboxManager::bump_version(&workspace);
         }
         "daemon-start" => {
             let ws = if args.len() > 1 { PathBuf::from(&args[1]) } else { workspace };
