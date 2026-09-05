@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+# 🤖 ghai - GHA Master Agent (GMA) Launcher & Sole Interactor
+# 100% Sandboxed - Any project, anywhere. 0 Effort, 100% Gain.
+
+set -e
+
+# 🌌 Global GHA Context & Project Discovery
+GLOBAL_GHA_DIR="$HOME/.gha"
+GLOBAL_BIN_DIR="$GLOBAL_GHA_DIR/bin"
+CWD=$(pwd)
+
+# Function to find project root (walking up from CWD)
+find_project_root() {
+    local dir="$1"
+    while [ "$dir" != "/" ] && [ "$dir" != "$HOME" ]; do
+        if [ -d "$dir/.gha" ]; then
+            echo "$dir"
+            return
+        fi
+        dir=$(dirname "$dir")
+    done
+    echo ""
+}
+
+PROJECT_ROOT=$(find_project_root "$CWD")
+GHA_REPO="${GHA_REPO:-$(git config gha.repo 2>/dev/null || echo "intellibitz/gha")}"
+
+if [ -n "$PROJECT_ROOT" ]; then
+    INIT_SCRIPT="$PROJECT_ROOT/.gha/init.gradle.kts"
+    GRADLEW="$PROJECT_ROOT/gradlew"
+    cd "$PROJECT_ROOT"
+else
+    INIT_SCRIPT="$GLOBAL_GHA_DIR/init.gradle.kts"
+    GRADLEW="$GLOBAL_GHA_DIR/gradlew"
+fi
+
+# Optimization: Allow skipping dependency refresh in CI environments to save time
+REFRESH_FLAG="--refresh-dependencies"
+if [ "$GHA_NO_REFRESH" = "1" ]; then
+    REFRESH_FLAG=""
+fi
+
+if [ ! -f "$GRADLEW" ]; then
+    echo "📥 [ghai On-Demand] Bootstrapping Gradle wrapper..."
+    mkdir -p "$(dirname "$GRADLEW")/gradle/wrapper"
+    curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/gradlew" -o "$GRADLEW" 2>/dev/null || true
+    chmod +x "$GRADLEW" 2>/dev/null || true
+fi
+
+# 🌌 GMA Master Daemon Auto-Start (Always-On Architecture)
+GMA_LOCK="$GLOBAL_GHA_DIR/gma.lock"
+DAEMON_RUNNING=0
+if [ -f "$GMA_LOCK" ]; then
+    GMA_PID=$(cat "$GMA_LOCK")
+    if [ -n "$GMA_PID" ] && ps -p "$GMA_PID" > /dev/null 2>&1; then
+        DAEMON_RUNNING=1
+    fi
+fi
+
+if [ "$DAEMON_RUNNING" = "0" ] && [ "$1" != ":daemon" ]; then
+    # Don't auto-start if we are explicitly trying to run the daemon or uninstall
+    if [[ "$1" != ":uninstall" && "$1" != ":ghaUninstall" ]]; then
+        echo "🚀 [ghai] Priming GMA Master Daemon..."
+        mkdir -p "$GLOBAL_GHA_DIR"
+        nohup "$GRADLEW" -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" ghaAiOrchestrate -Paction=daemon > "$GLOBAL_GHA_DIR/gma-daemon.log" 2>&1 &
+    fi
+fi
+
+RAW_ARG="$1"
+CMD="${RAW_ARG#:}"
+
+# Define execution helper for consistency
+run_gha() {
+    exec "$GRADLEW" $REFRESH_FLAG -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" "$@"
+}
+
+# 0. NO ARGUMENTS: Run Default Autonomous AI Workflow
+if [ -z "$RAW_ARG" ]; then
+    run_gha ghai
+fi
+
+# 1. CORE GHA SUBCOMMANDS (Priority)
+case "$CMD" in
+    version|--version|-v)
+        run_gha ghai -Pmessage="--version"
+        ;;
+    status)
+        run_gha ghaStatus
+        ;;
+    clone)
+        shift
+        run_gha ghaGitClone -PtargetRepo="$1" -Pdir="$2"
+        ;;
+    help)
+        run_gha ghaHelp
+        ;;
+    install)
+        # Ensure directory is ready for installation (GHA Scaffolding)
+        echo "🚀 [ghai] Initializing GHA environment in $(pwd)..."
+        mkdir -p .gha
+        if [ ! -f "settings.gradle.kts" ] && [ ! -f "settings.gradle" ]; then
+            echo "rootProject.name = \"$(basename $(pwd))\"" > settings.gradle.kts
+        fi
+        run_gha ghaInit
+        ;;
+    reinstall)
+        echo "🧹 [ghai Reinstall] Performing clean removal..."
+        "$GRADLEW" -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" ghaUninstall
+        echo "⚡ [ghai Reinstall] Restoring sandbox..."
+        mkdir -p .gha
+        curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/init/gha.init.gradle.kts" -o ".gha/init.gradle.kts" 2>/dev/null || true
+        curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/version.txt" -o "version.txt" 2>/dev/null || true
+        run_gha ghaInit
+        ;;
+    update)
+        echo "🚀 [ghai Update] Fetching and updating global gha launcher..."
+        curl -fsSL https://raw.githubusercontent.com/$GHA_REPO/main/init/install.sh | bash
+        echo "🎉 [ghai Update] Updated gha & ghai successfully!"
+        exit 0
+        ;;
+    uninstall)
+        echo "🧹 [ghai Uninstall] Completely removing gha sandbox, runner scripts, and workflows..."
+        "$GRADLEW" -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" ghaUninstall
+        echo "✨ [ghai Uninstall] gha removed completely with 0 lingering system modifications!"
+        exit 0
+        ;;
+    ai)
+        shift
+        SUBMODE="$1"
+        if [ "$SUBMODE" = "orchestrate" ] || [ "$SUBMODE" = "models" ] || [ "$SUBMODE" = "engines" ] || [ "$SUBMODE" = "mcp-hub" ] || [ "$SUBMODE" = "download" ]; then
+            run_gha ghaAiOrchestrate -Paction="$1" -Pmodel="$2" -Pfilter="$3" -Pgoal="$2"
+        else
+            run_gha ghaAiVision -Pmode="$1" -Pgoal="$2"
+        fi
+        ;;
+esac
+
+# 2. GRADLE FLAGS & KNOWN GRADLE TASKS
+KNOWN_GRADLE_TASKS="build test clean assemble check compileKotlin ghaInit ghaStatus ghaBuild ghaTest ghaClean ghaWorkflow ghaUpdate ghaUninstall ghaHelp ghaGitClone ghaGitStatus ghaGitCommit ghaGitPush ghaGitPull ghaGitBranch ghaGitCheckout ghaGitTag ghaGitLog ghaGitReset ghaGitStash ghaGitDiff ghaPrCreate ghaPrList ghaPrView ghaPrMerge ghaPrClose ghaPrReopen ghaPrEdit ghaPrCheckout ghaPrReview ghaIssueCreate ghaIssueList ghaIssueView ghaIssueClose ghaIssueReopen ghaIssueComment ghaIssueEdit ghaReleaseCreate ghaRepoView ghaGistCreate ghaSecretSet ghaProjectInit ghaProjectCreate ghaProjectList ghaProjectView ghaProjectAddItem ghaProjectClose ghaInsights ghaContributors ghaTraffic ghaSecurityInit ghaSecurityStatus ghaDependabotInit ghaDependabotList ghaDependabotMerge ghaDependabotClose ghaDependabotCleanup ghaDependabotRebase ghaCodeScanningInit ghaWikiInit ghaWikiStatus ghaWikiSync ghaWikiPublish ghaParallelWorkflow ghaDevWorkflow ghaAiContext ghaMcp ghaAiVision ghaAiOrchestrate ghaModels ghaEngines ghaMcpHub ghaBumpVersion"
+
+if [[ "$RAW_ARG" == ":"* ]] || [[ "$RAW_ARG" == "-"* ]] || [[ " $KNOWN_GRADLE_TASKS " =~ " $CMD " ]]; then
+    run_gha "$@"
+fi
+
+# 3. GITHUB CLI (gh) MAPPING
+GH_COMMANDS="pr issue repo gist release workflow secret project run auth browse codespace variable api"
+if [[ " $GH_COMMANDS " =~ " $CMD " ]]; then
+    export GITHUB_TOKEN=$("$GRADLEW" -q $REFRESH_FLAG -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" :ghai -Pmessage="--token-only" 2>/dev/null || echo "")
+    if command -v gh >/dev/null 2>&1; then
+        exec gh "$@"
+    else
+        run_gha ghai "$@"
+    fi
+fi
+
+# 4. GIT COMMAND DETECTION
+GIT_COMMANDS="add commit push pull diff log status branch checkout stash tag reset fetch rebase merge init clone config remote show rm mv bisect notes worktree shortlog filter-branch cherry-pick"
+IS_GIT=0
+for gitCmd in $GIT_COMMANDS; do
+    if [ "$CMD" = "$gitCmd" ]; then
+        IS_GIT=1
+        break
+    fi
+done
+
+if [ "$IS_GIT" = "1" ]; then
+    exec git "$@"
+fi
+
+# 5. NATURAL LANGUAGE INSTRUCTION / GOAL (Default Fallback)
+echo "🤖 [ghai Orchestrator] Natural Language Instruction: \"$*\""
+run_gha ghaAiOrchestrate -Paction="agent" -Pgoal="$*"
