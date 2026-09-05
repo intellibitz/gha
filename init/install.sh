@@ -43,11 +43,16 @@ if [ -f "$SCRIPT_DIR/version.txt" ]; then
     cp "$SCRIPT_DIR/version.txt" "$GLOBAL_GHA_DIR/gha-engine-version.txt"
 fi
 
+# 3. Prime background GMA Master Daemon (GMCP Port 9090 & GEMI Port 9091)
+if [ -x "$GLOBAL_BIN_DIR/ghai" ]; then
+    "$GLOBAL_BIN_DIR/ghai" :install >/dev/null 2>&1 || true
+fi
+
 echo "⚡ [gha] Standalone Native Engine Installation Complete!"
 echo "   ├── $GLOBAL_GHA_DIR/ sandbox initialized"
 echo "   └── $GLOBAL_BIN_DIR/ghai global launcher active (< 2ms startup)"
 
-# 3. PATH Automation (0-Effort Onboarding)
+# 4. PATH Automation (0-Effort Onboarding)
 if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
     echo "⚡ [ghai] Automatically adding '$GLOBAL_BIN_DIR' to PATH..."
     EXPORT_CMD="export PATH=\"\$HOME/.gha/bin:\$PATH\""

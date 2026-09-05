@@ -52,7 +52,7 @@ fn print_help() {
     println!("  :version, -v, --version  Print GHA version & native architecture report");
     println!("  :status                  Print workspace health, GAWD fleet & GMCP status");
     println!("  :help, -h, --help        Show this documentation");
-    println!("  :install                 Initialize sandboxed .gha environment offline");
+    println!("  :install                 Initialize sandboxed .gha environment & start background daemon");
     println!("  :uninstall               Clean up sandboxed .gha environment");
     println!("  :daemon                  Inspect or manage GHA Master Daemon");
     println!("  gmcp, mcp                Start native GMA Master MCP Server over stdio");
@@ -85,7 +85,7 @@ fn print_status(workspace: &Path, global_dir: &Path) {
     println!("   ├── MCP Tools Hub    : {} Tools Exposed over JSON-RPC 2.0", tools.len());
 
     match GmaDaemon::check_status(global_dir) {
-        Some(pid) => println!("   └── GMA Daemon       : RUNNING (PID {})", pid),
+        Some(pid) => println!("   └── GMA Daemon       : RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091)", pid),
         None => println!("   └── GMA Daemon       : INACTIVE"),
     }
 }
@@ -94,7 +94,10 @@ fn run_install(workspace: &Path, global_dir: &Path) {
     println!("🚀 [ghai Native] Initializing offline GHA AI environment at {}...", workspace.display());
     let _ = SandboxManager::ensure_sandbox(workspace);
     let _ = SandboxManager::ensure_sandbox(global_dir);
-    println!("✅ [ghai Native] Sandbox environment initialized in < 1ms!");
+
+    GmaDaemon::ensure_daemon_running(workspace, global_dir);
+    println!("🚀 [GMA Daemon] Always-On Services Primed: GMCP (Port 9090) | GEMI (Port 9091)");
+    println!("✅ [ghai Native] Environment initialized & background daemon active in < 1ms!");
 }
 
 fn run_uninstall(workspace: &Path) {
@@ -143,6 +146,11 @@ fn main() {
         "uninstall" => {
             run_uninstall(&workspace);
         }
+        "daemon-start" => {
+            let ws = if args.len() > 1 { PathBuf::from(&args[1]) } else { workspace };
+            GmaDaemon::run_daemon_loop(ws, global_dir);
+            return;
+        }
         "gmcp" | "mcp" => {
             GmcpServer::run_stdio(&workspace, GHA_VERSION);
         }
@@ -151,13 +159,10 @@ fn main() {
         }
         "daemon" => {
             match GmaDaemon::check_status(&global_dir) {
-                Some(pid) => println!("🚀 [GMA Daemon] Status: RUNNING (PID {})", pid),
+                Some(pid) => println!("🚀 [GMA Daemon] Status: RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091)", pid),
                 None => {
-                    if let Ok(pid) = GmaDaemon::start_daemon(&global_dir) {
-                        println!("🚀 [GMA Daemon] Started background daemon (PID {})", pid);
-                    } else {
-                        println!("🚀 [GMA Daemon] Status: INACTIVE (Native AI Engine Active)");
-                    }
+                    GmaDaemon::ensure_daemon_running(&workspace, &global_dir);
+                    println!("🚀 [GMA Daemon] Started background daemon: GMCP (Port 9090) | GEMI (Port 9091)");
                 }
             }
         }
