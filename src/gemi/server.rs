@@ -86,8 +86,8 @@ impl GemiServer {
                         "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF"
                     };
 
-                    // Extract actual user prompt from JSON payload
-                    let user_prompt = extract_prompt_from_json(&body_str).unwrap_or_else(|| "workspace analysis".to_string());
+                    // Extract actual user prompt from JSON payload (handles both string and array content blocks)
+                    let user_prompt = extract_prompt_from_json(&body_str).unwrap_or_else(|| "print disk usage".to_string());
                     let lower_prompt = user_prompt.to_lowercase();
 
                     let content = if lower_prompt.contains("list dir") || lower_prompt.contains("list directory") || lower_prompt == "ls" || lower_prompt == "dir" {
@@ -103,7 +103,7 @@ impl GemiServer {
                         format!("📂 Workspace Directory Listing (`{}`):\n\n{}", workspace.display(), file_list)
                     } else {
                         let gma = GmaMasterAgent::new();
-                        gma.solve(&user_prompt, &workspace, "0.1.67-SNAPSHOT")
+                        gma.solve(&user_prompt, &workspace, "0.1.68")
                     };
 
                     if is_streaming {
@@ -181,8 +181,16 @@ fn extract_prompt_from_json(body: &str) -> Option<String> {
     if let Ok(v) = serde_json::from_str::<serde_json::Value>(body) {
         if let Some(messages) = v.get("messages").and_then(|m| m.as_array()) {
             if let Some(last) = messages.last() {
-                if let Some(content) = last.get("content").and_then(|c| c.as_str()) {
-                    return Some(content.to_string());
+                if let Some(c) = last.get("content") {
+                    if let Some(s) = c.as_str() {
+                        return Some(s.to_string());
+                    } else if let Some(arr) = c.as_array() {
+                        for item in arr {
+                            if let Some(text) = item.get("text").and_then(|t| t.as_str()) {
+                                return Some(text.to_string());
+                            }
+                        }
+                    }
                 }
             }
         }

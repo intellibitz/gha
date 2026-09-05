@@ -2,6 +2,7 @@
 // 100% Rust implementation for Tier 1 Master Interactor
 
 use std::path::Path;
+use std::process::Command;
 use super::gmas::GmasSupervisor;
 
 pub struct GmaMasterAgent;
@@ -38,6 +39,21 @@ impl GmaMasterAgent {
         for msg in a2a_logs {
             report.push_str(&format!("   ├── [A2A {} -> {}] Action: {} ('{}')\n", msg.sender, msg.recipient, msg.action, msg.payload));
         }
+
+        let lower_goal = goal.to_lowercase();
+        if lower_goal.contains("disk usage") || lower_goal.contains("disk space") || lower_goal.contains("df") {
+            let df_out = Command::new("df")
+                .args(["-h", workspace.to_str().unwrap_or(".")])
+                .output()
+                .ok()
+                .and_then(|o| String::from_utf8(o.stdout).ok())
+                .unwrap_or_else(|| "Filesystem disk usage unavailable".to_string());
+
+            report.push_str("\n### 💾 Filesystem Disk Usage Metrics\n```\n");
+            report.push_str(&df_out);
+            report.push_str("```\n");
+        }
+
         report.push_str("✅ [GMA Executive Intelligence] Executed natively in < 2ms (100% Rust Engine)!\n");
 
         report
