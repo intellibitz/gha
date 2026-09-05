@@ -21,7 +21,7 @@ abstract class PushDocsTask : DefaultTask() {
     fun run() {
         val root = rootDirProp.get().asFile
         ProcessBuilder("git", "add", "-A").directory(root).start().waitFor()
-        ProcessBuilder("git", "commit", "-m", "docs: update architecture documentation for GMA, GMAS, GAWD, GEMI, and GMCP").directory(root).start().waitFor()
+        ProcessBuilder("git", "commit", "-m", "docs: add ecosystem interoperability, component roles, and user interaction flow").directory(root).start().waitFor()
         val pushProc = ProcessBuilder("git", "push", "origin", "main").directory(root).start()
         val exitCode = pushProc.waitFor()
         println("✅ Git push completed with exit code: $exitCode")

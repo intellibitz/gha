@@ -33,6 +33,79 @@ GitHub users and developers across any IDE or terminal can clone or install this
 
 ---
 
+## 🎯 User Interaction & Entry Point Flow
+
+```
+   GHA User Prompt / Command (CLI: ./ghai "my goal")
+                       │
+                       ▼
+    [GhaAiTask.kt] / [GhaAiOrchestratorTask.kt]
+                       │
+                       ▼
+ 🌌 Tier 1: GHA Master Agent (GMA / GhaAgentOfAgents.kt)
+ └── Sole Interactor for User & Top-Level Master Governor
+                       │
+     ┌─────────────────┴─────────────────┐
+     ▼                                   ▼
+ [GMAS Supervisor]                [GEMI Engines]
+ [GhaGmasAgent.kt]               [GhaGemiEngine.kt]
+     │                                   │
+     ▼                                   ▼
+ [GAWD Workers]                   [GMCP Tools]
+ [GhaGawdAgent.kt]               [GhaGmcpEngine.kt]
+     │                                   │
+     └─────────────────┬─────────────────┘
+                       │
+                       ▼
+ 🌌 GMA Synthesizes Master Report (`output`)
+                       │
+                       ▼
+         Presented Directly to User
+```
+
+---
+
+## 🏗️ GHA Component Roles & Responsibilities
+
+### 🏛️ Tier 1: GMA (Master Agent) & GMAS (Supervisor)
+* **GMA (GHA Master Agent)** (`GhaAgentOfAgents.kt`): The Master, The One, and Sole Interactor for the user. Operates as an Autonomous Agent, Agent of Agents (AOA), Engine, and MCP Client/Host.
+* **GMAS (GMA Supervisor)** (`GhaGmasAgent.kt`): Tier 1 AOA Supervisor sitting below GMA. Follows standard AOA Protocol (`aoa/init`, `aoa/supervise`, `aoa/plugin/download`) to supervise custom GAWD workers and downloaded web/AOA plugins, reporting back to GMA.
+
+### 🤖 Tier 2: GAWD (Agents Web & Domain)
+* **Custom GAWD Agent** (`GhaGawdAgent.kt`): Standard Protocol-Compliant Worker Agent implementing **Agent Task & Step Execution Protocol** (`INITIATED`, `IN_PROGRESS`, `COMPLETED`, `FAILED`) and **Agent-to-Agent (A2A)** Communication Protocol (`A2AMessage`).
+* **Domain Workers** (`GhaSpecializedAgents.kt`): Gradle Agent (Scaffolding & Build), Git Agent (VCS & Context), GitHub Agent (PRs & Workflows), System Agent (ADB, Docker, Python UV, System CLI).
+* **Web Agents** (`GhaWebAgents.kt` / `GhaWebAgentManager.kt`): Web Research, Hugging Face Hub, GitHub Remote API, and Remote MCP Web agents.
+
+### 🧠 Tier 3: GEMI (Engines & Models AI Inference)
+* **GEMI Router** (`GhaGemiEngine.kt`): Tier 3 Pure Intelligence & Reasoning Router evaluating prompts and routing to local or web engines.
+* **GHA Native Engine** (`GhaNativeGemiEngine.kt`): Embedded GGUF model runner loading `.gguf` models directly from `~/.gha/models`. Exposes OpenAI-compatible Chat Completions API (`chatCompletion`) and MCP reasoning tools (`gemi_reason`).
+* **Hardware Profiler** (`GhaHardwareProfiler.kt`): Profiles CPU cores and GPU capabilities (Metal/CUDA) to automatically calculate CPU threading and GPU layer offloading (`-ngl 99`).
+
+### 🔌 Tier 4: GMCP (Model Context Protocol Infrastructure)
+* **GMA Master MCP Server** (`GhaGmcpEngine.kt`): JSON-RPC 2.0 MCP implementation over stdio and background TCP sockets (Port 9090) with self-healing tool resolution (`resolveWithIntelligence`).
+* **GMA Master MCP Client** (`GhaGmcpClient.kt`): Native Kotlin MCP client used by GMA and workers to call tools over MCP.
+* **Tool Servers**: Built-in Universal MCP Server (`GhaUniversalMcpServer.kt`), System Tools MCP Server (`GhaSystemMcpServer.kt`), and MCP Host Hub (`GhaMcpHost.kt`) aggregating external stdio/SSE MCP tools.
+
+---
+
+## 🌍 Ecosystem Interoperability & External Exposure
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🌍 OUTSIDE WORLD (IDEs, Claude Desktop, VS Code, AutoGen, CrewAI, OpenAI, LangChain)    │
+└────────┬──────────────────────┬──────────────────────┬──────────────────────┬──────────┘
+         │                      │                      │                      │
+         │ MCP (JSON-RPC)       │ AOA Protocol         │ A2A Protocol         │ OpenAI API
+         ▼                      ▼                      ▼                      ▼
+┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐   ┌──────────────────┐
+│ GMCP Server      │   │ GMA & GMAS       │   │ GAWD Agent       │   │ GEMI Engine      │
+│ - Stdio / Socket │   │ - AOA Interceptor│   │ - A2A Envelope   │   │ - ChatCompletion │
+│ - Tools Registry │   │ - Handoff / AOA  │   │ - Step Protocol  │   │ - OpenAI Payload │
+└──────────────────┘   └──────────────────┘   └──────────────────┘   └──────────────────┘
+```
+
+---
+
 ### 🔄 GMA Delegation Cascade & Always-On Architecture
 
 Every user instruction (e.g. `./ghai "build an os"`) starts with the GMA and cascades through the 4 tiers. GMA runs as a **persistent background daemon** in the global sandbox (`~/.gha`), providing parallel coordination across many projects at once with 0% system modifications.
