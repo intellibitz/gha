@@ -98,7 +98,7 @@ The `ghai` launcher is the universal entry point that talks directly to the GMA:
 
 ## ⚡ 1-Second Installation
 
-Install `gha` into **any repository** instantly. The installer automatically primes the GMA Master Agent and GMCP Interactor to keep them running and ready:
+Install `gha` globally with a single command. The installer automatically primes the GMA Master Agent, GMCP Interactor, and **adds `ghai` to your PATH** for instant access anywhere:
 
 ```bash
 # Linux, macOS, & WSL:

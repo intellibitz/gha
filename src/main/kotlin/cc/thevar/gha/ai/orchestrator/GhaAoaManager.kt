@@ -2,6 +2,7 @@ package cc.thevar.gha.ai.orchestrator
 
 import cc.thevar.gha.ai.vision.GhaAgentResult
 import cc.thevar.gha.safety.GhaProcessRunner
+import cc.thevar.gha.safety.GhaSandboxManager
 import java.io.File
 
 /**
@@ -31,9 +32,7 @@ object GhaAoaManager {
     }
 
     fun getAoaDir(rootDir: File): File {
-        val dir = File(rootDir, ".gha/aoa")
-        if (!dir.exists()) dir.mkdirs()
-        return dir
+        return File(GhaSandboxManager.getGlobalGhaDir(), "aoa").apply { if (!exists()) mkdirs() }
     }
 
     /**

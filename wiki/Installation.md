@@ -1,8 +1,8 @@
 # Ridiculously Easy 0-Effort Installation
 
-Install `gha` into **any repository** in 1 second without modifying global system settings or existing project files:
+Install `gha` globally in 1 second. The installer automatically sets up the **GMA Master Daemon** and adds the `ghai` launcher to your `PATH` for zero-effort access from any directory:
 
-## ⚡ 1-Second Universal One-Liner Installers
+## ⚡ 1-Second Global Installers
 
 ### macOS, Linux, & WSL
 ```bash
@@ -16,28 +16,25 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ---
 
-## 🤖 Executable Launcher Subcommands (`ghai`)
+## 🤖 Global Launcher Subcommands (`ghai`)
 
-Once installed, `./ghai` works anywhere across Linux, macOS, WSL, and Windows. It is **100% sandboxed** and will never modify your existing `build.gradle.kts` or `settings.gradle.kts`. `ghai` supports standard Gradle task path syntax (prefixed with `:`).
+Once installed, `ghai` works globally across Linux, macOS, WSL, and Windows. It is **100% sandboxed** and context-aware—automatically detecting if you are inside a GHA project or offering to initialize one.
 
 ```bash
-# 1. Primary Autonomous AI Workflow (Auto-detects diffs, commits, pushes, PRs, auto-merges, prunes CI logs):
-./ghai
+# 1. Trigger AI Automation in the current folder:
+ghai
 
-# 2. Smart Git Repository Clone (e.g. ./ghai :clone intellibitz -> https://github.com/intellibitz/intellibitz):
-./ghai :clone intellibitz
+# 2. Initialize a folder for GHA (0-Effort Scaffolding):
+ghai :install
 
-# 3. Print Version Report & Verify Engines (100% Sandboxed):
-./ghai :version
+# 3. Smart Git Repository Clone:
+ghai :clone intellibitz
 
-# 4. Display Sandbox Health & Platform Status:
-./ghai :status
+# 4. Print Version Report & Verify Engines:
+ghai :version
 
-# 5. Fetch & Update gha to Latest Release:
-./ghai :update
-
-# 6. Completely Uninstall & Clean gha (0 side effects to user files):
-./ghai :uninstall
+# 5. Display Always-On Daemon & Sandbox Health:
+ghai :status
 ```
 
 ---

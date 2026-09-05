@@ -33,6 +33,12 @@ object GhaSandboxManager {
     fun ensureGlobalSandbox(): File {
         val globalDir = getGlobalGhaDir()
         getGlobalBinDir() // Ensure bin exists
+        
+        // Ensure shared component directories exist
+        listOf("models", "mcp", "aoa").forEach { subDir ->
+            File(globalDir, subDir).apply { if (!exists()) mkdirs() }
+        }
+
         val configFile = File(globalDir, GHA_JSON)
         if (!configFile.exists()) {
             configFile.writeText(
@@ -139,9 +145,35 @@ object GhaSandboxManager {
     }
 
     /**
-     * Attempts to self-heal the sandbox by refreshing critical files.
+     * Attempts to self-heal the sandbox by refreshing critical files and verifying PATH.
      */
     fun selfHeal(rootDir: File, projectName: String) {
         ensureSandbox(rootDir, projectName)
+        ensureGlobalSandbox()
+        autoPathOnboarding()
+    }
+
+    /**
+     * Automatically handles PATH onboarding for common shells if missing.
+     */
+    private fun autoPathOnboarding() {
+        val binDir = getGlobalBinDir()
+        val path = System.getenv("PATH") ?: ""
+        if (path.contains(binDir.absolutePath)) return
+
+        val userHome = System.getProperty("user.home")
+        val exportCmd = "export PATH=\"\$HOME/.gha/bin:\$PATH\""
+        
+        val configs = listOf(".bashrc", ".zshrc", ".profile", ".bash_profile")
+        configs.forEach { name ->
+            val file = File(userHome, name)
+            if (file.exists()) {
+                val content = file.readText()
+                if (!content.contains(".gha/bin")) {
+                    println("🚀 [GHA Onboarding] Adding global launcher to PATH in $name...")
+                    file.appendText("\n# gha: Global Master Agent Launcher\n$exportCmd\n")
+                }
+            }
+        }
     }
 }

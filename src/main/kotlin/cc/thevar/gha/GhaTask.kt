@@ -97,6 +97,7 @@ abstract class GhaTask : DefaultTask() {
 
         // Self-healing: auto-ensure sandbox integrity
         GhaSandboxManager.selfHeal(rootDir, pName)
+        GhaSandboxManager.ensureGlobalSandbox()
 
         val (isHealthy, message) = GhaSandboxManager.healthCheck(rootDir, userHome)
         if (!isHealthy) {

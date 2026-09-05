@@ -27,11 +27,34 @@ echo "⚡ [gha] Global 0-Effort Installation Complete!"
 echo "   ├── $GLOBAL_GHA_DIR/ sandbox initialized"
 echo "   └── $GLOBAL_BIN_DIR/ghai global launcher created"
 
-# 4. PATH Check & Recommendation
+# 4. PATH Automation (0-Effort Onboarding)
 if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
-    echo "⚠️  [ghai] Action Required: Add '$GLOBAL_BIN_DIR' to your PATH to use 'ghai' anywhere!"
-    echo "   Run this command: echo 'export PATH=\"\$HOME/.gha/bin:\$PATH\"' >> ~/.bashrc && source ~/.bashrc"
-    echo "   (Or update your .zshrc if using Zsh)"
+    echo "⚡ [ghai] Automatically adding '$GLOBAL_BIN_DIR' to PATH..."
+    EXPORT_CMD="export PATH=\"\$HOME/.gha/bin:\$PATH\""
+
+    # Target common shell config files
+    CONFIG_FILES=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile" "$HOME/.bash_profile")
+
+    ADDED=0
+    for config in "${CONFIG_FILES[@]}"; do
+        if [ -f "$config" ]; then
+            if ! grep -q ".gha/bin" "$config"; then
+                echo "" >> "$config"
+                echo "# gha: Global Master Agent Launcher" >> "$config"
+                echo "$EXPORT_CMD" >> "$config"
+                ADDED=1
+                echo "   ✅ Added to $config"
+            fi
+        fi
+    done
+
+    if [ "$ADDED" = "1" ]; then
+        echo "🎉 PATH updated! Please restart your terminal or run: source ~/.bashrc (or your shell's config)"
+    else
+        echo "ℹ️  GHA bin already present in shell configs or PATH."
+    fi
+else
+    echo "✅ [ghai] Global launcher already in PATH."
 fi
 
 echo "🎉 Global gha is ready! Type 'ghai :version' to verify."

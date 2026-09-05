@@ -1,6 +1,7 @@
 package cc.thevar.gha.ai.orchestrator
 
 import cc.thevar.gha.safety.GhaProcessRunner
+import cc.thevar.gha.safety.GhaSandboxManager
 import java.io.File
 
 /**
@@ -30,9 +31,7 @@ object GhaModelManager {
     )
 
     fun getModelsDir(rootDir: File): File {
-        val dir = File(rootDir, ".gha/models")
-        if (!dir.exists()) dir.mkdirs()
-        return dir
+        return File(GhaSandboxManager.getGlobalGhaDir(), "models").apply { if (!exists()) mkdirs() }
     }
 
     /**

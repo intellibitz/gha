@@ -2,6 +2,7 @@ package cc.thevar.gha.ai.orchestrator
 
 import cc.thevar.gha.ai.mcp.GhaSystemMcpServer
 import cc.thevar.gha.ai.vision.GhaUniversalMcpServer
+import cc.thevar.gha.safety.GhaSandboxManager
 import java.io.File
 
 /**
@@ -20,9 +21,7 @@ object GhaMcpHubManager {
     )
 
     fun getMcpDir(rootDir: File): File {
-        val dir = File(rootDir, ".gha/mcp")
-        if (!dir.exists()) dir.mkdirs()
-        return dir
+        return File(GhaSandboxManager.getGlobalGhaDir(), "mcp").apply { if (!exists()) mkdirs() }
     }
 
     /**
