@@ -38,44 +38,48 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
  └──────────────────────────────────┘  └──────────────────────────────────┘
 ```
 
-### 1. 🤖 Tier 1: GAWD (GMA Master Agent & GMAS Supervisor)
-* **What it does**: **GMA (GHA Master Agent)** acts as the **Sole Interactor** for the user. **GMAS (GMA Supervisor)** governs worker agent fleets using **AOA (Agent of Agents)** and **A2A (Agent to Agent)** protocols.
-* **How to use it**:
-  ```bash
-  ghai "orchestrate an autonomous AI workflow"   # Execute natural language AI goal
-  ghai :status                                   # Inspect GAWD fleet & workspace health
-  ```
+---
 
-### 2. 🧠 Tier 2: GEMI (GHA Engines & Models AI Inference) — Unique Port 9091
-* **What it does**: Coordinates local GGUF (`.gguf`) models in `~/.gha/models`, exposes a unique OpenAI-compatible ChatCompletions REST endpoint (`http://127.0.0.1:9091/v1`), and profiles hardware (CPU cores, Metal/CUDA GPU offloading `-ngl 99`).
-* **How to start GEMI Server**:
-  ```bash
-  ghai ai server                                 # Start GEMI REST Server on Port 9091
-  # Or
-  ghai gemi-server
-  ```
+## 🤖 1. How the World Can Use GAWD (Tier 1: Multi-Agent Orchestration)
 
-### 3. 🔌 Tier 3: GMCP (GMA Master MCP Infrastructure) — Port 9090 / Stdio
-* **What it does**: Native JSON-RPC 2.0 MCP Host, Client & Server over stdio and background TCP sockets (Port 9090) exposing 39+ coordinated AI tools.
-* **How to use it**:
-  ```bash
-  ghai gmcp, mcp                                 # Start stdio MCP Server for IDE integration
-  ghai ai mcp-hub                                # List active MCP tool servers & tools
-  ```
+GAWD exposes **GMA (Master Interactor)** and **GMAS (Supervisor)** to govern agentic workflows across specialized sub-agents (`GhaContextAgent`, `GhaReasoningAgent`, `GhaSystemExecutionAgent`, `GhaWebResearchAgent`, `GhaAutonomousAgent`).
+
+### A. Android Studio / Gemini / Agentic IDEs
+When you type a high-level goal into Android Studio's Agents Tab:
+1. Gemini delegates the top-level mission to **GMA (GHA Master Agent)** via MCP tool (`orchestrate`) or A2A message.
+2. GMA hands off supervision to **GMAS Supervisor**, which dispatches tasks across the specialized GAWD worker fleet using **A2A (`A2AMessage`)** protocols.
+3. GAWD workers execute steps natively and return a synthesized **GMA Master Interactor Report** to Android Studio in **< 2ms**.
+
+### B. External Multi-Agent Frameworks (AutoGen, CrewAI, LangGraph)
+External agent frameworks send A2A JSON messages to GMA:
+```json
+{
+  "sender": "ExternalAgent",
+  "recipient": "GMA-Master-Orchestrator",
+  "action": "SUPERVISE",
+  "payload": "Orchestrate workspace intelligence analysis"
+}
+```
+
+### C. Terminal CLI Natural Missions
+```bash
+ghai "orchestrate an autonomous AI mission"    # GMA natural mission execution
+ghai :status                                   # Inspect GAWD fleet & workspace status
+```
 
 ---
 
-## 🌍 How the World Can Use GEMI (Tier 2 AI Inference Engine)
+## 🧠 2. How the World Can Use GEMI (Tier 2: AI Inference Engine — Port 9091)
 
-Because GEMI implements the universal OpenAI REST specification (`/v1/chat/completions` and `/v1/models`), **any AI client, IDE, or framework in the world** can use GEMI as its hardware-accelerated local LLM provider:
+Because GEMI implements the universal OpenAI REST specification (`/v1/chat/completions` and `/v1/models`), **any AI client, IDE, or framework** can use GEMI as its local LLM provider:
 
-### 1. Android Studio / Gemini / JetBrains AI / Cursor / VS Code
+### A. Android Studio / Gemini / JetBrains AI / Cursor / VS Code
 Set custom OpenAI-compatible endpoint in your IDE settings or AI plugin:
 * **Base URL**: `http://127.0.0.1:9091/v1`
 * **API Key**: `gha-native-key` (any string)
 * **Model**: `deepseek-r1` or `llama-3.3-70b`
 
-### 2. cURL / Terminal HTTP Requests
+### B. cURL / Terminal HTTP Requests
 ```bash
 # List Available GGUF & Cloud Models
 curl -s http://127.0.0.1:9091/v1/models
@@ -90,7 +94,7 @@ curl -s http://127.0.0.1:9091/v1/chat/completions \
   }'
 ```
 
-### 3. Python (OpenAI SDK / LangChain / AutoGen / LlamaIndex)
+### C. Python (OpenAI SDK / LangChain / AutoGen / LlamaIndex)
 ```python
 from openai import OpenAI
 
@@ -109,11 +113,11 @@ print(response.choices[0].message.content)
 
 ---
 
-## 🔌 IDE Setup for GMCP (Tier 3 MCP Server over Stdio / Port 9090)
+## 🔌 3. How the World Can Use GMCP (Tier 3: MCP Server — Port 9090 / Stdio)
 
-To connect IDEs to `gha`'s **Tools Engine (GMCP)**:
+GMCP exposes 39+ action tools (`status`, `reason`, `orchestrate`, `list_models`, `profile_hardware`) to IDEs over stdio or background TCP Port 9090.
 
-### Android Studio / JetBrains IDEs (`.idea/mcp.json` or `~/.config/Google/AndroidStudio*/mcp.json`)
+### Android Studio / JetBrains IDEs Setup (`~/.config/Google/AndroidStudio*/mcp.json`)
 ```json
 {
   "mcpServers": {
@@ -127,7 +131,7 @@ To connect IDEs to `gha`'s **Tools Engine (GMCP)**:
 }
 ```
 
-### VS Code / Cursor / Claude Desktop (`mcp.json`)
+### VS Code / Cursor / Claude Desktop Setup (`mcp.json`)
 ```json
 {
   "mcpServers": {
