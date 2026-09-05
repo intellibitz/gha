@@ -20,9 +20,9 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ---
 
-## 🌟 Component Architecture & How To Use Each Tier
+## 🌟 Component Architecture & Port Mapping
 
-`gha` operates as a 3-tier coordinated ecosystem where each layer provides dedicated capabilities for `gha` users:
+`gha` operates a dual-port native architecture for tools and AI inference:
 
 ```text
  ┌────────────────────────────────────────────────────────────────────────┐
@@ -34,7 +34,7 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
  ┌──────────────────────────────────┐  ┌──────────────────────────────────┐
  │ 🧠 Tier 2: GEMI Inference        │  │ 🔌 Tier 3: GMCP MCP Infrastructure│
  │ • Local GGUF Model Runner        │  │ • Native JSON-RPC 2.0 MCP Server │
- │ • Hardware Profiler (-ngl 99)    │  │ • 39+ Coordinated Tools (Port 9090)│
+ │ • Unique Port 9091 REST API      │  │ • 39+ Tools (Stdio & Port 9090)  │
  └──────────────────────────────────┘  └──────────────────────────────────┘
 ```
 
@@ -46,16 +46,17 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
   ghai :status                                   # Inspect GAWD fleet & workspace health
   ```
 
-### 2. 🧠 Tier 2: GEMI (GHA Engines & Models AI Inference)
-* **What it does**: Coordinates local GGUF (`.gguf`) models in `~/.gha/models`, exposes OpenAI-compatible ChatCompletions endpoints, and profiles hardware (CPU cores, Metal/CUDA GPU offloading `-ngl 99`).
+### 2. 🧠 Tier 2: GEMI (GHA Engines & Models AI Inference) — Unique Port 9091
+* **What it does**: Coordinates local GGUF (`.gguf`) models in `~/.gha/models`, exposes a unique OpenAI-compatible ChatCompletions endpoint (`http://127.0.0.1:9091/v1`), and profiles hardware (CPU cores, Metal/CUDA GPU offloading `-ngl 99`).
 * **How to use it**:
   ```bash
+  ghai ai server                                 # Start GEMI REST Server on Port 9091
   ghai ai models                                 # Catalog local GGUF & cloud AI models
   ghai ai engines                                # Inspect embedded GGUF & cloud inference engines
   ```
 
-### 3. 🔌 Tier 3: GMCP (GMA Master MCP Infrastructure)
-* **What it does**: Native JSON-RPC 2.0 MCP Host, Client & Server over stdio and background TCP socket (Port 9090) exposing 39+ coordinated AI tools.
+### 3. 🔌 Tier 3: GMCP (GMA Master MCP Infrastructure) — Port 9090 / Stdio
+* **What it does**: Native JSON-RPC 2.0 MCP Host, Client & Server over stdio and background TCP sockets (Port 9090) exposing 39+ coordinated AI tools.
 * **How to use it**:
   ```bash
   ghai gmcp, mcp                                 # Start stdio MCP Server for IDE integration
@@ -64,81 +65,18 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ---
 
-## 🔌 IDE Integration & Common MCP Setup
+## 🔌 Connecting Android Studio / Custom LLM Clients to GEMI (Port 9091)
 
-`gha` connects directly to **Android Studio**, **VS Code**, **Cursor**, **IntelliJ**, **Claude Desktop**, and **GitHub Copilot Chat** via Model Context Protocol (MCP).
-
-### 1. Android Studio / JetBrains IDEs Setup
-Edit or create `.idea/mcp.json` in your workspace or global IDE settings (`~/.config/Google/AndroidStudio2026.1.4/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "gha": {
-      "command": "ghai",
-      "args": ["mcp"],
-      "enabled": true,
-      "trust": true
-    }
-  },
-  "mcpServersMetadata": {
-    "gha": {
-      "registryName": "gha",
-      "title": "GHA Master Agent (GMA)",
-      "description": "gha: Universal Multi-Agent AI Runtime & MCP Engine"
-    }
-  }
-}
-```
-
-### 2. VS Code / Cursor Setup
-In VS Code or Cursor MCP settings (`mcp.json` or `.vscode/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "gha": {
-      "command": "ghai",
-      "args": ["mcp"]
-    }
-  }
-}
-```
-
-### 3. Claude Desktop Setup
-Add `gha` to your Claude Desktop configuration file (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS or `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
-
-```json
-{
-  "mcpServers": {
-    "gha": {
-      "command": "ghai",
-      "args": ["mcp"]
-    }
-  }
-}
-```
-
----
-
-## 💬 How to Use `gha` Tools from IDE Agents / Chat Window
-
-Once registered, IDE chat agents (Gemini, Copilot, or Claude) discover `gha` tools automatically:
-
-* **Explicit Tool Calls**:
-  - `@gha status` — Get workspace health, sandbox status, and hardware profile.
-  - `@gha list_models` — Inspect local GGUF and web AI models.
-  - `@gha profile_hardware` — Check CPU cores and GPU acceleration (`-ngl 99`).
-  - `@gha orchestrate "goal"` — Execute GMA multi-agent mission.
-
-* **Natural Language Invocation**:
-  Simply ask your AI assistant: *"Check hardware profile and local GGUF models using gha"*. The assistant invokes `ghai mcp` over stdio in **< 2 ms**.
+In Android Studio, JetBrains AI Assistant, Cursor, or Python OpenAI SDK:
+* **Base URL**: `http://127.0.0.1:9091/v1`
+* **API Key**: `gha-native-key` (any string)
+* **Model**: `deepseek-r1` or `llama-3.3-70b`
 
 ---
 
 ## 🛡️ 2-Layer Sandboxing Model (`~/.gha` & `./.gha`)
 
-* **Global Vault (`~/.gha/`)**: Houses the global `ghai` executable, central GGUF model vault (`~/.gha/models/`), and daemon locks. Shared across all projects to avoid duplicate downloads.
+* **Global Vault (`~/.gha/`)**: Houses the global `ghai` executable, central GGUF model vault (`~/.gha/models/`), and daemon locks. Shared across all projects.
 * **Local Workspace Sandbox (`./.gha/`)**: Stores workspace build caches and session logs. Completely git-ignored. Cleaned instantly via `ghai :uninstall`.
 
 ---

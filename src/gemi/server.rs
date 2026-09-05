@@ -1,5 +1,5 @@
-// 🧠 GEMI REST Server: OpenAI-Compatible ChatCompletions HTTP Server
-// 100% Rust implementation listening on http://127.0.0.1:8080/v1
+// 🧠 GEMI REST Server: Unique OpenAI-Compatible ChatCompletions HTTP Server
+// 100% Rust implementation listening on http://127.0.0.1:9091/v1 (Unique GEMI Port)
 
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
@@ -12,6 +12,8 @@ use super::models::ModelManager;
 pub struct GemiServer;
 
 impl GemiServer {
+    pub const DEFAULT_PORT: u16 = 9091; // Unique GEMI Port
+
     pub fn start_http_server(workspace: PathBuf, port: u16) {
         let addr = format!("127.0.0.1:{}", port);
         let listener = match TcpListener::bind(&addr) {
@@ -22,7 +24,7 @@ impl GemiServer {
             }
         };
 
-        eprintln!("🧠 [GEMI Server] OpenAI-Compatible HTTP REST Server listening on http://{}/v1", addr);
+        eprintln!("🧠 [GEMI Server] Unique OpenAI-Compatible REST Server active at http://{}/v1", addr);
 
         for stream in listener.incoming().flatten() {
             let workspace = workspace.clone();
@@ -80,7 +82,7 @@ impl GemiServer {
 
                     let (cpus, gpu, _) = GemiEngine::get_intelligence_report(&workspace);
                     let content = format!(
-                        "🤖 [GHA GEMI Intelligence Report]\n- Hardware: {} CPU Cores | {}\n- Response: Executed natively via GEMI OpenAI-compatible Engine in < 2ms!",
+                        "🤖 [GHA GEMI Intelligence Report]\n- Hardware: {} CPU Cores | {}\n- Response: Executed natively via GEMI Unique REST Engine (Port 9091) in < 2ms!",
                         cpus, gpu
                     );
 

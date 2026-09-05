@@ -56,14 +56,14 @@ fn print_help() {
     println!("  :uninstall               Clean up sandboxed .gha environment");
     println!("  :daemon                  Inspect or manage GHA Master Daemon");
     println!("  gmcp, mcp                Start native GMA Master MCP Server over stdio");
-    println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (http://127.0.0.1:8080/v1)\n");
+    println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (http://127.0.0.1:9091/v1)\n");
     println!("GMA Master Interactor Native Missions & Multi-Tier AI Tasks:");
     println!("  ghai \"<instruction>\"     Execute natural language AI mission via GMA");
     println!("  ghai ai orchestrate      Inspect 3-tier GMA coordination report across tiers");
     println!("  ghai ai models           Inspect GGUF & web AI models");
     println!("  ghai ai engines          Inspect local & web AI inference engines");
     println!("  ghai ai mcp-hub          Inspect coordinated MCP tool servers");
-    println!("  ghai ai server           Start GEMI OpenAI-compatible HTTP REST server");
+    println!("  ghai ai server           Start GEMI OpenAI-compatible HTTP REST server (Port 9091)");
 }
 
 fn print_status(workspace: &Path, global_dir: &Path) {
@@ -80,7 +80,7 @@ fn print_status(workspace: &Path, global_dir: &Path) {
     let (cpus, gpu, models) = GemiEngine::get_intelligence_report(workspace);
     let tools = GmcpClient::list_tools();
     println!("   ├── Hardware Profile : {} CPU Cores | {}", cpus, gpu);
-    println!("   ├── Coordinated Tiers: Tier 1 (GAWD) | Tier 2 (GEMI) | Tier 3 (GMCP)");
+    println!("   ├── Coordinated Tiers: Tier 1 (GAWD) | Tier 2 (GEMI Port 9091) | Tier 3 (GMCP Port 9090)");
     println!("   ├── Active Models    : {} GGUF/Web Models Registered", models.len());
     println!("   ├── MCP Tools Hub    : {} Tools Exposed over JSON-RPC 2.0", tools.len());
 
@@ -147,7 +147,7 @@ fn main() {
             GmcpServer::run_stdio(&workspace, GHA_VERSION);
         }
         "gemi" | "gemi-server" => {
-            GemiServer::start_http_server(workspace, 8080);
+            GemiServer::start_http_server(workspace, GemiServer::DEFAULT_PORT);
         }
         "daemon" => {
             match GmaDaemon::check_status(&global_dir) {
@@ -166,7 +166,7 @@ fn main() {
                 let sub = &args[1];
                 match sub.as_str() {
                     "server" => {
-                        GemiServer::start_http_server(workspace, 8080);
+                        GemiServer::start_http_server(workspace, GemiServer::DEFAULT_PORT);
                         return;
                     }
                     "models" => {
@@ -180,7 +180,7 @@ fn main() {
                     "engines" => {
                         println!("⚡ GEMI Coordinated Inference Engines:");
                         println!("   ├── [NATIVE] Embedded GGUF Engine: ACTIVE (Metal/CUDA enabled)");
-                        println!("   ├── [WEB] OpenAI ChatCompletions API Endpoint: ACTIVE (http://127.0.0.1:8080/v1)");
+                        println!("   ├── [WEB] OpenAI ChatCompletions API Endpoint: ACTIVE (http://127.0.0.1:9091/v1)");
                         println!("   └── [MCP] GMCP Tool Reasoning Engine: ACTIVE");
                         return;
                     }
