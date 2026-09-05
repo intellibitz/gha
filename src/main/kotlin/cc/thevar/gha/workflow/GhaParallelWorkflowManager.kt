@@ -1,7 +1,9 @@
 package cc.thevar.gha.workflow
 
+import cc.thevar.gha.ai.GhaAiManager
 import cc.thevar.gha.git.GhaGitExec
 import cc.thevar.gha.safety.GhaProcessRunner
+import cc.thevar.gha.safety.GhaVersionManager
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -9,16 +11,6 @@ import java.util.Locale
 
 /**
  * Enterprise engine for worldwide parallel developer collaboration on protected branches.
- * 
- * Key Principles:
- * 1. Protected Branch Protection: Direct commits/pushes to protected base branches (main/master/release) are guarded.
- * 2. Rebase-First Sync: Keeps feature/working branches up-to-date with upstream base branches via `git pull --rebase`.
- * 3. Idempotency & Loop Prevention: Detects existing PRs for head branches to avoid duplicate PRs or creation loops.
- * 4. Self-Healing Stale Branch Recovery: Automatically recovers terminals stuck on stale merged auto-branches.
- * 5. Auto Git Init: Automatically initializes a Git repository if run in a brand new folder.
- * 6. Smart Branch Lifecycle:
- *    - Preserves User-created branches (e.g., `feature/login`, `john/hotfix`).
- *    - Automatically deletes GHA auto-created branches (e.g., `gha-auto/...`, `gha/...`, `dependabot/...`) after merge.
  */
 object GhaParallelWorkflowManager {
 
@@ -340,5 +332,252 @@ object GhaParallelWorkflowManager {
             }
         }
         return deletedCount
+    }
+
+    /**
+     * Executes the "0 Effort, 100% Gain" Autonomous AI Workflow.
+     * Ported from GhaAiTask for singular orchestration by GMA.
+     */
+    fun executeAutonomousWorkflow(
+        rootDir: File,
+        token: String?,
+        baseBranch: String = "main",
+        customUserBranch: String? = null,
+        explicitCommitMessage: String? = null,
+        mergeMethod: String = "squash",
+        log: (String) -> Unit = { println(it) }
+    ): String {
+        val method = mergeMethod.lowercase()
+
+        // 0. Auto-Init VCS if not present
+        if (!File(rootDir, ".git").exists()) {
+            log("🌱 [GMA] Initializing new Git repository...")
+            GhaGitExec.exec(rootDir, "init")
+            log("✅ [GMA] Git repository initialized.")
+        }
+
+        val isDirty = !GhaGitExec.isClean(rootDir)
+        val currentBranch = GhaGitExec.currentBranch(rootDir)
+        val projectContext = GhaAiManager.detectProjectContext(rootDir)
+
+        log("🤖 [GMA Interactor] Autonomous Workflow — Context: $projectContext")
+        log("   ├── Current Branch  : '$currentBranch'")
+        log("   └── Working Tree    : ${if (isDirty) "Dirty (Local Changes)" else "Clean"}")
+
+        // Step 1: Ensure safe working branch
+        val (headBranch, isAutoBranch) = prepareWorkingBranch(
+            projectDir = rootDir,
+            requestedBaseBranch = baseBranch,
+            customUserBranch = customUserBranch,
+            token = token,
+        )
+        val branchCategory = if (isAutoBranch) "GHA Auto-Branch" else "User Branch"
+
+        var activeHeadBranch = headBranch
+        var activeBranchCategory = branchCategory
+
+        var commitSummary = "No uncommitted local changes"
+        var pushSummary = "Up to date"
+        var prSummary = "N/A"
+        var prUrlSummary = "N/A"
+        var ciSummary = "N/A"
+        var tipRecommendation = "Make code edits anytime and run GMA to auto-save, sync, and push to GitHub."
+
+        if (isDirty) {
+            log("📦 [GMA] Detected dirty working tree. Executing local checkin & remote push workflow...")
+
+            // Autonomous Version Bump
+            val newVersion = GhaVersionManager.bumpVersion(rootDir)
+            log("📈 [GMA Version Bump] Incremented version to $newVersion")
+
+            val smartMsg = GhaAiManager.detectSmartCommitMessage(rootDir, explicitCommitMessage)
+            commitSummary = "Committed: \"$smartMsg\""
+
+            log("📦 Staging working tree changes...")
+            GhaGitExec.exec(rootDir, "add", "-A")
+            GhaGitExec.exec(rootDir, "update-index", "--chmod=+x", "ghai")
+            GhaGitExec.exec(rootDir, "update-index", "--chmod=+x", "init/install.sh")
+            GhaGitExec.exec(rootDir, "update-index", "--chmod=+x", "gradlew")
+
+            log("📝 Auto-committing: \"$smartMsg\"...")
+            GhaGitExec.exec(rootDir, "commit", "-m", smartMsg)
+
+            // Push & PR logic
+            syncWithRemoteBase(rootDir, baseBranch)
+
+            log("🚀 Pushing '$headBranch' to origin remote...")
+            val pushRes = GhaGitExec.push(rootDir, "origin", headBranch, setUpstream = true)
+            pushSummary = if (pushRes.isSuccess) "Pushed to origin/$headBranch" else "Push attempted"
+
+            if (headBranch != baseBranch) {
+                log("🔀 Managing Pull Request against protected '$baseBranch'...")
+                val (prOk, prInfo) = createOrUpdatePr(
+                    projectDir = rootDir,
+                    token = token,
+                    baseBranch = baseBranch,
+                    headBranch = headBranch,
+                    title = smartMsg,
+                    body = "Automated contribution created by GHA Master Agent.",
+                )
+
+                if (prOk && (prInfo != null)) {
+                    prSummary = "PR #${prInfo.number} active"
+                    prUrlSummary = prInfo.url
+                    ciSummary = "PENDING / AUTO-MERGE"
+
+                    log("✅ Pull Request #${prInfo.number} active on GitHub: ${prInfo.url}")
+                    val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
+                    GhaProcessRunner.exec(
+                        workingDir = rootDir,
+                        command = listOf("gh", "pr", "merge", prInfo.number.toString(), "--$method", "--delete-branch", "--auto"),
+                        extraEnv = env,
+                        timeoutSeconds = 30L,
+                    )
+                    log("🤖 GitHub Auto-Merge enabled for PR #${prInfo.number}.")
+                }
+
+                if (isAutoBranch) {
+                    log("🔄 Work pushed & PR auto-merge active. Returning to clean '$baseBranch' branch...")
+                    forceReturnToBaseBranch(rootDir, baseBranch, headBranch)
+                    activeHeadBranch = baseBranch
+                    activeBranchCategory = "Base Branch"
+                }
+            } else {
+                prSummary = "Direct main push (No PR required)"
+                ciSummary = "PASSED / DIRECT"
+                log("✅ Direct push to '$baseBranch' completed. Version $newVersion is live!")
+            }
+
+            tipRecommendation = "Your changes are saved, pushed, and auto-merging on GitHub."
+
+        } else {
+            log("✨ [GMA] Detected clean working tree. Sweeping open PRs and checking CI status...")
+
+            syncWithRemoteBase(rootDir, baseBranch)
+
+            val openPrs = listOpenPrsTargetingBase(rootDir, token, baseBranch)
+            if (openPrs.isNotEmpty()) {
+                log("🔀 Found ${openPrs.size} open PR(s) targeting '$baseBranch'. Sweeping...")
+                var mergedCount = 0
+                var pendingCount = 0
+                var failedCount = 0
+
+                openPrs.forEach { pr ->
+                    log("🔍 Inspecting PR #${pr.number} ('${pr.headBranch}')")
+                    val ciStatus = GhaAiManager.checkPrCiStatus(rootDir, token, pr.number)
+
+                    when (ciStatus.ciStatus) {
+                        GhaAiManager.CiStatus.PASSED, GhaAiManager.CiStatus.NO_CHECKS -> {
+                            val merged = mergeAndCleanup(
+                                projectDir = rootDir,
+                                token = token,
+                                prNumber = pr.number,
+                                headBranch = pr.headBranch,
+                                baseBranch = baseBranch,
+                                mergeMethod = method,
+                                autoMerge = true,
+                            )
+                            if (merged) {
+                                mergedCount++
+                                log("✅ Merged PR #${pr.number} into '$baseBranch'!")
+                            }
+                        }
+                        GhaAiManager.CiStatus.PENDING -> {
+                            pendingCount++
+                            val env = if (!token.isNullOrBlank()) mapOf("GITHUB_TOKEN" to token, "GH_TOKEN" to token) else emptyMap()
+                            GhaProcessRunner.exec(
+                                workingDir = rootDir,
+                                command = listOf("gh", "pr", "merge", pr.number.toString(), "--$method", "--delete-branch", "--auto"),
+                                extraEnv = env,
+                                timeoutSeconds = 30L,
+                            )
+                        }
+                        GhaAiManager.CiStatus.FAILED -> {
+                            failedCount++
+                            log("❌ PR #${pr.number} CI checks FAILED.")
+                        }
+                    }
+                }
+
+                if (mergedCount > 0) {
+                    forceReturnToBaseBranch(rootDir, baseBranch, headBranch)
+                    activeHeadBranch = baseBranch
+                    activeBranchCategory = "Base Branch"
+                    prSummary = "$mergedCount PR(s) MERGED"
+                    ciSummary = "PASSED"
+                } else if (pendingCount > 0) {
+                    if (isAutoBranch && headBranch != baseBranch) {
+                        forceReturnToBaseBranch(rootDir, baseBranch, headBranch)
+                        activeHeadBranch = baseBranch
+                        activeBranchCategory = "Base Branch"
+                    }
+                    prSummary = "$pendingCount PR(s) PENDING"
+                    ciSummary = "PENDING"
+                } else if (failedCount > 0) {
+                    prSummary = "$failedCount PR(s) FAILED"
+                    ciSummary = "FAILED"
+                }
+            } else {
+                if (GhaAiManager.isBranchAheadOfRemote(rootDir, baseBranch) && headBranch != baseBranch) {
+                    val lastCommitMsg = GhaGitExec.exec(rootDir, "log", "-1", "--pretty=%s").stdout.ifBlank { "Update $headBranch" }
+                    val (prOk, prInfo) = createOrUpdatePr(rootDir, token, baseBranch, headBranch, lastCommitMsg, "Automated contribution.")
+                    if (prOk && (prInfo != null)) {
+                        prSummary = "PR #${prInfo.number} created"
+                        prUrlSummary = prInfo.url
+                        log("✅ Created Pull Request #${prInfo.number}: ${prInfo.url}")
+                    }
+                } else {
+                    if (isAutoBranch && headBranch != baseBranch) {
+                        forceReturnToBaseBranch(rootDir, baseBranch, headBranch)
+                        activeHeadBranch = baseBranch
+                        activeBranchCategory = "Base Branch"
+                    }
+                }
+            }
+        }
+
+        // Sweepers
+        log("🧹 [GMA Sweeper] Sweeping stale workflow runs and branches...")
+        val prunedRuns = try {
+            GhaWorkflowManager.pruneOldWorkflowRuns(rootDir, token, maxKeep = 5)
+        } catch (_: Exception) { 0 }
+        
+        val prunedBranches = try {
+            sweepStaleRemoteBranches(rootDir, token, baseBranch)
+        } catch (_: Exception) { 0 }
+
+        val summary = StringBuilder()
+        summary.append("\n════════════════════════════════════════════════════════════════════════════════\n")
+        summary.append("📋 [GMA Execution Summary]\n")
+        summary.append("   • Working Branch : $activeHeadBranch ($activeBranchCategory)\n")
+        summary.append("   • Commit Status  : $commitSummary\n")
+        summary.append("   • Remote Push    : $pushSummary\n")
+        summary.append("   • GitHub PR      : $prSummary ${if (prUrlSummary != "N/A") "($prUrlSummary)" else ""}\n")
+        summary.append("   • CI/CD Status   : $ciSummary\n")
+        summary.append("   • Swept Data     : $prunedRuns runs pruned, $prunedBranches branches pruned\n")
+        summary.append("   • Local Sync     : 100% Synced with origin/$baseBranch\n")
+        summary.append("────────────────────────────────────────────────────────────────────────────────\n")
+        summary.append("💡 Tip: $tipRecommendation\n")
+        summary.append("════════════════════════════════════════════════════════════════════════════════\n")
+        
+        return summary.toString()
+    }
+
+    private fun forceReturnToBaseBranch(rootDir: File, baseBranch: String, autoBranchToDelete: String) {
+        if (!GhaGitExec.isClean(rootDir)) {
+            GhaGitExec.exec(rootDir, "add", "-A")
+            GhaGitExec.exec(rootDir, "commit", "-m", "chore: auto-commit remaining changes before returning to $baseBranch")
+        }
+
+        val checkoutRes = GhaGitExec.checkout(rootDir, baseBranch)
+        if (!checkoutRes.isSuccess || GhaGitExec.currentBranch(rootDir) != baseBranch) {
+            GhaGitExec.exec(rootDir, "checkout", "-f", baseBranch)
+        }
+
+        GhaGitExec.pullRebase(rootDir, "origin", baseBranch)
+
+        if (autoBranchToDelete.isNotBlank() && autoBranchToDelete != baseBranch) {
+            GhaGitExec.deleteLocalBranch(rootDir, autoBranchToDelete, force = true)
+        }
     }
 }

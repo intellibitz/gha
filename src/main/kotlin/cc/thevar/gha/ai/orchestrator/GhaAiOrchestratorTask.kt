@@ -40,13 +40,17 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
 
     init {
         val prov = project.providers
-        val cmdTargetDir = project.findProperty("targetDir")?.toString()
+        val cmdTargetDir = (project.findProperty("targetDir") ?: project.findProperty("dir"))?.toString()
         action.convention(prov.gradleProperty("action").orElse("status"))
         model.convention(prov.gradleProperty("model"))
         filter.convention(prov.gradleProperty("filter"))
         goal.convention(prov.gradleProperty("goal").orElse("health check and orchestrate"))
         aoaFramework.convention(prov.gradleProperty("aoa").orElse(prov.gradleProperty("framework")).orElse("builtin"))
-        targetDirProperty.convention(prov.gradleProperty("targetDir").orElse(prov.provider { cmdTargetDir }))
+        targetDirProperty.convention(
+            prov.gradleProperty("targetDir")
+                .orElse(prov.gradleProperty("dir"))
+                .orElse(prov.provider { cmdTargetDir })
+        )
     }
 
     @TaskAction
@@ -56,7 +60,7 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
         val rootDir = if (!targetDirStr.isNullOrBlank()) File(targetDirStr) else taskRootDirFile
         val activeAction = action.getOrElse("status").lowercase()
 
-        logger.lifecycle("🌌 [GHA AI Orchestrator] Action: '$activeAction', Target Directory: ${rootDir.absolutePath}")
+        logger.lifecycle("🌌 [GMA Master Interactor] Action: '$activeAction', Target Directory: ${rootDir.absolutePath}")
 
         when (activeAction) {
             "status", "orchestrate", "agent" -> {
@@ -85,7 +89,7 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
             }
             "engines" -> {
                 val engines = GhaEngineManager.detectEngines(rootDir)
-                logger.lifecycle("⚡ AI Inference Engines Detected (${engines.size}):")
+                logger.lifecycle("⚡ AI Inference Engines Coordinated (${engines.size}):")
                 engines.forEach { e ->
                     val status = if (e.isAvailable) "ACTIVE" else "NOT INSTALLED"
                     logger.lifecycle("   ├── [${e.type}] ${e.name}: $status (${e.version}) - ${e.description}")
@@ -93,7 +97,7 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
             }
             "mcp-hub", "mcp" -> {
                 val servers = GhaMcpHubManager.listServers(rootDir)
-                logger.lifecycle("🔌 Registered MCP Tool Hub Servers (${servers.size}):")
+                logger.lifecycle("🔌 Coordinated MCP Tool Hub Servers (${servers.size}):")
                 servers.forEach { s ->
                     logger.lifecycle("   ├── [${s.type}] ${s.name} (${s.id}): ${s.description}")
                 }
@@ -104,12 +108,12 @@ abstract class GhaAiOrchestratorTask : GhaTask() {
                     logger.error("❌ Action 'download' requires '-Pmodel=<repoId or URL>' argument.")
                     return
                 }
-                logger.lifecycle("📥 Downloading AI model '$modelRepo'...")
+                logger.lifecycle("📥 GMA downloading AI model '$modelRepo'...")
                 val res = GhaModelManager.downloadModel(rootDir, modelRepo, filter.orNull)
                 logger.lifecycle(res)
             }
             else -> {
-                logger.lifecycle("ℹ️ GHA AI Orchestrator: Unknown action '$activeAction'. Supported: status, models, engines, mcp-hub, download, agent.")
+                logger.lifecycle("ℹ️ GMA Master Interactor: Unknown action '$activeAction'. Supported: status, orchestrate, agent, models, engines, mcp-hub, download.")
             }
         }
     }

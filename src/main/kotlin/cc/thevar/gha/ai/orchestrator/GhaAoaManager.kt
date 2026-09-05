@@ -5,9 +5,9 @@ import cc.thevar.gha.safety.GhaProcessRunner
 import java.io.File
 
 /**
- * Agent of Agents (AOA) Manager for GHA AI Orchestrator.
+ * Agent of Agents (AOA) Manager for GMA Master Interactor.
  * Pluggable AOA framework manager supporting:
- * 1. BUILT_IN: 100% Kotlin GHA Master Orchestrator (GhaAgentOfAgents)
+ * 1. BUILT_IN: 100% Kotlin GHA Master Agent (GMA / GhaAgentOfAgents)
  * 2. AUTOGEN: Microsoft AutoGen GroupChatManager
  * 3. CREWAI: CrewAI Hierarchical Crew Manager
  * 4. LANGGRAPH: LangChain LangGraph Supervisor Node
@@ -63,7 +63,7 @@ object GhaAoaManager {
 
         val uvCheck = GhaProcessRunner.exec(rootDir, listOf("uv", "--version"))
         if (!uvCheck.isSuccess) {
-            log.add("⚠️ [AOA Fallback] Python UV runtime not detected. Falling back to GHA Native Kotlin Orchestrator...")
+            log.add("⚠️ [AOA Fallback] Python UV runtime not detected. Falling back to GHA Master Agent (GMA) Native Orchestrator...")
             return GhaAgentOfAgents().solve(goal, rootDir)
         }
 
@@ -75,7 +75,7 @@ object GhaAoaManager {
             GhaAgentResult(true, log, res.stdout)
         } else {
             log.add("⚠️ [AOA Plugin Retry] Python AOA execution info: ${res.stderr.ifEmpty { res.stdout }}")
-            log.add("🔄 Delegating mission execution back to GHA Native Master Orchestrator...")
+            log.add("🔄 Delegating mission execution back to GHA Master Agent (GMA) Native Orchestrator...")
             val nativeRes = GhaAgentOfAgents().solve(goal, rootDir)
             GhaAgentResult(nativeRes.success, log + nativeRes.log, nativeRes.output)
         }
@@ -92,7 +92,7 @@ object GhaAoaManager {
 
             # AutoGen AOA Bridge invoking GHA Universal MCP Server
             res = subprocess.run(["./ghai", "status"], capture_output=True, text=True)
-            print(f"✅ [AutoGen AOA -> GHA MCP Tool Result]:\n{res.stdout}")
+            print(f"✅ [AutoGen AOA -> GMA MCP Tool Result]:\n{res.stdout}")
             """.trimIndent() + "\n"
         )
         return script
@@ -108,7 +108,7 @@ object GhaAoaManager {
             print(f"👥 [CrewAI Manager Agent AOA] Processing goal: '{goal}'")
 
             res = subprocess.run(["./ghai", "status"], capture_output=True, text=True)
-            print(f"✅ [CrewAI AOA -> GHA MCP Tool Result]:\n{res.stdout}")
+            print(f"✅ [CrewAI AOA -> GMA MCP Tool Result]:\n{res.stdout}")
             """.trimIndent() + "\n"
         )
         return script
@@ -124,7 +124,7 @@ object GhaAoaManager {
             print(f"🕸️ [LangGraph Supervisor Node AOA] Processing goal: '{goal}'")
 
             res = subprocess.run(["./ghai", "status"], capture_output=True, text=True)
-            print(f"✅ [LangGraph AOA -> GHA MCP Tool Result]:\n{res.stdout}")
+            print(f"✅ [LangGraph AOA -> GMA MCP Tool Result]:\n{res.stdout}")
             """.trimIndent() + "\n"
         )
         return script
@@ -140,7 +140,7 @@ object GhaAoaManager {
             print(f"🐝 [OpenAI Swarm Handoff Orchestrator AOA] Processing goal: '{goal}'")
 
             res = subprocess.run(["./ghai", "status"], capture_output=True, text=True)
-            print(f"✅ [Swarm AOA -> GHA MCP Tool Result]:\n{res.stdout}")
+            print(f"✅ [Swarm AOA -> GMA MCP Tool Result]:\n{res.stdout}")
             """.trimIndent() + "\n"
         )
         return script

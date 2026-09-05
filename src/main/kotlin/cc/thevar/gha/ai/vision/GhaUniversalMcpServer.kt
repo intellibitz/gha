@@ -5,6 +5,7 @@ import cc.thevar.gha.git.GhaGitExec
 import cc.thevar.gha.provider.GhaProviderRegistry
 import cc.thevar.gha.safety.GhaProcessRunner
 import cc.thevar.gha.safety.GhaVersionManager
+import cc.thevar.gha.workflow.GhaParallelWorkflowManager
 import java.io.File
 
 /**
@@ -195,11 +196,14 @@ class GhaUniversalMcpServer(private val rootDir: File) : GhaMcpServer {
             }
             "sync" -> {
                 val msg = arguments["message"]?.toString()
-                val smartMsg = GhaAiManager.detectSmartCommitMessage(rootDir, msg)
-                if (vcs.isDirty(rootDir)) {
-                    vcs.commit(rootDir, smartMsg)
-                }
-                "GHA Tool 'sync' executed: Local changes committed as '$smartMsg' and synced with VCS."
+                val base = arguments["baseBranch"]?.toString() ?: "main"
+                val token = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN") ?: ""
+                GhaParallelWorkflowManager.executeAutonomousWorkflow(
+                    rootDir = rootDir,
+                    token = token,
+                    baseBranch = base,
+                    explicitCommitMessage = msg
+                )
             }
             "status" -> {
                 val branch = vcs.currentBranch(rootDir)

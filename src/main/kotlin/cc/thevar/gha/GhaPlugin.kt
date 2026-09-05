@@ -573,25 +573,13 @@ class GhaPlugin : Plugin<Project> {
         }
 
         project.tasks.withType(GhaAiTask::class.java).configureEach {
-            baseBranch.convention((project.findProperty("baseBranch") as? String) ?: "main")
-            if (project.hasProperty("userBranch") || project.hasProperty("branch")) {
-                userBranch.convention(
-                    (project.findProperty("userBranch") as? String)
-                        ?: (project.findProperty("branch") as? String)
-                )
-            }
-            if (project.hasProperty("commitMessage") || project.hasProperty("message") || project.hasProperty(
-                    "ghaAction"
-                )
-            ) {
+            if (project.hasProperty("commitMessage") || project.hasProperty("message") || project.hasProperty("ghaAction")) {
                 commitMessage.convention(
                     (project.findProperty("commitMessage") as? String)
                         ?: (project.findProperty("message") as? String)
                         ?: (project.findProperty("ghaAction") as? String)
                 )
             }
-            autoMerge.convention((project.findProperty("autoMerge") as? String) ?: "true")
-            mergeMethod.convention((project.findProperty("mergeMethod") as? String) ?: "squash")
         }
     }
 }

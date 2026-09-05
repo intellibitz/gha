@@ -7,15 +7,14 @@ import java.io.File
 /**
  * Agent Manager for GHA.
  * Registers specialized Agents and dispatches goals to the appropriate Agent(s).
- * GHA communicates ONLY with Agents managed by GhaAgentManager.
+ * GHA Master Agent (GMA) communicates ONLY with Agents managed by GhaAgentManager.
  */
 object GhaAgentManager {
 
-    private val scaffoldingAgent = GhaScaffoldingAgent()
-    private val buildTestAgent = GhaBuildTestAgent()
-    private val vcsAgent = GhaVcsAgent()
-    private val securityAgent = GhaSecurityAgent()
-    private val wikiAgent = GhaWikiAgent()
+    private val gradleAgent = GhaGradleAgent()
+    private val gitAgent = GhaGitAgent()
+    private val githubAgent = GhaGitHubAgent()
+    private val systemAgent = GhaSystemAgent()
 
     /**
      * Selects and delegates mission execution to the optimal Agent(s) based on the user's natural language goal.
@@ -25,30 +24,31 @@ object GhaAgentManager {
 
         return when {
             lowerGoal.contains("create") || lowerGoal.contains("scaffold") || lowerGoal.contains("app") || lowerGoal.contains("project") -> {
-                // 1. Scaffold project
-                val scaffoldRes = scaffoldingAgent.solveWithHost(goal, projectDir, mcpHost)
-                // 2. Build & Test project
-                val buildRes = buildTestAgent.solveWithHost(goal, projectDir, mcpHost)
-                GhaAgentResult(
-                    success = scaffoldRes.success && buildRes.success,
-                    log = scaffoldRes.log + buildRes.log,
-                    output = "${scaffoldRes.output}\n\n${buildRes.output}"
-                )
+                // 1. Scaffold & Build via Gradle Agent
+                gradleAgent.solveWithHost(goal, projectDir, mcpHost)
+            }
+            lowerGoal.contains("build") || lowerGoal.contains("test") || lowerGoal.contains("clean") || lowerGoal.contains("gradle") -> {
+                gradleAgent.solveWithHost(goal, projectDir, mcpHost)
+            }
+            lowerGoal.contains("pr") || lowerGoal.contains("issue") || lowerGoal.contains("workflow") ||
+                    lowerGoal.contains("github") || lowerGoal.contains("sync") || lowerGoal.contains("wiki") ||
+                    lowerGoal.contains("security") || lowerGoal.contains("audit") || lowerGoal.contains("dependabot") -> {
+                githubAgent.solveWithHost(goal, projectDir, mcpHost)
+            }
+            lowerGoal.contains("git") || lowerGoal.contains("clone") || lowerGoal.contains("status") || lowerGoal.contains("context") -> {
+                gitAgent.solveWithHost(goal, projectDir, mcpHost)
             }
             lowerGoal.contains("web") || lowerGoal.contains("search") || lowerGoal.contains("fetch") || lowerGoal.contains("huggingface") || lowerGoal.contains("url") -> {
                 GhaWebAgentManager.routeWebMission(goal, projectDir)
             }
-            lowerGoal.contains("security") || lowerGoal.contains("audit") || lowerGoal.contains("dependabot") -> {
-                securityAgent.solveWithHost(goal, projectDir, mcpHost)
-            }
-            lowerGoal.contains("wiki") || lowerGoal.contains("documentation") -> {
-                wikiAgent.solveWithHost(goal, projectDir, mcpHost)
-            }
-            "\\b(fix|build|compile|test|repair)\\b".toRegex().containsMatchIn(lowerGoal) -> {
-                buildTestAgent.solveWithHost(goal, projectDir, mcpHost)
+            lowerGoal.contains("system") || lowerGoal.contains("adb") || lowerGoal.contains("docker") ||
+                    lowerGoal.contains("python") || lowerGoal.contains("shell") || lowerGoal.contains("exec") ||
+                    lowerGoal.contains("profile") || lowerGoal.contains("hardware") -> {
+                systemAgent.solveWithHost(goal, projectDir, mcpHost)
             }
             else -> {
-                vcsAgent.solveWithHost(goal, projectDir, mcpHost)
+                // Default to Git Agent for repository-wide goals
+                gitAgent.solveWithHost(goal, projectDir, mcpHost)
             }
         }
     }

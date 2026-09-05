@@ -26,7 +26,7 @@ object GhaAiManager {
      * Inspects staged and unstaged files in the git repository to generate a smart, semantic commit message.
      */
     fun detectSmartCommitMessage(projectDir: File, userProvidedMessage: String?): String {
-        if (!userProvidedMessage.isNullOrBlank()) {
+        if (!userProvidedMessage.isNullOrBlank() && !userProvidedMessage.contains("autonomous", ignoreCase = true)) {
             return userProvidedMessage
         }
 
