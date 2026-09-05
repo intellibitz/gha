@@ -20,11 +20,19 @@ abstract class GhaAiTask : GhaTask() {
     @get:Optional
     abstract val commitMessage: Property<String>
 
+    @get:Input
+    @get:Optional
+    abstract val targetDir: Property<String>
+
     init {
         val prov = project.providers
         commitMessage.convention(
             prov.gradleProperty("commitMessage")
                 .orElse(prov.gradleProperty("message")),
+        )
+        targetDir.convention(
+            prov.gradleProperty("targetDir")
+                .orElse(prov.gradleProperty("dir"))
         )
     }
 
@@ -40,10 +48,8 @@ abstract class GhaAiTask : GhaTask() {
         }
 
         verifySandbox()
-        val targetDirProp = project.providers.gradleProperty("targetDir")
-            .orElse(project.providers.gradleProperty("dir"))
-            .orNull
-        val rootDir = if (!targetDirProp.isNullOrBlank()) File(targetDirProp) else projectRootDir.get().asFile
+        val targetDirStr = targetDir.orNull
+        val rootDir = if (!targetDirStr.isNullOrBlank()) File(targetDirStr) else projectRootDir.get().asFile
 
         // GHA Master Agent (GMA) is the sole interactor for the user.
         val gma = GhaAgentOfAgents()
