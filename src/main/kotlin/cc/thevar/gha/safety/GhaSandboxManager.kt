@@ -21,10 +21,18 @@ object GhaSandboxManager {
     }
 
     /**
+     * Returns the global GHA bin directory.
+     */
+    fun getGlobalBinDir(): File {
+        return File(getGlobalGhaDir(), "bin").apply { if (!exists()) mkdirs() }
+    }
+
+    /**
      * Ensures the global sandbox environment is initialized.
      */
     fun ensureGlobalSandbox(): File {
         val globalDir = getGlobalGhaDir()
+        getGlobalBinDir() // Ensure bin exists
         val configFile = File(globalDir, GHA_JSON)
         if (!configFile.exists()) {
             configFile.writeText(

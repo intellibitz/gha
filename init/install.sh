@@ -3,44 +3,35 @@
 # 100% Sandboxed - 0% Modifications to existing project files.
 set -e
 
-mkdir -p .gha
+# 🌌 Global GHA Setup
+GLOBAL_GHA_DIR="$HOME/.gha"
+GLOBAL_BIN_DIR="$GLOBAL_GHA_DIR/bin"
+mkdir -p "$GLOBAL_BIN_DIR"
 
-# Dynamic GHA Engine Repository resolution (custom fork/mirror support)
+# Dynamic GHA Engine Repository resolution
 GHA_REPO="${GHA_REPO:-$(git config gha.repo 2>/dev/null || echo "intellibitz/gha")}"
 
-# 1. Download or refresh init script (Single .gha/ Sandbox Init Script)
-curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/init/gha.init.gradle.kts" -o ".gha/init.gradle.kts" 2>/dev/null || true
+# 1. Fetch and update global ghai executable launcher
+echo "📥 Fetching latest global ghai launcher script..."
+curl -sSL "https://raw.githubusercontent.com/$GHA_REPO/main/ghai" -o "$GLOBAL_BIN_DIR/ghai" 2>/dev/null || true
+chmod +x "$GLOBAL_BIN_DIR/ghai" 2>/dev/null || true
 
-# Self-healing check: remove invalid 404 or zero-byte init script
-if grep -q "404" ".gha/init.gradle.kts" 2>/dev/null || [ ! -s ".gha/init.gradle.kts" ]; then
-    rm -f ".gha/init.gradle.kts"
-fi
+# 2. Download or refresh global init script
+curl -sSL "https://raw.githubusercontent.com/$GHA_REPO/main/init/gha.init.gradle.kts" -o "$GLOBAL_GHA_DIR/init.gradle.kts" 2>/dev/null || true
 
-# 2. Fetch and update ./ghai executable launcher & batch scripts
-echo "📥 Fetching latest ghai launcher script..."
-curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/ghai" -o "ghai" 2>/dev/null || true
-curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/ghai.bat" -o ".gha/ghai.bat" 2>/dev/null || true
-chmod +x ghai 2>/dev/null || true
-
-# 3. Fetch latest GHA Engine version.txt into .gha/ sandbox
+# 3. Fetch latest GHA Engine version info
 echo "📥 Syncing GHA engine version info..."
-curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/version.txt" -o ".gha/gha-engine-version.txt" 2>/dev/null || true
+curl -sSL "https://raw.githubusercontent.com/$GHA_REPO/main/version.txt" -o "$GLOBAL_GHA_DIR/gha-engine-version.txt" 2>/dev/null || true
 
-# 4. Update .gitignore for Invisible Integration (0 side effects)
-if [ -f ".gitignore" ]; then
-    if ! grep -q "# gha: Git, GitHub & Gradle Automation" ".gitignore"; then
-        echo "   ➕ Updating .gitignore for invisible gha integration..."
-        cat << 'EOF' >> .gitignore
+echo "⚡ [gha] Global 0-Effort Installation Complete!"
+echo "   ├── $GLOBAL_GHA_DIR/ sandbox initialized"
+echo "   └── $GLOBAL_BIN_DIR/ghai global launcher created"
 
-# gha: Git, GitHub & Gradle Automation (Invisible Sandbox)
-.gha/
-ghai
-ghai.bat
-EOF
-    fi
+# 4. PATH Check & Recommendation
+if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
+    echo "⚠️  [ghai] Action Required: Add '$GLOBAL_BIN_DIR' to your PATH to use 'ghai' anywhere!"
+    echo "   Run this command: echo 'export PATH=\"\$HOME/.gha/bin:\$PATH\"' >> ~/.bashrc && source ~/.bashrc"
+    echo "   (Or update your .zshrc if using Zsh)"
 fi
 
-echo "⚡ [gha] 100% Sandboxed 0-Effort Installation Complete!"
-echo "   ├── .gha/ sandbox initialized"
-echo "   └── ./ghai executable launcher created (rwxr-xr-x)"
-echo "🎉 gha is ready! Type './ghai' to run autonomous AI automation."
+echo "🎉 Global gha is ready! Type 'ghai :version' to verify."
