@@ -17,7 +17,8 @@ object GhaEngineManager {
         val isAvailable: Boolean,
         val version: String,
         val description: String,
-        val endpointOrHost: String = ""
+        val endpointOrHost: String = "",
+        val isAgent: Boolean = false
     )
 
     fun getEnginesDir(rootDir: File): File {

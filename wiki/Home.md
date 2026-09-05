@@ -12,22 +12,21 @@ The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA Use
 
 ---
 
-## 🌌 GMA Master Interactor Architecture
+## 🌌 GMA 4-Tier Master Architecture
 
-`gha` brings the power of AI to **every user, anywhere, even on limited home hardware**, through a singular master agent:
+`gha` brings the power of AI to **every user, anywhere, even on limited home hardware**, through a 4-tier coordinated system:
 
-1. **🏛️ GMA Master Interactor & Pluggable AOA (`GhaAgentOfAgents`)**: The singular one-point manager and worker for the GHA user. It coordinates every system component and optionally delegates to frameworks like Microsoft AutoGen, CrewAI, LangGraph, or Swarm.
-2. **🌐 Specialized Agents (`GhaAgentManager`)**: Domain-specific workers for Gradle, Git, GitHub, and System tasks, plus a fleet of Web Agents for research and remote APIs.
-3. **⚡ AI Inference Engines (`GhaEngineManager`)**: Coordinated local (Ollama, llama.cpp, Python UV) and web-based AI engines (OpenRouter, Groq, HF, Gemini, OpenAI, Anthropic).
-4. **🧠 AI Model Discovery & Resolution (`GhaModelManager`)**: Searches, resolves, and auto-downloads open-weights and cloud models across multiple registries.
-5. **🔌 GMA Master MCP Interactor (GMCP)**: Full Model Context Protocol (MCP) implementation (Host, Client, Server). GMA uses the GMCP Client to talk to the GMCP Server, ensuring 100% protocol compliance.
+1. **🏛️ Tier 1: GHA Master Agent (GMA)**: The **Master**. The Orchestrator. The One. GMA sits in the front as the singular Sole Interactor for the user. It takes user queries, coordinates GAWD, GEMI, and GMCP to complete work in the best possible execution, and reports back while awaiting the next command.
+2. **🤖 Tier 2: GHA Agents Web & Domain (GAWD)**: The **Workers** that execute missions. GAWD makes use of GEMI (Tier 3) for reasoning and thinking, and GMCP (Tier 4) for skills, tools, and capabilities. Includes Gradle, Git, GitHub, System, and Web fleet agents.
+3. **🧠 Tier 3: GHA Engines & Models AI Inference (GEMI)**: The **Intelligence** layer. GEMI coordinates all AI inference engines (Ollama, Groq, OpenAI) and autonomous models (DeepSeek R1, Llama 3.3). GEMI provides pure reasoning and reports back to agents without interacting with the infrastructure layer (unless an engine is also an agent).
+4. **🔌 Tier 4: Model Context Protocol (GMCP)**: The **Infrastructure** layer. Full MCP implementation (Host, Client, Server) exposing hardware, system tools, and registries. Only Agents (Tier 2 and agent-capable engines) talk to GMCP.
 
 ---
 
 ### 🔄 GMA Delegation Cascade
 
 ```
-[1. GMA Sole Interactor] ──► [2. GMCP Client] ──► [3. GMCP Server] ──► [4. Domain Agents] ──► [5. MCP Tools]
+[Tier 1: GMA Master] ──► [Tier 2: GAWD Agents] ──► [Tier 3: GEMI Reasoning] & [Tier 4: GMCP Skills]
 ```
 
 ---
@@ -60,6 +59,8 @@ The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA Use
 ---
 
 ## ⚡ 1-Second Installation
+
+Install `gha` into **any repository** instantly. The installer automatically primes the GMA Master Agent and GMCP Interactor to keep them running and ready:
 
 ```bash
 # Linux, macOS, & WSL:

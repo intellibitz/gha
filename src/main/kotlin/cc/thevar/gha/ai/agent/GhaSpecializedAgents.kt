@@ -1,38 +1,46 @@
 package cc.thevar.gha.ai.agent
 
 import cc.thevar.gha.ai.mcp.GhaGmcpClient
+import cc.thevar.gha.ai.orchestrator.GhaGemiEngine
 import cc.thevar.gha.ai.vision.GhaAgentResult
 import cc.thevar.gha.ai.vision.GhaAiAgent
 import java.io.File
 
 /**
- * Specialized Agents acting as MCP Clients.
- * Each Agent communicates with GHA MCP Host to execute tools and get work done.
+ * GAWD: GHA Agents Web & Domain (Tier 2).
+ * Workers that make use of GEMI (Tier 3) for reasoning and GMCP (Tier 4) for skills.
  */
 
 /**
- * 🛠️ Gradle Agent: Handles Gradle build, testing, and project scaffolding via MCP tools.
+ * 🛠️ Gradle Agent: Handles Gradle build, testing, and project scaffolding.
  */
 class GhaGradleAgent(
     override val identity: String = "GHA-Gradle-01",
     override val name: String = "GHA Gradle Agent",
-    override val role: String = "Gradle Build, Test & Scaffolding Agent"
+    override val role: String = "Gradle Build, Test & Scaffolding Worker"
 ) : GhaAiAgent, GhaAgent {
 
     override fun executeMission(projectDir: File, prompt: String): String {
         val client = GhaGmcpClient(projectDir)
-        return solveWithHost(prompt, projectDir, client).output
+        val gemi = GhaGemiEngine(projectDir)
+        return solveWithT3T4(prompt, projectDir, gemi, client).output
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
-        return solveWithHost(goal, rootDir, GhaGmcpClient(rootDir))
+        return solveWithT3T4(goal, rootDir, GhaGemiEngine(rootDir), GhaGmcpClient(rootDir))
     }
 
-    fun solveWithHost(goal: String, rootDir: File, mcpClient: GhaGmcpClient): GhaAgentResult {
+    fun solveWithT3T4(goal: String, rootDir: File, gemi: GhaGemiEngine, mcpClient: GhaGmcpClient): GhaAgentResult {
         val log = mutableListOf<String>()
-        val lowerGoal = goal.lowercase()
-        log.add("🛠️ Agent '$identity' ($name) acting as MCP Client for Gradle goal: \"$goal\"")
+        log.add("🛠️ Agent '$identity' ($name) active (Tier 2 Worker)")
 
+        // 1. Thinking Phase (Tier 3)
+        val reasoning = gemi.reason(goal)
+        log.addAll(reasoning.log)
+        log.add("   💭 Thinking (GEMI): ${reasoning.output}")
+
+        // 2. Doing Phase (Tier 4)
+        val lowerGoal = goal.lowercase()
         val toolName = when {
             lowerGoal.contains("android") -> "scaffold_android"
             lowerGoal.contains("scaffold") || lowerGoal.contains("kotlin") -> "scaffold_kotlin"
@@ -42,49 +50,56 @@ class GhaGradleAgent(
             else -> "build"
         }
 
-        log.add("   ► [MCP Client] Calling Gradle MCP Tool '$toolName' on GHA MCP Host...")
+        log.add("   ► Executing (GMCP): Calling Gradle Tool '$toolName'...")
         val args = when (toolName) {
             "scaffold_android", "scaffold_kotlin" -> mapOf("projectName" to rootDir.name, "targetDir" to rootDir.absolutePath)
             else -> emptyMap()
         }
 
         val output = mcpClient.callTool(toolName, args)
-        log.add("   ✅ [MCP Response] ${output.take(100).replace("\n", " ")}...")
+        log.add("   ✅ Completed: ${output.take(100).replace("\n", " ")}...")
 
         return GhaAgentResult(true, log, output)
     }
 }
 
 /**
- * 🔄 Git Agent: Handles Git version control, status, and repository cloning via MCP tools.
+ * 🔄 Git Agent: Handles Git version control and repository management.
  */
 class GhaGitAgent(
     override val identity: String = "GHA-Git-01",
     override val name: String = "GHA Git Agent",
-    override val role: String = "Git Version Control & Repository Agent"
+    override val role: String = "Git Version Control & Repository Worker"
 ) : GhaAiAgent, GhaAgent {
 
     override fun executeMission(projectDir: File, prompt: String): String {
         val client = GhaGmcpClient(projectDir)
-        return solveWithHost(prompt, projectDir, client).output
+        val gemi = GhaGemiEngine(projectDir)
+        return solveWithT3T4(prompt, projectDir, gemi, client).output
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
-        return solveWithHost(goal, rootDir, GhaGmcpClient(rootDir))
+        return solveWithT3T4(goal, rootDir, GhaGemiEngine(rootDir), GhaGmcpClient(rootDir))
     }
 
-    fun solveWithHost(goal: String, rootDir: File, mcpClient: GhaGmcpClient): GhaAgentResult {
+    fun solveWithT3T4(goal: String, rootDir: File, gemi: GhaGemiEngine, mcpClient: GhaGmcpClient): GhaAgentResult {
         val log = mutableListOf<String>()
-        val lowerGoal = goal.lowercase()
-        log.add("🔄 Agent '$identity' ($name) acting as MCP Client for Git goal: \"$goal\"")
+        log.add("🔄 Agent '$identity' ($name) active (Tier 2 Worker)")
 
+        // 1. Thinking Phase (Tier 3)
+        val reasoning = gemi.reason(goal)
+        log.addAll(reasoning.log)
+        log.add("   💭 Thinking (GEMI): ${reasoning.output}")
+
+        // 2. Doing Phase (Tier 4)
+        val lowerGoal = goal.lowercase()
         val toolName = when {
             lowerGoal.contains("clone") -> "clone"
             lowerGoal.contains("context") -> "context"
             else -> "status"
         }
 
-        log.add("   ► [MCP Client] Calling Git MCP Tool '$toolName' on GHA MCP Host...")
+        log.add("   ► Executing (GMCP): Calling Git Tool '$toolName'...")
         val args = when (toolName) {
             "clone" -> {
                 val repo = goal.split(" ").find { it.contains("/") } ?: ""
@@ -94,35 +109,42 @@ class GhaGitAgent(
         }
 
         val output = mcpClient.callTool(toolName, args)
-        log.add("   ✅ [MCP Response] ${output.take(100).replace("\n", " ")}...")
+        log.add("   ✅ Completed: ${output.take(100).replace("\n", " ")}...")
 
         return GhaAgentResult(true, log, output)
     }
 }
 
 /**
- * 🐙 GitHub Agent: Handles GitHub platform tasks including PRs, Issues, Workflows, and Sync via MCP tools.
+ * 🐙 GitHub Agent: Handles GitHub platform tasks (PRs, Issues, Workflows).
  */
 class GhaGitHubAgent(
     override val identity: String = "GHA-GitHub-01",
     override val name: String = "GHA GitHub Agent",
-    override val role: String = "GitHub Platform, PR & Issue Agent"
+    override val role: String = "GitHub Platform, PR & Issue Worker"
 ) : GhaAiAgent, GhaAgent {
 
     override fun executeMission(projectDir: File, prompt: String): String {
         val client = GhaGmcpClient(projectDir)
-        return solveWithHost(prompt, projectDir, client).output
+        val gemi = GhaGemiEngine(projectDir)
+        return solveWithT3T4(prompt, projectDir, gemi, client).output
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
-        return solveWithHost(goal, rootDir, GhaGmcpClient(rootDir))
+        return solveWithT3T4(goal, rootDir, GhaGemiEngine(rootDir), GhaGmcpClient(rootDir))
     }
 
-    fun solveWithHost(goal: String, rootDir: File, mcpClient: GhaGmcpClient): GhaAgentResult {
+    fun solveWithT3T4(goal: String, rootDir: File, gemi: GhaGemiEngine, mcpClient: GhaGmcpClient): GhaAgentResult {
         val log = mutableListOf<String>()
-        val lowerGoal = goal.lowercase()
-        log.add("🐙 Agent '$identity' ($name) acting as MCP Client for GitHub goal: \"$goal\"")
+        log.add("🐙 Agent '$identity' ($name) active (Tier 2 Worker)")
 
+        // 1. Thinking Phase (Tier 3)
+        val reasoning = gemi.reason(goal)
+        log.addAll(reasoning.log)
+        log.add("   💭 Thinking (GEMI): ${reasoning.output}")
+
+        // 2. Doing Phase (Tier 4)
+        val lowerGoal = goal.lowercase()
         val toolName = when {
             lowerGoal.contains("pr") && lowerGoal.contains("list") -> "pr_list"
             lowerGoal.contains("pr") && lowerGoal.contains("create") -> "pr_create"
@@ -135,7 +157,7 @@ class GhaGitHubAgent(
             else -> "sync"
         }
 
-        log.add("   ► [MCP Client] Calling GitHub MCP Tool '$toolName' on GHA MCP Host...")
+        log.add("   ► Executing (GMCP): Calling GitHub Tool '$toolName'...")
         val args = when (toolName) {
             "pr_create", "issue_create" -> mapOf("title" to "Automated Goal: $goal")
             "pr_merge" -> {
@@ -147,35 +169,42 @@ class GhaGitHubAgent(
         }
 
         val output = mcpClient.callTool(toolName, args)
-        log.add("   ✅ [MCP Response] ${output.take(100).replace("\n", " ")}...")
+        log.add("   ✅ Completed: ${output.take(100).replace("\n", " ")}...")
 
         return GhaAgentResult(true, log, output)
     }
 }
 
 /**
- * 💻 System Agent: Handles interaction with user system tools (ADB, Docker, Python, Shell) via MCP tools.
+ * 💻 System Agent: Handles interaction with user system tools (ADB, Docker, Python).
  */
 class GhaSystemAgent(
     override val identity: String = "GHA-System-01",
     override val name: String = "GHA System Agent",
-    override val role: String = "User System Tools & Environment Agent"
+    override val role: String = "User System Tools & Environment Worker"
 ) : GhaAiAgent, GhaAgent {
 
     override fun executeMission(projectDir: File, prompt: String): String {
         val client = GhaGmcpClient(projectDir)
-        return solveWithHost(prompt, projectDir, client).output
+        val gemi = GhaGemiEngine(projectDir)
+        return solveWithT3T4(prompt, projectDir, gemi, client).output
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
-        return solveWithHost(goal, rootDir, GhaGmcpClient(rootDir))
+        return solveWithT3T4(goal, rootDir, GhaGemiEngine(rootDir), GhaGmcpClient(rootDir))
     }
 
-    fun solveWithHost(goal: String, rootDir: File, mcpClient: GhaGmcpClient): GhaAgentResult {
+    fun solveWithT3T4(goal: String, rootDir: File, gemi: GhaGemiEngine, mcpClient: GhaGmcpClient): GhaAgentResult {
         val log = mutableListOf<String>()
-        val lowerGoal = goal.lowercase()
-        log.add("💻 Agent '$identity' ($name) acting as MCP Client for system goal: \"$goal\"")
+        log.add("💻 Agent '$identity' ($name) active (Tier 2 Worker)")
 
+        // 1. Thinking Phase (Tier 3)
+        val reasoning = gemi.reason(goal)
+        log.addAll(reasoning.log)
+        log.add("   💭 Thinking (GEMI): ${reasoning.output}")
+
+        // 2. Doing Phase (Tier 4)
+        val lowerGoal = goal.lowercase()
         val toolName = when {
             lowerGoal.contains("adb") || lowerGoal.contains("android device") -> "sys_adb_device"
             lowerGoal.contains("docker") || lowerGoal.contains("container") -> "sys_docker_container"
@@ -185,7 +214,7 @@ class GhaSystemAgent(
             else -> "sys_detect_tools"
         }
 
-        log.add("   ► [MCP Client] Calling System MCP Tool '$toolName' on GHA MCP Host...")
+        log.add("   ► Executing (GMCP): Calling System Tool '$toolName'...")
         val args = when (toolName) {
             "sys_exec_command" -> mapOf("command" to goal.replace("exec", "").replace("shell", "").replace("command", "").trim())
             "sys_python_env" -> mapOf("codeOrScript" to goal.replace("python", "").trim())
@@ -193,7 +222,7 @@ class GhaSystemAgent(
         }
 
         val output = mcpClient.callTool(toolName, args)
-        log.add("   ✅ [MCP Response] ${output.take(100).replace("\n", " ")}...")
+        log.add("   ✅ Completed: ${output.take(100).replace("\n", " ")}...")
 
         return GhaAgentResult(true, log, output)
     }

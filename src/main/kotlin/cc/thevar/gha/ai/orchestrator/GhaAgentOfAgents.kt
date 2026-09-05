@@ -5,7 +5,6 @@ import cc.thevar.gha.ai.agent.GhaAgent
 import cc.thevar.gha.ai.agent.GhaAgentManager
 import cc.thevar.gha.ai.agent.GhaWebAgentManager
 import cc.thevar.gha.ai.mcp.GhaGmcpClient
-import cc.thevar.gha.ai.mcp.GhaMcpHost
 import cc.thevar.gha.ai.vision.GhaAgentResult
 import cc.thevar.gha.ai.vision.GhaAiAgent
 import cc.thevar.gha.ai.vision.GhaAutonomousAgent
@@ -14,18 +13,14 @@ import java.io.File
 
 /**
  * GHA Master Agent / Orchestrator (GMA / AOA): "The Agent of Agents"
- * Serves as the SOLE INTERACTOR for the GHA User and singular master orchestrator & manager for GHA.
- *
- * Coordinates every:
- * 1. Manager (AiManager, AgentManager, WebAgentManager, EngineManager, ModelManager, McpHubManager, BootstrapManager,
- *             InsightsManager, ProjectManager, SandboxManager, SecurityManager, DependabotManager, WikiManager, WorkflowManager)
- * 2. Agent (Local Specialized Agents, Web Agents, Autonomous Agent)
- * 3. Engine (Local & Web AI Inference Engines)
- * 4. Model (Local Hardware-Optimized Models & Web Models)
- * 5. GMCP: GHA Model Context Protocol (Host, Client, Server)
- * 6. MCP Host (Central Tool Host for workspace)
- * 7. MCP Client (Agents & AOA acting as clients)
- * 8. MCP Server (Built-in Universal, System Tools, GitHub, HF, Memory, Brave Search, Puppeteer, Filesystem, Fetch, Remote SSE)
+ * Tier 1: The Master. The Orchestrator. The One.
+ * GMA sits in the front as the singular Sole Interactor for the GHA User.
+ * 
+ * Coordinates the 4-tier GHA architecture:
+ * 1. Tier 1: GMA Master Agent (Sole Interactor, Orchestrator & One-Point Manager)
+ * 2. Tier 2: GAWD (GHA Agents Web & Domain) - Specialized workers.
+ * 3. Tier 3: GEMI (GHA Engines & Models AI Inference) - Pure Intelligence Layer.
+ * 4. Tier 4: GMCP (GHA Model Context Protocol) - Infrastructure, Hardware & Tools Layer.
  */
 class GhaAgentOfAgents(
     override val identity: String = "GMA-Master-Orchestrator",
@@ -50,7 +45,17 @@ class GhaAgentOfAgents(
 
     override fun executeMission(projectDir: File, prompt: String): String {
         val res = solve(prompt, projectDir)
-        return "Master Orchestrator Mission: ${if (res.success) "SUCCESS" else "FAILED"}\nSummary:\n${res.output}\n\nExecution Trace Log:\n${res.log.joinToString("\n")}"
+        return """
+            |🌌 [GMA Master Interactor] Mission Status: ${if (res.success) "SUCCESS" else "FAILED"}
+            |
+            |Summary of Best Possible Execution:
+            |${res.output}
+            |
+            |Execution Trace Log:
+            |${res.log.joinToString("\n")}
+            |
+            |✨ GHA Master Agent (GMA) is ready and awaiting your next command.
+        """.trimMargin()
     }
 
     /**
@@ -59,13 +64,13 @@ class GhaAgentOfAgents(
     fun getCoordinationReport(targetDir: File): CoordinationReport {
         GhaSandboxManager.ensureSandbox(targetDir, targetDir.name)
         val hardware = GhaHardwareProfiler.profile(targetDir)
-        val mcpHost = GhaMcpHost(targetDir)
         val mcpServers = GhaMcpHubManager.listServers(targetDir)
-        val mcpTools = mcpHost.listTools()
         val engines = GhaEngineManager.detectEngines(targetDir)
         val localModels = GhaModelManager.listLocalModels(targetDir)
         val webModels = GhaModelManager.listWebModels(targetDir)
         val projectContext = GhaAiManager.detectProjectContext(targetDir)
+        val gmcpClient = GhaGmcpClient(targetDir)
+        val mcpTools = gmcpClient.listTools()
 
         val managersList = listOf(
             "GhaAiManager (Context & Smart Commit Engine)",
@@ -108,7 +113,7 @@ class GhaAgentOfAgents(
     }
 
     /**
-     * Master Orchestration Entry Point: Coordinates every manager, agent, engine, model, mcp host, mcp client, and mcp server.
+     * Master Orchestration Entry Point: Coordinates every tier from T1 to T4.
      */
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
         val requestedAoaEnv = System.getenv("GHA_AOA") ?: System.getenv("GHA_AOA_FRAMEWORK")
@@ -116,9 +121,7 @@ class GhaAgentOfAgents(
             val requestedFramework = GhaAoaManager.parseFramework(requestedAoaEnv)
             if (requestedFramework != GhaAoaManager.Framework.BUILT_IN) {
                 val topLog = mutableListOf<String>()
-                topLog.add("🌌 [GHA Master Orchestrator] Agent of Agents initialized for target: ${rootDir.absolutePath}")
-                topLog.add("🎯 Mission Objective: \"$goal\"")
-                topLog.add("🌐 [Top-Level Delegation] Master Orchestrator delegating mission from the TOP to Web AOA Framework: ${requestedFramework.displayName}")
+                topLog.add("🌌 [GMA Master Interactor] Delegating mission to Web AOA Framework: ${requestedFramework.displayName}")
 
                 val delegateResult = GhaAoaManager.executeMission(requestedFramework, goal, rootDir)
                 return GhaAgentResult(
@@ -130,7 +133,7 @@ class GhaAgentOfAgents(
         }
 
         val log = mutableListOf<String>()
-        log.add("🌌 [GMA Master Interactor] GHA Master Agent (GMA) initialized as Sole Interactor for GHA User.")
+        log.add("🌌 [GMA Master Interactor] GHA Master Agent (GMA) initialized as Sole Interactor.")
         log.add("🎯 Target Workspace : ${rootDir.absolutePath}")
         log.add("🎯 Mission Objective : \"$goal\"")
 
@@ -138,57 +141,39 @@ class GhaAgentOfAgents(
         val bootstrapLogs = GhaBootstrapManager.autoBootstrapEnvironment(rootDir)
         bootstrapLogs.forEach { log.add(it) }
 
-        // 1. Initialize Central GHA GMCP (Host, Client, Server)
-        val gmcpClient = GhaGmcpClient(rootDir)
-        log.add("🔌 [Phase 1: GMCP Interactor Initialized] Full MCP Protocol compliant (Host/Client/Server active)")
-
-        // 2. Hardware Profiling for Limited/Home Hardware Optimization
+        // 1. Hardware Profiling (Hardware Awareness)
         val hardware = GhaHardwareProfiler.profile(rootDir)
-        log.add("💻 [Phase 2: Hardware Constraints Profiled]")
-        log.add("   ├── Host OS      : ${hardware.osName}")
-        log.add("   ├── CPU Cores    : ${hardware.cpuCores}")
-        log.add("   ├── System RAM   : ${String.format("%.1f", hardware.totalRamGb)} GB (Available: ${String.format("%.1f", hardware.availableRamGb)} GB)")
-        log.add("   ├── Acceleration : ${hardware.gpuInfo}")
-        log.add("   └── Recommendation: ${hardware.maxRecommendedModelParams} (${hardware.recommendedQuantization})")
+        log.add("💻 [Phase 1: Hardware Constraints Profiled] ${hardware.cpuCores} Cores, ${String.format("%.1f", hardware.availableRamGb)}GB RAM avail.")
 
-        // 3. Engine Discovery & Manager Coordination
-        val engines = GhaEngineManager.detectEngines(rootDir)
-        val activeEngines = engines.filter { it.isAvailable }
-        log.add("⚡ [Phase 3: AI Inference Engines Coordinated] (${activeEngines.size}/${engines.size} Active)")
-        engines.forEach { engine ->
-            val statusSymbol = if (engine.isAvailable) "✅" else "❌"
-            log.add("   ├── $statusSymbol ${engine.name} [${engine.type}]: ${engine.version}")
-        }
+        // 2. GEMI Intelligence Layer Coordination (Tier 3)
+        val gemi = GhaGemiEngine(rootDir)
+        log.add("🧠 [Phase 2: GEMI Intelligence Coordinated] ${gemi.getIntelligenceReport()}")
+        
+        val reasoningRes = gemi.reason(goal)
+        reasoningRes.log.forEach { log.add("   $it") }
+        log.add("   └── GEMI Analysis: ${reasoningRes.output.take(100)}...")
 
-        // 3.5 Web & Local AI Models Resolution
-        val localModels = GhaModelManager.listLocalModels(rootDir)
-        val webModels = GhaModelManager.listWebModels(rootDir)
-        log.add("🧠 [Phase 3.5: AI Models Resolved] (${localModels.size} Local Cached, ${webModels.size} Web Models available)")
-
-        // 4. GMCP (GHA MCP) Servers Coordination
+        // 3. GMCP Infrastructure Coordination (Tier 4)
+        val gmcpClient = GhaGmcpClient(rootDir)
         val mcpServers = GhaMcpHubManager.listServers(rootDir)
         val exposedTools = gmcpClient.listTools()
-        log.add("🔌 [Phase 4: GMCP Tool Hub & Servers Coordinated] (${mcpServers.size} Servers, ${exposedTools.size} Tools available)")
-        log.add("   └── GMCP is active and available to GMA and outside systems over stdio.")
-        mcpServers.forEach { server ->
-            val statusSymbol = if (server.isEnabled) "✅" else "❌"
-            log.add("   ├── $statusSymbol [${server.type}] ${server.name} (${server.id}): ${server.description}")
-        }
+        log.add("🔌 [Phase 3: GMCP Infrastructure Coordinated] (${mcpServers.size} Servers, ${exposedTools.size} Tools active)")
+        log.add("   └── GMCP Server/Client/Host active. Infrastructure decoupled from Intelligence (except for Agent-engines).")
 
-        // 5. Agent Manager Dispatch (Full Top-to-Bottom Delegation)
-        log.add("🤖 [Phase 5: Agent Manager & MCP Client Dispatch]")
-        log.add("   ► Delegating goal down through Agents, Engines, Models, and MCP Servers...")
+        // 4. Agent Manager Dispatch (Tier 2 Workers)
+        log.add("🤖 [Phase 4: Agent Manager & Worker Dispatch]")
+        log.add("   ► GMA delegating goal to Workers using GEMI reasoning and GMCP tools...")
 
         val lowerGoal = goal.lowercase()
         val agentResult = when {
             lowerGoal.contains("web") || lowerGoal.contains("search") || lowerGoal.contains("huggingface") || lowerGoal.contains("fetch") -> {
-                GhaWebAgentManager.routeWebMission(goal, rootDir)
+                GhaWebAgentManager.routeWebMission(goal, rootDir, gemi, gmcpClient)
             }
             lowerGoal.contains("autonomous") || lowerGoal.contains("auto") -> {
-                GhaAutonomousAgent().solve(goal, rootDir)
+                GhaAutonomousAgent().solveWithT3T4(goal, rootDir, gemi, gmcpClient)
             }
             else -> {
-                GhaAgentManager.dispatchMission(goal, rootDir, gmcpClient)
+                GhaAgentManager.dispatchMission(goal, rootDir, gemi, gmcpClient)
             }
         }
 
@@ -210,8 +195,7 @@ class GhaAgentOfAgents(
         summary.append("## Coordinated System Components\n")
         summary.append("- **Active Managers**: ${report.managers.size} System Managers\n")
         summary.append("- **Registered Agents**: ${report.localAgents.size} Local Agents, ${report.webAgents.size} Web Agents\n")
-        summary.append("- **Inference Engines**: ${activeEngines.size}/${engines.size} Active (${activeEngines.joinToString(", ") { it.name }})\n")
-        summary.append("- **AI Models**: ${report.localModelsCount} Local Cached, ${report.webModelsCount} Web Models\n")
+        summary.append("- **GEMI Intelligence**: ${report.engines.count { it.isAvailable }} Active Engines, ${report.webModelsCount} web models\n")
         summary.append("- **GMCP Interactor**: ${gmcpClient.listTools().size} tools served across ${mcpServers.size} MCP Servers\n\n")
 
         summary.append("## Mission Execution Output\n")

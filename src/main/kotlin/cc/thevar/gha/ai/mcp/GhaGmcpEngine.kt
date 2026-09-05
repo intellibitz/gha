@@ -73,8 +73,41 @@ class GhaGmcpEngine(val rootDir: File) {
                         "isError" to false
                     )
                 }
-                "resources/list" -> mapOf("resources" to emptyList<Any>())
-                "prompts/list" -> mapOf("prompts" to emptyList<Any>())
+                "resources/list" -> {
+                    mapOf("resources" to listOf(
+                        mapOf(
+                            "uri" to "gha://project/context",
+                            "name" to "GHA AI Project Context",
+                            "description" to "Comprehensive metadata and structure of the current project",
+                            "mimeType" to "text/markdown"
+                        )
+                    ))
+                }
+                "resources/read" -> {
+                    val uri = params["uri"] as? String ?: ""
+                    if (uri == "gha://project/context") {
+                        val contextFile = File(rootDir, ".gha/ai-context.artifact.md")
+                        val content = if (contextFile.exists()) contextFile.readText() else "Context not generated. Run './ghai :aiContext' first."
+                        mapOf("contents" to listOf(mapOf(
+                            "uri" to uri,
+                            "mimeType" to "text/markdown",
+                            "text" to content
+                        )))
+                    } else {
+                        return createError(id, -32602, "Invalid resource URI: $uri")
+                    }
+                }
+                "prompts/list" -> {
+                    mapOf("prompts" to listOf(
+                        mapOf(
+                            "name" to "autonomous_sync",
+                            "description" to "Triggers an autonomous GHA sync (commit, push, PR)",
+                            "arguments" to listOf(
+                                mapOf("name" to "message", "description" to "Commit message", "required" to false)
+                            )
+                        )
+                    ))
+                }
                 "ping" -> mapOf<String, Any>()
                 else -> return createError(id, -32601, "Method not found: $method")
             }

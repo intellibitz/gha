@@ -2,18 +2,21 @@ package cc.thevar.gha.ai.vision
 
 import cc.thevar.gha.ai.GhaAiManager
 import cc.thevar.gha.ai.agent.GhaAgent
+import cc.thevar.gha.ai.mcp.GhaGmcpClient
+import cc.thevar.gha.ai.orchestrator.GhaGemiEngine
 import cc.thevar.gha.provider.GhaBuildProvider
 import cc.thevar.gha.provider.GhaProviderRegistry
 import java.io.File
 
 /**
+ * GAWD: GHA Agents Web & Domain (Tier 2).
  * The Ghost in the Machine: An autonomous GHA Agent that solves project goals.
- * Uses multi-step planning, MCP tool delegation, self-healing recovery, and structured reporting.
+ * Uses GEMI for reasoning and GMCP for capabilities.
  */
 class GhaAutonomousAgent(
     override val identity: String = "GHA-Agent-01",
     override val name: String = "GHA Autonomous Agent",
-    override val role: String = "Project Automation & Self-Healing Agent"
+    override val role: String = "Autonomous Project Automation Worker"
 ) : GhaAiAgent, GhaAgent {
 
     override fun executeMission(projectDir: File, prompt: String): String {
@@ -22,29 +25,38 @@ class GhaAutonomousAgent(
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
+        return solveWithT3T4(goal, rootDir, GhaGemiEngine(rootDir), GhaGmcpClient(rootDir))
+    }
+
+    fun solveWithT3T4(goal: String, rootDir: File, gemi: GhaGemiEngine, mcpClient: GhaGmcpClient): GhaAgentResult {
         val log = mutableListOf<String>()
         val lowerGoal = goal.lowercase().trim()
-        log.add("🤖 Agent '$identity' ($name) initialized for mission: \"$goal\"")
+        log.add("🤖 Agent '$identity' ($name) active (Tier 2 Worker)")
+
+        // 1. Thinking Phase (Tier 3)
+        val reasoning = gemi.reason(goal)
+        log.addAll(reasoning.log)
+        log.add("   💭 Thinking (GEMI): ${reasoning.output}")
         
         val vcs = GhaProviderRegistry.getVcsProvider(rootDir)
         val build = GhaProviderRegistry.getBuildProvider(rootDir)
         val context = GhaAiManager.detectProjectContext(rootDir)
-        val mcpServer = GhaUniversalMcpServer(rootDir)
 
         log.add("🔍 Phase 1 [Environment Analysis]: Context='$context', VCS=${vcs.name}, Branch='${vcs.currentBranch(rootDir)}', Dirty=${vcs.isDirty(rootDir)}")
 
-        // Formulate multi-step action plan
+        // 2. Planning Phase
         val plan = formulatePlan(lowerGoal, vcs.isDirty(rootDir))
         log.add("📋 Phase 2 [Plan Formulation]: Created ${plan.size}-step execution plan:")
         plan.forEachIndexed { idx, step -> log.add("   ├── Step ${idx + 1}: ${step.description}") }
 
-        log.add("⚙️ Phase 3 [Autonomous Execution]:")
+        // 3. Doing Phase (Tier 4)
+        log.add("⚙️ Phase 3 [Autonomous Execution via GMCP]:")
         var overallSuccess = true
         val outputs = mutableListOf<String>()
 
         for ((idx, step) in plan.withIndex()) {
             log.add("   ► Executing Step ${idx + 1}/${plan.size}: ${step.name} (${step.description})")
-            val result = executeStepWithSelfHealing(step, mcpServer, build, rootDir, log)
+            val result = executeStepWithSelfHealing(step, mcpClient, build, rootDir, log)
             if (!result.success) {
                 log.add("   ❌ Step ${idx + 1} failed: ${result.message}")
                 overallSuccess = false
@@ -134,20 +146,20 @@ class GhaAutonomousAgent(
 
     private fun executeStepWithSelfHealing(
         step: AgentStep,
-        mcpServer: GhaUniversalMcpServer,
+        mcpClient: GhaGmcpClient,
         build: GhaBuildProvider,
         rootDir: File,
         log: MutableList<String>
     ): StepResult {
         return try {
-            val output = mcpServer.executeTool(step.toolName, step.args)
+            val output = mcpClient.callTool(step.toolName, step.args)
             StepResult(true, output)
         } catch (e: Exception) {
             log.add("   🩹 [Self-Healing] Attempting recovery for step '${step.name}' following exception: ${e.message}")
             try {
                 // Attempt self-healing recovery: clean workspace then retry tool
                 build.clean(rootDir)
-                val retryOutput = mcpServer.executeTool(step.toolName, step.args)
+                val retryOutput = mcpClient.callTool(step.toolName, step.args)
                 StepResult(true, "Recovered via self-healing clean: $retryOutput")
             } catch (retryException: Exception) {
                 StepResult(false, "Self-healing failed: ${retryException.message}")

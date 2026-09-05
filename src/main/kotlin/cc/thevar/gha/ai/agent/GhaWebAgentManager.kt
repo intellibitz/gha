@@ -1,5 +1,7 @@
 package cc.thevar.gha.ai.agent
 
+import cc.thevar.gha.ai.mcp.GhaGmcpClient
+import cc.thevar.gha.ai.orchestrator.GhaGemiEngine
 import cc.thevar.gha.ai.vision.GhaAgentResult
 import java.io.File
 
@@ -36,21 +38,21 @@ object GhaWebAgentManager {
     /**
      * Routes a web mission goal to the optimal Web Agent.
      */
-    fun routeWebMission(goal: String, projectDir: File): GhaAgentResult {
+    fun routeWebMission(goal: String, projectDir: File, gemi: GhaGemiEngine, mcpClient: GhaGmcpClient): GhaAgentResult {
         val lowerGoal = goal.lowercase()
 
         return when {
             lowerGoal.contains("huggingface") || lowerGoal.contains("hf") || lowerGoal.contains("space") -> {
-                hfWebAgent.solve(goal, projectDir)
+                hfWebAgent.solveWithT3T4(goal, projectDir, gemi, mcpClient)
             }
             lowerGoal.contains("github") || lowerGoal.contains("gh") || lowerGoal.contains("api") -> {
-                githubWebAgent.solve(goal, projectDir)
+                githubWebAgent.solveWithT3T4(goal, projectDir, gemi, mcpClient)
             }
             lowerGoal.contains("mcp") || lowerGoal.contains("remote") || lowerGoal.contains("sse") -> {
-                remoteMcpWebAgent.solve(goal, projectDir)
+                remoteMcpWebAgent.solveWithT3T4(goal, projectDir, gemi, mcpClient)
             }
             else -> {
-                webResearchAgent.solve(goal, projectDir)
+                webResearchAgent.solveWithT3T4(goal, projectDir, gemi, mcpClient)
             }
         }
     }

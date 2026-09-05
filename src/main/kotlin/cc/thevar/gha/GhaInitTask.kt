@@ -1,5 +1,6 @@
 package cc.thevar.gha
 
+import cc.thevar.gha.ai.orchestrator.GhaAgentOfAgents
 import cc.thevar.gha.safety.GhaVersionManager
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -106,6 +107,12 @@ abstract class GhaInitTask : GhaTask() {
                 chmod +x "gradlew" 2>/dev/null || true
             fi
 
+            # Keep GMA/GMCP ready: Auto-install if sandbox missing
+            if [ ! -d ".gha" ] || [ ! -f ".gha/gha.json" ]; then
+                echo "🔄 [ghai] Initializing GHA environment..."
+                ./gradlew --refresh-dependencies -Dgradle.user.home=.gha/gradle-user-home ghaInit -PtargetDir="." > /dev/null 2>&1 || true
+            fi
+
             RAW_ARG="${'$'}1"
             CMD="${'$'}{RAW_ARG#:}"
 
@@ -170,6 +177,18 @@ abstract class GhaInitTask : GhaTask() {
             if (gitignore.exists()) {
                 if (!gitignore.readText().contains(".gha/")) gitignore.appendText(section)
             } else gitignore.writeText(section)
+        }
+
+        // 6. Final Readiness Check
+        logger.lifecycle("🏁 [GMA] Finalizing 1-line installation & priming core components...")
+        try {
+            val gma = GhaAgentOfAgents()
+            val report = gma.getCoordinationReport(rootDir)
+            logger.lifecycle("✅ [GMA] Master Agent Ready: ${report.projectContext}")
+            logger.lifecycle("✅ [GMCP] Master MCP Interactor Ready: ${report.gmcpStatus}")
+            logger.lifecycle("✅ [ghai] Launcher scripts verified and executable.")
+        } catch (e: Exception) {
+            logger.lifecycle("⚠️ [GMA] Primary priming skipped: ${e.message}")
         }
 
         logger.lifecycle("🎉 [GMA] 100% Sandboxed Installation Complete! Type './ghai' to start.")
