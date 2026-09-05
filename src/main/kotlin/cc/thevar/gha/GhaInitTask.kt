@@ -116,12 +116,22 @@ abstract class GhaInitTask : GhaTask() {
             GHA_REPO="${'$'}{GHA_REPO:-${'$'}(git config gha.repo 2>/dev/null || echo "intellibitz/gha")}"
             
             if [ -n "${'$'}PROJECT_ROOT" ]; then
-                INIT_SCRIPT="${'$'}PROJECT_ROOT/.gha/init.gradle.kts"
-                GRADLEW="${'$'}PROJECT_ROOT/gradlew"
                 cd "${'$'}PROJECT_ROOT"
+                if [ -f "${'$'}PROJECT_ROOT/.gha/init.gradle.kts" ]; then
+                    INIT_SCRIPT="${'$'}PROJECT_ROOT/.gha/init.gradle.kts"
+                else
+                    INIT_SCRIPT="${'$'}GLOBAL_GHA_DIR/init.gradle.kts"
+                fi
+
+                if [ -f "${'$'}PROJECT_ROOT/gradlew" ] && [ -f "${'$'}PROJECT_ROOT/gradle/wrapper/gradle-wrapper.jar" ]; then
+                    GRADLEW="${'$'}PROJECT_ROOT/gradlew"
+                else
+                    GRADLEW="${'$'}GLOBAL_GHA_DIR/gradlew"
+                fi
             else
                 INIT_SCRIPT="${'$'}GLOBAL_GHA_DIR/init.gradle.kts"
                 GRADLEW="${'$'}GLOBAL_GHA_DIR/gradlew"
+                cd "${'$'}GLOBAL_GHA_DIR"
             fi
 
             REFRESH_FLAG="--refresh-dependencies"
