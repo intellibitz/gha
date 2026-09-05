@@ -32,6 +32,17 @@ if [ -n "$PROJECT_ROOT" ]; then
 else
     INIT_SCRIPT="$GLOBAL_GHA_DIR/init.gradle.kts"
     GRADLEW="$GLOBAL_GHA_DIR/gradlew"
+
+    # Lazy Gradle Scaffolding (Standalone)
+    if [ ! -f "$GRADLEW" ]; then
+        echo "📥 [ghai Standalone] Bootstrapping Gradle environment in $GLOBAL_GHA_DIR..."
+        mkdir -p "$GLOBAL_GHA_DIR/gradle/wrapper"
+        curl -fsSL "https://raw.githubusercontent.com/$GHA_REPO/main/gradlew" -o "$GRADLEW" 2>/dev/null || true
+        chmod +x "$GRADLEW" 2>/dev/null || true
+        if [ ! -f "$GLOBAL_GHA_DIR/settings.gradle.kts" ]; then
+             echo "rootProject.name = \"gha-standalone\"" > "$GLOBAL_GHA_DIR/settings.gradle.kts"
+        fi
+    fi
 fi
 
 # Optimization: Allow skipping dependency refresh in CI environments to save time
