@@ -93,6 +93,41 @@ class GhaAutonomousAgent(
     private fun formulatePlan(goal: String, isDirty: Boolean): List<AgentStep> {
         val steps = mutableListOf<AgentStep>()
 
+        if (goal.contains("python")) {
+            return listOf(
+                AgentStep("scaffold_python", "sys_scaffold_stack", mapOf("stack" to "python"), "Scaffold Python app with UV & pytest"),
+                AgentStep("run_python", "sys_python_env", mapOf("codeOrScript" to "import main; main.main()"), "Execute Python entrypoint via UV"),
+                AgentStep("status_check", "status", emptyMap(), "Verify workspace health")
+            )
+        }
+
+        if (goal.contains("rust")) {
+            return listOf(
+                AgentStep("scaffold_rust", "sys_scaffold_stack", mapOf("stack" to "rust"), "Scaffold Rust Cargo package"),
+                AgentStep("status_check", "status", emptyMap(), "Verify workspace health")
+            )
+        }
+
+        if (goal.contains("go")) {
+            return listOf(
+                AgentStep("scaffold_go", "sys_scaffold_stack", mapOf("stack" to "go"), "Scaffold Go module"),
+                AgentStep("status_check", "status", emptyMap(), "Verify workspace health")
+            )
+        }
+
+        if (goal.contains("docker") || goal.contains("container")) {
+            return listOf(
+                AgentStep("scaffold_docker", "sys_scaffold_stack", mapOf("stack" to "docker"), "Scaffold Dockerfile and docker-compose.yml"),
+                AgentStep("docker_status", "sys_docker_container", mapOf("action" to "ps"), "Inspect active Docker containers")
+            )
+        }
+
+        if (goal.contains("adb") || goal.contains("device")) {
+            return listOf(
+                AgentStep("inspect_adb", "sys_adb_device", mapOf("subCommand" to "devices"), "Inspect connected ADB devices")
+            )
+        }
+
         if (goal.contains("android")) {
             return listOf(
                 AgentStep("scaffold_android_app", "scaffold_android", emptyMap(), "Scaffold 100% Kotlin/Compose Android project"),

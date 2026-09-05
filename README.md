@@ -1,14 +1,14 @@
-# gha: Git, GitHub & Gradle Automation (Universal & AI-Native)
+# gha: AI for AI — Universal, Multi-Stack & AI-Native Engine
 
-**gha** (`cc.thevar.gha`) is a **100% self-contained, 100% Kotlin** automation engine and **GMA Master Interactor ("The Agent of Agents")**. **gha runs on gha**—automating its own development, testing, dependencies, commits, pulls, PRs, releases, security, issues, wikis, insights, and AI workflows.
+**gha** (`cc.thevar.gha`) is a **100% self-contained, 100% Kotlin** autonomous AI runtime, supervisor, and execution engine powering **AI for AI, anywhere for anything**. **gha runs on gha**—automating its own development, testing, dependencies, commits, pulls, PRs, releases, security, issues, wikis, insights, hardware profiling, and AI workflows.
 
-The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA User, coordinating every manager, agent, engine, model, and MCP tool across any project, anywhere.
+The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA User, coordinating every manager, agent, engine, model, and MCP tool across any project, multi-stack technology (Kotlin, Python, Rust, Go, TypeScript, Docker, Android, ADB), anywhere.
 
 GitHub users and developers across any IDE or terminal can clone or install this project and expect **0% system modifications**. All dependencies, Kotlin libraries, Gradle caches, JDK toolchains, AI models, init scripts, and execution state are strictly sandboxed inside a single `.gha/` directory.
 
 ---
 
-## 🌟 Mission: 0 Effort, 100% Gain (`gha: ai, anywhere`)
+## 🌟 Mission: 0 Effort, 100% Gain (`gha: ai for ai, anywhere for anything`)
 
 `gha` creators—**Intellibitz**, **Muthu Ramadoss**, **Gemini (Google AI)**, and other AI agents alongside GitHub community contributors—build platform-independent automation workflows and multi-agent AI tools written purely in **100% Kotlin** to power software development everywhere.
 

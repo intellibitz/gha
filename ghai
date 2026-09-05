@@ -27,11 +27,14 @@ GHA_REPO="${GHA_REPO:-$(git config gha.repo 2>/dev/null || echo "intellibitz/gha
 
 if [ -n "$PROJECT_ROOT" ]; then
     cd "$PROJECT_ROOT"
-    if [ -f "$PROJECT_ROOT/.gha/init.gradle.kts" ]; then
-        INIT_SCRIPT="$PROJECT_ROOT/.gha/init.gradle.kts"
-    else
-        INIT_SCRIPT="$GLOBAL_GHA_DIR/init.gradle.kts"
+    mkdir -p "$PROJECT_ROOT/.gha"
+    if [ ! -f "$PROJECT_ROOT/settings.gradle.kts" ] && [ ! -f "$PROJECT_ROOT/settings.gradle" ]; then
+        echo "rootProject.name = \"$(basename "$PROJECT_ROOT")\"" > "$PROJECT_ROOT/settings.gradle.kts"
     fi
+    if [ ! -f "$PROJECT_ROOT/.gha/init.gradle.kts" ]; then
+        cp "$GLOBAL_GHA_DIR/init.gradle.kts" "$PROJECT_ROOT/.gha/init.gradle.kts" 2>/dev/null || true
+    fi
+    INIT_SCRIPT="$PROJECT_ROOT/.gha/init.gradle.kts"
 
     if [ -f "$PROJECT_ROOT/gradlew" ] && [ -f "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.jar" ]; then
         GRADLEW="$PROJECT_ROOT/gradlew"
@@ -39,9 +42,15 @@ if [ -n "$PROJECT_ROOT" ]; then
         GRADLEW="$GLOBAL_GHA_DIR/gradlew"
     fi
 else
-    INIT_SCRIPT="$GLOBAL_GHA_DIR/init.gradle.kts"
+    mkdir -p "$CWD/.gha"
+    if [ ! -f "$CWD/settings.gradle.kts" ] && [ ! -f "$CWD/settings.gradle" ]; then
+        echo "rootProject.name = \"$(basename "$CWD")\"" > "$CWD/settings.gradle.kts"
+    fi
+    cp "$GLOBAL_GHA_DIR/init.gradle.kts" "$CWD/.gha/init.gradle.kts" 2>/dev/null || true
+    PROJECT_ROOT="$CWD"
+    INIT_SCRIPT="$PROJECT_ROOT/.gha/init.gradle.kts"
     GRADLEW="$GLOBAL_GHA_DIR/gradlew"
-    cd "$GLOBAL_GHA_DIR"
+    cd "$PROJECT_ROOT"
 fi
 
 REFRESH_FLAG="--refresh-dependencies"
@@ -75,7 +84,7 @@ CMD="${RAW_ARG#:}"
 
 run_gha() {
     if [ -z "$PROJECT_ROOT" ]; then
-        exec "$GRADLEW" -p "$GLOBAL_GHA_DIR" $REFRESH_FLAG -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" "$@"
+        exec "$GRADLEW" -p "$GLOBAL_GHA_DIR" -PtargetDir="$CWD" $REFRESH_FLAG -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" "$@"
     else
         exec "$GRADLEW" $REFRESH_FLAG -Dgradle.user.home="$GLOBAL_GHA_DIR/gradle-user-home" --init-script "$INIT_SCRIPT" "$@"
     fi

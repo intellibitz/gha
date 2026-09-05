@@ -150,6 +150,35 @@ object GhaSandboxManager {
     fun selfHeal(rootDir: File, projectName: String) {
         ensureSandbox(rootDir, projectName)
         ensureGlobalSandbox()
+
+        val ghaDir = File(rootDir, GHA_DIR)
+        val initScript = File(ghaDir, "init.gradle.kts")
+        if (!initScript.exists() || initScript.length() == 0L) {
+            val globalInit = File(getGlobalGhaDir(), "init.gradle.kts")
+            if (globalInit.exists() && globalInit.length() > 0L) {
+                globalInit.copyTo(initScript, overwrite = true)
+            } else {
+                val engineVersion = GhaVersionManager.getEngineVersion(rootDir)
+                initScript.writeText(
+                    """
+                    initscript {
+                        repositories {
+                            mavenLocal()
+                            mavenCentral()
+                            gradlePluginPortal()
+                        }
+                        dependencies {
+                            classpath("cc.thevar.gha:gha:$engineVersion")
+                        }
+                    }
+                    allprojects {
+                        apply<cc.thevar.gha.GhaPlugin>()
+                    }
+                    """.trimIndent() + "\n"
+                )
+            }
+        }
+
         autoPathOnboarding()
     }
 
