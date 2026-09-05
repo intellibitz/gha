@@ -1,5 +1,5 @@
-// 📦 Model Manager: GGUF Models Resolver & Web AI Catalog
-// 100% Rust implementation for local .gguf & web model discovery
+// 📦 Model Manager: GGUF Models Resolver & Model Vault Catalog
+// 100% Rust implementation for local .gguf & model vault discovery
 
 use std::fs;
 use std::path::Path;
@@ -11,41 +11,70 @@ pub struct ModelInfo {
     pub registry: String,
     pub model_id: String,
     pub description: String,
+    pub is_local: bool,
 }
 
 pub struct ModelManager;
 
 impl ModelManager {
     pub fn list_models(workspace: &Path) -> Vec<ModelInfo> {
-        let models_dir = workspace.join(".gha/models");
         let mut list = Vec::new();
 
-        if let Ok(entries) = fs::read_dir(&models_dir) {
+        // 1. Scan workspace local models
+        let workspace_models_dir = workspace.join(".gha/models");
+        if let Ok(entries) = fs::read_dir(&workspace_models_dir) {
             for entry in entries.flatten() {
                 if let Ok(name) = entry.file_name().into_string() {
-                    list.push(ModelInfo {
-                        name: name.clone(),
-                        registry: "LOCAL_GGUF".to_string(),
-                        model_id: name,
-                        description: "Local Quantized GGUF Model".to_string(),
-                    });
+                    if name.ends_with(".gguf") || name.ends_with(".bin") {
+                        list.push(ModelInfo {
+                            name: name.clone(),
+                            registry: "Local GGUF Vault".to_string(),
+                            model_id: name,
+                            description: "Local Quantized GGUF Model".to_string(),
+                            is_local: true,
+                        });
+                    }
                 }
             }
         }
 
-        // Web AI Models
-        list.push(ModelInfo {
-            name: "DeepSeek R1 Distill Qwen 1.5B GGUF".to_string(),
-            registry: "Hugging Face".to_string(),
-            model_id: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF".to_string(),
-            description: "High performance reasoning model".to_string(),
-        });
-        list.push(ModelInfo {
-            name: "Llama 3.3 70B Instruct".to_string(),
-            registry: "Meta AI".to_string(),
-            model_id: "meta-llama/Llama-3.3-70B-Instruct".to_string(),
-            description: "Large language instruction model".to_string(),
-        });
+        // 2. Scan global ~/.gha/models
+        if let Some(home) = std::env::var_os("HOME").map(std::path::PathBuf::from) {
+            let global_models_dir = home.join(".gha/models");
+            if let Ok(entries) = fs::read_dir(&global_models_dir) {
+                for entry in entries.flatten() {
+                    if let Ok(name) = entry.file_name().into_string() {
+                        if (name.ends_with(".gguf") || name.ends_with(".bin")) && !list.iter().any(|m| m.model_id == name) {
+                            list.push(ModelInfo {
+                                name: name.clone(),
+                                registry: "Global GGUF Vault".to_string(),
+                                model_id: name,
+                                description: "Global Quantized GGUF Model".to_string(),
+                                is_local: true,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // If no local GGUF models are found, show available GEMI models
+        if list.is_empty() {
+            list.push(ModelInfo {
+                name: "DeepSeek R1 Distill Qwen 1.5B GGUF".to_string(),
+                registry: "Hugging Face (Remote)".to_string(),
+                model_id: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF".to_string(),
+                description: "Deep reasoning model (Download to ~/.gha/models for local execution)".to_string(),
+                is_local: false,
+            });
+            list.push(ModelInfo {
+                name: "Llama 3.3 70B Instruct".to_string(),
+                registry: "Meta AI (Remote)".to_string(),
+                model_id: "meta-llama/Llama-3.3-70B-Instruct".to_string(),
+                description: "Large language instruction model".to_string(),
+                is_local: false,
+            });
+        }
 
         list
     }

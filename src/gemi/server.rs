@@ -1,12 +1,13 @@
 // 🧠 GEMI REST Server: OpenAI-Compatible Streaming & Non-Streaming REST Server
 // 100% Rust implementation supporting text/event-stream SSE for Android Studio / IDEs
 
+use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
 use std::path::PathBuf;
 use std::thread;
 
-use super::engine::GemiEngine;
+use crate::gawd::GmaMasterAgent;
 use super::models::ModelManager;
 
 pub struct GemiServer;
@@ -76,7 +77,6 @@ impl GemiServer {
                     let _ = writer.write_all(resp.as_bytes());
                     let _ = writer.flush();
                 } else if first_line.starts_with("POST /v1/chat/completions") || first_line.starts_with("POST /chat/completions") {
-                    // Check if client requested streaming or if body contains "deepseek" / "llama"
                     let is_streaming = body_str.contains("\"stream\":true") || body_str.contains("\"stream\": true") || body_str.contains("stream");
                     let model_name = if body_str.contains("llama") {
                         "meta-llama/Llama-3.3-70B-Instruct"
@@ -86,14 +86,28 @@ impl GemiServer {
                         "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF"
                     };
 
-                    let (cpus, gpu, _) = GemiEngine::get_intelligence_report(&workspace);
-                    let content = format!(
-                        "🤖 [GHA GEMI Intelligence Report]\n- Model: {}\n- Hardware: {} CPU Cores | {}\n- Response: Executed natively via GEMI Unique REST Engine (Port 9091) in < 2ms!",
-                        model_name, cpus, gpu
-                    );
+                    // Extract actual user prompt from JSON payload
+                    let user_prompt = extract_prompt_from_json(&body_str).unwrap_or_else(|| "workspace analysis".to_string());
+                    let lower_prompt = user_prompt.to_lowercase();
+
+                    let content = if lower_prompt.contains("list dir") || lower_prompt.contains("list directory") || lower_prompt == "ls" || lower_prompt == "dir" {
+                        let mut file_list = String::new();
+                        if let Ok(entries) = fs::read_dir(&workspace) {
+                            for entry in entries.flatten() {
+                                if let Ok(file_name) = entry.file_name().into_string() {
+                                    let ftype = if entry.path().is_dir() { "📁 [DIR]" } else { "📄 [FILE]" };
+                                    file_list.push_str(&format!("{} {}\n", ftype, file_name));
+                                }
+                            }
+                        }
+                        format!("📂 Workspace Directory Listing (`{}`):\n\n{}", workspace.display(), file_list)
+                    } else {
+                        let gma = GmaMasterAgent::new();
+                        gma.solve(&user_prompt, &workspace, "0.1.67-SNAPSHOT")
+                    };
 
                     if is_streaming {
-                        // Server-Sent Events (SSE) text/event-stream for Android Studio, Gemini & IDE Streaming
+                        // Server-Sent Events (SSE) text/event-stream
                         let sse_headers = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nConnection: keep-alive\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: *\r\n\r\n";
                         let _ = writer.write_all(sse_headers.as_bytes());
 
@@ -161,4 +175,17 @@ impl GemiServer {
             });
         }
     }
+}
+
+fn extract_prompt_from_json(body: &str) -> Option<String> {
+    if let Ok(v) = serde_json::from_str::<serde_json::Value>(body) {
+        if let Some(messages) = v.get("messages").and_then(|m| m.as_array()) {
+            if let Some(last) = messages.last() {
+                if let Some(content) = last.get("content").and_then(|c| c.as_str()) {
+                    return Some(content.to_string());
+                }
+            }
+        }
+    }
+    None
 }
