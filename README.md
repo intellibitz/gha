@@ -20,48 +20,126 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ---
 
-## 🌟 Core Architecture: GAWD, GEMI & GMCP
+## 🌟 Component Architecture & How To Use Each Tier
 
-`gha` operates as a 3-tier coordinated ecosystem where each layer possesses custom intelligence, communicating seamlessly with external agents, IDEs, and LLMs:
+`gha` operates as a 3-tier coordinated ecosystem where each layer provides dedicated capabilities for `gha` users:
 
-1. **🤖 Tier 1: GAWD (GMA Master Agent & GMAS Supervisor)**
-   - **GMA (GHA Master Agent)**: The Master, The One, and Sole Interactor for the user.
-   - **GMAS (GMA Supervisor)**: AOA (Agent of Agents) and A2A (Agent to Agent) protocol supervisor managing worker agent fleets and web plugins.
+```text
+ ┌────────────────────────────────────────────────────────────────────────┐
+ │ 🤖 Tier 1: GAWD (GMA Master Agent & GMAS Supervisor)                   │
+ │ • Sole Interactor for User & Multi-Agent Fleet Governor                │
+ └─────────────────┬────────────────────────────────────┬─────────────────┘
+                   │                                    │
+                   ▼                                    ▼
+ ┌──────────────────────────────────┐  ┌──────────────────────────────────┐
+ │ 🧠 Tier 2: GEMI Inference        │  │ 🔌 Tier 3: GMCP MCP Infrastructure│
+ │ • Local GGUF Model Runner        │  │ • Native JSON-RPC 2.0 MCP Server │
+ │ • Hardware Profiler (-ngl 99)    │  │ • 39+ Coordinated Tools (Port 9090)│
+ └──────────────────────────────────┘  └──────────────────────────────────┘
+```
 
-2. **🧠 Tier 2: GEMI (GHA Engines & Models AI Inference)**
-   - **Local & Cloud AI Inference Coordinator**: Loads GGUF `.gguf` models directly from `~/.gha/models`. Serves OpenAI-compatible Chat Completions API endpoints.
-   - **Autonomous Hardware Profiler**: Profiles CPU cores and GPU acceleration (Metal/CUDA) to automatically configure GPU layer offloading (`-ngl 99`).
+### 1. 🤖 Tier 1: GAWD (GMA Master Agent & GMAS Supervisor)
+* **What it does**: **GMA (GHA Master Agent)** acts as the **Sole Interactor** for the user. **GMAS (GMA Supervisor)** governs worker agent fleets using **AOA (Agent of Agents)** and **A2A (Agent to Agent)** protocols.
+* **How to use it**:
+  ```bash
+  ghai "orchestrate an autonomous AI workflow"   # Execute natural language AI goal
+  ghai :status                                   # Inspect GAWD fleet & workspace health
+  ```
 
-3. **🔌 Tier 3: GMCP (GMA Master MCP Infrastructure)**
-   - **Full MCP Host, Client & Server**: Standalone JSON-RPC 2.0 MCP implementation over stdio and background TCP sockets (Port 9090).
-   - **Universal Tool Registry**: Exposes 39+ AI tools to external IDEs (VS Code, Android Studio, IntelliJ, Cursor), LLMs, and agents.
+### 2. 🧠 Tier 2: GEMI (GHA Engines & Models AI Inference)
+* **What it does**: Coordinates local GGUF (`.gguf`) models in `~/.gha/models`, exposes OpenAI-compatible ChatCompletions endpoints, and profiles hardware (CPU cores, Metal/CUDA GPU offloading `-ngl 99`).
+* **How to use it**:
+  ```bash
+  ghai ai models                                 # Catalog local GGUF & cloud AI models
+  ghai ai engines                                # Inspect embedded GGUF & cloud inference engines
+  ```
+
+### 3. 🔌 Tier 3: GMCP (GMA Master MCP Infrastructure)
+* **What it does**: Native JSON-RPC 2.0 MCP Host, Client & Server over stdio and background TCP socket (Port 9090) exposing 39+ coordinated AI tools.
+* **How to use it**:
+  ```bash
+  ghai gmcp, mcp                                 # Start stdio MCP Server for IDE integration
+  ghai ai mcp-hub                                # List active MCP tool servers & tools
+  ```
 
 ---
 
-## 🚀 The GMA Sole Interactor (`ghai`)
+## 🔌 IDE Integration & Common MCP Setup
 
-The ultra-fast native `ghai` executable responds in **sub-millisecond (< 2ms)** latency:
+`gha` connects directly to **Android Studio**, **VS Code**, **Cursor**, **IntelliJ**, **Claude Desktop**, and **GitHub Copilot Chat** via Model Context Protocol (MCP).
 
-```bash
-ghai                                           # Interactive GMA Interactor
-ghai "build an AI workflow"                    # GMA Mission: execute natural AI instruction
-ghai gmcp, mcp                                 # Start native GMA Master MCP Server over stdio
-ghai ai orchestrate                            # GMA Master Interactor coordination report
-ghai ai models                                 # Inspect GGUF & web AI models
-ghai ai engines                                # Detect local & cloud AI inference engines
-ghai ai mcp-hub                                # List GMA-coordinated MCP tool servers
-ghai :version                                  # Print engine architecture report
-ghai :status                                   # Print workspace health & daemon status
-ghai :install                                  # Initialize sandboxed .gha environment offline
+### 1. Android Studio / JetBrains IDEs Setup
+Edit or create `.idea/mcp.json` in your workspace or global IDE settings (`~/.config/Google/AndroidStudio2026.1.4/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "gha": {
+      "command": "ghai",
+      "args": ["mcp"],
+      "enabled": true,
+      "trust": true
+    }
+  },
+  "mcpServersMetadata": {
+    "gha": {
+      "registryName": "gha",
+      "title": "GHA Master Agent (GMA)",
+      "description": "gha: Universal Multi-Agent AI Runtime & MCP Engine"
+    }
+  }
+}
+```
+
+### 2. VS Code / Cursor Setup
+In VS Code or Cursor MCP settings (`mcp.json` or `.vscode/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "gha": {
+      "command": "ghai",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### 3. Claude Desktop Setup
+Add `gha` to your Claude Desktop configuration file (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS or `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+
+```json
+{
+  "mcpServers": {
+    "gha": {
+      "command": "ghai",
+      "args": ["mcp"]
+    }
+  }
+}
 ```
 
 ---
 
-## 🛡️ Core Principles
+## 💬 How to Use `gha` Tools from IDE Agents / Chat Window
 
-- **100% Sandboxed & Zero Side Effects**: Everything lives strictly inside `.gha/` or `~/.gha/`. Zero host system pollution.
-- **100% IDE & Environment Independent**: Plugs into any editor, terminal, or agent network via standard Model Context Protocol (MCP).
-- **Single Standalone Native Binary**: Instant startup in < 2ms without third-party runtime dependencies.
+Once registered, IDE chat agents (Gemini, Copilot, or Claude) discover `gha` tools automatically:
+
+* **Explicit Tool Calls**:
+  - `@gha status` — Get workspace health, sandbox status, and hardware profile.
+  - `@gha list_models` — Inspect local GGUF and web AI models.
+  - `@gha profile_hardware` — Check CPU cores and GPU acceleration (`-ngl 99`).
+  - `@gha orchestrate "goal"` — Execute GMA multi-agent mission.
+
+* **Natural Language Invocation**:
+  Simply ask your AI assistant: *"Check hardware profile and local GGUF models using gha"*. The assistant invokes `ghai mcp` over stdio in **< 2 ms**.
+
+---
+
+## 🛡️ 2-Layer Sandboxing Model (`~/.gha` & `./.gha`)
+
+* **Global Vault (`~/.gha/`)**: Houses the global `ghai` executable, central GGUF model vault (`~/.gha/models/`), and daemon locks. Shared across all projects to avoid duplicate downloads.
+* **Local Workspace Sandbox (`./.gha/`)**: Stores workspace build caches and session logs. Completely git-ignored. Cleaned instantly via `ghai :uninstall`.
 
 ---
 
