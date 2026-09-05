@@ -5,6 +5,11 @@
 /out/
 /bin/
 
+# Rust build outputs
+/target/
+**/target/
+ghai-native
+
 # Kotlin compiler & cache
 .kotlin/
 

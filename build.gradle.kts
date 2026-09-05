@@ -36,6 +36,35 @@ tasks.named("publishToMavenLocal") {
     dependsOn("syncInitScript")
 }
 
+abstract class BuildNativeLauncherTask : Exec() {
+    @get:Internal
+    abstract val projectDirFile: Property<File>
+
+    init {
+        group = "build"
+        description = "Compiles the ultra-fast lightweight native ghai CLI launcher binary."
+    }
+
+    @TaskAction
+    override fun exec() {
+        super.exec()
+        val root = projectDirFile.get()
+        val compiledBinary = File(root, "src/native/ghai/target/release/ghai")
+        if (compiledBinary.exists()) {
+            val rootBinary = File(root, "ghai-native")
+            compiledBinary.copyTo(rootBinary, overwrite = true)
+            rootBinary.setExecutable(true)
+            println("✅ Compiled & updated native ghai-native launcher binary at root (${compiledBinary.length()} bytes)")
+        }
+    }
+}
+
+tasks.register<BuildNativeLauncherTask>("buildNativeLauncher") {
+    projectDirFile.set(layout.projectDirectory.asFile)
+    workingDir = file("src/native/ghai")
+    commandLine = listOf("cargo", "build", "--release")
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))

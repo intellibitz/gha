@@ -1,0 +1,15 @@
+[package]
+name = "ghai"
+version = "0.1.67"
+edition = "2021"
+authors = ["IntelliBitz", "Muthu Ramadoss", "Gemini (Google AI)"]
+description = "GHA Master Agent (GMA) Lightweight Native CLI Binary Launcher"
+
+[dependencies]
+
+[profile.release]
+opt-level = "z"     # Optimize for size
+lto = true          # Link-time optimization
+codegen-units = 1   # Single codegen unit for max optimization
+panic = "abort"     # Remove panic unwinding code
+strip = true        # Automatically strip symbols
