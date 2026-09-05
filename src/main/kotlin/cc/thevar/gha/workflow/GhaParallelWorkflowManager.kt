@@ -518,13 +518,22 @@ object GhaParallelWorkflowManager {
                     ciSummary = "FAILED"
                 }
             } else {
-                if (GhaAiManager.isBranchAheadOfRemote(rootDir, baseBranch) && headBranch != baseBranch) {
-                    val lastCommitMsg = GhaGitExec.exec(rootDir, "log", "-1", "--pretty=%s").stdout.ifBlank { "Update $headBranch" }
-                    val (prOk, prInfo) = createOrUpdatePr(rootDir, token, baseBranch, headBranch, lastCommitMsg, "Automated contribution.")
-                    if (prOk && (prInfo != null)) {
-                        prSummary = "PR #${prInfo.number} created"
-                        prUrlSummary = prInfo.url
-                        log("✅ Created Pull Request #${prInfo.number}: ${prInfo.url}")
+                if (GhaAiManager.isBranchAheadOfRemote(rootDir, baseBranch)) {
+                    if (headBranch != baseBranch) {
+                        val lastCommitMsg = GhaGitExec.exec(rootDir, "log", "-1", "--pretty=%s").stdout.ifBlank { "Update $headBranch" }
+                        val (prOk, prInfo) = createOrUpdatePr(rootDir, token, baseBranch, headBranch, lastCommitMsg, "Automated contribution.")
+                        if (prOk && (prInfo != null)) {
+                            prSummary = "PR #${prInfo.number} created"
+                            prUrlSummary = prInfo.url
+                            log("✅ Created Pull Request #${prInfo.number}: ${prInfo.url}")
+                        }
+                    } else {
+                        log("🚀 Local '$baseBranch' is ahead of remote. Pushing directly...")
+                        val pushRes = GhaGitExec.push(rootDir, "origin", baseBranch)
+                        if (pushRes.isSuccess) {
+                            pushSummary = "Pushed to origin/$baseBranch"
+                            log("✅ Direct push to '$baseBranch' completed.")
+                        }
                     }
                 } else {
                     if (isAutoBranch && headBranch != baseBranch) {
