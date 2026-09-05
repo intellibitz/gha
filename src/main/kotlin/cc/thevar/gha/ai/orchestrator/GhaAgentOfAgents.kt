@@ -4,6 +4,7 @@ import cc.thevar.gha.ai.GhaAiManager
 import cc.thevar.gha.ai.agent.GhaAgent
 import cc.thevar.gha.ai.agent.GhaAgentManager
 import cc.thevar.gha.ai.agent.GhaWebAgentManager
+import cc.thevar.gha.ai.mcp.GhaGmcpClient
 import cc.thevar.gha.ai.mcp.GhaMcpHost
 import cc.thevar.gha.ai.vision.GhaAgentResult
 import cc.thevar.gha.ai.vision.GhaAiAgent
@@ -41,7 +42,7 @@ class GhaAgentOfAgents(
         val engines: List<GhaEngineManager.EngineInfo>,
         val localModelsCount: Int,
         val webModelsCount: Int,
-        val mcpHostStatus: String,
+        val gmcpStatus: String,
         val mcpServers: List<GhaMcpHubManager.McpServerConfig>,
         val mcpToolsCount: Int,
         val projectContext: String
@@ -99,7 +100,7 @@ class GhaAgentOfAgents(
             engines = engines,
             localModelsCount = localModels.size,
             webModelsCount = webModels.size,
-            mcpHostStatus = mcpHost.getStatusReport(),
+            gmcpStatus = "GMCP Host/Client/Server active with ${mcpTools.size} tools",
             mcpServers = mcpServers,
             mcpToolsCount = mcpTools.size,
             projectContext = projectContext
@@ -137,9 +138,9 @@ class GhaAgentOfAgents(
         val bootstrapLogs = GhaBootstrapManager.autoBootstrapEnvironment(rootDir)
         bootstrapLogs.forEach { log.add(it) }
 
-        // 1. Initialize Central GHA MCP Host
-        val mcpHost = GhaMcpHost(rootDir)
-        log.add("🔌 [Phase 1: GHA MCP Host Initialized] ${mcpHost.getStatusReport()}")
+        // 1. Initialize Central GHA GMCP (Host, Client, Server)
+        val gmcpClient = GhaGmcpClient(rootDir)
+        log.add("🔌 [Phase 1: GMCP Interactor Initialized] Full MCP Protocol compliant (Host/Client/Server active)")
 
         // 2. Hardware Profiling for Limited/Home Hardware Optimization
         val hardware = GhaHardwareProfiler.profile(rootDir)
@@ -166,7 +167,7 @@ class GhaAgentOfAgents(
 
         // 4. GMCP (GHA MCP) Servers Coordination
         val mcpServers = GhaMcpHubManager.listServers(rootDir)
-        val exposedTools = mcpHost.listTools()
+        val exposedTools = gmcpClient.listTools()
         log.add("🔌 [Phase 4: GMCP Tool Hub & Servers Coordinated] (${mcpServers.size} Servers, ${exposedTools.size} Tools available)")
         log.add("   └── GMCP is active and available to GMA and outside systems over stdio.")
         mcpServers.forEach { server ->
@@ -187,7 +188,7 @@ class GhaAgentOfAgents(
                 GhaAutonomousAgent().solve(goal, rootDir)
             }
             else -> {
-                GhaAgentManager.dispatchMission(goal, rootDir, mcpHost)
+                GhaAgentManager.dispatchMission(goal, rootDir, gmcpClient)
             }
         }
 
@@ -211,7 +212,7 @@ class GhaAgentOfAgents(
         summary.append("- **Registered Agents**: ${report.localAgents.size} Local Agents, ${report.webAgents.size} Web Agents\n")
         summary.append("- **Inference Engines**: ${activeEngines.size}/${engines.size} Active (${activeEngines.joinToString(", ") { it.name }})\n")
         summary.append("- **AI Models**: ${report.localModelsCount} Local Cached, ${report.webModelsCount} Web Models\n")
-        summary.append("- **MCP Tool Host**: ${mcpHost.listTools().size} tools served across ${mcpServers.size} MCP Servers\n\n")
+        summary.append("- **GMCP Interactor**: ${gmcpClient.listTools().size} tools served across ${mcpServers.size} MCP Servers\n\n")
 
         summary.append("## Mission Execution Output\n")
         summary.append("${agentResult.output}\n")

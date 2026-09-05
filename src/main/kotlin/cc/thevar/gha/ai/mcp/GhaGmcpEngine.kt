@@ -13,66 +13,75 @@ import java.util.Scanner
  *
  * Architecture:
  * 1. Host Mode: Manages external MCP servers and aggregates tools.
- * 2. Server Mode: Exposes GHA/GMA internal tools via JSON-RPC 2.0 (stdio).
- * 3. Client Mode: Used by Agents to invoke tools.
+ * 2. Server Mode: Exposes GHA/GMA internal tools via JSON-RPC 2.0.
+ * 3. Client Mode: Used by GMA and Agents to invoke tools through the GMCP Server.
  */
 class GhaGmcpEngine(val rootDir: File) {
 
     private val mcpHost = GhaMcpHost(rootDir)
+    private val slurper = JsonSlurper()
 
     /**
      * Starts a long-running MCP Server over stdio.
-     * Implements the full Model Context Protocol (JSON-RPC 2.0).
      */
     fun startServer() {
         val scanner = Scanner(System.`in`)
-        val slurper = JsonSlurper()
-
         while (scanner.hasNextLine()) {
             val line = scanner.nextLine()
             if (line.isBlank()) continue
-
-            try {
-                val request = slurper.parseText(line) as? Map<String, Any> ?: continue
-                val id = request["id"]
-                val method = request["method"] as? String ?: continue
-                val params = request["params"] as? Map<String, Any> ?: emptyMap()
-
-                when (method) {
-                    "initialize" -> sendResponse(id, mapOf(
-                        "protocolVersion" to "2024-11-05",
-                        "capabilities" to mapOf(
-                            "tools" to mapOf("listChanged" to true),
-                            "resources" to mapOf("subscribe" to true, "listChanged" to true),
-                            "prompts" to mapOf("listChanged" to true)
-                        ),
-                        "serverInfo" to mapOf(
-                            "name" to "GMA-Master-MCP-Server",
-                            "version" to "0.1.0"
-                        )
-                    ))
-                    "notifications/initialized" -> { /* No-op */ }
-                    "tools/list" -> {
-                        val tools = mcpHost.listTools().map { renderTool(it) }
-                        sendResponse(id, mapOf("tools" to tools))
-                    }
-                    "tools/call" -> {
-                        val toolName = params["name"] as? String ?: ""
-                        val toolArgs = params["arguments"] as? Map<String, Any> ?: emptyMap()
-                        val result = mcpHost.callTool(toolName, toolArgs)
-                        sendResponse(id, mapOf(
-                            "content" to listOf(mapOf("type" to "text", "text" to result)),
-                            "isError" to false
-                        ))
-                    }
-                    "resources/list" -> sendResponse(id, mapOf("resources" to emptyList<Any>()))
-                    "prompts/list" -> sendResponse(id, mapOf("prompts" to emptyList<Any>()))
-                    "ping" -> sendResponse(id, mapOf())
-                    else -> sendError(id, -32601, "Method not found: $method")
-                }
-            } catch (e: Exception) {
-                System.err.println("GMCP Error: ${e.message}")
+            val response = handleRequest(line)
+            if (response != null) {
+                println(response)
             }
+        }
+    }
+
+    /**
+     * Processes a single JSON-RPC request and returns a JSON-RPC response.
+     */
+    fun handleRequest(jsonRequest: String): String? {
+        return try {
+            val request = slurper.parseText(jsonRequest) as? Map<String, Any> ?: return null
+            val id = request["id"]
+            val method = request["method"] as? String ?: return null
+            val params = request["params"] as? Map<String, Any> ?: emptyMap()
+
+            val result = when (method) {
+                "initialize" -> mapOf(
+                    "protocolVersion" to "2024-11-05",
+                    "capabilities" to mapOf(
+                        "tools" to mapOf("listChanged" to true),
+                        "resources" to mapOf("subscribe" to true, "listChanged" to true),
+                        "prompts" to mapOf("listChanged" to true)
+                    ),
+                    "serverInfo" to mapOf(
+                        "name" to "GMA-Master-MCP-Server",
+                        "version" to "0.1.0"
+                    )
+                )
+                "notifications/initialized" -> return null
+                "tools/list" -> {
+                    val tools = mcpHost.listTools().map { renderTool(it) }
+                    mapOf("tools" to tools)
+                }
+                "tools/call" -> {
+                    val toolName = params["name"] as? String ?: ""
+                    val toolArgs = params["arguments"] as? Map<String, Any> ?: emptyMap()
+                    val output = mcpHost.callTool(toolName, toolArgs)
+                    mapOf(
+                        "content" to listOf(mapOf("type" to "text", "text" to output)),
+                        "isError" to false
+                    )
+                }
+                "resources/list" -> mapOf("resources" to emptyList<Any>())
+                "prompts/list" -> mapOf("prompts" to emptyList<Any>())
+                "ping" -> mapOf<String, Any>()
+                else -> return createError(id, -32601, "Method not found: $method")
+            }
+
+            createResponse(id, result)
+        } catch (e: Exception) {
+            createError(null, -32603, "Internal error: ${e.message}")
         }
     }
 
@@ -84,21 +93,21 @@ class GhaGmcpEngine(val rootDir: File) {
         )
     }
 
-    private fun sendResponse(id: Any?, result: Map<String, Any>) {
+    private fun createResponse(id: Any?, result: Any): String {
         val response = mutableMapOf<String, Any>(
             "jsonrpc" to "2.0",
             "result" to result
         )
         if (id != null) response["id"] = id
-        println(JsonOutput.toJson(response))
+        return JsonOutput.toJson(response)
     }
 
-    private fun sendError(id: Any?, code: Int, message: String) {
+    private fun createError(id: Any?, code: Int, message: String): String {
         val response = mutableMapOf<String, Any>(
             "jsonrpc" to "2.0",
             "error" to mapOf("code" to code, "message" to message)
         )
         if (id != null) response["id"] = id
-        println(JsonOutput.toJson(response))
+        return JsonOutput.toJson(response)
     }
 }

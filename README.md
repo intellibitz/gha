@@ -22,7 +22,7 @@ GitHub users and developers across any IDE or terminal can clone or install this
 2. **🌐 Specialized Agents (`GhaAgentManager`)**: Domain-specific workers for Gradle, Git, GitHub, and System tasks, plus a fleet of Web Agents for research and remote APIs.
 3. **⚡ AI Inference Engines (`GhaEngineManager`)**: Coordinated local (Ollama, llama.cpp, Python UV) and web-based AI engines (OpenRouter, Groq, HF, Gemini, OpenAI, Anthropic).
 4. **🧠 AI Model Discovery & Resolution (`GhaModelManager`)**: Searches, resolves, and auto-downloads open-weights and cloud models across multiple registries.
-5. **🔌 GMA Master MCP Interactor (GMCP)**: Full Model Context Protocol (MCP) implementation (Host, Client, Server) exposing 40+ tools to anyone over stdio. GMA hosts GMCP.
+5. **🔌 GMA Master MCP Interactor (GMCP)**: Full Model Context Protocol (MCP) implementation (Host, Client, Server). GMA uses the GMCP Client to talk to the GMCP Server, ensuring 100% protocol compliance and tool availability to anyone over stdio.
 
 ---
 

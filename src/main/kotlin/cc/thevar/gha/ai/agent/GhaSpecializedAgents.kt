@@ -1,6 +1,6 @@
 package cc.thevar.gha.ai.agent
 
-import cc.thevar.gha.ai.mcp.GhaMcpHost
+import cc.thevar.gha.ai.mcp.GhaGmcpClient
 import cc.thevar.gha.ai.vision.GhaAgentResult
 import cc.thevar.gha.ai.vision.GhaAiAgent
 import java.io.File
@@ -20,15 +20,15 @@ class GhaGradleAgent(
 ) : GhaAiAgent, GhaAgent {
 
     override fun executeMission(projectDir: File, prompt: String): String {
-        val host = GhaMcpHost(projectDir)
-        return solveWithHost(prompt, projectDir, host).output
+        val client = GhaGmcpClient(projectDir)
+        return solveWithHost(prompt, projectDir, client).output
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
-        return solveWithHost(goal, rootDir, GhaMcpHost(rootDir))
+        return solveWithHost(goal, rootDir, GhaGmcpClient(rootDir))
     }
 
-    fun solveWithHost(goal: String, rootDir: File, mcpHost: GhaMcpHost): GhaAgentResult {
+    fun solveWithHost(goal: String, rootDir: File, mcpClient: GhaGmcpClient): GhaAgentResult {
         val log = mutableListOf<String>()
         val lowerGoal = goal.lowercase()
         log.add("🛠️ Agent '$identity' ($name) acting as MCP Client for Gradle goal: \"$goal\"")
@@ -48,7 +48,7 @@ class GhaGradleAgent(
             else -> emptyMap()
         }
 
-        val output = mcpHost.callTool(toolName, args)
+        val output = mcpClient.callTool(toolName, args)
         log.add("   ✅ [MCP Response] ${output.take(100).replace("\n", " ")}...")
 
         return GhaAgentResult(true, log, output)
@@ -65,15 +65,15 @@ class GhaGitAgent(
 ) : GhaAiAgent, GhaAgent {
 
     override fun executeMission(projectDir: File, prompt: String): String {
-        val host = GhaMcpHost(projectDir)
-        return solveWithHost(prompt, projectDir, host).output
+        val client = GhaGmcpClient(projectDir)
+        return solveWithHost(prompt, projectDir, client).output
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
-        return solveWithHost(goal, rootDir, GhaMcpHost(rootDir))
+        return solveWithHost(goal, rootDir, GhaGmcpClient(rootDir))
     }
 
-    fun solveWithHost(goal: String, rootDir: File, mcpHost: GhaMcpHost): GhaAgentResult {
+    fun solveWithHost(goal: String, rootDir: File, mcpClient: GhaGmcpClient): GhaAgentResult {
         val log = mutableListOf<String>()
         val lowerGoal = goal.lowercase()
         log.add("🔄 Agent '$identity' ($name) acting as MCP Client for Git goal: \"$goal\"")
@@ -93,7 +93,7 @@ class GhaGitAgent(
             else -> emptyMap()
         }
 
-        val output = mcpHost.callTool(toolName, args)
+        val output = mcpClient.callTool(toolName, args)
         log.add("   ✅ [MCP Response] ${output.take(100).replace("\n", " ")}...")
 
         return GhaAgentResult(true, log, output)
@@ -110,15 +110,15 @@ class GhaGitHubAgent(
 ) : GhaAiAgent, GhaAgent {
 
     override fun executeMission(projectDir: File, prompt: String): String {
-        val host = GhaMcpHost(projectDir)
-        return solveWithHost(prompt, projectDir, host).output
+        val client = GhaGmcpClient(projectDir)
+        return solveWithHost(prompt, projectDir, client).output
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
-        return solveWithHost(goal, rootDir, GhaMcpHost(rootDir))
+        return solveWithHost(goal, rootDir, GhaGmcpClient(rootDir))
     }
 
-    fun solveWithHost(goal: String, rootDir: File, mcpHost: GhaMcpHost): GhaAgentResult {
+    fun solveWithHost(goal: String, rootDir: File, mcpClient: GhaGmcpClient): GhaAgentResult {
         val log = mutableListOf<String>()
         val lowerGoal = goal.lowercase()
         log.add("🐙 Agent '$identity' ($name) acting as MCP Client for GitHub goal: \"$goal\"")
@@ -146,7 +146,7 @@ class GhaGitHubAgent(
             else -> emptyMap()
         }
 
-        val output = mcpHost.callTool(toolName, args)
+        val output = mcpClient.callTool(toolName, args)
         log.add("   ✅ [MCP Response] ${output.take(100).replace("\n", " ")}...")
 
         return GhaAgentResult(true, log, output)
@@ -163,15 +163,15 @@ class GhaSystemAgent(
 ) : GhaAiAgent, GhaAgent {
 
     override fun executeMission(projectDir: File, prompt: String): String {
-        val host = GhaMcpHost(projectDir)
-        return solveWithHost(prompt, projectDir, host).output
+        val client = GhaGmcpClient(projectDir)
+        return solveWithHost(prompt, projectDir, client).output
     }
 
     override fun solve(goal: String, rootDir: File): GhaAgentResult {
-        return solveWithHost(goal, rootDir, GhaMcpHost(rootDir))
+        return solveWithHost(goal, rootDir, GhaGmcpClient(rootDir))
     }
 
-    fun solveWithHost(goal: String, rootDir: File, mcpHost: GhaMcpHost): GhaAgentResult {
+    fun solveWithHost(goal: String, rootDir: File, mcpClient: GhaGmcpClient): GhaAgentResult {
         val log = mutableListOf<String>()
         val lowerGoal = goal.lowercase()
         log.add("💻 Agent '$identity' ($name) acting as MCP Client for system goal: \"$goal\"")
@@ -192,7 +192,7 @@ class GhaSystemAgent(
             else -> emptyMap()
         }
 
-        val output = mcpHost.callTool(toolName, args)
+        val output = mcpClient.callTool(toolName, args)
         log.add("   ✅ [MCP Response] ${output.take(100).replace("\n", " ")}...")
 
         return GhaAgentResult(true, log, output)
