@@ -114,7 +114,12 @@ class GhaPlugin : Plugin<Project> {
 
         project.tasks.register("ghaMcp", GhaMcpTask::class.java) {
             group = GROUP_AI
-            description = "Exposes gha tasks as Model Context Protocol (MCP) tools for AI Agents"
+            description = "Starts GMA Master MCP Interactor (GMCP) server over stdio"
+        }
+
+        project.tasks.register("gmcp", GhaMcpTask::class.java) {
+            group = GROUP_AI
+            description = "Alias for ghaMcp: Starts GMA Master MCP Interactor (GMCP) server"
         }
 
         project.tasks.register("ghaAiVision", cc.thevar.gha.ai.vision.GhaAiTask::class.java) {

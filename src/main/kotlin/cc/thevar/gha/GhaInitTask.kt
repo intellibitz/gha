@@ -117,6 +117,9 @@ abstract class GhaInitTask : GhaTask() {
                 version|--version|-v)
                     exec ./gradlew ${'$'}REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghai -Pmessage="--version report"
                     ;;
+                gmcp|mcp)
+                    exec ./gradlew ${'$'}REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" gmcp
+                    ;;
                 help)
                     exec ./gradlew ${'$'}REFRESH_FLAG -Dgradle.user.home=.gha/gradle-user-home --init-script "${'$'}INIT_SCRIPT" ghaHelp
                     ;;

@@ -21,8 +21,8 @@ GitHub users and developers across any IDE or terminal can clone or install this
 1. **🏛️ GMA Master Interactor & Pluggable AOA (`GhaAgentOfAgents`)**: The singular one-point manager and worker for the GHA user. It coordinates every system component and optionally delegates to frameworks like Microsoft AutoGen, CrewAI, LangGraph, or Swarm.
 2. **🌐 Specialized Agents (`GhaAgentManager`)**: Domain-specific workers for Gradle, Git, GitHub, and System tasks, plus a fleet of Web Agents for research and remote APIs.
 3. **⚡ AI Inference Engines (`GhaEngineManager`)**: Coordinated local (Ollama, llama.cpp, Python UV) and web-based AI engines (OpenRouter, Groq, HF, Gemini, OpenAI, Anthropic).
-4. **🧠 AI Model Discovery & Resolution (`GhaModelManager`)**: Searches, resolves, and auto-downloads open-weights and cloud models (DeepSeek R1, Llama 3.3, Qwen 2.5 Coder, Claude 3.5 Sonnet, GPT-4o) across Hugging Face Hub, OpenRouter, Ollama Library, and Groq.
-5. **🔌 GHA MCP Host & Custom System Tools (`GhaMcpHost` & `GhaSystemMcpServer`)**: `gha` hosts 10 MCP servers and exposes 33+ system, build, git, GitHub, and browser tools (`ADB`, `Docker`, `Python UV`, `Node/NPM`, `System CLIs`, `GitHub API`, `Hugging Face`, `Brave Search`, `Puppeteer`).
+4. **🧠 AI Model Discovery & Resolution (`GhaModelManager`)**: Searches, resolves, and auto-downloads open-weights and cloud models across multiple registries.
+5. **🔌 GMA Master MCP Interactor (GMCP)**: Full Model Context Protocol (MCP) implementation (Host, Client, Server) exposing 40+ tools to anyone over stdio. GMA hosts GMCP.
 
 ---
 
@@ -88,6 +88,7 @@ The `ghai` launcher is the universal entry point that talks directly to the GMA:
 ./ghai ai models                                 # Inspect coordinated local & web AI models
 ./ghai ai engines                                # Detect coordinated local & cloud engines
 ./ghai ai mcp-hub                                # List GMA-coordinated MCP servers
+./ghai gmcp                                      # Start GMA Master MCP Server (stdio)
 ./ghai :version                                  # GMA detailed version report
 ./ghai :status                                   # GMA sandbox health report
 ./ghai :install                                  # Initialize GMA sandboxed environment

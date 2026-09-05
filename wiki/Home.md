@@ -20,14 +20,14 @@ The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA Use
 2. **🌐 Specialized Agents (`GhaAgentManager`)**: Domain-specific workers for Gradle, Git, GitHub, and System tasks, plus a fleet of Web Agents for research and remote APIs.
 3. **⚡ AI Inference Engines (`GhaEngineManager`)**: Coordinated local (Ollama, llama.cpp, Python UV) and web-based AI engines (OpenRouter, Groq, HF, Gemini, OpenAI, Anthropic).
 4. **🧠 AI Model Discovery & Resolution (`GhaModelManager`)**: Searches, resolves, and auto-downloads open-weights and cloud models across multiple registries.
-5. **🔌 GHA MCP Host & Custom System Tools (`GhaMcpHost`)**: GMA hosts MCP servers exposing 40+ system, build, git, GitHub, and browser tools.
+5. **🔌 GMA Master MCP Interactor (GMCP)**: Full Model Context Protocol (MCP) implementation (Host, Client, Server) exposing 40+ tools to anyone over stdio. GMA hosts GMCP.
 
 ---
 
 ### 🔄 GMA Delegation Cascade
 
 ```
-[1. GMA Sole Interactor] ──► [2. Domain & Web Agents] ──► [3. AI Engines] ──► [4. AI Models] ──► [5. MCP Tool Execution]
+[1. GMA Sole Interactor] ──► [2. Domain & Web Agents] ──► [3. AI Engines] ──► [4. AI Models] ──► [5. GMCP Host & Server]
 ```
 
 ---
@@ -46,6 +46,7 @@ The **GHA Master Agent (GMA)** serves as the **Sole Interactor** for the GHA Use
 ./ghai                                           # Autonomous AI Workflow (Sync, Commit, Push, PR)
 ./ghai "build an os"                            # GMA Mission: execute natural instruction
 ./ghai "create a kotlin app"                     # GMA Mission: application scaffolding
+./ghai gmcp                                      # Start GMA Master MCP Server (stdio)
 ./ghai ai orchestrate                            # GMA Master Interactor coordination report
 ./ghai ai models                                 # Inspect coordinated local & web AI models
 ./ghai ai engines                                # Detect coordinated local & cloud engines

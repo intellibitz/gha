@@ -21,9 +21,10 @@ import java.io.File
  * 2. Agent (Local Specialized Agents, Web Agents, Autonomous Agent)
  * 3. Engine (Local & Web AI Inference Engines)
  * 4. Model (Local Hardware-Optimized Models & Web Models)
- * 5. MCP Host (Central Tool Host for workspace)
- * 6. MCP Client (Agents & AOA acting as clients)
- * 7. MCP Server (Built-in Universal, System Tools, GitHub, HF, Memory, Brave Search, Puppeteer, Filesystem, Fetch, Remote SSE)
+ * 5. GMCP: GHA Model Context Protocol (Host, Client, Server)
+ * 6. MCP Host (Central Tool Host for workspace)
+ * 7. MCP Client (Agents & AOA acting as clients)
+ * 8. MCP Server (Built-in Universal, System Tools, GitHub, HF, Memory, Brave Search, Puppeteer, Filesystem, Fetch, Remote SSE)
  */
 class GhaAgentOfAgents(
     override val identity: String = "GMA-Master-Orchestrator",
@@ -163,10 +164,11 @@ class GhaAgentOfAgents(
         val webModels = GhaModelManager.listWebModels(rootDir)
         log.add("🧠 [Phase 3.5: AI Models Resolved] (${localModels.size} Local Cached, ${webModels.size} Web Models available)")
 
-        // 4. MCP Servers Coordination
+        // 4. GMCP (GHA MCP) Servers Coordination
         val mcpServers = GhaMcpHubManager.listServers(rootDir)
         val exposedTools = mcpHost.listTools()
-        log.add("🔌 [Phase 4: MCP Tool Hub & Servers Coordinated] (${mcpServers.size} Servers, ${exposedTools.size} Tools available)")
+        log.add("🔌 [Phase 4: GMCP Tool Hub & Servers Coordinated] (${mcpServers.size} Servers, ${exposedTools.size} Tools available)")
+        log.add("   └── GMCP is active and available to GMA and outside systems over stdio.")
         mcpServers.forEach { server ->
             val statusSymbol = if (server.isEnabled) "✅" else "❌"
             log.add("   ├── $statusSymbol [${server.type}] ${server.name} (${server.id}): ${server.description}")
