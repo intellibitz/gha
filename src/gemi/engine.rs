@@ -170,7 +170,14 @@ impl GemiEngine {
         if (lower.contains("create") || lower.contains("write")) && lower.contains("containing") {
             let parts: Vec<&str> = lower.split("containing").collect();
             if parts.len() >= 2 {
-                let file_name_raw = parts[0].replace("create", "").replace("write", "").replace("file", "").replace("named", "").trim().to_string();
+                let file_name_raw = parts[0]
+                    .replace("create", "")
+                    .replace("write", "")
+                    .replace("file", "")
+                    .replace("named", "")
+                    .replace(" a ", " ")
+                    .trim()
+                    .to_string();
                 let file = if file_name_raw.is_empty() { "output.txt" } else { &file_name_raw };
                 let content = parts[1].trim();
                 return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: write_file {} {}", cpus, file, content);

@@ -30,7 +30,7 @@ impl GhaPulse {
             return Ok("ACTION: status".to_string());
         }
 
-        if lower.contains("models") || lower.contains("inventory") {
+        if lower.contains("models") || lower.contains("inventory") || lower.contains("list_models") {
             return Ok("ACTION: list_models".to_string());
         }
 
@@ -47,8 +47,20 @@ impl GhaPulse {
             return Ok("ACTION: docker_ps".to_string());
         }
 
-        if lower == "build" || lower.contains("compile") {
+        if lower == "build" || lower.contains("compile") || lower == "run build" {
             return Ok("ACTION: self_heal_build".to_string());
+        }
+
+        if lower == "test" || lower.contains("unit test") || lower == "run tests" {
+            return Ok("ACTION: run_test_harness".to_string());
+        }
+
+        if lower.contains("scout") || lower.contains("discovery") {
+            return Ok("ACTION: scout".to_string());
+        }
+
+        if lower.contains("services") || lower.contains("running processes") {
+            return Ok("ACTION: services".to_string());
         }
 
         if lower.contains("romeo") && lower.contains("juliet") && lower.contains("download") {
