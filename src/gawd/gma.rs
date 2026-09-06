@@ -24,7 +24,7 @@ impl GmaMasterAgent {
 
         let mut report = String::new();
 
-        report.push_str("# 🌌 gha: AI for AI — Sole Interactor Report\n\n");
+        report.push_str("# 🌌 gha: AI for AI – Sole Interactor Report\n\n");
 
         report.push_str("## 🤖 Tier 1: GAWD (Universal Swarm Supervisor)\n");
         report.push_str("- **Identity**: GMA Master Agent (A2A Protocol Root)\n");
@@ -35,8 +35,9 @@ impl GmaMasterAgent {
         report.push_str("## 🎯 Mission Execution (A2A Swarm Flux)\n");
         report.push_str(&format!("🤖 [GMA] Universal Intent: \"{}\"\n", goal));
 
-        for msg in &a2a_logs {
-            report.push_str(&format!("   ├── [{} -> GMA] {} ('{}')\n", msg.sender, msg.action, msg.payload));
+        for (i, msg) in a2a_logs.iter().enumerate() {
+            let connector = if i == a2a_logs.len() - 1 { "└──" } else { "├──" };
+            report.push_str(&format!(" {} [{} -> GMA] {} ('{}')\n", connector, msg.sender, msg.action, msg.payload));
         }
 
         report.push_str("\n## 🔌 GMCP (Universal Tool Capabilities)\n");
@@ -58,10 +59,10 @@ impl GmaMasterAgent {
             report.push_str(&mission_result);
         }
 
-        // ⚖️ GMA Trust Audit (Post-Execution Reality Check)
+        // ⚖️ GMA Trust Audit (Reality Check)
         let audit = self.audit_truth(goal, &a2a_logs, workspace);
         report.push_str("\n## ⚖️ GMA Trust Audit (Reality Check)\n");
-        report.push_str(&format!("   └── {}\n", audit));
+        report.push_str(&format!(" └── {}\n", audit));
 
         report.push_str("\n✅ [gha Intelligence] Flux executed natively (0-Effort, 100% Gains).\n");
 

@@ -1,9 +1,9 @@
 // 🔌 GMCP Native Server: JSON-RPC 2.0 MCP Host & Server over stdio & TCP Port 9090
 // 100% Rust implementation supporting dynamic tool execution
 
+use super::tools::ToolRegistry;
 use std::io::{self, BufRead, Write};
 use std::path::Path;
-use super::tools::ToolRegistry;
 
 pub struct GmcpServer;
 
@@ -83,15 +83,15 @@ pub fn extract_tool_arg(line: &str) -> Option<String> {
     if let Ok(v) = serde_json::from_str::<serde_json::Value>(line) {
         if let Some(params) = v.get("params") {
             if let Some(arguments) = params.get("arguments") {
-                if let Some(s) = arguments.as_str() {
-                    return Some(s.to_string());
+                return if let Some(s) = arguments.as_str() {
+                    Some(s.to_string())
                 } else if let Some(command) = arguments.get("command").and_then(|c| c.as_str()) {
-                    return Some(command.to_string());
+                    Some(command.to_string())
                 } else if let Some(path) = arguments.get("path").and_then(|p| p.as_str()) {
-                    return Some(path.to_string());
+                    Some(path.to_string())
                 } else {
-                    return Some(arguments.to_string());
-                }
+                    Some(arguments.to_string())
+                };
             }
         }
     }

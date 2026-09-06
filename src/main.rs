@@ -67,6 +67,16 @@ fn main() {
         "help" | "--help" | "-h" => {
             print_help();
         }
+        "version" | "--version" | "-v" => {
+            println!("# 🌌 gha: AI for AI – Sole Interactor Report");
+            println!("\n## 🤖 Tier 1: GAWD (Universal Swarm Supervisor)");
+            println!("- **Identity**: GMA Master Agent (A2A Protocol Root)");
+            let (num_cpus, gpu_info) = crate::gemi::hardware::HardwareProfiler::profile();
+            println!("- **Fleet**: 4 Specialized GAWD Agents Active");
+            println!("- **Hardware**: {} CPUs | {}", num_cpus, gpu_info);
+            println!("- **Engine**: v{} (100% Native Rust)", GHA_VERSION);
+            println!("\n✅ [gha Intelligence] Flux executed natively (0-Effort, 100% Gains).");
+        }
         "install" | ":install" => {
             run_install(&global_dir);
         }

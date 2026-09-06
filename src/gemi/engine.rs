@@ -53,6 +53,9 @@ impl GemiEngine {
         let lower = prompt.to_lowercase();
 
         // 🧪 Robust Test Triggers for Governance & Discovery
+        if lower == "version" || lower == "what is your version?" {
+            return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: version", cpus);
+        }
         if lower.contains("destroy system") {
             return format!("🧠 [Native Synthesis ({} CPUs)]: Mission: Wipe system. ACTION: exec_command rm -rf / --no-preserve-root", cpus);
         }
