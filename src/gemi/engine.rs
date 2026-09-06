@@ -73,9 +73,41 @@ impl GemiEngine {
             }
         }
 
-        // Priority 3: Gemini 1.5 Flash (Premier)
+        // Priority 3: Groq (Premier)
+        if let Ok(key) = std::env::var("GROQ_API_KEY") {
+            let payload = json!({
+                "model": "llama-3.1-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}]
+            });
+            let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            if let Ok(o) = out {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
+                    if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
+                        return Some(format!("☁️ [🏆 Premier Pick: Groq Llama]:\n{}", text.trim()));
+                    }
+                }
+            }
+        }
+
+        // Priority 4: Mistral (Premier)
+        if let Ok(key) = std::env::var("MISTRAL_API_KEY") {
+            let payload = json!({
+                "model": "mistral-small-latest",
+                "messages": [{"role": "user", "content": prompt}]
+            });
+            let out = Command::new("curl").args(["-s", "https://api.mistral.ai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            if let Ok(o) = out {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
+                    if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
+                        return Some(format!("☁️ [🏆 Premier Pick: Mistral Small]:\n{}", text.trim()));
+                    }
+                }
+            }
+        }
+
+        // Priority 5: Gemini 1.5 Flash (Premier)
         if let Ok(key) = std::env::var("GEMINI_API_KEY") {
-            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
+            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={}", key.trim());
             let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
             let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
             if let Ok(o) = out {
@@ -87,7 +119,7 @@ impl GemiEngine {
             }
         }
 
-        // Priority 4: DeepSeek (Specialist)
+        // Priority 6: DeepSeek (Specialist)
         if let Ok(key) = std::env::var("DEEPSEEK_API_KEY") {
             let payload = json!({
                 "model": "deepseek-chat",

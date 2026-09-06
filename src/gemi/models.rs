@@ -75,6 +75,28 @@ impl ModelManager {
                 latency_ms: None,
             });
         }
+        if std::env::var("MISTRAL_API_KEY").is_ok() {
+            list.push(ModelInfo {
+                name: "Mistral Small".to_string(),
+                registry: "Mistral AI".to_string(),
+                model_id: "mistral/mistral-small-latest".to_string(),
+                description: "Efficient European reasoning specialist".to_string(),
+                is_local: false,
+                tier: ModelTier::Premier,
+                latency_ms: None,
+            });
+        }
+        if std::env::var("GROQ_API_KEY").is_ok() {
+            list.push(ModelInfo {
+                name: "Groq Llama 3.3 70B".to_string(),
+                registry: "Groq Cloud".to_string(),
+                model_id: "groq/llama-3.3-70b-versatile".to_string(),
+                description: "Ultra-low latency inference".to_string(),
+                is_local: false,
+                tier: ModelTier::Premier,
+                latency_ms: None,
+            });
+        }
 
         // 2. Scan Local GGUF Vault
         let model_paths = vec![workspace.join(".gha/models"), PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".gha/models")];
