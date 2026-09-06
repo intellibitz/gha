@@ -13,6 +13,23 @@ pub enum ReflexDecision {
 pub struct ReflexEngine;
 
 impl ReflexEngine {
+    pub fn scout_tier0_assets() -> Vec<crate::gawd::agents::DiscoverableAsset> {
+        vec![
+            crate::gawd::agents::DiscoverableAsset {
+                tier: "Tier 0: GHA-Alpha (Reflex)".to_string(),
+                name: "GhaReflexCloud-v2".to_string(),
+                provider: "GHA Hub".to_string(),
+                url: "https://gha.ai/reflex/v2".to_string(),
+            },
+            crate::gawd::agents::DiscoverableAsset {
+                tier: "Tier 0: GHA-Alpha (Reflex)".to_string(),
+                name: "DistilledRouter-1B".to_string(),
+                provider: "HuggingFace".to_string(),
+                url: "https://huggingface.co/gha/distilled-router".to_string(),
+            },
+        ]
+    }
+
     /// Attempts to solve the mission using "Reflex Logic" (Protocol-level matching).
     pub fn try_solve(intent: &str, _workspace: &Path) -> (ReflexDecision, u128) {
         let start = Instant::now();

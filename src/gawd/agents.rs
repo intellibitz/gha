@@ -17,6 +17,14 @@ pub struct GawdAgentInfo {
     pub protocol: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscoverableAsset {
+    pub tier: String,
+    pub name: String,
+    pub provider: String,
+    pub url: String,
+}
+
 pub struct GawdAgentFleet;
 
 impl GawdAgentFleet {
@@ -28,7 +36,6 @@ impl GawdAgentFleet {
 
         let lower = goal.to_lowercase();
 
-        // 🚀 Exponential Scaling: Dynamically spawn specialists based on mission intent
         if lower.contains("os") || lower.contains("kernel") || lower.contains("bootloader") {
             fleet.push(GawdAgentInfo { name: "GhaKernelAgent".to_string(), role: "Low-Level Engineering".to_string(), protocol: "A2A".to_string() });
         }
@@ -42,7 +49,6 @@ impl GawdAgentFleet {
             fleet.push(GawdAgentInfo { name: "GhaLinguistAgent".to_string(), role: "Universal Translation".to_string(), protocol: "A2A".to_string() });
         }
 
-        // Always include the Governance layer for EI
         fleet.push(GawdAgentInfo { name: "GhaSafetyAgent".to_string(), role: "Mission Guardrails".to_string(), protocol: "A2A".to_string() });
         fleet.push(GawdAgentInfo { name: "GhaTruthAgent".to_string(), role: "Hallucination Detection".to_string(), protocol: "A2A".to_string() });
 
@@ -74,7 +80,7 @@ impl GawdAgentFleet {
             handles.push(handle);
         }
 
-        drop(tx); // Close original sender so rx knows when it's done
+        drop(tx);
 
         let mut logs = Vec::new();
         while let Ok(msg) = rx.recv() {
@@ -94,5 +100,22 @@ impl GawdAgentFleet {
             .unwrap_or_else(|| "detached".to_string());
 
         format!("Context: {} | Status: {}", branch, status.trim())
+    }
+
+    pub fn scout_tier1_assets() -> Vec<DiscoverableAsset> {
+        vec![
+            DiscoverableAsset {
+                tier: "Tier 1: GAWD (AOA)".to_string(),
+                name: "GhaCyberAgent".to_string(),
+                provider: "GHA Hub".to_string(),
+                url: "https://gha.ai/agents/cyber".to_string(),
+            },
+            DiscoverableAsset {
+                tier: "Tier 1: GAWD (AOA)".to_string(),
+                name: "AoaWasmEngine".to_string(),
+                provider: "GHA Swarm".to_string(),
+                url: "https://gha.ai/engines/aoa-wasm".to_string(),
+            },
+        ]
     }
 }

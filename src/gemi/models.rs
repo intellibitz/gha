@@ -147,4 +147,21 @@ impl ModelManager {
         models.sort_by_key(|m| m.latency_ms.unwrap_or(9999));
         models
     }
+
+    pub fn scout_tier2_assets() -> Vec<crate::gawd::agents::DiscoverableAsset> {
+        vec![
+            crate::gawd::agents::DiscoverableAsset {
+                tier: "Tier 2: GEMI (Intelligence)".to_string(),
+                name: "Llama-3.1-8B-GGUF".to_string(),
+                provider: "HuggingFace".to_string(),
+                url: "https://huggingface.co/meta-llama/Llama-3.1-8B-GGUF".to_string(),
+            },
+            crate::gawd::agents::DiscoverableAsset {
+                tier: "Tier 2: GEMI (Intelligence)".to_string(),
+                name: "vLLM-Server-Binary".to_string(),
+                provider: "vLLM Project".to_string(),
+                url: "https://github.com/vllm-project/vllm".to_string(),
+            },
+        ]
+    }
 }

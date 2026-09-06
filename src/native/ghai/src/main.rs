@@ -375,6 +375,10 @@ fn main() {
             let goal = "list_models";
             run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
         }
+        "scout" | "ghaScout" => {
+            let goal = "scout";
+            run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
+        }
         "install" | "ghaInit" => {
             run_install(&project_root, &global_gha_dir);
         }

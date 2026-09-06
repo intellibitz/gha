@@ -149,6 +149,10 @@ impl ToolRegistry {
                 name: "self_train".to_string(),
                 description: "Trigger autonomous agent self-training and PKB synthesis (arg: 'num_samples')".to_string(),
             },
+            McpTool {
+                name: "scout".to_string(),
+                description: "Discover available cloud reflex engines, agents, and models for download".to_string(),
+            },
         ];
 
         // Dynamic Tool Discovery
@@ -309,6 +313,22 @@ impl ToolRegistry {
                     Ok(msg) => format!("🌱 [Self-Training]: Swarm synthesis complete. {}", msg),
                     Err(e) => format!("❌ [Self-Training Error]: {}", e),
                 }
+            }
+            "scout" => {
+                let mut assets = Vec::new();
+                assets.extend(crate::gemi::reflex::ReflexEngine::scout_tier0_assets());
+                assets.extend(crate::gawd::agents::GawdAgentFleet::scout_tier1_assets());
+                assets.extend(crate::gemi::models::ModelManager::scout_tier2_assets());
+
+                let mut output = "# 🌌 Universal GHA Discovery Report\n\n".to_string();
+                for asset in assets {
+                    output.push_str(&format!("## {}\n", asset.tier));
+                    output.push_str(&format!("- **Asset**: {}\n", asset.name));
+                    output.push_str(&format!("- **Provider**: {}\n", asset.provider));
+                    output.push_str(&format!("- **URL**: {}\n\n", asset.url));
+                }
+                output.push_str("✅ Sticking to industry standard protocols at all tiers.");
+                output
             }
             "vision_analyze" => {
                 let parts: Vec<&str> = arg.splitn(2, ' ').collect();

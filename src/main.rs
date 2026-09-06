@@ -10,6 +10,7 @@ mod sandbox;
 use std::env;
 use std::path::{Path, PathBuf};
 
+use crate::gmcp::tools::ToolRegistry;
 use daemon::GmaDaemon;
 use gawd::GmaMasterAgent;
 use gemi::GemiServer;
@@ -97,6 +98,10 @@ fn main() {
         }
         "gemi" | "gemi-server" => {
             GemiServer::start_http_server(cwd, GemiServer::DEFAULT_PORT);
+        }
+        "scout" | ":scout" => {
+            let res = ToolRegistry::execute_tool("scout", "", &cwd);
+            println!("{}", res);
         }
         _ => {
             // Universal Mission: The Impact Scope is ALWAYS the Current Working Directory
