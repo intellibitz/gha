@@ -67,6 +67,8 @@ fn main() {
     let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let home = get_home_dir();
     let global_dir = home.join(".gha");
+
+    // Internal workspace for context/config, but mission scope is always CWD
     let workspace = find_workspace(&cwd);
 
     let args: Vec<String> = env::args().skip(1).collect();
@@ -84,15 +86,14 @@ fn main() {
             print_help();
         }
         "install" | ":install" => {
-            run_install(&workspace, &global_dir);
+            run_install(&cwd, &global_dir);
         }
         "uninstall" | ":uninstall" => {
-            let _ = std::fs::remove_dir_all(workspace.join(".gha"));
+            let _ = std::fs::remove_dir_all(cwd.join(".gha"));
             println!("✅ [gha] Environment uninstalled.");
         }
         "daemon-start" => {
-            let ws = if args.len() > 1 { PathBuf::from(&args[1]) } else { workspace };
-            GmaDaemon::run_daemon_loop(ws, global_dir);
+            GmaDaemon::run_daemon_loop(workspace, global_dir);
         }
         "gmcp" | "mcp" => {
             GmcpServer::run_stdio(&workspace, GHA_VERSION);
@@ -101,10 +102,10 @@ fn main() {
             GemiServer::start_http_server(workspace, GemiServer::DEFAULT_PORT);
         }
         _ => {
-            // All other inputs are treated as Natural Language Intent for the GMA Master Agent
+            // Universal Mission: The Impact Scope is ALWAYS the Current Working Directory
             let goal = args.join(" ");
             let gma = GmaMasterAgent::new();
-            let report = gma.solve(&goal, &workspace, GHA_VERSION);
+            let report = gma.solve(&goal, &cwd, GHA_VERSION);
             println!("{}", report);
         }
     }
