@@ -295,7 +295,18 @@ impl ToolRegistry {
                         }
                     }
                 }
-                GemiEngine::generate_reasoning_deep(&full_prompt, workspace)
+
+                let result = GemiEngine::generate_reasoning_deep(&full_prompt, workspace);
+
+                // Autonomous Artifact Delivery: If "save to [file]" is in the prompt, fulfill it
+                if arg.contains("save to") {
+                     if let Some(target_file) = arg.split("save to ").nth(1).and_then(|s| s.split_whitespace().next()) {
+                         let path = workspace.join(target_file);
+                         let _ = std::fs::write(&path, &result);
+                         return format!("✅ Mission fulfilled. Result saved to {}.\n\nSUMMARY:\n{}", target_file, result.chars().take(200).collect::<String>());
+                     }
+                }
+                result
             }
             "git_auto_branch" => {
                 Self::git_auto_branch(workspace)
