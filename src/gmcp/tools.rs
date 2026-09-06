@@ -276,24 +276,33 @@ impl ToolRegistry {
                 output
             }
             "reason" => {
-                let mut full_prompt = format!("MISSION: {}\n\nINSTRUCTION: Output the final result. Wrap the final completed artifact inside <GHA_ARTIFACT>...</GHA_ARTIFACT> tags. Do not explain your process outside these tags.", arg);
-                // Autonomous Context Attachment: If a filename is mentioned, inline its content
+                let mut full_prompt = format!("Mission: {}\n\nPlease provide the requested translation or reasoning based on the context below. Deliver the final result clearly.", arg);
+                // Autonomous Context Attachment: If an EXISTING source file is mentioned, inline its content
                 for word in arg.split_whitespace() {
-                    if word.ends_with(".txt") || word.ends_with(".rs") || word.ends_with(".toml") {
-                        let path = workspace.join(word);
+                    let clean_word = word.trim_matches(|c| c == '(' || c == ')' || c == '[' || c == ']');
+                    if (clean_word.ends_with(".txt") || clean_word.ends_with(".rs") || clean_word.ends_with(".toml")) && !arg.contains(&format!("save to {}", clean_word)) {
+                        let mut path = workspace.join(clean_word);
+                        if !path.exists() {
+                             // Deep Discovery: Check common subdirectories
+                             for sub in &["Downloads", "Documents", "target"] {
+                                 let p = workspace.join(sub).join(clean_word);
+                                 if p.exists() { path = p; break; }
+                             }
+                        }
+
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
-                                // Meritocratic Context: Standardize on very small snippet for free-tier cloud verification
-                                let limit = 150;
-                                if arg.contains("first") || arg.contains("only") || arg.contains("5 lines") || arg.contains("tamil") {
-                                     limit = 100; // Ultra-reduction to ensure success
+                                // Meritocratic Context: Standardize on balanced snippet for free-tier cloud verification
+                                let mut limit = 1000;
+                                if arg.contains("tamil") || arg.contains("translate") {
+                                     limit = 400; // Optimal balance for free-tier rate limits
                                 }
                                 let snippet = if content.len() > limit {
                                     format!("{}... [TRUNCATED]", &content[..limit])
                                 } else {
                                     content
                                 };
-                                full_prompt = format!("{}\n\n[FILE CONTEXT: {}]\n{}", full_prompt, word, snippet);
+                                full_prompt = format!("{}\n\n[SOURCE FILE CONTEXT: {}]\n{}", full_prompt, clean_word, snippet);
                             }
                         }
                     }

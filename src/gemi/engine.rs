@@ -51,16 +51,22 @@ impl GemiEngine {
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
         let mut errors = Vec::new();
 
-        // Priority 1: Groq
+        // Priority 1: Gemini (Reliable for artifacts)
+        match Self::execute_gemini(prompt) {
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)),
+            Err(e) => errors.push(format!("Gemini: {}", e)),
+        }
+
+        // Priority 2: Groq (Fast)
         match Self::execute_groq(prompt) {
-            Ok(res) => return Some(res),
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)),
             Err(e) => errors.push(format!("Groq: {}", e)),
         }
 
-        // Priority 2: Gemini
-        match Self::execute_gemini(prompt) {
-            Ok(res) => return Some(res),
-            Err(e) => errors.push(format!("Gemini: {}", e)),
+        // Priority 3: OpenAI
+        match Self::execute_openai(prompt) {
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)),
+            Err(e) => errors.push(format!("OpenAI: {}", e)),
         }
 
         if !errors.is_empty() {
@@ -103,6 +109,24 @@ impl GemiEngine {
         }
     }
 
+    fn execute_anthropic(prompt: &str) -> Result<String> {
+        let key = std::env::var("ANTHROPIC_API_KEY")?;
+        let payload = json!({
+            "model": "claude-3-5-sonnet-20240620",
+            "max_tokens": 4096,
+            "messages": [{"role": "user", "content": prompt}]
+        });
+
+        let payload_file = std::env::temp_dir().join("gha_anthropic_payload.json");
+        std::fs::write(&payload_file, payload.to_string())?;
+
+        let out = Command::new("curl").args(["-s", "https://api.anthropic.com/v1/messages", "-H", &format!("x-api-key: {}", key.trim()), "-H", "anthropic-version: 2023-06-01", "-H", "Content-Type: application/json", "-d", &format!("@{}", payload_file.display())]).output()?;
+        let _ = std::fs::remove_file(payload_file);
+
+        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
+        v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Anthropic failure: {}", v))
+    }
+
     fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
@@ -118,14 +142,12 @@ impl GemiEngine {
         let _ = std::fs::remove_file(payload_file);
 
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Groq failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", Self::cleanse_artifact(&text)))
+        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Groq failure: {}", v))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        // Use v1 for stability in free-tier
-        let url = format!("https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={}", key.trim());
+        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
 
         let payload_file = std::env::temp_dir().join("gha_gemini_payload.json");
@@ -135,8 +157,7 @@ impl GemiEngine {
         let _ = std::fs::remove_file(payload_file);
 
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Gemini failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", Self::cleanse_artifact(&text)))
+        v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Gemini failure: {}", v))
     }
 
     fn execute_openai(prompt: &str) -> Result<String> {
@@ -147,31 +168,7 @@ impl GemiEngine {
         });
         let out = Command::new("curl").args(["-s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("OpenAI failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", Self::cleanse_artifact(&text)))
-    }
-
-    fn cleanse_artifact(text: &str) -> String {
-        let mut final_text = text.trim().to_string();
-
-        if let Some(start) = final_text.find("<GHA_ARTIFACT>") {
-            if let Some(end) = final_text.find("</GHA_ARTIFACT>") {
-                return final_text[start + 14..end].trim().to_string();
-            }
-        }
-
-        while let Some(start) = final_text.find("<think>") {
-            if let Some(end) = final_text.find("</think>") {
-                let mut new_text = final_text[..start].to_string();
-                new_text.push_str(&final_text[end + 8..]);
-                final_text = new_text.trim().to_string();
-            } else {
-                final_text = final_text[..start].trim().to_string();
-                break;
-            }
-        }
-
-        final_text
+        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("OpenAI failure: {}", v))
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
