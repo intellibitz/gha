@@ -7,7 +7,6 @@ use std::process::Command;
 use serde::{Deserialize, Serialize};
 
 use super::hardware::HardwareProfiler;
-use super::models::{ModelInfo, ModelManager};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CustomCloudProvider {
@@ -25,12 +24,6 @@ pub struct CloudProvidersConfig {
 pub struct GemiEngine;
 
 impl GemiEngine {
-    pub fn get_intelligence_report(workspace: &Path) -> (usize, String, Vec<ModelInfo>) {
-        let (cpus, gpu) = HardwareProfiler::profile();
-        let models = ModelManager::list_models(workspace);
-        (cpus, gpu, models)
-    }
-
     pub fn find_local_model_path(workspace: &Path) -> Option<PathBuf> {
         // 1. Check workspace local vault
         let ws_models = workspace.join(".gha/models");

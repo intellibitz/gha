@@ -11,14 +11,13 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use daemon::GmaDaemon;
-use gawd::gmas::GmasSupervisor;
 use gawd::GmaMasterAgent;
-use gemi::{GemiEngine, GemiServer, ModelManager};
+use gemi::{GemiServer, ModelManager};
 use gmcp::tools::ToolRegistry;
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.100";
+const GHA_VERSION: &str = "0.1.101";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -41,66 +40,22 @@ fn find_workspace(cwd: &Path) -> PathBuf {
     cwd.to_path_buf()
 }
 
-fn print_version() {
-    println!("⚡ gha (GHA Native AI Runtime) v{}", GHA_VERSION);
-    println!("   ├── Architecture : Pure AI for AI (GAWD, GEMI & GMCP)");
-    println!("   └── Runtime      : 100% Standalone Native Executable (100% Rust Engine)");
-}
-
 fn print_help() {
     println!("🌌 gha - Universal Multi-Agent AI Runtime & MCP Engine");
-    println!("Usage: ghai [COMMAND | OPTION | MISSION_INSTRUCTION]\n");
-    println!("Native AI Runtime Commands:");
-    println!("  :version, -v, --version  Print GHA version & native architecture report");
-    println!("  :status                  Print workspace health, GAWD fleet & GMCP status");
-    println!("  :help, -h, --help        Show this documentation");
+    println!("Usage: ghai [NATURAL_LANGUAGE_GOAL | RUNTIME_COMMAND]\n");
+    println!("🤖 GHA Master Agent (GMA) Sole Interactor:");
+    println!("  ghai \"check system status\"         Mission: Full executive health & hardware report");
+    println!("  ghai \"what is your version?\"       Mission: Architecture & engine version report");
+    println!("  ghai \"list models\"                 Mission: Discover cloud & local AI models");
+    println!("  ghai \"analyze this image...\"       Mission: Multimodal vision analysis");
+    println!("  ghai \"provision infrastructure\"    Mission: Terraform / Docker / K8s orchestration");
+    println!("  ghai \"<any user intent>\"           Mission: Parallel multi-agent execution\n");
+    println!("⚙️ Native Runtime Management:");
     println!("  :install                 Initialize sandboxed .gha environment & start background daemon");
     println!("  :uninstall               Clean up sandboxed .gha environment");
     println!("  :daemon                  Inspect or manage GHA Master Daemon");
-    println!("  gmcp, mcp                Start native GMA Master MCP Server over stdio");
-    println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (http://127.0.0.1:9091/v1)\n");
-    println!("GMA Master Interactor Native Missions & Multi-Tier AI Tasks:");
-    println!("  ghai \"<instruction>\"     Execute natural language AI mission via GMA");
-    println!("  ghai ai swarm            Synchronize mission context across active world-scale nodes");
-    println!("  ghai ai evolve           Trigger autonomous self-evolution & tool engineering loop");
-    println!("  ghai ai scan-global      Scan world-wide GHA registry for agent service providers");
-    println!("  ghai ai provision        Run autonomous cloud infrastructure provisioning (Tf/Docker/K8s)");
-    println!("  ghai ai docker-ps        List active Docker containers");
-    println!("  ghai ai kube-pods        List Kubernetes pods");
-    println!("  ghai ai vision           Analyze image via multimodal models");
-    println!("  ghai ai cluster          Inspect multi-node A2A agent network cluster nodes");
-    println!("  ghai ai ping-peers       Broadcast UDP discovery pings to local LAN peer nodes");
-    println!("  ghai ai self-heal        Run autonomous self-healing code compilation loop");
-    println!("  ghai ai run-tests        Run automated workspace unit test harness");
-    println!("  ghai ai orchestrate      Inspect 3-tier GMA coordination report");
-    println!("  ghai ai models           Inspect GGUF & web AI models");
-    println!("  ghai ai server           Start GEMI OpenAI-compatible HTTP REST server (Port 9091)");
-}
-
-fn print_status(workspace: &Path, global_dir: &Path) {
-    println!("🌌 [gha Native AI Status Report]");
-    println!("   ├── Target Workspace : {}", workspace.display());
-    let sandbox_status = if SandboxManager::is_sandbox_active(workspace) {
-        "ACTIVE (.gha/ present)"
-    } else {
-        "NOT INITIALIZED (run 'ghai :install')"
-    };
-    println!("   ├── Sandbox Status   : {}", sandbox_status);
-    println!("   ├── Engine Version   : v{}", GHA_VERSION);
-
-    let (cpus, gpu, models) = GemiEngine::get_intelligence_report(workspace);
-    let tools = GmcpClient::list_tools();
-    let cluster_nodes = GmasSupervisor::list_cluster_nodes();
-    println!("   ├── Hardware Profile : {} CPU Cores | {}", cpus, gpu);
-    println!("   ├── Coordinated Tiers: Tier 1 (GAWD) | Tier 2 (GEMI Port 9091) | Tier 3 (GMCP Port 9090)");
-    println!("   ├── Active Models    : {} GGUF/Web Models Registered", models.len());
-    println!("   ├── MCP Tools Hub    : {} Tools Exposed over JSON-RPC 2.0", tools.len());
-    println!("   ├── World-Scale A2A  : {} Active Nodes in Global Swarm", cluster_nodes.len());
-
-    match GmaDaemon::check_status(global_dir) {
-        Some(pid) => println!("   └── GMA Daemon       : RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091) | UDP (Port 9092)", pid),
-        None => println!("   └── GMA Daemon       : INACTIVE"),
-    }
+    println!("  mcp, gmcp                Start native GMA Master MCP Server over stdio");
+    println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (Port 9091)");
 }
 
 fn run_install(workspace: &Path, global_dir: &Path) {
@@ -150,14 +105,8 @@ fn main() {
     }
 
     match cmd {
-        "version" | "--version" | "-v" => {
-            print_version();
-        }
         "help" | "--help" | "-h" => {
             print_help();
-        }
-        "status" => {
-            print_status(&workspace, &global_dir);
         }
         "install" => {
             run_install(&workspace, &global_dir);
@@ -189,6 +138,7 @@ fn main() {
             }
         }
         _ => {
+            // Specialized AI subcommands for developer-centric fast-access (still routed through ToolRegistry)
             if cmd == "ai" && args.len() > 1 {
                 let sub = &args[1];
                 match sub.as_str() {
@@ -243,10 +193,6 @@ fn main() {
                         println!("{}", ToolRegistry::run_test_harness(&workspace));
                         return;
                     }
-                    "server" => {
-                        GemiServer::start_http_server(workspace, GemiServer::DEFAULT_PORT);
-                        return;
-                    }
                     "models" => {
                         let models = ModelManager::list_models(&workspace);
                         println!("📦 GHA Coordinated Models ({} Total):", models.len());
@@ -267,6 +213,7 @@ fn main() {
                 }
             }
 
+            // Universal GMA Natural Language Interactor
             let goal = args.join(" ");
             let gma = GmaMasterAgent::new();
             let report = gma.solve(&goal, &workspace, GHA_VERSION);
