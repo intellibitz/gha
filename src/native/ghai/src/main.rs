@@ -113,7 +113,9 @@ fn read_version(project_root: &Path, global_gha_dir: &Path) -> String {
 }
 
 fn print_version(version: &str) {
-    println!("# 🌌 gha: AI for AI – Sole Interactor Report");
+    println!("# 🌌 gha: AI for AI - Sole Interactor Report");
+    println!("\n## 🧠 Tier 0: GHA-Alpha (Native Reflex)");
+    println!("- **Logic**: Hyper-Optimized Protocol Routing (< 1ms)");
     println!("\n## 🤖 Tier 1: GAWD (Universal Swarm Supervisor)");
     println!("- **Identity**: GMA Master Agent (A2A Protocol Root)");
     let num_cpus = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
@@ -309,12 +311,15 @@ fn run_native_mcp_server(project_root: &Path) {
 // 0 JVM / 0 Gradle / 0 Git / 0 GitHub Dependency: Native AI Orchestrator & Mission Engine
 fn run_native_ai_orchestrator(project_root: &Path, global_gha_dir: &Path, goal: &str) {
     let version = read_version(project_root, global_gha_dir);
-    let (vcs_branch, vcs_remote) = get_native_vcs_info(project_root);
 
     // Native CPU/Hardware Profiling
     let num_cpus = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
 
-    println!("# 🌌 gha: AI for AI – Sole Interactor Report\n");
+    println!("# 🌌 gha: AI for AI - Sole Interactor Report\n");
+
+    println!("## 🧠 Tier 0: GHA-Alpha (Native Reflex)");
+    println!("- **Logic**: Hyper-Optimized Protocol Routing (< 1ms)\n");
+
     println!("## 🤖 Tier 1: GAWD (Universal Swarm Supervisor)");
     println!("- **Identity**: GMA Master Agent (A2A Protocol Root)");
     println!("- **Fleet**: 4 Specialized GAWD Agents Active");

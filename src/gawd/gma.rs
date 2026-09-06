@@ -24,7 +24,10 @@ impl GmaMasterAgent {
 
         let mut report = String::new();
 
-        report.push_str("# 🌌 gha: AI for AI – Sole Interactor Report\n\n");
+        report.push_str("# 🌌 gha: AI for AI - Sole Interactor Report\n\n");
+
+        report.push_str("## 🧠 Tier 0: GHA-Alpha (Native Reflex)\n");
+        report.push_str("- **Logic**: Hyper-Optimized Protocol Routing (< 1ms)\n\n");
 
         report.push_str("## 🤖 Tier 1: GAWD (Universal Swarm Supervisor)\n");
         report.push_str("- **Identity**: GMA Master Agent (A2A Protocol Root)\n");

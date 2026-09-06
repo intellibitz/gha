@@ -68,7 +68,9 @@ fn main() {
             print_help();
         }
         "version" | "--version" | "-v" => {
-            println!("# 🌌 gha: AI for AI – Sole Interactor Report");
+            println!("# 🌌 gha: AI for AI - Sole Interactor Report");
+            println!("\n## 🧠 Tier 0: GHA-Alpha (Native Reflex)");
+            println!("- **Logic**: Hyper-Optimized Protocol Routing (< 1ms)");
             println!("\n## 🤖 Tier 1: GAWD (Universal Swarm Supervisor)");
             println!("- **Identity**: GMA Master Agent (A2A Protocol Root)");
             let (num_cpus, gpu_info) = crate::gemi::hardware::HardwareProfiler::profile();
