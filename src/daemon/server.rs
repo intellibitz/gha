@@ -8,6 +8,7 @@ use std::thread;
 use std::time::Duration;
 
 use crate::gemi::GemiServer;
+use crate::gmcp::server::{extract_json_id, extract_tool_arg, extract_tool_name};
 use crate::gmcp::tools::ToolRegistry;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
@@ -115,27 +116,37 @@ impl GmaDaemon {
                     }
 
                     if trimmed.contains("\"method\":\"initialize\"") {
+                        let id = extract_json_id(trimmed).unwrap_or(1);
                         let resp = format!(
-                            "{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gmcp-native-server\",\"version\":\"0.1.67-SNAPSHOT\"}}}}}}\n"
+                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gmcp-native-server\",\"version\":\"0.1.73\"}}}}}}\n",
+                            id
                         );
                         let _ = writer.write_all(resp.as_bytes());
                         let _ = writer.flush();
                     } else if trimmed.contains("\"method\":\"tools/list\"") {
+                        let id = extract_json_id(trimmed).unwrap_or(2);
                         let tools = ToolRegistry::list_tools();
                         let tools_json: Vec<String> = tools
                             .iter()
                             .map(|t| format!("{{\"name\":\"{}\",\"description\":\"{}\"}}", t.name, t.description))
                             .collect();
                         let resp = format!(
-                            "{{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{{\"tools\":[{}]}}}}\n",
-                            tools_json.join(",")
+                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"tools\":[{}]}}}}\n",
+                            id, tools_json.join(",")
                         );
                         let _ = writer.write_all(resp.as_bytes());
                         let _ = writer.flush();
                     } else if trimmed.contains("\"method\":\"tools/call\"") {
+                        let id = extract_json_id(trimmed).unwrap_or(3);
+                        let tool_name = extract_tool_name(trimmed).unwrap_or_else(|| "status".to_string());
+                        let tool_arg = extract_tool_arg(trimmed).unwrap_or_default();
+
+                        let result_text = ToolRegistry::execute_tool(&tool_name, &tool_arg, &workspace);
+                        let escaped_text = serde_json::to_string(&result_text).unwrap_or_default();
+
                         let resp = format!(
-                            "{{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":\"✅ GMCP Tool Executed natively in workspace {}\"}}]}}}}\n",
-                            workspace.display()
+                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":{}}}]}}}}\n",
+                            id, escaped_text
                         );
                         let _ = writer.write_all(resp.as_bytes());
                         let _ = writer.flush();

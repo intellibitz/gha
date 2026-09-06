@@ -2,8 +2,9 @@
 // 100% Rust implementation for Tier 1 Master Interactor
 
 use std::path::Path;
-use std::process::Command;
 use super::gmas::GmasSupervisor;
+use crate::gemi::hardware::HardwareProfiler;
+use crate::gmcp::tools::ToolRegistry;
 
 pub struct GmaMasterAgent;
 
@@ -13,8 +14,9 @@ impl GmaMasterAgent {
     }
 
     pub fn solve(&self, goal: &str, workspace: &Path, version: &str) -> String {
-        let (num_cpus, _) = crate::gemi::hardware::HardwareProfiler::profile();
-        let (a2a_logs, fleet) = GmasSupervisor::supervise_mission(goal);
+        let (num_cpus, gpu_info) = HardwareProfiler::profile();
+        let (a2a_logs, fleet) = GmasSupervisor::supervise_mission(goal, workspace);
+        let active_tools = ToolRegistry::list_tools();
 
         let mut report = String::new();
 
@@ -27,14 +29,14 @@ impl GmaMasterAgent {
         report.push_str(&format!("- **Workspace**: `{}`\n\n", workspace.display()));
 
         report.push_str("## 🧠 Tier 2: GEMI (Inference & Hardware Profiler)\n");
-        report.push_str(&format!("- **Engine Version**: {}\n", version));
-        report.push_str(&format!("- **Hardware Profile**: {} CPU Cores Detected | Metal / CUDA Offload Enabled (-ngl 99)\n\n", num_cpus));
+        report.push_str(&format!("- **Engine Version**: v{}\n", version));
+        report.push_str(&format!("- **Hardware Profile**: {} CPU Cores Detected | {}\n\n", num_cpus, gpu_info));
 
         report.push_str("## 🔌 Tier 3: GMCP (Master MCP Infrastructure)\n");
         report.push_str("- **MCP Status**: Native JSON-RPC 2.0 Server Active (stdio & TCP Port 9090)\n");
-        report.push_str("- **Tool Registry**: 39+ Coordinated AI Tools Active\n\n");
+        report.push_str(&format!("- **Tool Registry**: {} Executable AI Tools Active\n\n", active_tools.len()));
 
-        report.push_str("## 🎯 Mission Execution Output\n");
+        report.push_str("## 🎯 Autonomous Multi-Agent Mission Execution\n");
         report.push_str(&format!("🤖 [GMA Interactor] Natural Language Goal: \"{}\"\n", goal));
         for msg in a2a_logs {
             report.push_str(&format!("   ├── [A2A {} -> {}] Action: {} ('{}')\n", msg.sender, msg.recipient, msg.action, msg.payload));
@@ -42,32 +44,11 @@ impl GmaMasterAgent {
 
         let lower_goal = goal.to_lowercase();
         if lower_goal.contains("dir") || lower_goal.contains("ls") || lower_goal.contains("files") {
-            let mut file_list = String::new();
-            let mut count = 0;
-            if let Ok(entries) = std::fs::read_dir(workspace) {
-                for entry in entries.flatten() {
-                    if let Ok(file_name) = entry.file_name().into_string() {
-                        let ftype = if entry.path().is_dir() { "📁 Directory" } else { "📄 File" };
-                        file_list.push_str(&format!("| `{}` | {} |\n", file_name, ftype));
-                        count += 1;
-                    }
-                }
-            }
-            report.push_str(&format!("\n### 📂 Workspace Directory Listing (`{}` - {} entries)\n\n", workspace.display(), count));
-            report.push_str("| Entry Name | Type |\n");
-            report.push_str("| :--- | :--- |\n");
-            report.push_str(&file_list);
-        } else if lower_goal.contains("disk usage") || lower_goal.contains("disk space") || lower_goal.contains("df") {
-            let df_out = Command::new("df")
-                .args(["-h", workspace.to_str().unwrap_or(".")])
-                .output()
-                .ok()
-                .and_then(|o| String::from_utf8(o.stdout).ok())
-                .unwrap_or_else(|| "Filesystem disk usage unavailable".to_string());
-
-            report.push_str("\n### 💾 Filesystem Disk Usage Metrics\n```\n");
-            report.push_str(&df_out);
-            report.push_str("```\n");
+            let listing = ToolRegistry::execute_tool("list_directory", "", workspace);
+            report.push_str(&format!("\n### 📂 Workspace Directory Listing Output\n```\n{}\n```\n", listing));
+        } else if lower_goal.contains("disk") || lower_goal.contains("df") || lower_goal.contains("space") {
+            let df_out = ToolRegistry::execute_tool("get_disk_usage", "", workspace);
+            report.push_str(&format!("\n### 💾 Filesystem Disk Usage Metrics\n```\n{}\n```\n", df_out));
         }
 
         report.push_str("\n✅ [GMA Executive Intelligence] Executed natively in < 2ms (100% Rust Engine)!\n");

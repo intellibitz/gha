@@ -1,7 +1,14 @@
-// 🔌 GMCP Universal Tool Registry
-// 100% Rust implementation exposing 39+ Coordinated AI tools over JSON-RPC 2.0
+// 🔌 GMCP Universal Tool Registry & Dynamic Tool Execution Engine
+// 100% Rust implementation supporting dynamic tool registration & script execution
 
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use serde::{Deserialize, Serialize};
+
+use crate::gemi::hardware::HardwareProfiler;
+use crate::gemi::models::ModelManager;
+use crate::sandbox::SandboxManager;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpTool {
@@ -13,7 +20,7 @@ pub struct ToolRegistry;
 
 impl ToolRegistry {
     pub fn list_tools() -> Vec<McpTool> {
-        vec![
+        let mut tools = vec![
             McpTool {
                 name: "status".to_string(),
                 description: "Get health report of GHA workspace".to_string(),
@@ -38,6 +45,136 @@ impl ToolRegistry {
                 name: "orchestrate".to_string(),
                 description: "Execute GMA multi-agent mission".to_string(),
             },
-        ]
+            McpTool {
+                name: "exec_command".to_string(),
+                description: "Execute system shell command in workspace".to_string(),
+            },
+            McpTool {
+                name: "read_file".to_string(),
+                description: "Read workspace file content".to_string(),
+            },
+            McpTool {
+                name: "list_directory".to_string(),
+                description: "List entries in workspace directory".to_string(),
+            },
+            McpTool {
+                name: "get_disk_usage".to_string(),
+                description: "Inspect filesystem disk usage (df -h)".to_string(),
+            },
+        ];
+
+        // Dynamic Tool Discovery: Scan ~/.gha/tools/ or .gha/tools/ for external executable CLI scripts
+        if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
+            let tools_dir = home.join(".gha/tools");
+            if let Ok(entries) = fs::read_dir(&tools_dir) {
+                for entry in entries.flatten() {
+                    if let Ok(name) = entry.file_name().into_string() {
+                        tools.push(McpTool {
+                            name: format!("ext_{}", name),
+                            description: format!("External executable tool plugin ({})", name),
+                        });
+                    }
+                }
+            }
+        }
+
+        tools
+    }
+
+    pub fn execute_tool(name: &str, arg: &str, workspace: &Path) -> String {
+        if name.starts_with("ext_") {
+            let script_name = name.trim_start_matches("ext_");
+            if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
+                let script_path = home.join(".gha/tools").join(script_name);
+                if script_path.exists() {
+                    let out = Command::new(&script_path)
+                        .arg(arg)
+                        .current_dir(workspace)
+                        .output();
+                    return match out {
+                        Ok(o) => String::from_utf8_lossy(&o.stdout).trim().to_string(),
+                        Err(e) => format!("External tool execution error: {}", e),
+                    };
+                }
+            }
+        }
+
+        match name {
+            "status" => {
+                let is_active = SandboxManager::is_sandbox_active(workspace);
+                let (cpus, gpu) = HardwareProfiler::profile();
+                format!(
+                    "Workspace: {} | Sandbox: {} | Hardware: {} CPUs, {}",
+                    workspace.display(),
+                    if is_active { "ACTIVE" } else { "INACTIVE" },
+                    cpus,
+                    gpu
+                )
+            }
+            "profile_hardware" => {
+                let (cpus, gpu) = HardwareProfiler::profile();
+                format!("Hardware Profile: {} CPU Cores | {}", cpus, gpu)
+            }
+            "version" => {
+                format!("gha Native Engine v{}", crate::GHA_VERSION)
+            }
+            "list_models" => {
+                let models = ModelManager::list_models(workspace);
+                let names: Vec<String> = models.iter().map(|m| m.name.clone()).collect();
+                format!("Active Models ({}): {}", models.len(), names.join(", "))
+            }
+            "reason" => {
+                crate::gemi::engine::GemiEngine::generate_reasoning(arg, workspace)
+            }
+            "list_directory" => {
+                let target = if arg.is_empty() { workspace } else { Path::new(arg) };
+                let mut entries_list = Vec::new();
+                if let Ok(read) = std::fs::read_dir(target) {
+                    for entry in read.flatten() {
+                        if let Ok(name) = entry.file_name().into_string() {
+                            let mark = if entry.path().is_dir() { "[DIR]" } else { "[FILE]" };
+                            entries_list.push(format!("{} {}", mark, name));
+                        }
+                    }
+                }
+                format!("Directory Entries ({}): {}", entries_list.len(), entries_list.join(", "))
+            }
+            "get_disk_usage" => {
+                Command::new("df")
+                    .args(["-h", workspace.to_str().unwrap_or(".")])
+                    .output()
+                    .ok()
+                    .and_then(|o| String::from_utf8(o.stdout).ok())
+                    .unwrap_or_else(|| "Disk usage unavailable".to_string())
+            }
+            "read_file" => {
+                let file_path = workspace.join(arg);
+                if file_path.is_file() {
+                    std::fs::read_to_string(&file_path).unwrap_or_else(|_| "Error reading file".to_string())
+                } else {
+                    format!("File not found: {}", file_path.display())
+                }
+            }
+            "exec_command" => {
+                if arg.trim().is_empty() {
+                    "No command specified".to_string()
+                } else {
+                    let output = Command::new("sh")
+                        .arg("-c")
+                        .arg(arg)
+                        .current_dir(workspace)
+                        .output();
+                    match output {
+                        Ok(out) => {
+                            let stdout = String::from_utf8_lossy(&out.stdout);
+                            let stderr = String::from_utf8_lossy(&out.stderr);
+                            format!("STDOUT:\n{}\nSTDERR:\n{}", stdout, stderr)
+                        }
+                        Err(e) => format!("Execution error: {}", e),
+                    }
+                }
+            }
+            _ => format!("Executable tool '{}' processed with input: '{}'", name, arg),
+        }
     }
 }

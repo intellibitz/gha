@@ -86,11 +86,11 @@ impl GemiServer {
                     };
 
                     // Extract actual user prompt from JSON payload
-                    let user_prompt = extract_prompt_from_json(&body_str).unwrap_or_else(|| "list directory".to_string());
+                    let user_prompt = extract_prompt_from_json(&body_str).unwrap_or_else(|| "list workspace health".to_string());
 
                     // Execute goal via GMA Master Agent to generate full formatted report
                     let gma = GmaMasterAgent::new();
-                    let content = gma.solve(&user_prompt, &workspace, "0.1.68");
+                    let content = gma.solve(&user_prompt, &workspace, crate::GHA_VERSION);
 
                     if is_streaming {
                         // Server-Sent Events (SSE) text/event-stream
