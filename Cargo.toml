@@ -3,7 +3,7 @@ name = "gha"
 version = "0.1.112"
 edition = "2024"
 authors = ["IntelliBitz", "Muthu Ramadoss", "Gemini (Google AI)"]
-description = "gha: Pure AI for AI Runtime — GAWD, GEMI & GMCP Multi-Agent Engine"
+description = "gha: EAI: Exponential Intelligence for Any AI. - GAWD, GEMI & GMCP Multi-Agent Engine"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

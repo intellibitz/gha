@@ -1,5 +1,5 @@
 // ⚡ GHA-Pulse: Tier 0 Native Bootstrap Brain
-// Powered by Candle — Exponential Intelligence from 2^0
+// Powered by Candle — EAI: Exponential Intelligence for Any AI.
 
 use anyhow::{Result, anyhow};
 use candle_core::Device;

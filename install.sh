@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 🚀 gha: 1-Line Universal Installer (0-Effort, 100% Gains)
+# 🚀 gha: EAI: Exponential Intelligence for Any AI. - 1-Line Universal Installer
 # 100% Sandboxed - 100% Platform Independent - 100% IDE Independent - 0 JVM, 0 Git, 0 Gradle
 set -e
 

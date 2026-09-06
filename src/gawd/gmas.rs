@@ -1,4 +1,4 @@
-// 🌌 GMAS: Universal AI for AI Swarm Supervisor
+// 🌌 GMAS: Universal EAI Swarm Supervisor
 // Tier 1 AOA Protocol governing Exponential Explosive Intelligence Swarms
 
 use std::io::{BufRead, BufReader, Write};

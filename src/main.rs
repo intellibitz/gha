@@ -1,4 +1,4 @@
-// 🌌 gha: Pure AI for AI Runtime — GAWD, GEMI & GMCP Multi-Agent Engine
+// 🌌 gha: EAI: Exponential Intelligence for Any AI. — GAWD, GEMI & GMCP Multi-Agent Engine
 // 100% Standalone Native Executable — 0 JVM, 0 Git, 0 Gradle Dependency
 
 mod daemon;
@@ -27,7 +27,7 @@ fn get_home_dir() -> PathBuf {
 }
 
 fn print_help() {
-    println!("🌌 gha: AI for AI — Anywhere for Anything.");
+    println!("🌌 gha: EAI: Exponential Intelligence for Any AI.");
     println!("Usage: gha \"<your intent>\"\n");
     println!("🤖 GHA Master Agent (GMA) Sole Interactor:");
     println!("  gha \"what is your version?\"");
@@ -70,7 +70,7 @@ fn main() {
             print_help();
         }
         "version" | "--version" | "-v" => {
-            println!("# 🌌 gha: AI for AI - Sole Interactor Report");
+            println!("# 🌌 gha: EAI: Exponential Intelligence for Any AI. - Sole Interactor Report");
             println!("\n## 🎯 Mission Execution (A2A Swarm Flux)");
             println!("🤖 [GMA] Universal Intent: \"version\"");
             println!("\n## 🏁 GAWD Accomplishment");

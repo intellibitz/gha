@@ -1,4 +1,4 @@
-// 🌌 GAWD: Exponential Explosive Intelligence Agent Fleet
+// 🌌 GAWD: EAI: Exponential Intelligence for Any AI.
 // 100% Rust implementation for Dynamic Agent Synthesis & Swarm Flux
 
 use std::path::{Path, PathBuf};

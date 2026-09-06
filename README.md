@@ -1,4 +1,4 @@
-# 🌌 gha: EI for AI. Exponential Intelligence for Any AI.
+# 🌌 gha: EAI: Exponential Intelligence for Any AI.
 
 > **100% Platform Independent • 100% Sandboxed • 100% IDE Independent • 0% Effort • 100% Gains**
 
