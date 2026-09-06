@@ -124,6 +124,10 @@ fn main() {
             let res = ToolRegistry::execute_tool("services", "", &cwd);
             println!("{}", res);
         }
+        "verify-cloud" | ":verify-cloud" => {
+            let res = ToolRegistry::execute_tool("verify_cloud_providers", "", &cwd);
+            println!("{}", res);
+        }
         _ => {
             // Universal Mission: The Impact Scope is ALWAYS the Current Working Directory
             // No local .gha folder required. 100% Pure anywhere execution.

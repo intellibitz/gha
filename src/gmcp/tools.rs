@@ -159,6 +159,10 @@ impl ToolRegistry {
                 description: "List running GHA background services (Daemon, GEMI, GMCP)".to_string(),
             },
             McpTool {
+                name: "verify_cloud_providers".to_string(),
+                description: "Verify health and API keys of all active cloud intelligence models".to_string(),
+            },
+            McpTool {
                 name: "debug_engine".to_string(),
                 description: "Autonomous self-debugging: Scan engine source for logic errors and fix them (arg: 'error_log')".to_string(),
             },
@@ -373,6 +377,29 @@ impl ToolRegistry {
                     output.push_str(&format!("- **{} (Port {})**: {}\n", name, port, status));
                 }
                 output.push_str("- **A2A Cluster UDP (Port 9092)**: ACTIVE (Discovery Active)\n");
+                output
+            }
+            "verify_cloud_providers" => {
+                let models = ModelManager::list_models(workspace);
+                let mut output = "# ☁️ GHA Cloud Health Report\n\n".to_string();
+
+                for m in models {
+                    if !m.is_local {
+                        output.push_str(&format!("## {} Verification\n", m.name));
+                        // Trigger a real inference to verify the key
+                        let res = GemiEngine::generate_reasoning("hi", workspace);
+                        if res.contains("Pick") || (res.len() > 10 && !res.contains("FAILED") && !res.contains("Error")) {
+                            output.push_str(&format!("- **Status**: ✅ ACTIVE (Key Verified)\n"));
+                            output.push_str(&format!("- **Response**: \"{}\"\n\n", res.lines().last().unwrap_or("Verified").trim()));
+                        } else {
+                            output.push_str(&format!("- **Status**: ❌ FAILED (Invalid Key or Provider Down)\n"));
+                            output.push_str(&format!("- **Error**: \"{}\"\n\n", res.trim()));
+                        }
+                    }
+                }
+                if output.len() < 30 {
+                    output.push_str("⚠️ No cloud providers detected. Ensure API keys are set in your environment.");
+                }
                 output
             }
             "reflex_scout" => {

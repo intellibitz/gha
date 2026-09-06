@@ -396,6 +396,10 @@ fn main() {
             let goal = "services";
             run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
         }
+        "verify-cloud" | "ghaVerifyCloud" => {
+            let goal = "verify_cloud_providers";
+            run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
+        }
         "scout" | "ghaScout" => {
             let goal = "scout";
             run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);

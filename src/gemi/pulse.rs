@@ -107,6 +107,10 @@ impl GhaPulse {
             return Ok("ACTION: version".to_string());
         }
 
+        if lower.contains("verify cloud") || lower.contains("test api keys") {
+            return Ok("ACTION: verify_cloud_providers".to_string());
+        }
+
         if lower.contains("exponential intelligence step") {
              return Ok(format!("ACTION: reason Perform autonomous self-evolution for {}", prompt));
         }
