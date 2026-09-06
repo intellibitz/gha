@@ -57,7 +57,7 @@ fi
 
 # 3. Prime background GMA Master Daemon
 if [ -x "$GLOBAL_BIN_DIR/ghai" ]; then
-    "$GLOBAL_BIN_DIR/ghai" :install >/dev/null 2>&1 || true
+    "$GLOBAL_BIN_DIR/ghai" install >/dev/null 2>&1 || true
 fi
 
 # 4. PATH Integration
@@ -73,4 +73,4 @@ if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
 fi
 
 echo ""
-echo "🎉 Global gha is ready! Type 'ghai :version' or 'ghai :status' to verify."
+echo "🎉 Global gha is ready! Type 'ghai \"what is your version?\"' to verify."
