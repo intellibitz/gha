@@ -30,7 +30,14 @@ impl GemiEngine {
             return res;
         }
 
-        format!("❌ CLOUD_BRAIN_UNAVAILABLE: All cloud brains failed. (Native: Scouting for brains...)")
+        let models = super::models::ModelManager::scout_and_benchmark(workspace);
+        for best_model in models {
+             if best_model.name.contains("Ollama") {
+                 return Self::execute_local_ollama(prompt, &best_model.model_id);
+             }
+        }
+
+        format!("❌ CLOUD_BRAIN_UNAVAILABLE: All cloud brains failed. (Context: {})", prompt)
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
@@ -48,7 +55,7 @@ impl GemiEngine {
         let payload = json!({
             "model": "qwen/qwen3.6-27b",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 500
+            "max_tokens": 1000
         });
         let out = Self::curl_pipe("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
@@ -78,6 +85,17 @@ impl GemiEngine {
         Ok(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", Self::cleanse_artifact(text)))
     }
 
+    fn execute_local_ollama(prompt: &str, model_id: &str) -> String {
+        let out = Command::new("ollama").args(["run", model_id, prompt]).output();
+        match out {
+            Ok(o) if o.status.success() => {
+                let text = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                format!("🧠 [Ollama Pick: {}]:\n{}", model_id, Self::cleanse_artifact(&text))
+            },
+            _ => format!("❌ Ollama Failure: Falling back from model '{}'", model_id)
+        }
+    }
+
     fn curl_pipe(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<Vec<u8>> {
         let mut child = Command::new("curl")
             .args(["-s", "-X", "POST", url, "-H", "Content-Type: application/json"])
@@ -99,30 +117,17 @@ impl GemiEngine {
 
     fn cleanse_artifact(text: &str) -> String {
         let mut final_text = text.trim().to_string();
-
-        while let Some(start) = final_text.find("<think>") {
-            if let Some(end) = final_text.find("</think>") {
-                let mut new_text = final_text[..start].to_string();
-                new_text.push_str(&final_text[end + 8..]);
-                final_text = new_text.trim().to_string();
-            } else {
-                final_text = final_text[..start].trim().to_string();
-                break;
-            }
-        }
-
         if let Some(pos) = final_text.rfind("</think>") {
             final_text = final_text[pos + 8..].trim().to_string();
         }
-
         final_text
     }
 
     pub fn verify_provider(name: &str) -> String {
         let prompt = "Verification mission: Respond with 'ACTIVE'.";
         let res = match name {
-            "Groq" => Self::execute_groq(prompt),
             "Google Gemini" => Self::execute_gemini(prompt),
+            "Groq" => Self::execute_groq(prompt),
             "OpenAI" => Self::execute_openai(prompt),
             _ => Err(anyhow!("Unknown Provider")),
         };
