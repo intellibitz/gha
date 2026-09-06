@@ -51,28 +51,16 @@ impl GemiEngine {
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
         let mut errors = Vec::new();
 
-        // Priority 1: Anthropic Claude 3.5 Sonnet (Best for Artifacts)
-        match Self::execute_anthropic(prompt) {
-            Ok(res) => return Some(res),
-            Err(e) => errors.push(format!("Anthropic: {}", e)),
-        }
-
-        // Priority 2: Groq
+        // Priority 1: Groq (using non-reasoning model for speed/artifacts)
         match Self::execute_groq(prompt) {
             Ok(res) => return Some(res),
             Err(e) => errors.push(format!("Groq: {}", e)),
         }
 
-        // Priority 3: Gemini
+        // Priority 2: Gemini
         match Self::execute_gemini(prompt) {
             Ok(res) => return Some(res),
             Err(e) => errors.push(format!("Gemini: {}", e)),
-        }
-
-        // Priority 4: OpenAI
-        match Self::execute_openai(prompt) {
-            Ok(res) => return Some(res),
-            Err(e) => errors.push(format!("OpenAI: {}", e)),
         }
 
         if !errors.is_empty() {
@@ -107,7 +95,6 @@ impl GemiEngine {
             "Groq" => Self::execute_groq(prompt),
             "Google Gemini" => Self::execute_gemini(prompt),
             "OpenAI" => Self::execute_openai(prompt),
-            "Anthropic" => Self::execute_anthropic(prompt),
             _ => Err(anyhow!("Unknown Provider")),
         };
         match res {
@@ -116,29 +103,10 @@ impl GemiEngine {
         }
     }
 
-    fn execute_anthropic(prompt: &str) -> Result<String> {
-        let key = std::env::var("ANTHROPIC_API_KEY")?;
-        let payload = json!({
-            "model": "claude-3-5-sonnet-20240620",
-            "max_tokens": 4096,
-            "messages": [{"role": "user", "content": prompt}]
-        });
-
-        let payload_file = std::env::temp_dir().join("gha_anthropic_payload.json");
-        std::fs::write(&payload_file, payload.to_string())?;
-
-        let out = Command::new("curl").args(["-s", "https://api.anthropic.com/v1/messages", "-H", &format!("x-api-key: {}", key.trim()), "-H", "anthropic-version: 2023-06-01", "-H", "Content-Type: application/json", "-d", &format!("@{}", payload_file.display())]).output()?;
-        let _ = std::fs::remove_file(payload_file);
-
-        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        let text = v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Anthropic failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: Anthropic Claude]:\n{}", Self::cleanse_artifact(&text)))
-    }
-
     fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
-            "model": "qwen/qwen3.6-27b",
+            "model": "llama-3.1-8b-instant",
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": 1000
         });
@@ -151,7 +119,7 @@ impl GemiEngine {
 
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
         let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Groq failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", Self::cleanse_artifact(&text)))
+        Ok(format!("☁️ [🏆 Premier Pick: Groq Llama]:\n{}", Self::cleanse_artifact(&text)))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
