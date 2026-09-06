@@ -68,6 +68,12 @@ impl GemiEngine {
             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: write_file {} The universe is a vast, mostly empty space consisting of billions of galaxies, each containing billions of stars. It originated approximately 13.8 billion years ago from the Big Bang and continues to expand.", cpus, file);
         }
 
+        if (lower.contains("create") || lower.contains("write")) && lower.contains("file") {
+            let file = lower.split("named ").nth(1).unwrap_or("output.txt").split_whitespace().next().unwrap_or("output.txt");
+            let content = lower.split("containing ").nth(1).unwrap_or("GHA Universal Flux").trim();
+            return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: write_file {} {}", cpus, file, content);
+        }
+
         format!("🧠 [Native Synthesis ({} CPUs | {})]:\nMission: \"{}\"\nNote: Inference Engine Offline. Set GEMINI_API_KEY for anywhere intelligence.", cpus, gpu, prompt)
     }
 
