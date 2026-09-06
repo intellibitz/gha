@@ -93,10 +93,26 @@ fn main() {
         "daemon-start" => {
             GmaDaemon::run_daemon_loop(global_dir.clone(), global_dir);
         }
-        "gmcp" | "mcp" => {
+        "gmcp-server" | "mcp-server" => {
             GmcpServer::run_stdio(&cwd, GHA_VERSION);
         }
-        "gemi" | "gemi-server" => {
+        "gmcp" | "mcp" => {
+            let res = ToolRegistry::execute_tool("gmcp_scout", "", &cwd);
+            println!("{}", res);
+        }
+        "reflex" | ":reflex" => {
+            let res = ToolRegistry::execute_tool("reflex_scout", "", &cwd);
+            println!("{}", res);
+        }
+        "gawd" | ":gawd" => {
+            let res = ToolRegistry::execute_tool("gawd_scout", "", &cwd);
+            println!("{}", res);
+        }
+        "gemi" | ":gemi" => {
+            let res = ToolRegistry::execute_tool("gemi_scout", "", &cwd);
+            println!("{}", res);
+        }
+        "gemi-server" => {
             GemiServer::start_http_server(cwd, GemiServer::DEFAULT_PORT);
         }
         "scout" | ":scout" => {

@@ -319,6 +319,7 @@ impl ToolRegistry {
                 assets.extend(crate::gemi::reflex::ReflexEngine::scout_tier0_assets());
                 assets.extend(crate::gawd::agents::GawdAgentFleet::scout_tier1_assets());
                 assets.extend(crate::gemi::models::ModelManager::scout_tier2_assets());
+                assets.extend(crate::gmcp::client::GmcpClient::scout_tier3_assets());
 
                 let mut output = "# 🌌 Universal GHA Discovery Report\n\n".to_string();
                 for asset in assets {
@@ -328,6 +329,38 @@ impl ToolRegistry {
                     output.push_str(&format!("- **URL**: {}\n\n", asset.url));
                 }
                 output.push_str("✅ Sticking to industry standard protocols at all tiers.");
+                output
+            }
+            "reflex_scout" => {
+                let assets = crate::gemi::reflex::ReflexEngine::scout_tier0_assets();
+                let mut output = "# 🧠 GHA Tier 0: Reflex Discovery\n\n".to_string();
+                for asset in assets {
+                    output.push_str(&format!("- **Asset**: {} ({})\n  URL: {}\n", asset.name, asset.provider, asset.url));
+                }
+                output
+            }
+            "gawd_scout" => {
+                let assets = crate::gawd::agents::GawdAgentFleet::scout_tier1_assets();
+                let mut output = "# 🤖 GHA Tier 1: GAWD (AOA) Discovery\n\n".to_string();
+                for asset in assets {
+                    output.push_str(&format!("- **Asset**: {} ({})\n  URL: {}\n", asset.name, asset.provider, asset.url));
+                }
+                output
+            }
+            "gemi_scout" => {
+                let assets = crate::gemi::models::ModelManager::scout_tier2_assets();
+                let mut output = "# ☁️ GHA Tier 2: GEMI (Intelligence) Discovery\n\n".to_string();
+                for asset in assets {
+                    output.push_str(&format!("- **Asset**: {} ({})\n  URL: {}\n", asset.name, asset.provider, asset.url));
+                }
+                output
+            }
+            "gmcp_scout" => {
+                let assets = crate::gmcp::client::GmcpClient::scout_tier3_assets();
+                let mut output = "# 🔌 GHA Tier 3: GMCP (Capabilities) Discovery\n\n".to_string();
+                for asset in assets {
+                    output.push_str(&format!("- **Asset**: {} ({})\n  URL: {}\n", asset.name, asset.provider, asset.url));
+                }
                 output
             }
             "vision_analyze" => {

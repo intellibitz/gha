@@ -192,4 +192,27 @@ impl GmcpClient {
 
         "❌ MCP Error: No response from server.".to_string()
     }
+
+    pub fn scout_tier3_assets() -> Vec<crate::gawd::agents::DiscoverableAsset> {
+        vec![
+            crate::gawd::agents::DiscoverableAsset {
+                tier: "Tier 3: GMCP (Capabilities)".to_string(),
+                name: "Claude Desktop".to_string(),
+                provider: "Anthropic".to_string(),
+                url: "https://claude.ai/download".to_string(),
+            },
+            crate::gawd::agents::DiscoverableAsset {
+                tier: "Tier 3: GMCP (Capabilities)".to_string(),
+                name: "Cursor IDE".to_string(),
+                provider: "Anysphere".to_string(),
+                url: "https://cursor.sh".to_string(),
+            },
+            crate::gawd::agents::DiscoverableAsset {
+                tier: "Tier 3: GMCP (Capabilities)".to_string(),
+                name: "Brave Search MCP".to_string(),
+                provider: "Brave Software".to_string(),
+                url: "https://github.com/modelcontextprotocol/server-brave-search".to_string(),
+            },
+        ]
+    }
 }

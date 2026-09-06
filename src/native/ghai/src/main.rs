@@ -375,9 +375,28 @@ fn main() {
             let goal = "list_models";
             run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
         }
+        "reflex" | "ghaReflex" => {
+            let goal = "reflex_scout";
+            run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
+        }
+        "gawd" | "ghaGawd" => {
+            let goal = "gawd_scout";
+            run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
+        }
+        "gemi" | "ghaGemi" => {
+            let goal = "gemi_scout";
+            run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
+        }
+        "gmcp" | "ghaGmcp" => {
+            let goal = "gmcp_scout";
+            run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
+        }
         "scout" | "ghaScout" => {
             let goal = "scout";
             run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
+        }
+        "gmcp-server" | "mcp-server" => {
+            run_native_mcp_server(&project_root);
         }
         "install" | "ghaInit" => {
             run_install(&project_root, &global_gha_dir);
