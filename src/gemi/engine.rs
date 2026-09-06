@@ -26,39 +26,46 @@ impl GemiEngine {
             }
         }
 
-        if let Some(res) = Self::scout_cloud_providers(prompt) {
-            return res;
+        let (res, errors) = Self::scout_cloud_providers(prompt);
+        if let Some(text) = res {
+            return text;
         }
 
-        format!("❌ CLOUD_BRAIN_UNAVAILABLE: All cloud brains failed. (Native: Scouting for brains...)")
+        let models = super::models::ModelManager::scout_and_benchmark(workspace);
+        for best_model in models {
+             if best_model.name.contains("Ollama") {
+                 return Self::execute_local_ollama(prompt, &best_model.model_id);
+             }
+        }
+
+        format!("❌ CLOUD_BRAIN_UNAVAILABLE: No responders. Diagnostics:\n  {}", errors.join("\n  "))
     }
 
-    fn scout_cloud_providers(prompt: &str) -> Option<String> {
+    fn scout_cloud_providers(prompt: &str) -> (Option<String>, Vec<String>) {
         let mut errors = Vec::new();
 
-        // Priority 1: Gemini (Reliable for free tier)
+        // Priority 1: Gemini (Reliable for artifacts)
         match Self::execute_gemini(prompt) {
-            Ok(res) => return Some(res),
+            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)), errors),
+            Ok(_) => errors.push("Gemini: Empty response".to_string()),
             Err(e) => errors.push(format!("Gemini: {}", e)),
         }
 
         // Priority 2: Groq
         match Self::execute_groq(prompt) {
-            Ok(res) => return Some(res),
+            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)), errors),
+            Ok(_) => errors.push("Groq: Empty response".to_string()),
             Err(e) => errors.push(format!("Groq: {}", e)),
         }
 
         // Priority 3: OpenAI
         match Self::execute_openai(prompt) {
-            Ok(res) => return Some(res),
+            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)), errors),
+            Ok(_) => errors.push("OpenAI: Empty response".to_string()),
             Err(e) => errors.push(format!("OpenAI: {}", e)),
         }
 
-        if !errors.is_empty() {
-            eprintln!("⚠️ Cloud Intelligence Scouting Failures:\n  {}", errors.join("\n  "));
-        }
-
-        None
+        (None, errors)
     }
 
     fn execute_groq(prompt: &str) -> Result<String> {
@@ -70,18 +77,18 @@ impl GemiEngine {
         });
         let out = Self::curl_pipe("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq parse failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", Self::cleanse_artifact(text)))
+        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq failure"))?;
+        Ok(Self::cleanse_artifact(text))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={}", key.trim());
+        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Self::curl_pipe(&url, vec![], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini parse failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", Self::cleanse_artifact(text)))
+        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure"))?;
+        Ok(Self::cleanse_artifact(text))
     }
 
     fn execute_openai(prompt: &str) -> Result<String> {
@@ -93,7 +100,7 @@ impl GemiEngine {
         let out = Self::curl_pipe("https://api.openai.com/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
         let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI failure"))?;
-        Ok(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", Self::cleanse_artifact(text)))
+        Ok(Self::cleanse_artifact(text))
     }
 
     fn execute_local_ollama(prompt: &str, model_id: &str) -> String {
@@ -122,10 +129,7 @@ impl GemiEngine {
         drop(stdin);
 
         let out = child.wait_with_output()?;
-        if !out.status.success() {
-             return Err(anyhow!("Curl failed with status: {} - {}", out.status, String::from_utf8_lossy(&out.stderr)));
-        }
-
+        if !out.status.success() { return Err(anyhow!("Curl failed")); }
         Ok(out.stdout)
     }
 
@@ -147,8 +151,8 @@ impl GemiEngine {
     pub fn verify_provider(name: &str) -> String {
         let prompt = "Verification mission: Respond with 'ACTIVE'.";
         let res = match name {
-            "Groq" => Self::execute_groq(prompt),
             "Google Gemini" => Self::execute_gemini(prompt),
+            "Groq" => Self::execute_groq(prompt),
             "OpenAI" => Self::execute_openai(prompt),
             _ => Err(anyhow!("Unknown Provider")),
         };
