@@ -292,10 +292,10 @@ impl ToolRegistry {
 
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
-                                // Meritocratic Context: Standardize on balanced snippet for free-tier cloud verification
+                                // Meritocratic Context: Standardize on very small snippet for free-tier cloud verification
                                 let mut limit = 2000; // Standard limit for most providers
                                 if arg.contains("tamil") || arg.contains("translate") {
-                                     limit = 2000; // Give enough for the title and prologue
+                                     limit = 100; // Optimal balance for free-tier rate limits
                                 }
                                 let snippet = if content.len() > limit {
                                     format!("{}... [TRUNCATED]", &content[..limit])
@@ -309,6 +309,10 @@ impl ToolRegistry {
                 }
 
                 let result = GemiEngine::generate_reasoning_deep(&full_prompt, workspace);
+
+                if result.trim().is_empty() || result.contains("CLOUD_BRAIN_UNAVAILABLE") {
+                    return "❌ Error: Intelligence provider returned an empty or unavailable result. Retrying...".to_string();
+                }
 
                 // Autonomous Artifact Delivery: If "save to [file]" is in the prompt, fulfill it
                 if arg.contains("save to") {
