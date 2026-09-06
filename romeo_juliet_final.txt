@@ -1,0 +1,60 @@
+<think>
+Here's a thinking process:
+
+1.  **Analyze User Input:**
+   - **Mission:** Translate `romeo_juliet.txt` to Tamil and save to `romeo_juliet_final.txt`
+   - **Provided Context:** `[SOURCE FILE CONTEXT: romeo_juliet.txt] The Project Gutenberg eBook of... [TRUNCATED]`
+   - **Key Constraints:** The source text is truncated, meaning I don't have the full text of Romeo and Juliet to translate. I need to handle this limitation appropriately.
+   - **Expected Output:** A clear final result, likely acknowledging the truncation and providing a partial translation or explaining how to proceed, while still fulfilling the mission as much as possible given the constraints.
+
+2.  **Identify Core Challenges:**
+   - The source text is incomplete/truncated.
+   - Translating a full Shakespeare play is a massive task.
+   - I need to simulate the translation process for a representative sample or explain the limitation clearly.
+   - I should provide the output in the requested format (Tamil translation) and specify that it should be saved to `romeo_juliet_final.txt`.
+
+3.  **Determine Response Strategy:**
+   - Acknowledge the truncation.
+   - Provide a high-quality Tamil translation of a representative excerpt (e.g., the famous opening lines or Prologue).
+   - Explain how the full file would be handled if provided.
+   - Format the output clearly as requested.
+   - Include instructions on how to save it to `romeo_juliet_final.txt`.
+
+4.  **Draft - Mental Refinement (Internal Translation & Structure):**
+   - *Original (Shakespeare, Romeo & Juliet, Prologue/Sonnet):*
+     Two households, both alike in dignity,
+     In fair Verona, where we lay our scene,
+     From ancient grudge break to new mutiny,
+     Where civil blood makes civil hands unclean.
+     From forth the fatal loins of these two foes
+     A pair of star-cross'd lovers take their life;
+     Whose misadventured piteous overthrows
+     Do with their death bury their parents' strife.
+     The fearful passage of their death-mark'd love,
+     And the continuance of their parents' rage,
+     Which, but their children's end, naught could remove,
+     Is now the two hours' traffic of our stage;
+     The which if you with patient ears attend,
+     What here shall miss, our toil shall strive to mend.
+   - *Tamil Translation (Mental/Reference-based crafting):*
+     சமமான மதிப்புள்ள இரண்டு குடும்பங்கள்,
+     நம் நடிப்பு மேடை அமைக்கும் வெணீசக் காட்டு வீரன்,
+     பழைய விரோதம் புதிய வாள் மோதலாய் மாற,
+     மாநகர் ரத்தம் மாநகர் கரங்களை அண்டுகிறது.
+     இவ்விரு விரோதிகளின் வயிடங்களிலிருந்து,
+     மதியில் நிலையற்ற காதலர்கள் இரண்டினர் தங்கள் ஆயுளைத் தூய்மை செய்கின்றனர்;
+     இவர்களின் நம்பிக்கை மாதாவின் மோகனைகள்,
+     தங்கள் மறைவு தங்கள் தந்தையின் சிற்றினங்கள்,
+     இவர்களின் பயமுறுத்துறு குணங்களின் தடங்கள்,
+     தங்கள் பெற்றோரின் வீசிதிமரங்களின் விழிகள்,
+     அவரது குழந்தைகளின் மணிநேரங்களின் வட்டமின்மை,
+     இப்போது இரண்டு மணிநேரங்களின் நமது மேடை;
+     இது நீங்கள் பொறுமையான காதுகளால் கேட்டுக்கொண்டால்,
+     இங்கு வாழ்த்துகிறது, முயற்சி திரைக்கு முயற்சிக்கிறது.
+   - *Self-Correction/Verification of Tamil Translation:* The above draft is quite rough and not accurate. I need a proper, literary Tamil translation that captures the poetic meter and meaning. Since I'm an AI, I should generate a careful, accurate translation rather than a random one. Let me craft a proper translation based on standard Tamil literary conventions for Shakespeare.
+
+   Actually, translating Shakespeare's sonnet into Tamil requires careful phrasing. Let me do a more accurate version:
+
+   **Original:**
+   Two households, both alike in dignity,
+   In fair Verona, where we lay our scene,
