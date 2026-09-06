@@ -145,12 +145,12 @@ impl GmaMasterAgent {
                         let mut res = ToolRegistry::execute_tool(tool_name, arg, workspace);
 
                         // 🚀 Native Self-Healing Loop (2^0 intelligence)
-                        if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") || res.to_lowercase().contains("rate_limit") {
+                        if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") || res.to_lowercase().contains("cloud_brain_unavailable") {
                             let mut fix_prompt = format!("Mission '{}' failed at tool '{}' with error: '{}'. Suggest a fixed command.", goal, tool_name, res);
 
-                            // Specific Self-Healing: Context Reduction for Rate Limits
-                            if res.contains("rate_limit") || res.contains("too large") {
-                                fix_prompt = format!("Mission '{}' failed due to rate limits. Suggest the same command but with a much smaller context or snippet.", goal);
+                            // Specific Self-Healing: Context Reduction for Rate Limits or Large Requests
+                            if res.contains("rate_limit") || res.contains("too large") || res.contains("CLOUD_BRAIN_UNAVAILABLE") {
+                                fix_prompt = format!("Mission '{}' failed due to intelligence limits. Suggest the same command but with a 'smaller context' or 'snippet' of any referenced files.", goal);
                             }
 
                             if let Ok(fixed_action) = crate::gemi::pulse::GhaPulse::reason(&fix_prompt, workspace) {
@@ -159,7 +159,7 @@ impl GmaMasterAgent {
                                      let fix_tool = fix_parts[0];
                                      let fix_arg = fix_parts.get(1).unwrap_or(&"");
                                      let fix_res = ToolRegistry::execute_tool(fix_tool, fix_arg, workspace);
-                                     res = fix_res; // Prioritize the successful self-healed result
+                                     res = fix_res; // Successfully self-healed
                                 }
                             }
                         }

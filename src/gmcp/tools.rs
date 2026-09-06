@@ -280,7 +280,12 @@ impl ToolRegistry {
                 // Autonomous Context Attachment: If an EXISTING source file is mentioned, inline its content
                 for word in arg.split_whitespace() {
                     let clean_word = word.trim_matches(|c| c == '(' || c == ')' || c == '[' || c == ']');
-                    if (clean_word.ends_with(".txt") || clean_word.ends_with(".rs") || clean_word.ends_with(".toml")) && !arg.contains(&format!("save to {}", clean_word)) {
+                    if (clean_word.ends_with(".txt") || clean_word.ends_with(".rs") || clean_word.ends_with(".toml")) {
+                        // Context Filtering: Don't treat the target of "save to" as a source
+                        if arg.contains(&format!("save to {}", clean_word)) || arg.contains(&format!("save the tamil translation in {}", clean_word)) {
+                            continue;
+                        }
+
                         let mut path = workspace.join(clean_word);
                         if !path.exists() {
                              for sub in &["Downloads", "Documents", "target"] {
@@ -292,9 +297,9 @@ impl ToolRegistry {
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
                                 // Meritocratic Context: Standardize on balanced snippet for free-tier cloud verification
-                                let mut limit = 2000;
-                                if arg.contains("tamil") || arg.contains("translate") {
-                                     limit = 400; // Optimal balance for free-tier rate limits
+                                let mut limit = 1000;
+                                if arg.contains("smaller context") || arg.contains("snippet") {
+                                     limit = 300;
                                 }
                                 let snippet = if content.len() > limit {
                                     format!("{}... [TRUNCATED]", &content[..limit])
