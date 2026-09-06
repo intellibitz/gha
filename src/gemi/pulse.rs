@@ -58,6 +58,10 @@ impl GhaPulse {
             return Ok("ACTION: self_heal_build".to_string());
         }
 
+        if lower.contains("self_heal_build") || lower.contains("fix build") {
+             return Ok("ACTION: self_heal_build".to_string());
+        }
+
         if lower == "test" || lower.contains("unit test") || lower == "run tests" {
             return Ok("ACTION: run_test_harness".to_string());
         }
@@ -66,8 +70,29 @@ impl GhaPulse {
             return Ok("ACTION: scout".to_string());
         }
 
-        if lower.contains("services") || lower.contains("running processes") {
-            return Ok("ACTION: services".to_string());
+        if lower.contains("self_evolve") || lower.contains("self_optimization") {
+            return Ok("ACTION: self_evolve".to_string());
+        }
+
+        if lower.contains("docker_build") || lower.contains("build container") {
+            let tag = lower.split_whitespace().last().unwrap_or("latest");
+            return Ok(format!("ACTION: docker_build {}", tag));
+        }
+
+        if lower.contains("kube_deploy") || lower.contains("deploy pods") {
+            let file = lower.split_whitespace().last().unwrap_or("k8s/deployment.yaml");
+            return Ok(format!("ACTION: kube_deploy {}", file));
+        }
+
+        if lower.contains("cluster_ping") || lower.contains("find peers") {
+            return Ok("ACTION: cluster_ping".to_string());
+        }
+
+        if lower.contains("cluster_dispatch") {
+            let parts: Vec<&str> = lower.split_whitespace().collect();
+            let addr = parts.get(1).unwrap_or(&"127.0.0.1:9090");
+            let task = parts.get(2).unwrap_or(&"status");
+            return Ok(format!("ACTION: cluster_dispatch {} {}", addr, task));
         }
 
         if lower == "version" {
