@@ -11,14 +11,15 @@ mkdir -p "$GLOBAL_GHA_DIR/models"
 # ⚡ [gha] Mission: Initialize 100% Sandboxed Native AI Runtime
 echo "⚡ [gha] Initializing 100% Sandboxed Native AI Runtime..."
 
-# Determine source location (Local vs Remote)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd 2>/dev/null || pwd)"
-
-if [ ! -f "$SCRIPT_DIR/Cargo.toml" ]; then
+# Determine source location (Local vs Remote Swarm Flux)
+if [[ -n "${BASH_SOURCE[0]}" ]] && [[ -f "$(dirname "${BASH_SOURCE[0]}")/../Cargo.toml" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    echo "🏠 [gha Local] Detected local installation from source..."
+else
     echo "🌐 [gha Remote] Detected remote installation mission..."
     TEMP_DIR=$(mktemp -d)
     echo "   ├── Cloning gha engine from GitHub to $TEMP_DIR..."
-    git clone --depth 1 https://github.com/intellibitz/gha.git "$TEMP_DIR" >/dev/null 2>&1
+    git clone --depth 1 https://github.com/intellibitz/gha.git "$TEMP_DIR" >/dev/null 2>&1 || { echo "❌ Git clone failed."; exit 1; }
     SCRIPT_DIR="$TEMP_DIR"
 fi
 
