@@ -47,17 +47,6 @@ impl GemiEngine {
         None
     }
 
-    pub fn verify_provider(name: &str) -> String {
-        let prompt = "Verification mission: Respond with 'ACTIVE'.";
-        let res = match name {
-            "Google Gemini" => Self::execute_gemini(prompt),
-            "Groq" => Self::execute_groq(prompt),
-            "OpenAI" => Self::execute_openai(prompt),
-            _ => Err(anyhow!("Unknown Provider")),
-        };
-        match res { Ok(t) => t, Err(e) => format!("❌ Error: {}", e) }
-    }
-
     fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
@@ -125,10 +114,28 @@ impl GemiEngine {
 
     fn cleanse_artifact(text: &str) -> String {
         let mut final_text = text.trim().to_string();
-        if let Some(pos) = final_text.rfind("</think>") {
-            final_text = final_text[pos + 8..].trim().to_string();
+        while let Some(start) = final_text.find("<think>") {
+            if let Some(end) = final_text.find("</think>") {
+                let mut new_text = final_text[..start].to_string();
+                new_text.push_str(&final_text[end + 8..]);
+                final_text = new_text.trim().to_string();
+            } else {
+                final_text = final_text[..start].trim().to_string();
+                break;
+            }
         }
         final_text
+    }
+
+    pub fn verify_provider(name: &str) -> String {
+        let prompt = "Verification mission: Respond with 'ACTIVE'.";
+        let res = match name {
+            "Groq" => Self::execute_groq(prompt),
+            "Google Gemini" => Self::execute_gemini(prompt),
+            "OpenAI" => Self::execute_openai(prompt),
+            _ => Err(anyhow!("Unknown Provider")),
+        };
+        match res { Ok(t) => t, Err(e) => format!("❌ Error: {}", e) }
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
