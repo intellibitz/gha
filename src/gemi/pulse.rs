@@ -20,7 +20,13 @@ impl GhaPulse {
         if lower.contains("create") || lower.contains("write") {
              let parts: Vec<&str> = lower.split("containing").collect();
              if parts.len() >= 2 {
-                 let file_name = parts[0].replace("create", "").replace("write", "").replace("file", "").replace("named", "").trim();
+                 let file_name = parts[0]
+                    .replace("create", "")
+                    .replace("write", "")
+                    .replace("file", "")
+                    .replace("named", "")
+                    .replace(" a ", " ")
+                    .trim();
                  let content = parts[1].trim();
                  return Ok(format!("ACTION: write_file {} {}", file_name, content));
              }
@@ -63,16 +69,12 @@ impl GhaPulse {
             return Ok("ACTION: services".to_string());
         }
 
-        if lower.contains("romeo") && lower.contains("juliet") && lower.contains("download") {
-             return Ok("ACTION: exec_command curl -L https://www.gutenberg.org/cache/epub/1513/pg1513.txt -o romeo_juliet.txt".to_string());
-        }
-
-        if lower.contains("translate") && lower.contains("tamil") {
-             return Ok("ACTION: reason Translate romeo_juliet.txt to Tamil".to_string());
-        }
-
         if lower == "version" {
             return Ok("ACTION: version".to_string());
+        }
+
+        if lower.contains("romeo") && lower.contains("juliet") && lower.contains("download") {
+             return Ok("ACTION: exec_command curl -L https://www.gutenberg.org/cache/epub/1513/pg1513.txt -o romeo_juliet.txt".to_string());
         }
 
         // 🚀 Self-Bootstrapping: If Pulse cannot map intent, it returns a special signal
