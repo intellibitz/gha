@@ -18,7 +18,7 @@ use gmcp::tools::ToolRegistry;
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.90";
+const GHA_VERSION: &str = "0.1.97";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -61,16 +61,19 @@ fn print_help() {
     println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (http://127.0.0.1:9091/v1)\n");
     println!("GMA Master Interactor Native Missions & Multi-Tier AI Tasks:");
     println!("  ghai \"<instruction>\"     Execute natural language AI mission via GMA");
+    println!("  ghai ai swarm            Synchronize mission context across active world-scale nodes");
+    println!("  ghai ai evolve           Trigger autonomous self-evolution & tool engineering loop");
+    println!("  ghai ai scan-global      Scan world-wide GHA registry for agent service providers");
     println!("  ghai ai provision        Run autonomous cloud infrastructure provisioning (Tf/Docker/K8s)");
     println!("  ghai ai docker-ps        List active Docker containers");
     println!("  ghai ai kube-pods        List Kubernetes pods");
     println!("  ghai ai vision           Analyze image via multimodal models");
     println!("  ghai ai cluster          Inspect multi-node A2A agent network cluster nodes");
+    println!("  ghai ai ping-peers       Broadcast UDP discovery pings to local LAN peer nodes");
     println!("  ghai ai self-heal        Run autonomous self-healing code compilation loop");
     println!("  ghai ai run-tests        Run automated workspace unit test harness");
     println!("  ghai ai orchestrate      Inspect 3-tier GMA coordination report");
     println!("  ghai ai models           Inspect GGUF & web AI models");
-    println!("  ghai ai mcp-hub          Inspect coordinated MCP tool servers");
     println!("  ghai ai server           Start GEMI OpenAI-compatible HTTP REST server (Port 9091)");
 }
 
@@ -92,7 +95,7 @@ fn print_status(workspace: &Path, global_dir: &Path) {
     println!("   ├── Coordinated Tiers: Tier 1 (GAWD) | Tier 2 (GEMI Port 9091) | Tier 3 (GMCP Port 9090)");
     println!("   ├── Active Models    : {} GGUF/Web Models Registered", models.len());
     println!("   ├── MCP Tools Hub    : {} Tools Exposed over JSON-RPC 2.0", tools.len());
-    println!("   ├── A2A Cluster Nodes: {} Nodes Connected Across LAN/Cloud", cluster_nodes.len());
+    println!("   ├── World-Scale A2A  : {} Active Nodes in Global Swarm", cluster_nodes.len());
 
     match GmaDaemon::check_status(global_dir) {
         Some(pid) => println!("   └── GMA Daemon       : RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091) | UDP (Port 9092)", pid),
@@ -106,7 +109,7 @@ fn run_install(workspace: &Path, global_dir: &Path) {
     let _ = SandboxManager::ensure_sandbox(global_dir);
 
     GmaDaemon::ensure_daemon_running(workspace, global_dir);
-    println!("🚀 [GMA Daemon] Always-On Services Primed: GMCP (Port 9090) | GEMI (Port 9091) | A2A UDP (Port 9092)");
+    println!("🚀 [GMA Daemon] Always-On Services Primed: GMCP (Port 9090) | GEMI (Port 9091) | World-Scale UDP (Port 9092)");
     println!("✅ [ghai Native] Environment initialized & background daemon active in < 1ms!");
 }
 
@@ -178,10 +181,10 @@ fn main() {
         }
         "daemon" => {
             match GmaDaemon::check_status(&global_dir) {
-                Some(pid) => println!("🚀 [GMA Daemon] Status: RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091) | UDP (Port 9092)", pid),
+                Some(pid) => println!("🚀 [GMA Daemon] Status: RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091) | World-Scale UDP (Port 9092)", pid),
                 None => {
                     GmaDaemon::ensure_daemon_running(&workspace, &global_dir);
-                    println!("🚀 [GMA Daemon] Started background daemon: GMCP (Port 9090) | GEMI (Port 9091) | UDP (Port 9092)");
+                    println!("🚀 [GMA Daemon] Started background daemon: GMCP (Port 9090) | GEMI (Port 9091) | World-Scale UDP (Port 9092)");
                 }
             }
         }
@@ -189,6 +192,18 @@ fn main() {
             if cmd == "ai" && args.len() > 1 {
                 let sub = &args[1];
                 match sub.as_str() {
+                    "swarm" => {
+                        println!("{}", ToolRegistry::execute_tool("swarm_sync", "", &workspace));
+                        return;
+                    }
+                    "evolve" => {
+                        println!("{}", ToolRegistry::execute_tool("self_evolve", "", &workspace));
+                        return;
+                    }
+                    "scan-global" => {
+                        println!("{}", ToolRegistry::execute_tool("global_registry_scan", "", &workspace));
+                        return;
+                    }
                     "provision" => {
                         println!("{}", ToolRegistry::execute_tool("cloud_provision", "", &workspace));
                         return;
@@ -243,11 +258,9 @@ fn main() {
                     "mcp-hub" => {
                         let tools = GmcpClient::list_tools();
                         println!("🔌 GMCP Coordinated Tool Servers ({} Tools Active):", tools.len());
-                        println!("   ├── [STDIO] Native GMCP Server: ACTIVE (Port 9090 / stdio)");
                         for t in tools {
                             println!("   │   ├── Tool: '{}' - {}", t.name, t.description);
                         }
-                        println!("   └── [HOST] Universal AI Tool Registry: ACTIVE");
                         return;
                     }
                     _ => {}
