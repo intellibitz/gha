@@ -53,7 +53,9 @@ impl GemiEngine {
                     if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
                         return Some(format!("☁️ [🏆 Premier Pick: Groq Llama 3.3]:\n{}", text.trim()));
                     }
+                    return Some(format!("❌ Groq Parse Error: {}", stdout));
                 }
+                return Some(format!("❌ Groq Curl Failed"));
             }
         }
 
@@ -68,7 +70,9 @@ impl GemiEngine {
                     if let Some(text) = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
                         return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", text.trim()));
                     }
+                    return Some(format!("❌ Gemini Parse Error: {}", stdout));
                 }
+                return Some(format!("❌ Gemini Curl Failed"));
             }
         }
 
