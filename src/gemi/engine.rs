@@ -30,27 +30,26 @@ impl GemiEngine {
             return res;
         }
 
-        let models = super::models::ModelManager::scout_and_benchmark(workspace);
-        for best_model in models {
-             if best_model.name.contains("Ollama") {
-                 return Self::execute_local_ollama(prompt, &best_model.model_id);
-             }
-        }
-
         format!("❌ CLOUD_BRAIN_UNAVAILABLE: All cloud brains failed. (Native: Scouting for brains...)")
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
+        let mut errors = Vec::new();
+
         // Priority 1: Gemini (Verified Active v1beta)
         match Self::execute_gemini(prompt) {
             Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)),
-            Err(_) => {},
+            Err(e) => errors.push(format!("Gemini: {}", e)),
         }
 
         // Priority 2: Groq (Verified Active qwen3.6)
         match Self::execute_groq(prompt) {
             Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)),
-            Err(_) => {},
+            Err(e) => errors.push(format!("Groq: {}", e)),
+        }
+
+        if !errors.is_empty() {
+            eprintln!("⚠️ Cloud Intelligence Scouting Failures:\n  {}", errors.join("\n  "));
         }
 
         None
@@ -65,7 +64,7 @@ impl GemiEngine {
         });
         let out = Self::curl_pipe("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq failure"))?;
+        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq parse failure: {}", v))?;
         Ok(Self::cleanse_artifact(text))
     }
 
@@ -75,19 +74,8 @@ impl GemiEngine {
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Self::curl_pipe(&url, vec![], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure"))?;
+        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini parse failure: {}", v))?;
         Ok(Self::cleanse_artifact(text))
-    }
-
-    fn execute_local_ollama(prompt: &str, model_id: &str) -> String {
-        let out = Command::new("ollama").args(["run", model_id, prompt]).output();
-        match out {
-            Ok(o) if o.status.success() => {
-                let text = String::from_utf8_lossy(&o.stdout).trim().to_string();
-                format!("🧠 [Ollama Pick: {}]:\n{}", model_id, Self::cleanse_artifact(&text))
-            },
-            _ => format!("❌ Ollama Failure: Falling back from model '{}'", model_id)
-        }
     }
 
     fn curl_pipe(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<Vec<u8>> {
@@ -105,7 +93,10 @@ impl GemiEngine {
         drop(stdin);
 
         let out = child.wait_with_output()?;
-        if !out.status.success() { return Err(anyhow!("Curl failed")); }
+        if !out.status.success() {
+             return Err(anyhow!("Curl failed with status: {} - {}", out.status, String::from_utf8_lossy(&out.stderr)));
+        }
+
         Ok(out.stdout)
     }
 
