@@ -46,7 +46,7 @@ impl GemiEngine {
                 "model": "gpt-4o",
                 "messages": [{"role": "user", "content": prompt}]
             });
-            let out = Command::new("curl").args(["s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            let out = Command::new("curl").args(["-s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
             if let Ok(o) = out {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
                     if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
@@ -63,7 +63,7 @@ impl GemiEngine {
                 "max_tokens": 1024,
                 "messages": [{"role": "user", "content": prompt}]
             });
-            let out = Command::new("curl").args(["s", "https://api.anthropic.com/v1/messages", "-H", &format!("x-api-key: {}", key.trim()), "-H", "anthropic-version: 2023-06-01", "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            let out = Command::new("curl").args(["-s", "https://api.anthropic.com/v1/messages", "-H", &format!("x-api-key: {}", key.trim()), "-H", "anthropic-version: 2023-06-01", "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
             if let Ok(o) = out {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
                     if let Some(text) = v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()) {
@@ -77,7 +77,7 @@ impl GemiEngine {
         if let Ok(key) = std::env::var("GEMINI_API_KEY") {
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
             let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
-            let out = Command::new("curl").args(["s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
             if let Ok(o) = out {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
                     if let Some(text) = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
@@ -94,7 +94,7 @@ impl GemiEngine {
                 "messages": [{"role": "user", "content": prompt}],
                 "stream": false
             });
-            let out = Command::new("curl").args(["s", "https://api.deepseek.com/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            let out = Command::new("curl").args(["-s", "https://api.deepseek.com/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
             if let Ok(o) = out {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
                     if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
