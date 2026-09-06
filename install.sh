@@ -56,13 +56,13 @@ if [ -f "$SCRIPT_DIR/version.txt" ]; then
 fi
 
 # 3. Prime background GMA Master Daemon
-if [ -x "$GLOBAL_BIN_DIR/ghai" ]; then
-    "$GLOBAL_BIN_DIR/ghai" install >/dev/null 2>&1 || true
+if [ -x "$GLOBAL_BIN_DIR/gha" ]; then
+    "$GLOBAL_BIN_DIR/gha" install >/dev/null 2>&1 || true
 fi
 
 # 4. PATH Integration
 if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
-    echo "⚡ [ghai] Integrating '$GLOBAL_BIN_DIR' into system PATH..."
+    echo "⚡ [gha] Integrating '$GLOBAL_BIN_DIR' into system PATH..."
     CONFIG_FILES=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile")
     for config in "${CONFIG_FILES[@]}"; do
         if [ -f "$config" ] && ! grep -q ".gha/bin" "$config"; then
@@ -73,4 +73,4 @@ if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
 fi
 
 echo ""
-echo "🎉 Global gha is ready! Type 'ghai \"what is your version?\"' to verify."
+echo "🎉 Global gha is ready! Type 'gha \"what is your version?\"' to verify."

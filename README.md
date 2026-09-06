@@ -26,9 +26,9 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/install.ps1 | i
 Once installed, talk to the **GMA Master Agent** to verify your engine:
 
 ```bash
-ghai "what is your version?"    # Verify native architecture
-ghai "check system status"      # Verify workspace health & swarm
-ghai "list active models"       # Discover cloud & local models
+gha "what is your version?"    # Verify native architecture
+gha "check system status"      # Verify workspace health & swarm
+gha "list active models"       # Discover cloud & local models
 ```
 
 ---

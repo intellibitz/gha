@@ -28,13 +28,13 @@ fn get_home_dir() -> PathBuf {
 
 fn print_help() {
     println!("🌌 gha: AI for AI — Anywhere for Anything.");
-    println!("Usage: ghai \"<your intent>\"\n");
+    println!("Usage: gha \"<your intent>\"\n");
     println!("🤖 GHA Master Agent (GMA) Sole Interactor:");
-    println!("  ghai \"what is your version?\"");
-    println!("  ghai \"check system status\"");
-    println!("  ghai \"build a simple bootloader\"");
-    println!("  ghai \"explain the universe\"");
-    println!("  ghai \"<any goal or mission>\"\n");
+    println!("  gha \"what is your version?\"");
+    println!("  gha \"check system status\"");
+    println!("  gha \"build a simple bootloader\"");
+    println!("  gha \"explain the universe\"");
+    println!("  gha \"<any goal or mission>\"\n");
     println!("⚙️ Internal Runtime Infrastructure:");
     println!("  install                  Initialize global gha environment");
     println!("  uninstall                Remove global gha environment");
