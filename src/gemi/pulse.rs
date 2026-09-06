@@ -84,6 +84,14 @@ impl GhaPulse {
             return Ok(format!("ACTION: kube_deploy {}", file));
         }
 
+        if lower.contains("swarm_sync") {
+            return Ok("ACTION: swarm_sync".to_string());
+        }
+
+        if lower.contains("global_registry_scan") {
+            return Ok("ACTION: global_registry_scan".to_string());
+        }
+
         if lower.contains("cluster_ping") || lower.contains("find peers") {
             return Ok("ACTION: cluster_ping".to_string());
         }
@@ -101,6 +109,14 @@ impl GhaPulse {
 
         if lower.contains("romeo") && lower.contains("juliet") && lower.contains("download") {
              return Ok("ACTION: exec_command curl -L https://www.gutenberg.org/cache/epub/1513/pg1513.txt -o romeo_juliet.txt".to_string());
+        }
+
+        if lower.contains("reason") || lower.contains("explain") || lower.contains("summarize") {
+             return Ok(format!("ACTION: reason {}", prompt));
+        }
+
+        if lower.contains("orchestrate") || lower.contains("mission") {
+             return Ok(format!("ACTION: reason Execute multi-agent orchestration for: {}", prompt));
         }
 
         // 🚀 Self-Bootstrapping: If Pulse cannot map intent, it returns a special signal
