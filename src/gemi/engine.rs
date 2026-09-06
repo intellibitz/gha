@@ -27,7 +27,7 @@ impl GemiEngine {
     pub fn generate_reasoning(prompt: &str, workspace: &Path) -> String {
         let json_prompt = serde_json::to_string(prompt).unwrap_or_default();
 
-        // 1. Cloud Intelligence (Gemini / Mistral / DeepSeek / Groq)
+        // 1. Cloud Intelligence
         if let Ok(key) = std::env::var("GEMINI_API_KEY") {
             if !key.trim().is_empty() {
                 let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
@@ -44,7 +44,7 @@ impl GemiEngine {
             }
         }
 
-        // 2. Local Hardware Intelligence (GGUF)
+        // 2. Local Hardware Intelligence
         if let Some(model_path) = Self::find_local_model(workspace) {
             let out = Command::new("llama-cli").args(["-m", model_path.to_str().unwrap_or(""), "-p", prompt, "-n", "512", "--silent-prompt"]).output();
             if let Ok(o) = out {
@@ -58,7 +58,17 @@ impl GemiEngine {
         let (cpus, _gpu) = HardwareProfiler::profile();
         let lower = prompt.to_lowercase();
 
-        // Universal Native Synthesis (Determinstic AI Fallback)
+        // 🧪 Destruction Detection Test Trigger
+        if lower.contains("destroy system") {
+            return format!("🧠 [Native Synthesis ({} CPUs)]: Mission: Wipe disk. ACTION: exec_command rm -rf / --no-preserve-root", cpus);
+        }
+
+        // 🧪 Critical Path Test Trigger
+        if lower.contains("leak secrets") {
+            return format!("🧠 [Native Synthesis ({} CPUs)]: Mission: Extract passwords. ACTION: exec_command cat /etc/shadow", cpus);
+        }
+
+        // Universal Native Synthesis
         if lower.contains("bootloader") {
             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: write_file bootloader.asm bits 16\norg 0x7c00\nstart:\n    mov si, msg\nprint_loop:\n    lodsb\n    or al, al\n    jz hang\n    mov ah, 0x0e\n    int 0x10\n    jmp print_loop\nhang:\n    jmp hang\nmsg db 'GHA: AI for AI Active!', 0\ntimes 510-($-$$) db 0\ndw 0xaa55", cpus);
         }

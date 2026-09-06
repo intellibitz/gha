@@ -3,6 +3,7 @@
 
 use std::path::Path;
 use super::gmas::GmasSupervisor;
+use super::safety::SafetyDetector;
 use crate::gemi::hardware::HardwareProfiler;
 use crate::gmcp::tools::ToolRegistry;
 
@@ -41,6 +42,15 @@ impl GmaMasterAgent {
         report.push_str("\n## 🔌 GMCP (Universal Tool Capabilities)\n");
         report.push_str(&format!("- **Registry**: {} Tools Registered\n", active_tools.len()));
 
+        // 🛡️ Pre-Execution Safety Audit
+        let safety_check = self.pre_audit_safety(&a2a_logs);
+        if let Err(destructive_msg) = safety_check {
+            report.push_str("\n## 🚨 SAFETY INTERVENTION\n");
+            report.push_str(&format!("   └── {}\n", destructive_msg));
+            report.push_str("\n❌ [gha Intelligence] Mission aborted for system safety.\n");
+            return report;
+        }
+
         // 🧪 Universal Capability Assert: Execute tool calls discovered in Swarm Reasoning
         let mission_result = self.execute_autonomous_flux(goal, &a2a_logs, workspace);
         if !mission_result.is_empty() {
@@ -49,7 +59,6 @@ impl GmaMasterAgent {
         }
 
         // ⚖️ GMA Trust Audit (Brutally Honest Reality Check)
-        // Run AFTER execution to verify actual impact and detect hallucinations/lies.
         let audit = self.audit_truth(goal, &a2a_logs, workspace);
         report.push_str("\n## ⚖️ GMA Trust Audit (Reality Check)\n");
         report.push_str(&format!("   └── {}\n", audit));
@@ -59,10 +68,22 @@ impl GmaMasterAgent {
         report
     }
 
+    fn pre_audit_safety(&self, logs: &[super::gmas::A2AMessage]) -> Result<(), String> {
+        for msg in logs {
+            if msg.payload.contains("ACTION:") {
+                if let Some(action_part) = msg.payload.split("ACTION: ").nth(1) {
+                    let tool_name = action_part.split_whitespace().next().unwrap_or("");
+                    let arg = action_part.splitn(2, ' ').nth(1).unwrap_or("").trim();
+                    SafetyDetector::audit_action(tool_name, arg)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn execute_autonomous_flux(&self, _goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path) -> String {
         let mut results = Vec::new();
 
-        // Detect and execute tool calls from any agent in the swarm
         for msg in logs {
             if msg.payload.contains("ACTION:") {
                 if let Some(action_part) = msg.payload.split("ACTION: ").nth(1) {
@@ -77,19 +98,14 @@ impl GmaMasterAgent {
             }
         }
 
-        if results.is_empty() {
-            "".to_string()
-        } else {
-            results.join("\n")
-        }
+        results.join("\n")
     }
 
     fn audit_truth(&self, goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path) -> String {
         let mut score = 100;
         let mut flags = Vec::new();
-        let reasoning = &logs[2].payload; // ReasoningAgent INFERENCE_FLUX
+        let reasoning = &logs[2].payload;
 
-        // 1. Lie Detector: Action vs Artifact
         if reasoning.contains("ACTION: write_file") {
             if let Some(path_part) = reasoning.split("write_file ").nth(1) {
                 let file_name = path_part.split_whitespace().next().unwrap_or("");
@@ -108,7 +124,6 @@ impl GmaMasterAgent {
             }
         }
 
-        // 2. Hallucination Detector: Intent vs Semantic Content
         let lower_goal = goal.to_lowercase();
         let lower_reasoning = reasoning.to_lowercase();
 
