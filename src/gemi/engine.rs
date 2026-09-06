@@ -34,8 +34,11 @@ impl GemiEngine {
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
+        // Priority 1: Groq (Robust and Fast)
         if let Ok(res) = Self::execute_groq(prompt) { return Some(res); }
+        // Priority 2: Gemini
         if let Ok(res) = Self::execute_gemini(prompt) { return Some(res); }
+        // Priority 3: OpenAI
         if let Ok(res) = Self::execute_openai(prompt) { return Some(res); }
         None
     }
@@ -45,12 +48,12 @@ impl GemiEngine {
         let payload = json!({
             "model": "qwen/qwen3.6-27b",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 1000
+            "max_tokens": 500
         });
         let out = Self::curl_pipe("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
         let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq failure"))?;
-        Ok(Self::cleanse_artifact(text))
+        Ok(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", Self::cleanse_artifact(text)))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
@@ -60,7 +63,7 @@ impl GemiEngine {
         let out = Self::curl_pipe(&url, vec![], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
         let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure"))?;
-        Ok(Self::cleanse_artifact(text))
+        Ok(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", Self::cleanse_artifact(text)))
     }
 
     fn execute_openai(prompt: &str) -> Result<String> {
@@ -72,7 +75,7 @@ impl GemiEngine {
         let out = Self::curl_pipe("https://api.openai.com/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
         let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI failure"))?;
-        Ok(Self::cleanse_artifact(text))
+        Ok(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", Self::cleanse_artifact(text)))
     }
 
     fn curl_pipe(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<Vec<u8>> {
@@ -97,20 +100,17 @@ impl GemiEngine {
     fn cleanse_artifact(text: &str) -> String {
         let mut final_text = text.trim().to_string();
 
-        // Remove ALL content between <think> and </think> tags
         while let Some(start) = final_text.find("<think>") {
             if let Some(end) = final_text.find("</think>") {
                 let mut new_text = final_text[..start].to_string();
                 new_text.push_str(&final_text[end + 8..]);
                 final_text = new_text.trim().to_string();
             } else {
-                // If it's a leading <think> without an end tag, just strip everything from it
                 final_text = final_text[..start].trim().to_string();
                 break;
             }
         }
 
-        // Handle case where some models might use other reasoning headers
         if let Some(pos) = final_text.rfind("</think>") {
             final_text = final_text[pos + 8..].trim().to_string();
         }

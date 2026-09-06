@@ -292,12 +292,12 @@ impl ToolRegistry {
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
                                 // Meritocratic Context: Standardize on balanced snippet for free-tier cloud verification
-                                let mut limit = 1000;
-                                if arg.contains("smaller context") || arg.contains("snippet") || arg.contains("tamil") || arg.contains("translate") {
-                                     limit = 300; // Ultra-reduction for free-tier reliability
+                                let mut limit = 2000;
+                                if arg.contains("tamil") || arg.contains("translate") {
+                                     limit = 400; // Optimal balance for free-tier rate limits
                                 }
                                 let snippet = if content.len() > limit {
-                                    format!("{}... [TRUNCATED - partial result only]", &content[..limit])
+                                    format!("{}... [TRUNCATED]", &content[..limit])
                                 } else {
                                     content
                                 };
