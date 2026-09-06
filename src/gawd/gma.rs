@@ -4,6 +4,7 @@
 use std::path::Path;
 use super::gmas::GmasSupervisor;
 use super::safety::SafetyDetector;
+use super::security::SecurityDetector;
 use crate::gemi::hardware::HardwareProfiler;
 use crate::gmcp::tools::ToolRegistry;
 
@@ -42,12 +43,12 @@ impl GmaMasterAgent {
         report.push_str("\n## 🔌 GMCP (Universal Tool Capabilities)\n");
         report.push_str(&format!("- **Registry**: {} Tools Registered\n", active_tools.len()));
 
-        // 🛡️ Pre-Execution Safety Audit
-        let safety_check = self.pre_audit_safety(&a2a_logs);
-        if let Err(destructive_msg) = safety_check {
-            report.push_str("\n## 🚨 SAFETY INTERVENTION\n");
-            report.push_str(&format!("   └── {}\n", destructive_msg));
-            report.push_str("\n❌ [gha Intelligence] Mission aborted for system safety.\n");
+        // 🛡️ Pre-Execution Safety & Security Audit
+        let audit_result = self.pre_audit_safety_and_security(&a2a_logs);
+        if let Err(violation_msg) = audit_result {
+            report.push_str("\n## 🚨 SECURITY & SAFETY INTERVENTION\n");
+            report.push_str(&format!("   └── {}\n", violation_msg));
+            report.push_str("\n❌ [gha Intelligence] Mission aborted for system integrity.\n");
             return report;
         }
 
@@ -68,13 +69,18 @@ impl GmaMasterAgent {
         report
     }
 
-    fn pre_audit_safety(&self, logs: &[super::gmas::A2AMessage]) -> Result<(), String> {
+    fn pre_audit_safety_and_security(&self, logs: &[super::gmas::A2AMessage]) -> Result<(), String> {
         for msg in logs {
             if msg.payload.contains("ACTION:") {
                 if let Some(action_part) = msg.payload.split("ACTION: ").nth(1) {
                     let tool_name = action_part.split_whitespace().next().unwrap_or("");
                     let arg = action_part.splitn(2, ' ').nth(1).unwrap_or("").trim();
+
+                    // 1. Check for system destruction
                     SafetyDetector::audit_action(tool_name, arg)?;
+
+                    // 2. Check for security violations (key leaks, exfiltration)
+                    SecurityDetector::audit_action(tool_name, arg)?;
                 }
             }
         }
