@@ -30,57 +30,29 @@ impl GemiEngine {
             return res;
         }
 
-        format!("❌ CLOUD_BRAIN_UNAVAILABLE: All cloud brains failed. (Context: {})", prompt)
+        format!("❌ CLOUD_BRAIN_UNAVAILABLE: All cloud brains failed. (Native: Scouting for brains...)")
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
-        let mut errors = Vec::new();
-
-        // Priority 1: Gemini (Reliable for free tier)
-        match Self::execute_gemini(prompt) {
-            Ok(res) => return Some(res),
-            Err(e) => errors.push(format!("Gemini: {}", e)),
+        // Priority 1: Groq (Cap tokens for free tier)
+        match Self::execute_groq(prompt) {
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)),
+            Err(_) => {},
         }
 
-        // Priority 2: Groq
-        match Self::execute_groq(prompt) {
-            Ok(res) => return Some(res),
-            Err(e) => errors.push(format!("Groq: {}", e)),
+        // Priority 2: Gemini
+        match Self::execute_gemini(prompt) {
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)),
+            Err(_) => {},
         }
 
         // Priority 3: OpenAI
         match Self::execute_openai(prompt) {
-            Ok(res) => return Some(res),
-            Err(e) => errors.push(format!("OpenAI: {}", e)),
-        }
-
-        if !errors.is_empty() {
-            eprintln!("⚠️ Cloud Intelligence Scouting Failures:\n  {}", errors.join("\n  "));
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)),
+            Err(_) => {},
         }
 
         None
-    }
-
-    fn execute_local_ollama(prompt: &str, model_id: &str) -> String {
-        let out = Command::new("ollama").args(["run", model_id, prompt]).output();
-        match out {
-            Ok(o) if o.status.success() => format!("🧠 [Ollama Pick: {}]:\n{}", model_id, String::from_utf8_lossy(&o.stdout).trim()),
-            _ => format!("❌ Ollama Failure: Falling back from model '{}'", model_id)
-        }
-    }
-
-    pub fn verify_provider(name: &str) -> String {
-        let prompt = "Verification mission: Respond with 'ACTIVE'.";
-        let res = match name {
-            "Groq" => Self::execute_groq(prompt),
-            "Google Gemini" => Self::execute_gemini(prompt),
-            "OpenAI" => Self::execute_openai(prompt),
-            _ => Err(anyhow!("Unknown Provider")),
-        };
-        match res {
-            Ok(text) => text,
-            Err(e) => format!("❌ Error: {}", e),
-        }
     }
 
     fn execute_groq(prompt: &str) -> Result<String> {
@@ -88,22 +60,21 @@ impl GemiEngine {
         let payload = json!({
             "model": "qwen/qwen3.6-27b",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 200
+            "max_tokens": 100
         });
         let out = Self::curl_pipe("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq failure: {}", v))?;
+        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq failure"))?;
         Ok(Self::cleanse_artifact(text))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        // Use v1beta for fresh models
         let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Self::curl_pipe(&url, vec![], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure: {}", v))?;
+        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure"))?;
         Ok(Self::cleanse_artifact(text))
     }
 
@@ -115,7 +86,7 @@ impl GemiEngine {
         });
         let out = Self::curl_pipe("https://api.openai.com/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI failure: {}", v))?;
+        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI failure"))?;
         Ok(Self::cleanse_artifact(text))
     }
 
@@ -134,26 +105,26 @@ impl GemiEngine {
         drop(stdin);
 
         let out = child.wait_with_output()?;
-        if !out.status.success() {
-             return Err(anyhow!("Curl failed with status: {} - {}", out.status, String::from_utf8_lossy(&out.stderr)));
-        }
-
+        if !out.status.success() { return Err(anyhow!("Curl process failed")); }
         Ok(out.stdout)
     }
 
     fn cleanse_artifact(text: &str) -> String {
         let mut final_text = text.trim().to_string();
-        while let Some(start) = final_text.find("<think>") {
-            if let Some(end) = final_text.find("</think>") {
-                let mut new_text = final_text[..start].to_string();
-                new_text.push_str(&final_text[end + 8..]);
-                final_text = new_text.trim().to_string();
-            } else {
-                final_text = final_text[..start].trim().to_string();
-                break;
-            }
+        if let Some(pos) = final_text.rfind("</think>") {
+            final_text = final_text[pos + 8..].trim().to_string();
         }
         final_text
+    }
+
+    pub fn verify_provider(name: &str) -> String {
+        let prompt = "Verification mission: Respond with 'ACTIVE'.";
+        match name {
+            "Groq" => Self::execute_groq(prompt).unwrap_or_else(|e| format!("❌ Error: {}", e)),
+            "Google Gemini" => Self::execute_gemini(prompt).unwrap_or_else(|e| format!("❌ Error: {}", e)),
+            "OpenAI" => Self::execute_openai(prompt).unwrap_or_else(|e| format!("❌ Error: {}", e)),
+            _ => "❌ Error: Unknown Provider".to_string(),
+        }
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
