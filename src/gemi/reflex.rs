@@ -27,6 +27,8 @@ impl ReflexEngine {
             ReflexDecision::Solved("ACTION: self_heal_build".to_string())
         } else if lower == "test" || lower == "run tests" {
             ReflexDecision::Solved("ACTION: run_test_harness".to_string())
+        } else if lower == "models" || lower == "list models" || lower == "list_models" {
+            ReflexDecision::Solved("ACTION: list_models".to_string())
         } else if lower.contains("clean") && (lower.contains("workspace") || lower.contains("build")) {
             ReflexDecision::Solved("ACTION: exec_command cargo clean".to_string())
         } else {

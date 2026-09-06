@@ -79,6 +79,11 @@ fn main() {
             println!("- **Engine**: v{} (100% Native Rust)", GHA_VERSION);
             println!("\n✅ [gha Intelligence] Flux executed natively (0-Effort, 100% Gains).");
         }
+        "models" | ":models" => {
+            let gma = GmaMasterAgent::new();
+            let report = gma.solve("list_models", &cwd, GHA_VERSION);
+            println!("{}", report);
+        }
         "install" | ":install" => {
             run_install(&global_dir);
         }

@@ -62,6 +62,9 @@ impl GemiEngine {
         if lower == "version" || lower == "what is your version?" {
             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: version", cpus);
         }
+        if lower == "models" || lower == "list models" {
+            return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: list_models", cpus);
+        }
         if lower.contains("destroy system") {
             return format!("🧠 [Native Synthesis ({} CPUs)]: Mission: Wipe system. ACTION: exec_command rm -rf / --no-preserve-root", cpus);
         }

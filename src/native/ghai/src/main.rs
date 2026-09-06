@@ -373,6 +373,10 @@ fn main() {
         "status" | "ghaStatus" => {
             print_status(&project_root, &global_gha_dir, &version);
         }
+        "models" | "ghaModels" => {
+            let goal = "list_models";
+            run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
+        }
         "install" | "ghaInit" => {
             run_install(&project_root, &global_gha_dir);
         }
