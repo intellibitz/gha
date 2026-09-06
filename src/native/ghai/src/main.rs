@@ -273,7 +273,7 @@ fn run_native_clean(project_root: &Path) {
 
 // 0 JVM / 0 Gradle / 0 GitHub Dependency: Native MCP Server over Stdio
 fn run_native_mcp_server(project_root: &Path) {
-    eprintln!("🔌 [ghai Native MCP Server] Starting JSON-RPC 2.0 MCP Server over stdio (0 JVM, 0 GitHub required)...");
+    eprintln!("🔌 [GMCP Server] Started (Listening on stdio for external AI clients like Cursor/Claude).");
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 

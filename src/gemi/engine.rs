@@ -28,7 +28,17 @@ impl GemiEngine {
              }
         }
 
-        // 3. Fallback to Cloud (Gemini)
+        // 3. Fallback to Cloud (Gemini, OpenAI, Anthropic, DeepSeek)
+        if let Some(res) = Self::scout_cloud_providers(prompt) {
+            return res;
+        }
+
+        // 4. Native GHA Synthesis (Protocol-Level Fallback)
+        Self::native_synthesis(prompt)
+    }
+
+    fn scout_cloud_providers(prompt: &str) -> Option<String> {
+        // Priority 1: Gemini
         if let Ok(key) = std::env::var("GEMINI_API_KEY") {
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
             let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
@@ -36,14 +46,63 @@ impl GemiEngine {
             if let Ok(o) = out {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
                     if let Some(text) = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
-                        return format!("☁️ [Cloud Intelligence Pick]:\n{}", text.trim());
+                        return Some(format!("☁️ [Google Gemini Pick]:\n{}", text.trim()));
                     }
                 }
             }
         }
 
-        // 4. Native GHA Synthesis (Protocol-Level Fallback)
-        Self::native_synthesis(prompt)
+        // Priority 2: OpenAI
+        if let Ok(key) = std::env::var("OPENAI_API_KEY") {
+            let payload = json!({
+                "model": "gpt-4o",
+                "messages": [{"role": "user", "content": prompt}]
+            });
+            let out = Command::new("curl").args(["s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            if let Ok(o) = out {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
+                    if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
+                        return Some(format!("☁️ [OpenAI GPT-4o Pick]:\n{}", text.trim()));
+                    }
+                }
+            }
+        }
+
+        // Priority 3: Anthropic
+        if let Ok(key) = std::env::var("ANTHROPIC_API_KEY") {
+            let payload = json!({
+                "model": "claude-3-5-sonnet-20240620",
+                "max_tokens": 1024,
+                "messages": [{"role": "user", "content": prompt}]
+            });
+            let out = Command::new("curl").args(["s", "https://api.anthropic.com/v1/messages", "-H", &format!("x-api-key: {}", key.trim()), "-H", "anthropic-version: 2023-06-01", "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            if let Ok(o) = out {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
+                    if let Some(text) = v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()) {
+                        return Some(format!("☁️ [Anthropic Claude Pick]:\n{}", text.trim()));
+                    }
+                }
+            }
+        }
+
+        // Priority 4: DeepSeek
+        if let Ok(key) = std::env::var("DEEPSEEK_API_KEY") {
+            let payload = json!({
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": false
+            });
+            let out = Command::new("curl").args(["s", "https://api.deepseek.com/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            if let Ok(o) = out {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
+                    if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
+                        return Some(format!("☁️ [DeepSeek Pick]:\n{}", text.trim()));
+                    }
+                }
+            }
+        }
+
+        None
     }
 
     fn execute_local_ollama(prompt: &str, model_id: &str) -> String {

@@ -37,7 +37,7 @@ fn print_help() {
     println!("⚙️ Internal Runtime Infrastructure:");
     println!("  install                  Initialize global gha environment");
     println!("  uninstall                Remove global gha environment");
-    println!("  mcp                      Start native GMA Master MCP Server");
+    println!("  mcp                      Start native GMA Master MCP Server (for external AI clients)");
     println!("  gemi                     Start GEMI OpenAI-compatible REST server");
 }
 

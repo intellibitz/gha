@@ -33,6 +33,36 @@ impl ModelManager {
                 latency_ms: None,
             });
         }
+        if std::env::var("OPENAI_API_KEY").is_ok() {
+            list.push(ModelInfo {
+                name: "OpenAI GPT-4o".to_string(),
+                registry: "OpenAI Cloud".to_string(),
+                model_id: "openai/gpt-4o".to_string(),
+                description: "Industry-standard reasoning & tool-use".to_string(),
+                is_local: false,
+                latency_ms: None,
+            });
+        }
+        if std::env::var("ANTHROPIC_API_KEY").is_ok() {
+            list.push(ModelInfo {
+                name: "Anthropic Claude 3.5 Sonnet".to_string(),
+                registry: "Anthropic Cloud".to_string(),
+                model_id: "anthropic/claude-3.5-sonnet".to_string(),
+                description: "High-precision reasoning specialist".to_string(),
+                is_local: false,
+                latency_ms: None,
+            });
+        }
+        if std::env::var("DEEPSEEK_API_KEY").is_ok() {
+            list.push(ModelInfo {
+                name: "DeepSeek Chat".to_string(),
+                registry: "DeepSeek Cloud".to_string(),
+                model_id: "deepseek/deepseek-chat".to_string(),
+                description: "High-throughput code & logic reasoning".to_string(),
+                is_local: false,
+                latency_ms: None,
+            });
+        }
 
         // 2. Scan Local GGUF Vault
         let model_paths = vec![workspace.join(".gha/models"), PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(".gha/models")];

@@ -9,7 +9,7 @@ pub struct GmcpServer;
 
 impl GmcpServer {
     pub fn run_stdio(workspace: &Path, version: &str) {
-        eprintln!("🔌 [GMCP Server] Starting 100% Native JSON-RPC 2.0 MCP Server over stdio...");
+        eprintln!("🔌 [GMCP Server] Started (Listening on stdio for external AI clients like Cursor/Claude).");
         let stdin = io::stdin();
         let mut stdout = io::stdout();
 
