@@ -12,12 +12,12 @@ Install `gha` globally and start your autonomous AI mission in 1 second:
 
 ### 🐧 Linux, 🍏 macOS, & 🐚 WSL:
 ```bash
-curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/install.sh | bash
 ```
 
 ### 🪟 Windows PowerShell:
 ```powershell
-iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/install.ps1 | iex
 ```
 
 ---
