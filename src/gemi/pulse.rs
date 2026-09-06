@@ -75,10 +75,8 @@ impl GhaPulse {
             return Ok("ACTION: version".to_string());
         }
 
-        if lower.contains("fix") && lower.contains("curl") {
-             return Ok("ACTION: exec_command curl -v -L https://www.gutenberg.org/cache/epub/1513/pg1513.txt -o romeo_juliet.txt".to_string());
-        }
-
-        Err(anyhow!("Pulse Brain: Mission complexity exceeds current bootstrap capacity. Escalating to GEMI."))
+        // 🚀 Self-Bootstrapping: If Pulse cannot map intent, it returns a special signal
+        // that tells GHA to use the tiered discovery and deep brains.
+        Err(anyhow!("Pulse Brain: Transitioning to Tier 2 Deep Reasoning..."))
     }
 }

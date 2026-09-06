@@ -40,56 +40,37 @@ impl GemiEngine {
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
         // Meritocratic Routing: Priority to Premier Tier Models
 
-        // Priority 1: OpenAI GPT-4o (Premier)
-        if let Ok(key) = std::env::var("OPENAI_API_KEY") {
-            let payload = json!({
-                "model": "gpt-4o",
-                "messages": [{"role": "user", "content": prompt}]
-            });
-            let out = Command::new("curl").args(["-s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
-            if let Ok(o) = out {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
-                    if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
-                        return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", text.trim()));
-                    }
-                }
-            }
-        }
-
-        // Priority 2: Anthropic Claude 3.5 Sonnet (Premier)
-        if let Ok(key) = std::env::var("ANTHROPIC_API_KEY") {
-            let payload = json!({
-                "model": "claude-3-5-sonnet-20240620",
-                "max_tokens": 1024,
-                "messages": [{"role": "user", "content": prompt}]
-            });
-            let out = Command::new("curl").args(["-s", "https://api.anthropic.com/v1/messages", "-H", &format!("x-api-key: {}", key.trim()), "-H", "anthropic-version: 2023-06-01", "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
-            if let Ok(o) = out {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
-                    if let Some(text) = v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()) {
-                        return Some(format!("☁️ [🏆 Premier Pick: Anthropic Claude]:\n{}", text.trim()));
-                    }
-                }
-            }
-        }
-
-        // Priority 3: Groq (Premier)
+        // Priority 1: Groq (Ultra-fast, available)
         if let Ok(key) = std::env::var("GROQ_API_KEY") {
             let payload = json!({
-                "model": "llama-3.1-70b-versatile",
+                "model": "llama-3.3-70b-versatile",
                 "messages": [{"role": "user", "content": prompt}]
             });
             let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
             if let Ok(o) = out {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
                     if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
-                        return Some(format!("☁️ [🏆 Premier Pick: Groq Llama]:\n{}", text.trim()));
+                        return Some(format!("☁️ [🏆 Premier Pick: Groq Llama 3.3]:\n{}", text.trim()));
                     }
                 }
             }
         }
 
-        // Priority 4: Mistral (Premier)
+        // Priority 2: Gemini 1.5 Flash (Resilient)
+        if let Ok(key) = std::env::var("GEMINI_API_KEY") {
+            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
+            let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
+            let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
+            if let Ok(o) = out {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
+                    if let Some(text) = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
+                        return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", text.trim()));
+                    }
+                }
+            }
+        }
+
+        // Priority 3: Mistral (Reliable)
         if let Ok(key) = std::env::var("MISTRAL_API_KEY") {
             let payload = json!({
                 "model": "mistral-small-latest",
@@ -100,20 +81,6 @@ impl GemiEngine {
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
                     if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
                         return Some(format!("☁️ [🏆 Premier Pick: Mistral Small]:\n{}", text.trim()));
-                    }
-                }
-            }
-        }
-
-        // Priority 5: Gemini 1.5 Flash (Premier)
-        if let Ok(key) = std::env::var("GEMINI_API_KEY") {
-            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={}", key.trim());
-            let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
-            let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
-            if let Ok(o) = out {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
-                    if let Some(text) = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
-                        return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", text.trim()));
                     }
                 }
             }
