@@ -393,12 +393,11 @@ impl ToolRegistry {
                 for (env_var, name) in keys {
                     if std::env::var(env_var).is_ok() {
                         output.push_str(&format!("## {} Verification\n", name));
-                        // Force a direct check for this specific provider
-                        let res = GemiEngine::generate_reasoning("echo 'Verified'", workspace);
+                        let res = GemiEngine::verify_provider(name);
 
-                        if res.contains(name) || (res.len() > 15 && !res.contains("scouting for brains")) {
+                        if res.to_lowercase().contains("active") || (res.len() > 5 && !res.contains("❌")) {
                             output.push_str(&format!("- **Status**: ✅ ACTIVE (Key Verified)\n"));
-                            output.push_str(&format!("- **Response**: \"{}\"\n\n", res.trim().lines().last().unwrap_or("Verified")));
+                            output.push_str(&format!("- **Response**: \"{}\"\n\n", res.trim()));
                         } else {
                             output.push_str(&format!("- **Status**: ❌ FAILED or LIMITED\n"));
                             output.push_str(&format!("- **Detail**: \"{}\"\n\n", res.trim()));
