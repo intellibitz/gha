@@ -49,14 +49,29 @@ impl GemiEngine {
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
-        // Priority 1: Groq (Ultra-fast)
-        if let Ok(res) = Self::execute_groq(prompt) { return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)); }
+        let mut errors = Vec::new();
+
+        // Priority 1: Groq
+        match Self::execute_groq(prompt) {
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)),
+            Err(e) => errors.push(format!("Groq: {}", e)),
+        }
 
         // Priority 2: Gemini
-        if let Ok(res) = Self::execute_gemini(prompt) { return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)); }
+        match Self::execute_gemini(prompt) {
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)),
+            Err(e) => errors.push(format!("Gemini: {}", e)),
+        }
 
         // Priority 3: OpenAI
-        if let Ok(res) = Self::execute_openai(prompt) { return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)); }
+        match Self::execute_openai(prompt) {
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)),
+            Err(e) => errors.push(format!("OpenAI: {}", e)),
+        }
+
+        if !errors.is_empty() {
+            eprintln!("⚠️ Cloud Intelligence Scouting Failures:\n  {}", errors.join("\n  "));
+        }
 
         None
     }
