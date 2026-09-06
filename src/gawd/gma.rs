@@ -35,10 +35,16 @@ impl GmaMasterAgent {
         report.push_str("## 🎯 Mission Execution (A2A Swarm Flux)\n");
         report.push_str(&format!("🤖 [GMA] Universal Intent: \"{}\"\n", goal));
 
+        let mut intelligence_tier = "Tier 2: GEMI (Deep Reasoning)";
         for (i, msg) in a2a_logs.iter().enumerate() {
+            if msg.sender == "GhaReasoningAgent" && msg.payload.contains("Tier 0") {
+                intelligence_tier = "Tier 0: GHA-Alpha (Native Reflex)";
+            }
             let connector = if i == a2a_logs.len() - 1 { "└──" } else { "├──" };
             report.push_str(&format!(" {} [{} -> GMA] {} ('{}')\n", connector, msg.sender, msg.action, msg.payload));
         }
+
+        report.push_str(&format!("\n🚀 [Orchestration Strategy]: {}\n", intelligence_tier));
 
         report.push_str("\n## 🔌 GMCP (Universal Tool Capabilities)\n");
         report.push_str(&format!("- **Registry**: {} Tools Registered\n", active_tools.len()));

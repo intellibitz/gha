@@ -12,6 +12,12 @@ pub struct GemiEngine;
 
 impl GemiEngine {
     pub fn generate_reasoning(prompt: &str, workspace: &Path) -> String {
+        // 🚀 Tier 0: GHA-Alpha Reflex Reasoning (<10ms)
+        let (reflex_decision, micros) = super::reflex::ReflexEngine::try_solve(prompt, workspace);
+        if let super::reflex::ReflexDecision::Solved(action) = reflex_decision {
+            return format!("⚡ [Tier 0: GHA-Alpha Reflex ({}μs)]: {}", micros, action);
+        }
+
         // 1. 🚀 Exponential Discovery: Scout and Benchmark all available brains
         let models = ModelManager::scout_and_benchmark(workspace);
 
