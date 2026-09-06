@@ -419,7 +419,7 @@ impl ToolRegistry {
                 let mut output = "# 🔌 GHA MCP Hands Health Report\n\n".to_string();
 
                 if tools.is_empty() {
-                    return "⚠️ No external MCP servers configured. Run 'ghai \"I need web search capabilities\"' to provision one.".to_string();
+                    return "⚠️ No external MCP servers configured. Run 'gha \"I need web search capabilities\"' to provision one.".to_string();
                 }
 
                 for tool in tools {

@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "ghai"
+name = "gha"
 version = "0.1.67"

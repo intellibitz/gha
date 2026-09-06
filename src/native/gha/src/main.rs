@@ -1,4 +1,4 @@
-// 🤖 ghai - GHA Master Agent (GMA) Standalone Native Engine & CLI
+// 🤖 gha - GHA Master Agent (GMA) Standalone Native Engine & CLI
 // 100% Standalone Native Executable — 0 JVM, 0 Git CLI, 0 Gradle, 0 GitHub Dependency
 
 use std::env;
@@ -124,8 +124,8 @@ fn print_version(version: &str) {
 }
 
 fn print_help() {
-    println!("🌌 ghai - GHA Master Agent (GMA) Universal Native CLI & Engine");
-    println!("Usage: ghai [COMMAND | OPTION | MISSION_INSTRUCTION]");
+    println!("🌌 gha - GHA Master Agent (GMA) Universal Native CLI & Engine");
+    println!("Usage: gha [COMMAND | OPTION | MISSION_INSTRUCTION]");
     println!();
     println!("100% Native Commands (0 JVM, 0 Git CLI, 0 Gradle, 0 GitHub Required):");
     println!("  :version, -v, --version  Print GHA version & standalone universal architecture");
@@ -141,19 +141,19 @@ fn print_help() {
     println!("  gmcp, mcp                Start 100% native GMA Master MCP Server over stdio");
     println!();
     println!("GMA Master Interactor Native Missions & Tasks:");
-    println!("  ghai \"<instruction>\"     Execute natural language AI mission natively via GMA");
-    println!("  ghai ai orchestrate      Inspect 4-tier GMA master report across components");
-    println!("  ghai ai models           Inspect local GGUF & web AI models");
-    println!("  ghai ai engines          Inspect local & web AI inference engines");
-    println!("  ghai ai mcp-hub          Inspect coordinated MCP tool servers");
-    println!("  ghai :clone <repo_url>   Smart clone any repository path or URL via GHA Native Agent");
+    println!("  gha \"<instruction>\"     Execute natural language AI mission natively via GMA");
+    println!("  gha ai orchestrate      Inspect 4-tier GMA master report across components");
+    println!("  gha ai models           Inspect local GGUF & web AI models");
+    println!("  gha ai engines          Inspect local & web AI inference engines");
+    println!("  gha ai mcp-hub          Inspect coordinated MCP tool servers");
+    println!("  gha :clone <repo_url>   Smart clone any repository path or URL via gha Native Agent");
 }
 
 fn print_status(project_root: &Path, global_gha_dir: &Path, version: &str) {
-    println!("🌌 [ghai Native Status Report]");
+    println!("🌌 [gha Native Status Report]");
     println!("   ├── Target Workspace : {}", project_root.display());
     let sandbox = project_root.join(".gha");
-    let sandbox_status = if sandbox.is_dir() { "ACTIVE (.gha/ present)" } else { "NOT INITIALIZED (run 'ghai :install')" };
+    let sandbox_status = if sandbox.is_dir() { "ACTIVE (.gha/ present)" } else { "NOT INITIALIZED (run 'gha :install')" };
     println!("   ├── Sandbox Status   : {}", sandbox_status);
     println!("   ├── Engine Version   : {}", version);
 
@@ -173,7 +173,7 @@ fn print_status(project_root: &Path, global_gha_dir: &Path, version: &str) {
 }
 
 fn run_install(project_root: &Path, global_gha_dir: &Path) {
-    println!("🚀 [ghai Native] Initializing offline GHA environment at {}...", project_root.display());
+    println!("🚀 [gha Native] Initializing offline GHA environment at {}...", project_root.display());
     let gha_dir = project_root.join(".gha");
     if let Err(e) = fs::create_dir_all(&gha_dir) {
         eprintln!("❌ Failed to create .gha directory: {}", e);
@@ -204,7 +204,7 @@ fn run_install(project_root: &Path, global_gha_dir: &Path) {
         let _ = fs::write(&global_init, EMBEDDED_INIT_GRADLE_KTS);
     }
 
-    println!("✅ [ghai Native] Offline environment initialization complete (0 GitHub / 0 Network required)!");
+    println!("✅ [gha Native] Offline environment initialization complete (0 GitHub / 0 Network required)!");
 }
 
 fn run_uninstall(project_root: &Path) {
@@ -213,7 +213,7 @@ fn run_uninstall(project_root: &Path) {
         if let Err(e) = fs::remove_dir_all(&gha_dir) {
             eprintln!("❌ Failed to remove .gha sandbox: {}", e);
         } else {
-            println!("✅ [ghai Native] Removed .gha sandbox directory.");
+            println!("✅ [gha Native] Removed .gha sandbox directory.");
         }
     } else {
         println!("ℹ️  No .gha sandbox directory found to uninstall.");
@@ -222,7 +222,7 @@ fn run_uninstall(project_root: &Path) {
 
 // 0 Gradle / 0 JVM / 0 GitHub Dependency: Native Build Executor
 fn run_native_build(project_root: &Path) {
-    println!("⚡ [ghai Native Build] Executing 100% native workspace build validation...");
+    println!("⚡ [gha Native Build] Executing 100% native workspace build validation...");
     println!("   ├── Workspace : {}", project_root.display());
 
     let build_dir = project_root.join(".gha/build");
@@ -243,22 +243,22 @@ fn run_native_build(project_root: &Path) {
     let build_status = build_dir.join("last_build.status");
     let _ = fs::write(&build_status, format!("BUILD SUCCESSFUL - timestamp={}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)));
 
-    println!("✅ [ghai Native Build] BUILD SUCCESSFUL in < 2ms (0 JVM, 0 Gradle, 0 GitHub required)!");
+    println!("✅ [gha Native Build] BUILD SUCCESSFUL in < 2ms (0 JVM, 0 Gradle, 0 GitHub required)!");
 }
 
 // 0 Gradle / 0 JVM Dependency: Native Test Suite Executor
 fn run_native_test(project_root: &Path, filter: Option<&str>) {
-    println!("⚡ [ghai Native Test] Running native test suite runner...");
+    println!("⚡ [gha Native Test] Running native test suite runner...");
     if let Some(f) = filter {
         println!("   ├── Filter    : '{}'", f);
     }
     println!("   ├── Workspace : {}", project_root.display());
-    println!("✅ [ghai Native Test] ALL TESTS PASSED (0 tests failed, execution time < 2ms)!");
+    println!("✅ [gha Native Test] ALL TESTS PASSED (0 tests failed, execution time < 2ms)!");
 }
 
 // 0 Gradle / 0 JVM Dependency: Native Workspace Cleaner
 fn run_native_clean(project_root: &Path) {
-    println!("🧹 [ghai Native Clean] Cleaning workspace build artifacts & sandbox caches...");
+    println!("🧹 [gha Native Clean] Cleaning workspace build artifacts & sandbox caches...");
     let gha_build = project_root.join(".gha/build");
     if gha_build.exists() {
         let _ = fs::remove_dir_all(&gha_build);
@@ -269,7 +269,7 @@ fn run_native_clean(project_root: &Path) {
         let _ = fs::remove_dir_all(&build_dir);
         println!("   ├── Cleaned build/");
     }
-    println!("✅ [ghai Native Clean] Workspace cleaned in < 2ms!");
+    println!("✅ [gha Native Clean] Workspace cleaned in < 2ms!");
 }
 
 // 0 JVM / 0 Gradle / 0 GitHub Dependency: Native MCP Server over Stdio
@@ -285,7 +285,7 @@ fn run_native_mcp_server(project_root: &Path) {
 
         if line.contains("\"method\":\"initialize\"") {
             let resp = format!(
-                "{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"ghai-native-mcp\",\"version\":\"{}\"}}}}}}\n",
+                "{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gha-native-mcp\",\"version\":\"{}\"}}}}}}\n",
                 GHA_VERSION
             );
             let _ = stdout.write_all(resp.as_bytes());

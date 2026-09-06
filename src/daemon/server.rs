@@ -44,14 +44,14 @@ impl GmaDaemon {
         }
 
         let current_exe = std::env::current_exe().ok();
-        let global_bin = global_dir.join("bin/ghai-engine");
+        let global_bin = global_dir.join("bin/gha-engine");
 
         let bin_to_run = if let Some(ref exe) = current_exe {
             exe.clone()
         } else if global_bin.exists() {
             global_bin
         } else {
-            PathBuf::from("ghai")
+            PathBuf::from("gha")
         };
 
         let _ = Command::new("nohup")

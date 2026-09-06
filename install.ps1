@@ -15,7 +15,7 @@ $RawUrl = "https://raw.githubusercontent.com/$GHA_REPO/main"
 
 Write-Host "⚡ [gha] Initializing 100% Sandboxed Native AI Runtime..." -ForegroundColor Cyan
 
-$ExePath = Join-Path $GlobalBinDir "ghai.exe"
+$ExePath = Join-Path $GlobalBinDir "gha.exe"
 
 # 1. Install or copy native binary
 if (Test-Path "target\release\gha.exe") {
@@ -29,17 +29,17 @@ if (Test-Path "target\release\gha.exe") {
         Write-Host "   └── Compiled & installed native binary to $ExePath" -ForegroundColor Green
     }
 } else {
-    Write-Host "📥 Fetching latest ghai executable to $ExePath..." -ForegroundColor Yellow
-    Invoke-WebRequest -Uri "$RawUrl/ghai.exe" -OutFile $ExePath -UseBasicParsing
+    Write-Host "📥 Fetching latest gha executable to $ExePath..." -ForegroundColor Yellow
+    Invoke-WebRequest -Uri "$RawUrl/gha.exe" -OutFile $ExePath -UseBasicParsing
 }
 
 # 2. PATH Automation (0-Effort Onboarding)
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($UserPath -notlike "*$GlobalBinDir*") {
-    Write-Host "⚡ [ghai] Automatically adding '$GlobalBinDir' to User PATH..." -ForegroundColor Cyan
+    Write-Host "⚡ [gha] Automatically adding '$GlobalBinDir' to User PATH..." -ForegroundColor Cyan
     [Environment]::SetEnvironmentVariable("Path", "$GlobalBinDir;$UserPath", "User")
     $env:Path = "$GlobalBinDir;$env:Path"
     Write-Host "   ✅ User PATH updated!" -ForegroundColor Green
 }
 
-Write-Host "`n🎉 Global gha is ready! Type 'ghai :version' or 'ghai :status' to verify." -ForegroundColor Green
+Write-Host "`n🎉 Global gha is ready! Type 'gha :version' or 'gha :status' to verify." -ForegroundColor Green

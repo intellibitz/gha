@@ -24,24 +24,24 @@ else
 fi
 
 INSTALLED=0
-rm -f "$GLOBAL_BIN_DIR/ghai" "$GLOBAL_BIN_DIR/ghai-engine" 2>/dev/null || true
+rm -f "$GLOBAL_BIN_DIR/gha" "$GLOBAL_BIN_DIR/gha-engine" 2>/dev/null || true
 
 # 1. Binary Deployment Protocol
 if [ -f "$SCRIPT_DIR/target/release/gha" ]; then
-    cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/ghai-engine"
-    cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/ghai"
-    chmod +x "$GLOBAL_BIN_DIR/ghai-engine" "$GLOBAL_BIN_DIR/ghai"
+    cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/gha-engine"
+    cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/gha"
+    chmod +x "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
     INSTALLED=1
-    echo "   └── Installed native binary engine to $GLOBAL_BIN_DIR/ghai (< 2ms startup)"
+    echo "   └── Installed native binary engine to $GLOBAL_BIN_DIR/gha (< 2ms startup)"
 elif command -v cargo >/dev/null 2>&1 && [ -f "$SCRIPT_DIR/Cargo.toml" ]; then
     echo "⚡ [gha Native] Compiling standalone Rust AI engine (High Throughput Optimized)..."
     (cd "$SCRIPT_DIR" && cargo build --release >/dev/null 2>&1)
     if [ -f "$SCRIPT_DIR/target/release/gha" ]; then
-        cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/ghai-engine"
-        cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/ghai"
-        chmod +x "$GLOBAL_BIN_DIR/ghai-engine" "$GLOBAL_BIN_DIR/ghai"
+        cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/gha-engine"
+        cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/gha"
+        chmod +x "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
         INSTALLED=1
-        echo "   └── Compiled & installed native binary engine to $GLOBAL_BIN_DIR/ghai (< 2ms startup)"
+        echo "   └── Compiled & installed native binary engine to $GLOBAL_BIN_DIR/gha (< 2ms startup)"
     fi
 fi
 

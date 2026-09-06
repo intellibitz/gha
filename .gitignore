@@ -8,7 +8,7 @@
 # Rust build outputs
 /target/
 **/target/
-ghai-native
+gha-native
 
 # Kotlin compiler & cache
 .kotlin/

@@ -1,5 +1,5 @@
 [package]
-name = "ghai"
+name = "gha"
 version = "0.1.67"
 edition = "2021"
 authors = ["IntelliBitz", "Muthu Ramadoss", "Gemini (Google AI)"]
