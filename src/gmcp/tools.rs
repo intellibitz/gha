@@ -276,7 +276,7 @@ impl ToolRegistry {
                 output
             }
             "reason" => {
-                GemiEngine::generate_reasoning(arg, workspace)
+                GemiEngine::generate_reasoning_deep(arg, workspace)
             }
             "git_auto_branch" => {
                 Self::git_auto_branch(workspace)
@@ -483,7 +483,7 @@ impl ToolRegistry {
                 let source_path = workspace.join("src/gemi/pulse.rs");
                 let source = std::fs::read_to_string(&source_path).unwrap_or_default();
                 let prompt = format!("Analyze GHA Pulse Brain source for errors related to: '{}'. \n\nSOURCE:\n{}", arg, source);
-                let reasoning = GemiEngine::generate_reasoning(&prompt, workspace);
+                let reasoning = GemiEngine::generate_reasoning_deep(&prompt, workspace);
                 format!("🛠️ [Autonomous Debugger]:\n{}", reasoning)
             }
             "vision_analyze" => {
@@ -665,7 +665,7 @@ impl ToolRegistry {
                         "🔧 [Self-Healing Build Harness]: Code compilation clean — 0 build errors detected.".to_string()
                     } else {
                         let stderr = String::from_utf8_lossy(&o.stderr);
-                        let reasoning = GemiEngine::generate_reasoning(
+                        let reasoning = GemiEngine::generate_reasoning_deep(
                             &format!("Analyze build error and suggest fix:\n{}", stderr),
                             workspace
                         );

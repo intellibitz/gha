@@ -13,10 +13,20 @@ pub struct GemiEngine;
 
 impl GemiEngine {
     pub fn generate_reasoning(prompt: &str, workspace: &Path) -> String {
-        // 🚀 Tier 0: GHA-Alpha Reflex Reasoning (<10ms)
-        let (reflex_decision, micros) = super::reflex::ReflexEngine::try_solve(prompt, workspace);
-        if let super::reflex::ReflexDecision::Solved(action) = reflex_decision {
-            return format!("⚡ [Tier 0: GHA-Alpha Reflex ({}μs)]: {}", micros, action);
+        Self::reason_internal(prompt, workspace, true)
+    }
+
+    pub fn generate_reasoning_deep(prompt: &str, workspace: &Path) -> String {
+        Self::reason_internal(prompt, workspace, false)
+    }
+
+    fn reason_internal(prompt: &str, workspace: &Path, allow_reflex: bool) -> String {
+        if allow_reflex {
+            // 🚀 Tier 0: GHA-Alpha Reflex Reasoning (<10ms)
+            let (reflex_decision, micros) = super::reflex::ReflexEngine::try_solve(prompt, workspace);
+            if let super::reflex::ReflexDecision::Solved(action) = reflex_decision {
+                return format!("⚡ [Tier 0: GHA-Alpha Reflex ({}μs)]: {}", micros, action);
+            }
         }
 
         // 1. 🚀 Exponential Discovery: Scout and Benchmark all available brains
