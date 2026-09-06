@@ -56,7 +56,7 @@ impl GawdAgentFleet {
         let (tx3, rx3) = channel();
         let (tx4, rx4) = channel();
 
-        // Worker 1: Context Agent Thread
+        // Worker 1: Context Agent Thread (with Git Auto-Branching check)
         let ws1 = workspace.clone();
         thread::spawn(move || {
             let out = Self::execute_context_agent(&ws1);
@@ -91,7 +91,7 @@ impl GawdAgentFleet {
         let reasoning_out = rx3.recv().unwrap_or_else(|_| "Reasoning Agent error".to_string());
         let sys_out = rx4.recv().unwrap_or_else(|_| "System Agent error".to_string());
 
-        let auto_out = Self::execute_autonomous_agent(&sys_out);
+        let auto_out = Self::execute_autonomous_agent(&goal, &workspace);
 
         (ctx_out, research_out, reasoning_out, sys_out, auto_out)
     }
@@ -108,6 +108,8 @@ impl GawdAgentFleet {
             context.push("Node.js");
         }
 
+        let git_branch_info = ToolRegistry::git_auto_branch(workspace);
+
         let git_status = Command::new("git")
             .args(["status", "--short"])
             .current_dir(workspace)
@@ -123,8 +125,9 @@ impl GawdAgentFleet {
         };
 
         format!(
-            "Workspace Context: {} | Git Status Summary: {}",
+            "Workspace Context: {} | {} | Git Status Summary: {}",
             ctx_summary,
+            git_branch_info,
             if git_status.trim().is_empty() { "Clean Tree" } else { git_status.trim() }
         )
     }
@@ -148,11 +151,16 @@ impl GawdAgentFleet {
         }
     }
 
-    pub fn execute_autonomous_agent(system_output: &str) -> String {
-        if system_output.contains("Error") || system_output.contains("FAILED") {
-            format!("Autonomous Agent Warning: Detected execution exception - {}", system_output)
+    pub fn execute_autonomous_agent(goal: &str, workspace: &Path) -> String {
+        let lower = goal.to_lowercase();
+        if lower.contains("test") {
+            ToolRegistry::run_test_harness(workspace)
+        } else if lower.contains("build") || lower.contains("check") || lower.contains("heal") {
+            ToolRegistry::self_heal_build(workspace)
         } else {
-            "Autonomous Agent Verification: Execution completed cleanly with 100% health assertion.".to_string()
+            let build_check = ToolRegistry::self_heal_build(workspace);
+            let test_check = ToolRegistry::run_test_harness(workspace);
+            format!("Autonomous Agent Verification: {} | {}", build_check, test_check)
         }
     }
 }

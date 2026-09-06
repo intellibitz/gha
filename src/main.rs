@@ -13,10 +13,11 @@ use std::path::{Path, PathBuf};
 use daemon::GmaDaemon;
 use gawd::GmaMasterAgent;
 use gemi::{GemiEngine, GemiServer, ModelManager};
+use gmcp::tools::ToolRegistry;
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.83";
+const GHA_VERSION: &str = "0.1.85";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -59,6 +60,9 @@ fn print_help() {
     println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (http://127.0.0.1:9091/v1)\n");
     println!("GMA Master Interactor Native Missions & Multi-Tier AI Tasks:");
     println!("  ghai \"<instruction>\"     Execute natural language AI mission via GMA");
+    println!("  ghai ai self-heal        Run autonomous self-healing code compilation loop");
+    println!("  ghai ai auto-branch      Create isolated git mission feature branch");
+    println!("  ghai ai run-tests        Run automated workspace unit test harness");
     println!("  ghai ai orchestrate      Inspect 3-tier GMA coordination report across tiers");
     println!("  ghai ai models           Inspect GGUF & web AI models");
     println!("  ghai ai engines          Inspect local & web AI inference engines");
@@ -179,6 +183,18 @@ fn main() {
             if cmd == "ai" && args.len() > 1 {
                 let sub = &args[1];
                 match sub.as_str() {
+                    "self-heal" => {
+                        println!("{}", ToolRegistry::self_heal_build(&workspace));
+                        return;
+                    }
+                    "auto-branch" => {
+                        println!("{}", ToolRegistry::git_auto_branch(&workspace));
+                        return;
+                    }
+                    "run-tests" => {
+                        println!("{}", ToolRegistry::run_test_harness(&workspace));
+                        return;
+                    }
                     "server" => {
                         GemiServer::start_http_server(workspace, GemiServer::DEFAULT_PORT);
                         return;
