@@ -17,7 +17,7 @@ use gmcp::tools::ToolRegistry;
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.85";
+const GHA_VERSION: &str = "0.1.86";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
