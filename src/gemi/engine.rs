@@ -122,7 +122,13 @@ impl GemiEngine {
             "model": "qwen/qwen3.6-27b",
             "messages": [{"role": "user", "content": prompt}]
         });
-        let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
+
+        let payload_file = std::env::temp_dir().join("gha_groq_payload.json");
+        std::fs::write(&payload_file, payload.to_string())?;
+
+        let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &format!("@{}", payload_file.display())]).output()?;
+        let _ = std::fs::remove_file(payload_file);
+
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
         v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Groq failure: {}", v))
     }
@@ -131,7 +137,13 @@ impl GemiEngine {
         let key = std::env::var("GEMINI_API_KEY")?;
         let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
-        let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
+
+        let payload_file = std::env::temp_dir().join("gha_gemini_payload.json");
+        std::fs::write(&payload_file, payload.to_string())?;
+
+        let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &format!("@{}", payload_file.display())]).output()?;
+        let _ = std::fs::remove_file(payload_file);
+
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
         v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Gemini failure: {}", v))
     }
