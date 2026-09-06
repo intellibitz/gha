@@ -1,6 +1,6 @@
 [package]
 name = "gha"
-version = "0.1.106"
+version = "0.1.107"
 edition = "2021"
 authors = ["IntelliBitz", "Muthu Ramadoss", "Gemini (Google AI)"]
 description = "gha: Pure AI for AI Runtime — GAWD, GEMI & GMCP Multi-Agent Engine"
