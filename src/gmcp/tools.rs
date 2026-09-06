@@ -305,8 +305,16 @@ impl ToolRegistry {
                 if arg.contains("save to") {
                      if let Some(target_file) = arg.split("save to ").nth(1).and_then(|s| s.split_whitespace().next()) {
                          let path = workspace.join(target_file);
-                         let _ = std::fs::write(&path, &result);
-                         return format!("✅ Mission fulfilled. Result saved to {}.\n\nSUMMARY:\n{}", target_file, result.chars().take(200).collect::<String>());
+
+                         // 🧼 Cleanse for storage: Remove the cloud picker label from the saved file
+                         let file_content = if result.contains("]:\n") {
+                             result.splitn(2, "]:\n").nth(1).unwrap_or(&result).to_string()
+                         } else {
+                             result.clone()
+                         };
+
+                         let _ = std::fs::write(&path, &file_content);
+                         return format!("✅ Mission fulfilled. Result saved to {}.\n\nSUMMARY:\n{}", target_file, file_content.chars().take(200).collect::<String>());
                      }
                 }
                 result
