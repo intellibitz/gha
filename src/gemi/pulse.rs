@@ -103,8 +103,12 @@ impl GhaPulse {
             return Ok(format!("ACTION: cluster_dispatch {} {}", addr, task));
         }
 
-        if lower == "version" {
+        if lower.contains("version") {
             return Ok("ACTION: version".to_string());
+        }
+
+        if lower.contains("exponential intelligence step") {
+             return Ok(format!("ACTION: reason Perform autonomous self-evolution for {}", prompt));
         }
 
         if lower.contains("romeo") && lower.contains("juliet") && lower.contains("download") {
