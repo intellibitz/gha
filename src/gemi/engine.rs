@@ -89,14 +89,6 @@ impl GemiEngine {
             }
         }
 
-        if lower.contains("romeo") && lower.contains("juliet") && lower.contains("download") {
-             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: exec_command curl -L https://www.gutenberg.org/cache/epub/1513/pg1513.txt -o romeo_juliet.txt", cpus);
-        }
-
-        if lower.contains("translate") && lower.contains("tamil") {
-             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: reason Translate the content of romeo_juliet.txt to Tamil and save to romeo_juliet_tamil.txt", cpus);
-        }
-
         format!("🧠 [Native Synthesis ({} CPUs | {})]:\nMission: \"{}\"\nNote: Swarm is scouting for specialized brains.", cpus, gpu, prompt)
     }
 
@@ -117,21 +109,21 @@ impl GemiEngine {
     fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
-            "model": "llama-3.3-70b-versatile",
+            "model": "llama-3.1-70b-versatile",
             "messages": [{"role": "user", "content": prompt}]
         });
         let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Parse failure: {}", v))
+        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Groq failure: {}", v))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
+        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Parse failure: {}", v))
+        v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Gemini failure: {}", v))
     }
 
     fn execute_openai(prompt: &str) -> Result<String> {
@@ -142,7 +134,7 @@ impl GemiEngine {
         });
         let out = Command::new("curl").args(["-s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Parse failure: {}", v))
+        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("OpenAI failure: {}", v))
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {

@@ -128,11 +128,7 @@ impl GhaPulse {
              return Ok(format!("ACTION: reason Perform autonomous self-evolution for {}", prompt));
         }
 
-        if lower.contains("romeo") && lower.contains("juliet") && lower.contains("download") {
-             return Ok("ACTION: exec_command curl -L https://www.gutenberg.org/cache/epub/1513/pg1513.txt -o romeo_juliet.txt".to_string());
-        }
-
-        if lower.contains("reason") || lower.contains("explain") || lower.contains("summarize") {
+        if lower.contains("reason") || lower.contains("explain") || lower.contains("summarize") || lower.contains("translate") {
              return Ok(format!("ACTION: reason {}", prompt));
         }
 

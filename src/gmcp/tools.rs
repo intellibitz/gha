@@ -276,13 +276,6 @@ impl ToolRegistry {
                 output
             }
             "reason" => {
-                let lower = arg.to_lowercase();
-                if lower.contains("translate") && lower.contains("tamil") && lower.contains("romeo") {
-                    let tamil_text = "ரோமியோ மற்றும் ஜூலியட்\n\nஇரண்டு வீடுகள், கண்ணியத்தில் சமமானவை,\nஅழகான வெரோனாவில், நாம் காட்சி அமைக்கும் இடத்தில்...";
-                    let path = workspace.join("romeo_juliet_tamil.txt");
-                    let _ = std::fs::write(&path, tamil_text);
-                    return format!("✅ Translated snippet to Tamil and saved to {}", path.display());
-                }
                 GemiEngine::generate_reasoning(arg, workspace)
             }
             "git_auto_branch" => {
