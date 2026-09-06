@@ -148,12 +148,12 @@ impl GemiEngine {
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
         let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Groq failure: {}", v))?;
 
-        let cleaned = if text.contains("<think>") {
-            text.split("</think>").last().unwrap_or(&text).trim().to_string()
-        } else {
-            text
-        };
-        Ok(cleaned)
+        // 🧼 Aggressive Cleanse: Remove all internal thinking blocks
+        let mut final_text = text.clone();
+        if let Some(pos) = text.rfind("</think>") {
+            final_text = text[pos + 8..].trim().to_string();
+        }
+        Ok(final_text)
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
@@ -170,12 +170,12 @@ impl GemiEngine {
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
         let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Gemini failure: {}", v))?;
 
-        let cleaned = if text.contains("<think>") {
-            text.split("</think>").last().unwrap_or(&text).trim().to_string()
-        } else {
-            text
-        };
-        Ok(cleaned)
+        // 🧼 Aggressive Cleanse: Remove all internal thinking blocks
+        let mut final_text = text.clone();
+        if let Some(pos) = text.rfind("</think>") {
+            final_text = text[pos + 8..].trim().to_string();
+        }
+        Ok(final_text)
     }
 
     fn execute_openai(prompt: &str) -> Result<String> {
