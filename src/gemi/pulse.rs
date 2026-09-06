@@ -37,6 +37,10 @@ impl GhaPulse {
             return Ok("ACTION: status".to_string());
         }
 
+        if lower.contains("verify cloud") || lower.contains("test api keys") {
+            return Ok("ACTION: verify_cloud_providers".to_string());
+        }
+
         if lower.contains("models") || lower.contains("inventory") || lower.contains("list_models") {
             return Ok("ACTION: list_models".to_string());
         }
@@ -105,10 +109,6 @@ impl GhaPulse {
 
         if lower.contains("version") {
             return Ok("ACTION: version".to_string());
-        }
-
-        if lower.contains("verify cloud") || lower.contains("test api keys") {
-            return Ok("ACTION: verify_cloud_providers".to_string());
         }
 
         if lower.contains("exponential intelligence step") {
