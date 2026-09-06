@@ -46,8 +46,8 @@ impl GmasSupervisor {
     pub fn supervise_mission(goal: &str, workspace: &Path) -> (Vec<A2AMessage>, Vec<GawdAgentInfo>) {
         let fleet = GawdAgentFleet::list_agents();
 
-        // 1. Swarm Flux Initiation
-        let (ctx_out, vault_out, reasoning_out, exec_out, verify_out) =
+        // 1. Swarm Flux Initiation (A2A Multi-Agent Coordination)
+        let (ctx_out, vault_out, reasoning_out, discovery_out, exec_out, safety_out) =
             GawdAgentFleet::dispatch_parallel_fleet(goal.to_string(), workspace.to_path_buf());
 
         let logs = vec![
@@ -71,15 +71,21 @@ impl GmasSupervisor {
             },
             A2AMessage {
                 sender: "ReasoningAgent".to_string(),
+                recipient: "DiscoveryAgent".to_string(),
+                action: "MCP_EXPLORATION".to_string(),
+                payload: discovery_out,
+            },
+            A2AMessage {
+                sender: "DiscoveryAgent".to_string(),
                 recipient: "ExecutorAgent".to_string(),
                 action: "TOOL_DISPATCH".to_string(),
                 payload: exec_out,
             },
             A2AMessage {
-                sender: "ExecutorAgent".to_string(),
-                recipient: "GMA-Master".to_string(),
-                action: "MISSION_VERIFY".to_string(),
-                payload: verify_out,
+                sender: "GMA-Master".to_string(),
+                recipient: "SafetyAgent".to_string(),
+                action: "SAFETY_GUARD".to_string(),
+                payload: safety_out,
             },
         ];
 

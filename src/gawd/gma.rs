@@ -75,11 +75,7 @@ impl GmaMasterAgent {
                 if let Some(action_part) = msg.payload.split("ACTION: ").nth(1) {
                     let tool_name = action_part.split_whitespace().next().unwrap_or("");
                     let arg = action_part.splitn(2, ' ').nth(1).unwrap_or("").trim();
-
-                    // 1. Check for system destruction
                     SafetyDetector::audit_action(tool_name, arg)?;
-
-                    // 2. Check for security violations (key leaks, exfiltration)
                     SecurityDetector::audit_action(tool_name, arg)?;
                 }
             }
