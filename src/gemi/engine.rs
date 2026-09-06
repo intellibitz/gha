@@ -51,7 +51,7 @@ impl GemiEngine {
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
         let mut errors = Vec::new();
 
-        // Priority 1: Groq (using non-reasoning model for speed/artifacts)
+        // Priority 1: Groq
         match Self::execute_groq(prompt) {
             Ok(res) => return Some(res),
             Err(e) => errors.push(format!("Groq: {}", e)),
@@ -106,9 +106,9 @@ impl GemiEngine {
     fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
-            "model": "llama-3.1-8b-instant",
+            "model": "qwen/qwen3.6-27b",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 1000
+            "max_tokens": 500
         });
 
         let payload_file = std::env::temp_dir().join("gha_groq_payload.json");
@@ -119,12 +119,13 @@ impl GemiEngine {
 
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
         let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Groq failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: Groq Llama]:\n{}", Self::cleanse_artifact(&text)))
+        Ok(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", Self::cleanse_artifact(&text)))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
+        // Use v1 for stability in free-tier
+        let url = format!("https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
 
         let payload_file = std::env::temp_dir().join("gha_gemini_payload.json");
@@ -153,21 +154,18 @@ impl GemiEngine {
     fn cleanse_artifact(text: &str) -> String {
         let mut final_text = text.trim().to_string();
 
-        // 1. Precision Cleanse: Extract only the content between GHA tags
         if let Some(start) = final_text.find("<GHA_ARTIFACT>") {
             if let Some(end) = final_text.find("</GHA_ARTIFACT>") {
                 return final_text[start + 14..end].trim().to_string();
             }
         }
 
-        // 2. Loop Cleanse: Remove all <think>...</think> blocks
         while let Some(start) = final_text.find("<think>") {
             if let Some(end) = final_text.find("</think>") {
                 let mut new_text = final_text[..start].to_string();
                 new_text.push_str(&final_text[end + 8..]);
                 final_text = new_text.trim().to_string();
             } else {
-                // Unclosed think block (likely truncated) - remove it entirely
                 final_text = final_text[..start].trim().to_string();
                 break;
             }
