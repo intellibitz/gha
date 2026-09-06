@@ -34,16 +34,28 @@ impl GemiEngine {
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
-        // Priority 1: Gemini (Verified Active v1beta)
+        let mut errors = Vec::new();
+
+        // Priority 1: Gemini (Reliable for free tier)
         match Self::execute_gemini(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)),
-            Err(_) => {},
+            Ok(res) => return Some(res),
+            Err(e) => errors.push(format!("Gemini: {}", e)),
         }
 
-        // Priority 2: Groq (Robust and Fast)
+        // Priority 2: Groq
         match Self::execute_groq(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)),
-            Err(_) => {},
+            Ok(res) => return Some(res),
+            Err(e) => errors.push(format!("Groq: {}", e)),
+        }
+
+        // Priority 3: OpenAI
+        match Self::execute_openai(prompt) {
+            Ok(res) => return Some(res),
+            Err(e) => errors.push(format!("OpenAI: {}", e)),
+        }
+
+        if !errors.is_empty() {
+            eprintln!("⚠️ Cloud Intelligence Scouting Failures:\n  {}", errors.join("\n  "));
         }
 
         None
@@ -54,12 +66,12 @@ impl GemiEngine {
         let payload = json!({
             "model": "qwen/qwen3.6-27b",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 500
+            "max_tokens": 1000
         });
         let out = Self::curl_pipe("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq failure"))?;
-        Ok(Self::cleanse_artifact(text))
+        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq parse failure: {}", v))?;
+        Ok(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", Self::cleanse_artifact(text)))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
@@ -68,8 +80,31 @@ impl GemiEngine {
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Self::curl_pipe(&url, vec![], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure"))?;
-        Ok(Self::cleanse_artifact(text))
+        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini parse failure: {}", v))?;
+        Ok(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", Self::cleanse_artifact(text)))
+    }
+
+    fn execute_openai(prompt: &str) -> Result<String> {
+        let key = std::env::var("OPENAI_API_KEY")?;
+        let payload = json!({
+            "model": "gpt-4o",
+            "messages": [{"role": "user", "content": prompt}]
+        });
+        let out = Self::curl_pipe("https://api.openai.com/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
+        let v: serde_json::Value = serde_json::from_slice(&out)?;
+        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI failure"))?;
+        Ok(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", Self::cleanse_artifact(text)))
+    }
+
+    fn execute_local_ollama(prompt: &str, model_id: &str) -> String {
+        let out = Command::new("ollama").args(["run", model_id, prompt]).output();
+        match out {
+            Ok(o) if o.status.success() => {
+                let text = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                format!("🧠 [Ollama Pick: {}]:\n{}", model_id, Self::cleanse_artifact(&text))
+            },
+            _ => format!("❌ Ollama Failure: Falling back from model '{}'", model_id)
+        }
     }
 
     fn curl_pipe(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<Vec<u8>> {
@@ -87,13 +122,15 @@ impl GemiEngine {
         drop(stdin);
 
         let out = child.wait_with_output()?;
-        if !out.status.success() { return Err(anyhow!("Curl failed")); }
+        if !out.status.success() {
+             return Err(anyhow!("Curl failed with status: {} - {}", out.status, String::from_utf8_lossy(&out.stderr)));
+        }
+
         Ok(out.stdout)
     }
 
     fn cleanse_artifact(text: &str) -> String {
         let mut final_text = text.trim().to_string();
-
         while let Some(start) = final_text.find("<think>") {
             if let Some(end) = final_text.find("</think>") {
                 let mut new_text = final_text[..start].to_string();
@@ -104,21 +141,18 @@ impl GemiEngine {
                 break;
             }
         }
-
-        if let Some(pos) = final_text.rfind("</think>") {
-            final_text = final_text[pos + 8..].trim().to_string();
-        }
-
         final_text
     }
 
     pub fn verify_provider(name: &str) -> String {
         let prompt = "Verification mission: Respond with 'ACTIVE'.";
-        match name {
-            "Groq" => Self::execute_groq(prompt).unwrap_or_else(|e| format!("❌ Error: {}", e)),
-            "Google Gemini" => Self::execute_gemini(prompt).unwrap_or_else(|e| format!("❌ Error: {}", e)),
-            _ => "❌ Error: Unknown Provider".to_string(),
-        }
+        let res = match name {
+            "Groq" => Self::execute_groq(prompt),
+            "Google Gemini" => Self::execute_gemini(prompt),
+            "OpenAI" => Self::execute_openai(prompt),
+            _ => Err(anyhow!("Unknown Provider")),
+        };
+        match res { Ok(t) => t, Err(e) => format!("❌ Error: {}", e) }
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
