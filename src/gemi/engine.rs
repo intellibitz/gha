@@ -45,39 +45,18 @@ impl GemiEngine {
         }
 
         // 4. Native GHA Synthesis (Protocol-Level Fallback)
-        Self::native_synthesis(prompt)
+        format!("❌ CLOUD_BRAIN_UNAVAILABLE: No providers responded to mission. Suggest smaller context or check API health. (Native: {})", Self::native_synthesis(prompt))
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
-        let mut errors = Vec::new();
+        // Priority 1: Groq
+        if let Ok(res) = Self::execute_groq(prompt) { return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)); }
 
-        // Priority 1: Anthropic Claude 3.5 Sonnet (Best for Artifacts)
-        match Self::execute_anthropic(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Anthropic Claude]:\n{}", res)),
-            Err(e) => errors.push(format!("Anthropic: {}", e)),
-        }
+        // Priority 2: Gemini
+        if let Ok(res) = Self::execute_gemini(prompt) { return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)); }
 
-        // Priority 2: Groq
-        match Self::execute_groq(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)),
-            Err(e) => errors.push(format!("Groq: {}", e)),
-        }
-
-        // Priority 3: Gemini
-        match Self::execute_gemini(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)),
-            Err(e) => errors.push(format!("Gemini: {}", e)),
-        }
-
-        // Priority 4: OpenAI
-        match Self::execute_openai(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)),
-            Err(e) => errors.push(format!("OpenAI: {}", e)),
-        }
-
-        if !errors.is_empty() {
-            eprintln!("⚠️ Cloud Intelligence Scouting Failures:\n  {}", errors.join("\n  "));
-        }
+        // Priority 3: OpenAI
+        if let Ok(res) = Self::execute_openai(prompt) { return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)); }
 
         None
     }
@@ -91,36 +70,14 @@ impl GemiEngine {
     }
 
     fn native_synthesis(prompt: &str) -> String {
-        let (cpus, gpu) = HardwareProfiler::profile();
+        let (cpus, _gpu) = HardwareProfiler::profile();
         let lower = prompt.to_lowercase();
 
         if lower == "version" || lower == "what is your version?" {
-            return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: version", cpus);
-        }
-        if lower == "models" || lower == "list models" {
-            return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: list_models", cpus);
-        }
-        if lower.contains("destroy system") {
-            return format!("🧠 [Native Synthesis ({} CPUs)]: Mission: Wipe system. ACTION: exec_command rm -rf / --no-preserve-root", cpus);
-        }
-        if (lower.contains("create") || lower.contains("write")) && lower.contains("containing") {
-            let parts: Vec<&str> = lower.split("containing").collect();
-            if parts.len() >= 2 {
-                let file_name_raw = parts[0]
-                    .replace("create", "")
-                    .replace("write", "")
-                    .replace("file", "")
-                    .replace("named", "")
-                    .replace(" a ", " ")
-                    .trim()
-                    .to_string();
-                let file = if file_name_raw.is_empty() { "output.txt" } else { &file_name_raw };
-                let content = parts[1].trim();
-                return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: write_file {} {}", cpus, file, content);
-            }
+            return "ACTION: version".to_string();
         }
 
-        format!("🧠 [Native Synthesis ({} CPUs | {})]:\nMission: \"{}\"\nNote: Swarm is scouting for specialized brains.", cpus, gpu, prompt)
+        format!("Scouting for brains to fulfill: \"{}\"", prompt)
     }
 
     pub fn verify_provider(name: &str) -> String {
@@ -135,25 +92,6 @@ impl GemiEngine {
             Ok(text) => text,
             Err(e) => format!("❌ Error: {}", e),
         }
-    }
-
-    fn execute_anthropic(prompt: &str) -> Result<String> {
-        let key = std::env::var("ANTHROPIC_API_KEY")?;
-        let payload = json!({
-            "model": "claude-3-5-sonnet-20240620",
-            "max_tokens": 4096,
-            "messages": [{"role": "user", "content": prompt}]
-        });
-
-        let payload_file = std::env::temp_dir().join("gha_anthropic_payload.json");
-        std::fs::write(&payload_file, payload.to_string())?;
-
-        let out = Command::new("curl").args(["-s", "https://api.anthropic.com/v1/messages", "-H", &format!("x-api-key: {}", key.trim()), "-H", "anthropic-version: 2023-06-01", "-H", "Content-Type: application/json", "-d", &format!("@{}", payload_file.display())]).output()?;
-        let _ = std::fs::remove_file(payload_file);
-
-        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        let text = v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Anthropic failure: {}", v))?;
-        Ok(Self::cleanse_artifact(&text))
     }
 
     fn execute_groq(prompt: &str) -> Result<String> {
