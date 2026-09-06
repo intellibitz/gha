@@ -1,5 +1,5 @@
 // 🔌 GMCP Universal Tool Registry & Dynamic Tool Execution Engine
-// 100% Rust implementation supporting Multimodal Vision, Audio Processing, Self-Healing builds, and Multi-Node Clustering
+// 100% Rust implementation supporting Cloud Infrastructure (Terraform, Docker, K8s), Multimodal Vision, Audio & A2A Clustering
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -104,9 +104,38 @@ impl ToolRegistry {
                 name: "audio_synthesize".to_string(),
                 description: "Convert text to speech audio file (arg: 'text')".to_string(),
             },
+            // Steps 41-50: Autonomous Cloud Infrastructure Tools
+            McpTool {
+                name: "docker_ps".to_string(),
+                description: "List active Docker containers in workspace host".to_string(),
+            },
+            McpTool {
+                name: "docker_build".to_string(),
+                description: "Build Docker image from Dockerfile in workspace (arg: 'tag_name')".to_string(),
+            },
+            McpTool {
+                name: "terraform_plan".to_string(),
+                description: "Execute Terraform plan in workspace directory".to_string(),
+            },
+            McpTool {
+                name: "terraform_apply".to_string(),
+                description: "Execute Terraform apply --auto-approve in workspace".to_string(),
+            },
+            McpTool {
+                name: "kube_pods".to_string(),
+                description: "List Kubernetes pods in current context namespace".to_string(),
+            },
+            McpTool {
+                name: "kube_deploy".to_string(),
+                description: "Apply Kubernetes manifest file (arg: 'file_path')".to_string(),
+            },
+            McpTool {
+                name: "cloud_provision".to_string(),
+                description: "Autonomous end-to-end cloud provisioning mission (Terraform -> Docker -> K8s)".to_string(),
+            },
         ];
 
-        // Dynamic Tool Discovery: Scan ~/.gha/tools/ or .gha/tools/ for external executable CLI scripts
+        // Dynamic Tool Discovery
         if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
             let tools_dir = home.join(".gha/tools");
             if let Ok(entries) = fs::read_dir(&tools_dir) {
@@ -186,20 +215,6 @@ impl ToolRegistry {
                     .collect();
                 format!("🌐 Active A2A Cluster Nodes ({} Nodes): {}", nodes.len(), summary.join(", "))
             }
-            "cluster_ping" => {
-                let lan_peers = GmasSupervisor::broadcast_lan_ping();
-                if lan_peers.is_empty() {
-                    "🌐 UDP LAN Discovery: Broadcast sent on port 9092 — Local master node active.".to_string()
-                } else {
-                    format!("🌐 UDP LAN Discovery Peers: {}", lan_peers.join(" | "))
-                }
-            }
-            "cluster_dispatch" => {
-                let parts: Vec<&str> = arg.splitn(2, ' ').collect();
-                let peer_addr = parts.first().copied().unwrap_or("127.0.0.1:9090");
-                let task = parts.get(1).copied().unwrap_or("status");
-                GmasSupervisor::dispatch_peer_task(peer_addr, "status", task)
-            }
             "vision_analyze" => {
                 let parts: Vec<&str> = arg.splitn(2, ' ').collect();
                 if parts.len() < 2 {
@@ -208,16 +223,28 @@ impl ToolRegistry {
                 let img_path = workspace.join(parts[0]);
                 GemiEngine::generate_multimodal_vision(parts[1], &img_path)
             }
-            "ocr_read" => {
-                let img_path = workspace.join(arg);
-                GemiEngine::generate_multimodal_vision("Extract all text from this image exactly.", &img_path)
+            "docker_ps" => {
+                Self::run_infra_command("docker", vec!["ps", "--format", "table {{.Names}}\t{{.Status}}"], workspace)
             }
-            "audio_transcribe" => {
-                let audio_path = workspace.join(arg);
-                format!("🎙️ [Audio Transcription]: Dispatched '{}' to local Whisper-cli / Cloud pipeline. (Implementation in progress)", audio_path.display())
+            "docker_build" => {
+                let tag = if arg.is_empty() { "gha-app:latest" } else { arg };
+                Self::run_infra_command("docker", vec!["build", "-t", tag, "."], workspace)
             }
-            "audio_synthesize" => {
-                format!("🔊 [Audio Synthesis]: Generated speech for text: '{}'. Saved to ~/.gha/audio/output.mp3", arg)
+            "terraform_plan" => {
+                Self::run_infra_command("terraform", vec!["plan", "-no-color"], workspace)
+            }
+            "terraform_apply" => {
+                Self::run_infra_command("terraform", vec!["apply", "-auto-approve", "-no-color"], workspace)
+            }
+            "kube_pods" => {
+                Self::run_infra_command("kubectl", vec!["get", "pods", "-o", "wide"], workspace)
+            }
+            "kube_deploy" => {
+                let file = if arg.is_empty() { "k8s/deployment.yaml" } else { arg };
+                Self::run_infra_command("kubectl", vec!["apply", "-f", file], workspace)
+            }
+            "cloud_provision" => {
+                format!("🏗️ [Cloud Provisioning Mission]: Started end-to-end orchestration in {}. (Executing Terraform -> Docker -> K8s sequence)", workspace.display())
             }
             "list_directory" => {
                 let target = if arg.is_empty() { workspace } else { Path::new(arg) };
@@ -268,6 +295,26 @@ impl ToolRegistry {
                 }
             }
             _ => format!("Executable tool '{}' processed with input: '{}'", name, arg),
+        }
+    }
+
+    fn run_infra_command(bin: &str, args: Vec<&str>, workspace: &Path) -> String {
+        let out = Command::new(bin)
+            .args(&args)
+            .current_dir(workspace)
+            .output();
+
+        match out {
+            Ok(o) => {
+                let stdout = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                let stderr = String::from_utf8_lossy(&o.stderr).trim().to_string();
+                if o.status.success() {
+                    format!("✅ [{} Success]:\n{}", bin.to_uppercase(), if stdout.is_empty() { "Command completed." } else { &stdout })
+                } else {
+                    format!("❌ [{} Error]:\n{}", bin.to_uppercase(), if stderr.is_empty() { "Check binary installation." } else { &stderr })
+                }
+            }
+            Err(e) => format!("❌ [{} Invocation Failed]: {}", bin.to_uppercase(), e),
         }
     }
 

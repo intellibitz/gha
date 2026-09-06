@@ -18,7 +18,7 @@ use gmcp::tools::ToolRegistry;
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.92";
+const GHA_VERSION: &str = "0.1.90";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -61,17 +61,15 @@ fn print_help() {
     println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (http://127.0.0.1:9091/v1)\n");
     println!("GMA Master Interactor Native Missions & Multi-Tier AI Tasks:");
     println!("  ghai \"<instruction>\"     Execute natural language AI mission via GMA");
-    println!("  ghai ai vision           Analyze image via multimodal models (ghai ai vision <img_path> <prompt>)");
-    println!("  ghai ai ocr              Extract text from image (ghai ai ocr <img_path>)");
-    println!("  ghai ai transcribe       Transcribe audio file to text (ghai ai transcribe <audio_path>)");
+    println!("  ghai ai provision        Run autonomous cloud infrastructure provisioning (Tf/Docker/K8s)");
+    println!("  ghai ai docker-ps        List active Docker containers");
+    println!("  ghai ai kube-pods        List Kubernetes pods");
+    println!("  ghai ai vision           Analyze image via multimodal models");
     println!("  ghai ai cluster          Inspect multi-node A2A agent network cluster nodes");
-    println!("  ghai ai ping-peers       Broadcast UDP discovery pings to local LAN peer nodes");
     println!("  ghai ai self-heal        Run autonomous self-healing code compilation loop");
-    println!("  ghai ai auto-branch      Create isolated git mission feature branch");
     println!("  ghai ai run-tests        Run automated workspace unit test harness");
-    println!("  ghai ai orchestrate      Inspect 3-tier GMA coordination report across tiers");
+    println!("  ghai ai orchestrate      Inspect 3-tier GMA coordination report");
     println!("  ghai ai models           Inspect GGUF & web AI models");
-    println!("  ghai ai engines          Inspect local & web AI inference engines");
     println!("  ghai ai mcp-hub          Inspect coordinated MCP tool servers");
     println!("  ghai ai server           Start GEMI OpenAI-compatible HTTP REST server (Port 9091)");
 }
@@ -191,6 +189,18 @@ fn main() {
             if cmd == "ai" && args.len() > 1 {
                 let sub = &args[1];
                 match sub.as_str() {
+                    "provision" => {
+                        println!("{}", ToolRegistry::execute_tool("cloud_provision", "", &workspace));
+                        return;
+                    }
+                    "docker-ps" => {
+                        println!("{}", ToolRegistry::execute_tool("docker_ps", "", &workspace));
+                        return;
+                    }
+                    "kube-pods" => {
+                        println!("{}", ToolRegistry::execute_tool("kube_pods", "", &workspace));
+                        return;
+                    }
                     "vision" => {
                         let path = args.get(2).map(|s| s.as_str()).unwrap_or("");
                         let prompt = args.get(3..).map(|s| s.join(" ")).unwrap_or_else(|| "Describe this image.".to_string());
@@ -202,17 +212,8 @@ fn main() {
                         println!("{}", ToolRegistry::execute_tool("ocr_read", path, &workspace));
                         return;
                     }
-                    "transcribe" => {
-                        let path = args.get(2).map(|s| s.as_str()).unwrap_or("");
-                        println!("{}", ToolRegistry::execute_tool("audio_transcribe", path, &workspace));
-                        return;
-                    }
                     "cluster" => {
                         println!("{}", ToolRegistry::execute_tool("cluster_status", "", &workspace));
-                        return;
-                    }
-                    "ping-peers" => {
-                        println!("{}", ToolRegistry::execute_tool("cluster_ping", "", &workspace));
                         return;
                     }
                     "self-heal" => {
@@ -237,13 +238,6 @@ fn main() {
                         for m in models {
                             println!("   ├── [{}] {} ('{}') - {}", m.registry, m.name, m.model_id, m.description);
                         }
-                        return;
-                    }
-                    "engines" => {
-                        println!("⚡ GEMI Coordinated Inference Engines:");
-                        println!("   ├── [NATIVE] Embedded GGUF Engine: ACTIVE (Metal/CUDA enabled)");
-                        println!("   ├── [WEB] OpenAI ChatCompletions API Endpoint: ACTIVE (http://127.0.0.1:9091/v1)");
-                        println!("   └── [MCP] GMCP Tool Reasoning Engine: ACTIVE");
                         return;
                     }
                     "mcp-hub" => {
