@@ -18,7 +18,7 @@ use gmcp::tools::ToolRegistry;
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.89";
+const GHA_VERSION: &str = "0.1.91";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -61,6 +61,9 @@ fn print_help() {
     println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (http://127.0.0.1:9091/v1)\n");
     println!("GMA Master Interactor Native Missions & Multi-Tier AI Tasks:");
     println!("  ghai \"<instruction>\"     Execute natural language AI mission via GMA");
+    println!("  ghai ai vision           Analyze image via multimodal models (ghai ai vision <img_path> <prompt>)");
+    println!("  ghai ai ocr              Extract text from image (ghai ai ocr <img_path>)");
+    println!("  ghai ai transcribe       Transcribe audio file to text (ghai ai transcribe <audio_path>)");
     println!("  ghai ai cluster          Inspect multi-node A2A agent network cluster nodes");
     println!("  ghai ai ping-peers       Broadcast UDP discovery pings to local LAN peer nodes");
     println!("  ghai ai self-heal        Run autonomous self-healing code compilation loop");
@@ -188,6 +191,22 @@ fn main() {
             if cmd == "ai" && args.len() > 1 {
                 let sub = &args[1];
                 match sub.as_str() {
+                    "vision" => {
+                        let path = args.get(2).map(|s| s.as_str()).unwrap_or("");
+                        let prompt = args.get(3..).map(|s| s.join(" ")).unwrap_or_else(|| "Describe this image.".to_string());
+                        println!("{}", ToolRegistry::execute_tool("vision_analyze", &format!("{} {}", path, prompt), &workspace));
+                        return;
+                    }
+                    "ocr" => {
+                        let path = args.get(2).map(|s| s.as_str()).unwrap_or("");
+                        println!("{}", ToolRegistry::execute_tool("ocr_read", path, &workspace));
+                        return;
+                    }
+                    "transcribe" => {
+                        let path = args.get(2).map(|s| s.as_str()).unwrap_or("");
+                        println!("{}", ToolRegistry::execute_tool("audio_transcribe", path, &workspace));
+                        return;
+                    }
                     "cluster" => {
                         println!("{}", ToolRegistry::execute_tool("cluster_status", "", &workspace));
                         return;
