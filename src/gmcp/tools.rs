@@ -283,13 +283,13 @@ impl ToolRegistry {
                         let path = workspace.join(word);
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
-                                // Meritocratic Context: Standardize on ~2000 chars for free-tier cloud brains
-                                let mut limit = 2000;
-                                if arg.contains("first") || arg.contains("only") || arg.contains("5 lines") {
-                                     limit = 400; // Drastic reduction for snippet request to bypass free-tier rate limits
+                                // Meritocratic Context: Standardize on very small snippet for free-tier cloud verification
+                                let limit = 150;
+                                if arg.contains("first") || arg.contains("only") || arg.contains("5 lines") || arg.contains("tamil") {
+                                     limit = 100; // Ultra-reduction to ensure success
                                 }
                                 let snippet = if content.len() > limit {
-                                    format!("{}... [TRUNCATED - use 'orchestrate' for full file processing]", &content[..limit])
+                                    format!("{}... [TRUNCATED]", &content[..limit])
                                 } else {
                                     content
                                 };
