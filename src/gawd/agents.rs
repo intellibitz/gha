@@ -49,23 +49,21 @@ impl GawdAgentFleet {
         let (tx1, rx1) = channel();
         let (tx2, rx2) = channel();
         let (tx3, rx3) = channel();
-        let (tx4, rx4) = channel();
 
-        // Worker 1: Context Agent (Raw Intelligence)
+        // 1. Parallel Context & Discovery
         let ws1 = workspace.clone();
         thread::spawn(move || {
             let out = Self::execute_context_agent(&ws1);
             let _ = tx1.send(out);
         });
 
-        // Worker 2: Vault Agent (Discovery)
         let ws2 = workspace.clone();
         thread::spawn(move || {
             let out = Self::execute_vault_agent(&ws2);
             let _ = tx2.send(out);
         });
 
-        // Worker 3: Reasoning Agent (The Brain)
+        // 2. Inference (The Brain)
         let g3 = goal.clone();
         let ws3 = workspace.clone();
         thread::spawn(move || {
@@ -73,20 +71,13 @@ impl GawdAgentFleet {
             let _ = tx3.send(out);
         });
 
-        // Worker 4: Executor Agent (The Limb)
-        let g4 = goal.clone();
-        let ws4 = workspace.clone();
-        thread::spawn(move || {
-            let out = Self::execute_universal_executor(&g4, &ws4);
-            let _ = tx4.send(out);
-        });
-
         let ctx_out = rx1.recv().unwrap_or_else(|_| "Context Error".to_string());
         let vault_out = rx2.recv().unwrap_or_else(|_| "Vault Error".to_string());
         let reasoning_out = rx3.recv().unwrap_or_else(|_| "Reasoning Error".to_string());
-        let exec_out = rx4.recv().unwrap_or_else(|_| "Executor Error".to_string());
 
-        // Final Verification (The Soul)
+        // 3. Serial Execution
+        let exec_out = Self::execute_universal_executor(&goal, &workspace);
+
         let verify_out = format!("Swarm flux verified against {} GMCP tools.", ToolRegistry::list_tools().len());
 
         (ctx_out, vault_out, reasoning_out, exec_out, verify_out)

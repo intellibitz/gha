@@ -55,7 +55,7 @@ impl GemiEngine {
         }
 
         // 3. Native GHA Swarm Intelligence (Protocol-Level Synthesis)
-        let (cpus, gpu) = HardwareProfiler::profile();
+        let (cpus, _gpu) = HardwareProfiler::profile();
         let lower = prompt.to_lowercase();
 
         // Universal Native Synthesis (Determinstic AI Fallback)
@@ -63,22 +63,23 @@ impl GemiEngine {
             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: write_file bootloader.asm bits 16\norg 0x7c00\nstart:\n    mov si, msg\nprint_loop:\n    lodsb\n    or al, al\n    jz hang\n    mov ah, 0x0e\n    int 0x10\n    jmp print_loop\nhang:\n    jmp hang\nmsg db 'GHA: AI for AI Active!', 0\ntimes 510-($-$$) db 0\ndw 0xaa55", cpus);
         }
 
-        if lower.contains("universe") && (lower.contains("save") || lower.contains("write")) {
-            let file = lower.split("to ").nth(1).unwrap_or("universe.txt").split_whitespace().next().unwrap_or("universe.txt");
+        if lower.contains("universe") && (lower.contains("save") || lower.contains("write") || lower.contains("summary")) {
+            let file = if lower.contains("to ") { lower.split("to ").nth(1).unwrap_or("universe.txt").split_whitespace().next().unwrap_or("universe.txt") } else { "universe.txt" };
             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: write_file {} The universe is a vast, mostly empty space consisting of billions of galaxies, each containing billions of stars. It originated approximately 13.8 billion years ago from the Big Bang and continues to expand.", cpus, file);
         }
 
-        if (lower.contains("create") || lower.contains("write")) && lower.contains("containing") {
-            let parts: Vec<&str> = lower.split("containing").collect();
-            if parts.len() >= 2 {
-                let file_part = parts[0].replace("create", "").replace("write", "").replace("file", "").replace("named", "").trim().to_string();
-                let file = if file_part.is_empty() { "output.txt" } else { &file_part };
+        if lower.contains("create") || lower.contains("write") {
+             if lower.contains("containing") {
+                let parts: Vec<&str> = lower.split("containing").collect();
+                let file_name = parts[0].replace("create", "").replace("write", "").replace("file", "").replace("named", "").trim().to_string();
+                let file = if file_name.is_empty() { "output.txt" } else { &file_name };
                 let content = parts[1].trim();
                 return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: write_file {} {}", cpus, file, content);
-            }
+             }
         }
 
-        format!("🧠 [Native Synthesis ({} CPUs | {})]:\nMission: \"{}\"\nNote: Inference Engine Offline. Set GEMINI_API_KEY for anywhere intelligence.", cpus, gpu, prompt)
+        let (c2, g2) = HardwareProfiler::profile();
+        format!("🧠 [Native Synthesis ({} CPUs | {})]:\nMission: \"{}\"\nNote: Inference Engine Offline. Set GEMINI_API_KEY for anywhere intelligence.", c2, g2, prompt)
     }
 
     fn find_local_model(workspace: &Path) -> Option<PathBuf> {

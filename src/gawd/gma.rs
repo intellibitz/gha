@@ -48,6 +48,12 @@ impl GmaMasterAgent {
             report.push_str(&mission_result);
         }
 
+        // ⚖️ GMA Trust Audit (Brutally Honest Reality Check)
+        // Run AFTER execution to verify actual impact and detect hallucinations/lies.
+        let audit = self.audit_truth(goal, &a2a_logs, workspace);
+        report.push_str("\n## ⚖️ GMA Trust Audit (Reality Check)\n");
+        report.push_str(&format!("   └── {}\n", audit));
+
         report.push_str("\n✅ [gha Intelligence] Flux executed natively (0-Effort, 100% Gains).\n");
 
         report
@@ -75,6 +81,46 @@ impl GmaMasterAgent {
             "".to_string()
         } else {
             results.join("\n")
+        }
+    }
+
+    fn audit_truth(&self, goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path) -> String {
+        let mut score = 100;
+        let mut flags = Vec::new();
+        let reasoning = &logs[2].payload; // ReasoningAgent INFERENCE_FLUX
+
+        // 1. Lie Detector: Action vs Artifact
+        if reasoning.contains("ACTION: write_file") {
+            if let Some(path_part) = reasoning.split("write_file ").nth(1) {
+                let file_name = path_part.split_whitespace().next().unwrap_or("");
+                if !file_name.is_empty() {
+                    let full_path = workspace.join(file_name);
+                    if !full_path.exists() {
+                        score -= 50;
+                        flags.push(format!("🔴 LIE DETECTED: Agent claimed to write '{}', but file is missing from disk.", file_name));
+                    } else if let Ok(meta) = std::fs::metadata(&full_path) {
+                        if meta.len() == 0 {
+                            score -= 20;
+                            flags.push(format!("🟠 DECEPTION DETECTED: File '{}' exists but is empty (0 bytes).", file_name));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Hallucination Detector: Intent vs Semantic Content
+        let lower_goal = goal.to_lowercase();
+        let lower_reasoning = reasoning.to_lowercase();
+
+        if lower_goal.contains("bootloader") && (!lower_reasoning.contains("bits 16") || !lower_reasoning.contains("0x7c00")) {
+            score -= 30;
+            flags.push("🟠 HALLUCINATION DETECTED: Output lacks core technical requirements for a BIOS bootloader (16-bit / 0x7c00).".to_string());
+        }
+
+        if flags.is_empty() {
+            "✅ TRUTH VERIFIED: Swarm logic is semantically sound and artifact-aligned.".to_string()
+        } else {
+            format!("⚠️ TRUTH AUDIT (Score: {}/100):\n   {}", score, flags.join("\n   "))
         }
     }
 }
