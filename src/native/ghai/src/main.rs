@@ -134,6 +134,7 @@ fn print_help() {
     println!("  :install                 Initialize sandboxed .gha environment natively offline");
     println!("  :uninstall               Clean up sandboxed .gha environment");
     println!("  :daemon                  Inspect or manage GHA Master Daemon");
+    println!("  :services                List running GHA background services");
     println!("  build                    Execute 100% native workspace build validation");
     println!("  test                     Execute 100% native test suite runner");
     println!("  clean                    Clean workspace build artifacts & sandbox caches");
@@ -389,6 +390,10 @@ fn main() {
         }
         "gmcp" | "ghaGmcp" => {
             let goal = "gmcp_scout";
+            run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
+        }
+        "services" | "ghaServices" => {
+            let goal = "services";
             run_native_ai_orchestrator(&project_root, &global_gha_dir, goal);
         }
         "scout" | "ghaScout" => {

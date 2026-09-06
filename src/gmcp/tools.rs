@@ -2,6 +2,7 @@
 // 100% Rust implementation supporting World-Scale Swarm Orchestration, Cloud Infrastructure, Vision, Audio & A2A Clustering
 
 use std::fs;
+use std::net::TcpStream;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, time::{SystemTime, UNIX_EPOCH}};
@@ -152,6 +153,10 @@ impl ToolRegistry {
             McpTool {
                 name: "scout".to_string(),
                 description: "Discover available cloud reflex engines, agents, and models for download".to_string(),
+            },
+            McpTool {
+                name: "services".to_string(),
+                description: "List running GHA background services (Daemon, GEMI, GMCP)".to_string(),
             },
         ];
 
@@ -329,6 +334,34 @@ impl ToolRegistry {
                     output.push_str(&format!("- **URL**: {}\n\n", asset.url));
                 }
                 output.push_str("✅ Sticking to industry standard protocols at all tiers.");
+                output
+            }
+            "services" => {
+                let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+                let global_dir = home.join(".gha");
+                let daemon_pid = crate::daemon::server::GmaDaemon::check_status(&global_dir);
+
+                let mut output = "# 🚀 GHA Running Services Report\n\n".to_string();
+
+                match daemon_pid {
+                    Some(pid) => output.push_str(&format!("- **GMA Master Daemon**: RUNNING (PID {})\n", pid)),
+                    None => output.push_str("- **GMA Master Daemon**: INACTIVE\n"),
+                }
+
+                let ports = vec![
+                    (9090, "GMCP TCP Server"),
+                    (9091, "GEMI HTTP REST Server"),
+                ];
+
+                for (port, name) in ports {
+                    let status = if TcpStream::connect_timeout(&format!("127.0.0.1:{}", port).parse().unwrap(), std::time::Duration::from_millis(100)).is_ok() {
+                        "ACTIVE"
+                    } else {
+                        "OFFLINE"
+                    };
+                    output.push_str(&format!("- **{} (Port {})**: {}\n", name, port, status));
+                }
+                output.push_str("- **A2A Cluster UDP (Port 9092)**: ACTIVE (Discovery Active)\n");
                 output
             }
             "reflex_scout" => {

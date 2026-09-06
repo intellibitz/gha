@@ -40,6 +40,7 @@ fn print_help() {
     println!("  uninstall                Remove global gha environment");
     println!("  mcp                      Start native GMA Master MCP Server (for external AI clients)");
     println!("  gemi                     Start GEMI OpenAI-compatible REST server");
+    println!("  services                 List running GHA background services");
 }
 
 fn run_install(global_dir: &Path) {
@@ -117,6 +118,10 @@ fn main() {
         }
         "scout" | ":scout" => {
             let res = ToolRegistry::execute_tool("scout", "", &cwd);
+            println!("{}", res);
+        }
+        "services" | ":services" => {
+            let res = ToolRegistry::execute_tool("services", "", &cwd);
             println!("{}", res);
         }
         _ => {
