@@ -78,6 +78,15 @@ impl GemiEngine {
         format!("🧠 [Native Synthesis ({} CPUs | {})]:\nMission: \"{}\"\nNote: Swarm is scouting for specialized brains.", cpus, gpu, prompt)
     }
 
+    pub fn generate_protocol_data(intent: &str) -> String {
+        format!(
+            "Generate a JSON representation of a GHA AOA Swarm Flux for the mission: '{}'. \
+            Follow the protocol: GhaSafetyAgent -> GhaReasoningAgent -> GhaContextAgent. \
+            Use '├──' and '└──' connectors.",
+            intent
+        )
+    }
+
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
         format!("👁️ [gha Vision]: {} -> {}", image_path.display(), prompt)
     }

@@ -4,7 +4,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{env, time::{SystemTime, UNIX_EPOCH}};
 use serde::{Deserialize, Serialize};
 
 use crate::gawd::gmas::GmasSupervisor;
@@ -145,6 +145,10 @@ impl ToolRegistry {
                 name: "global_registry_scan".to_string(),
                 description: "Scan global GHA registry for world-wide agent service providers".to_string(),
             },
+            McpTool {
+                name: "self_train".to_string(),
+                description: "Trigger autonomous agent self-training and PKB synthesis (arg: 'num_samples')".to_string(),
+            },
         ];
 
         // Dynamic Tool Discovery
@@ -258,6 +262,23 @@ impl ToolRegistry {
             }
             "global_registry_scan" => {
                 "🌌 [Global Registry]: Scanning world-wide GHA network... Discovered 1,024+ verified agent service nodes across 6 continents.".to_string()
+            }
+            "self_train" => {
+                let count = arg.parse::<usize>().unwrap_or(10);
+                let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+                let global_dir = home.join(".gha");
+
+                let intents = vec!["version", "status", "build", "test", "clean", "explain the universe"];
+                let mut entries = Vec::new();
+                for i in 0..count {
+                    let intent = intents[i % intents.len()];
+                    entries.push(crate::gawd::pkb::PkbSynthesizer::generate_sample(intent, workspace));
+                }
+
+                match crate::gawd::pkb::PkbSynthesizer::save_training_data(entries, &global_dir) {
+                    Ok(msg) => format!("🌱 [Self-Training]: Swarm synthesis complete. {}", msg),
+                    Err(e) => format!("❌ [Self-Training Error]: {}", e),
+                }
             }
             "vision_analyze" => {
                 let parts: Vec<&str> = arg.splitn(2, ' ').collect();
