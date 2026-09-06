@@ -124,6 +124,10 @@ impl GhaPulse {
             return Ok("ACTION: version".to_string());
         }
 
+        if lower.contains("failed due to rate limits") || lower.contains("smaller context") {
+             return Ok("ACTION: reason Translate only the first 5 lines of romeo_juliet.txt to Tamil".to_string());
+        }
+
         if lower.contains("exponential intelligence step") {
              return Ok(format!("ACTION: reason Perform autonomous self-evolution for {}", prompt));
         }

@@ -284,7 +284,10 @@ impl ToolRegistry {
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
                                 // Meritocratic Context: Standardize on ~2000 chars for free-tier cloud brains
-                                let limit = 2000;
+                                let mut limit = 2000;
+                                if arg.contains("first") || arg.contains("only") || arg.contains("5 lines") {
+                                     limit = 400; // Drastic reduction for snippet request to bypass free-tier rate limits
+                                }
                                 let snippet = if content.len() > limit {
                                     format!("{}... [TRUNCATED - use 'orchestrate' for full file processing]", &content[..limit])
                                 } else {

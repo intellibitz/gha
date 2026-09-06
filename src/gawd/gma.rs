@@ -145,8 +145,14 @@ impl GmaMasterAgent {
                         let mut res = ToolRegistry::execute_tool(tool_name, arg, workspace);
 
                         // 🚀 Native Self-Healing Loop (2^0 intelligence)
-                        if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") {
-                            let fix_prompt = format!("Mission '{}' failed at tool '{}' with error: '{}'. Suggest a fixed command.", goal, tool_name, res);
+                        if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") || res.to_lowercase().contains("rate_limit") {
+                            let mut fix_prompt = format!("Mission '{}' failed at tool '{}' with error: '{}'. Suggest a fixed command.", goal, tool_name, res);
+
+                            // Specific Self-Healing: Context Reduction for Rate Limits
+                            if res.contains("rate_limit") || res.contains("too large") {
+                                fix_prompt = format!("Mission '{}' failed due to rate limits. Suggest the same command but with a much smaller context or snippet.", goal);
+                            }
+
                             if let Ok(fixed_action) = crate::gemi::pulse::GhaPulse::reason(&fix_prompt, workspace) {
                                 if fixed_action.contains("ACTION:") {
                                      let fix_parts: Vec<&str> = fixed_action.split("ACTION: ").nth(1).unwrap_or("").splitn(2, ' ').collect();
