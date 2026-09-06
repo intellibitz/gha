@@ -20,45 +20,32 @@ impl GemiEngine {
 
     fn reason_internal(prompt: &str, workspace: &Path, allow_reflex: bool) -> String {
         if allow_reflex {
-            // 🚀 Tier 0: GHA-Alpha Reflex Reasoning (<10ms)
             let (reflex_decision, micros) = super::reflex::ReflexEngine::try_solve(prompt, workspace);
             if let super::reflex::ReflexDecision::Solved(action) = reflex_decision {
                 return format!("⚡ [Tier 0: GHA-Alpha Reflex ({}μs)]: {}", micros, action);
             }
         }
 
-        // 1. 🚀 Exponential Discovery: Scout and Benchmark all available brains
-        let models = super::models::ModelManager::scout_and_benchmark(workspace);
-
-        // 2. 🎯 Picking the Winner: Mission-based model selection
-        if let Some(best_model) = models.get(0) {
-             if prompt.contains("local") && best_model.name.contains("Ollama") {
-                 return Self::execute_local_ollama(prompt, &best_model.model_id);
-             }
-        }
-
-        // 3. Fallback to Cloud (Gemini, OpenAI, Anthropic, DeepSeek)
         if let Some(res) = Self::scout_cloud_providers(prompt) {
             return res;
         }
 
-        // 4. Native GHA Synthesis (Protocol-Level Fallback)
-        format!("❌ CLOUD_BRAIN_UNAVAILABLE: No providers responded to mission. Suggest smaller context or check API health. (Native: Scouting for brains...)")
+        format!("❌ CLOUD_BRAIN_UNAVAILABLE: All cloud brains failed. (Context: {})", prompt)
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
         let mut errors = Vec::new();
 
-        // Priority 1: Groq (Qwen 2.5 32b is very robust on Groq)
-        match Self::execute_groq(prompt) {
-            Ok(res) => return Some(res),
-            Err(e) => errors.push(format!("Groq: {}", e)),
-        }
-
-        // Priority 2: Gemini (1.5 Flash is reliable)
+        // Priority 1: Gemini (Reliable for free tier)
         match Self::execute_gemini(prompt) {
             Ok(res) => return Some(res),
             Err(e) => errors.push(format!("Gemini: {}", e)),
+        }
+
+        // Priority 2: Groq
+        match Self::execute_groq(prompt) {
+            Ok(res) => return Some(res),
+            Err(e) => errors.push(format!("Groq: {}", e)),
         }
 
         // Priority 3: OpenAI
@@ -101,22 +88,23 @@ impl GemiEngine {
         let payload = json!({
             "model": "qwen/qwen3.6-27b",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 1000
+            "max_tokens": 200
         });
         let out = Self::curl_pipe("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
         let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", Self::cleanse_artifact(text)))
+        Ok(Self::cleanse_artifact(text))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        let url = format!("https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={}", key.trim());
+        // Use v1beta for fresh models
+        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Self::curl_pipe(&url, vec![], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
         let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", Self::cleanse_artifact(text)))
+        Ok(Self::cleanse_artifact(text))
     }
 
     fn execute_openai(prompt: &str) -> Result<String> {
@@ -128,7 +116,7 @@ impl GemiEngine {
         let out = Self::curl_pipe("https://api.openai.com/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
         let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI failure: {}", v))?;
-        Ok(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", Self::cleanse_artifact(text)))
+        Ok(Self::cleanse_artifact(text))
     }
 
     fn curl_pipe(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<Vec<u8>> {
