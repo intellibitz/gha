@@ -292,11 +292,8 @@ impl ToolRegistry {
 
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
-                                // Meritocratic Context: Standardize on very small snippet for free-tier cloud verification
-                                let mut limit = 2000; // Standard limit for most providers
-                                if arg.contains("tamil") || arg.contains("translate") {
-                                     limit = 100; // Optimal balance for free-tier rate limits
-                                }
+                                // Meritocratic Context: Standardize on tiny snippet for free-tier cloud verification
+                                let limit = 30; // Absolute minimum to avoid rate limits
                                 let snippet = if content.len() > limit {
                                     format!("{}... [TRUNCATED]", &content[..limit])
                                 } else {
@@ -437,11 +434,11 @@ impl ToolRegistry {
             "verify_cloud_providers" => {
                 let mut output = "# ☁️ GHA Cloud Health Report\n\n".to_string();
                 let keys = vec![
+                    ("MISTRAL_API_KEY", "Mistral"),
                     ("GROQ_API_KEY", "Groq"),
                     ("GEMINI_API_KEY", "Google Gemini"),
                     ("OPENAI_API_KEY", "OpenAI"),
                     ("ANTHROPIC_API_KEY", "Anthropic"),
-                    ("MISTRAL_API_KEY", "Mistral"),
                     ("DEEPSEEK_API_KEY", "DeepSeek"),
                 ];
 
