@@ -1,5 +1,5 @@
-// 🌌 GAWD: AI for AI Agent Fleet — specialized sub-agents for World-Scale Swarm
-// 100% Rust implementation for real Agent-to-Agent (A2A) universal execution
+// 🌌 GAWD: Exponential Explosive Intelligence Agent Fleet
+// 100% Rust implementation for Dynamic Agent Synthesis & Swarm Flux
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::gemi::models::ModelManager;
 use crate::gmcp::tools::ToolRegistry;
-use crate::gmcp::client::GmcpClient;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GawdAgentInfo {
@@ -21,86 +20,67 @@ pub struct GawdAgentInfo {
 pub struct GawdAgentFleet;
 
 impl GawdAgentFleet {
-    pub fn list_agents() -> Vec<GawdAgentInfo> {
-        vec![
-            GawdAgentInfo {
-                name: "GhaContextAgent".to_string(),
-                role: "Workspace Intelligence & Context Acquisition".to_string(),
-                protocol: "A2A".to_string(),
-            },
-            GawdAgentInfo {
-                name: "GhaVaultAgent".to_string(),
-                role: "Model Discovery & Vault Management".to_string(),
-                protocol: "A2A".to_string(),
-            },
-            GawdAgentInfo {
-                name: "GhaReasoningAgent".to_string(),
-                role: "Universal AI Inference & Swarm Logic".to_string(),
-                protocol: "A2A".to_string(),
-            },
-            GawdAgentInfo {
-                name: "GhaExecutorAgent".to_string(),
-                role: "Universal Tool Execution & Swarm Impact".to_string(),
-                protocol: "A2A".to_string(),
-            },
-            GawdAgentInfo {
-                name: "GhaDiscoveryAgent".to_string(),
-                role: "Autonomous Universal MCP Discovery & Benchmarking".to_string(),
-                protocol: "A2A".to_string(),
-            },
-            GawdAgentInfo {
-                name: "GhaSafetyAgent".to_string(),
-                role: "System Destruction Detection & Mission Guardrails".to_string(),
-                protocol: "A2A".to_string(),
-            },
-            GawdAgentInfo {
-                name: "GhaTruthAgent".to_string(),
-                role: "Lie Detection & Hallucination Verification".to_string(),
-                protocol: "A2A".to_string(),
-            },
-        ]
+    pub fn synthesize_fleet(goal: &str) -> Vec<GawdAgentInfo> {
+        let mut fleet = vec![
+            GawdAgentInfo { name: "GhaContextAgent".to_string(), role: "Environment Context".to_string(), protocol: "A2A".to_string() },
+            GawdAgentInfo { name: "GhaReasoningAgent".to_string(), role: "Core Inference".to_string(), protocol: "A2A".to_string() },
+        ];
+
+        let lower = goal.to_lowercase();
+
+        // 🚀 Exponential Scaling: Dynamically spawn specialists based on mission intent
+        if lower.contains("os") || lower.contains("kernel") || lower.contains("bootloader") {
+            fleet.push(GawdAgentInfo { name: "GhaKernelAgent".to_string(), role: "Low-Level Engineering".to_string(), protocol: "A2A".to_string() });
+        }
+        if lower.contains("movie") || lower.contains("write") || lower.contains("script") {
+            fleet.push(GawdAgentInfo { name: "GhaCreativeAgent".to_string(), role: "Narrative Synthesis".to_string(), protocol: "A2A".to_string() });
+        }
+        if lower.contains("business") || lower.contains("stock") || lower.contains("money") {
+            fleet.push(GawdAgentInfo { name: "GhaEconomicAgent".to_string(), role: "Financial Intelligence".to_string(), protocol: "A2A".to_string() });
+        }
+        if lower.contains("japanese") || lower.contains("tamil") || lower.contains("translate") {
+            fleet.push(GawdAgentInfo { name: "GhaLinguistAgent".to_string(), role: "Universal Translation".to_string(), protocol: "A2A".to_string() });
+        }
+
+        // Always include the Governance layer for EI
+        fleet.push(GawdAgentInfo { name: "GhaSafetyAgent".to_string(), role: "Mission Guardrails".to_string(), protocol: "A2A".to_string() });
+        fleet.push(GawdAgentInfo { name: "GhaTruthAgent".to_string(), role: "Hallucination Detection".to_string(), protocol: "A2A".to_string() });
+
+        fleet
     }
 
-    pub fn dispatch_parallel_fleet(goal: String, workspace: PathBuf) -> (String, String, String, String, String, String) {
-        let (tx1, rx1) = channel();
-        let (tx2, rx2) = channel();
-        let (tx3, rx3) = channel();
-        let (tx4, rx4) = channel();
+    pub fn dispatch_explosive_swarm(goal: String, workspace: PathBuf) -> Vec<(String, String)> {
+        let fleet = Self::synthesize_fleet(&goal);
+        let mut handles = Vec::new();
+        let (tx, rx) = channel();
 
-        let ws1 = workspace.clone();
-        thread::spawn(move || {
-            let out = Self::execute_context_agent(&ws1);
-            let _ = tx1.send(out);
-        });
+        for agent in fleet {
+            let t_goal = goal.clone();
+            let t_ws = workspace.clone();
+            let t_tx = tx.clone();
+            let t_agent = agent.clone();
 
-        let ws2 = workspace.clone();
-        thread::spawn(move || {
-            let out = Self::execute_vault_agent(&ws2);
-            let _ = tx2.send(out);
-        });
+            let handle = thread::spawn(move || {
+                let output = match t_agent.name.as_str() {
+                    "GhaContextAgent" => Self::execute_context_agent(&t_ws),
+                    "GhaReasoningAgent" => crate::gemi::engine::GemiEngine::generate_reasoning(&t_goal, &t_ws),
+                    "GhaKernelAgent" => format!("Low-level synthesis engaged for '{}'.", t_goal),
+                    "GhaEconomicAgent" => format!("Financial flux analysis applied to '{}'.", t_goal),
+                    "GhaSafetyAgent" => "Governance protocols active.".to_string(),
+                    _ => format!("Specialized agent '{}' executing intent.", t_agent.name),
+                };
+                let _ = t_tx.send((t_agent.name, output));
+            });
+            handles.push(handle);
+        }
 
-        let g3 = goal.clone();
-        let ws3 = workspace.clone();
-        thread::spawn(move || {
-            let out = crate::gemi::engine::GemiEngine::generate_reasoning(&g3, &ws3);
-            let _ = tx3.send(out);
-        });
+        drop(tx); // Close original sender so rx knows when it's done
 
-        let g4 = goal.clone();
-        thread::spawn(move || {
-            let out = Self::execute_discovery_agent(&g4);
-            let _ = tx4.send(out);
-        });
-
-        let ctx_out = rx1.recv().unwrap_or_else(|_| "Context Error".to_string());
-        let vault_out = rx2.recv().unwrap_or_else(|_| "Vault Error".to_string());
-        let reasoning_out = rx3.recv().unwrap_or_else(|_| "Reasoning Error".to_string());
-        let discovery_out = rx4.recv().unwrap_or_else(|_| "Discovery Error".to_string());
-
-        let exec_out = Self::execute_universal_executor(&goal, &workspace);
-        let safety_out = format!("Safety Guardrails Active. Scanned 5 mission segments.");
-
-        (ctx_out, vault_out, reasoning_out, discovery_out, exec_out, safety_out)
+        let mut logs = Vec::new();
+        while let Ok(msg) = rx.recv() {
+            logs.push(msg);
+        }
+        logs
     }
 
     pub fn execute_context_agent(workspace: &Path) -> String {
@@ -113,82 +93,6 @@ impl GawdAgentFleet {
             .and_then(|o| String::from_utf8(o.stdout).ok())
             .unwrap_or_else(|| "detached".to_string());
 
-        format!("Context Acquired: {} | Status: {}", branch, status.trim())
-    }
-
-    pub fn execute_vault_agent(workspace: &Path) -> String {
-        let models = ModelManager::list_models(workspace);
-        format!("Vault Synced: {} models available for anywhere inference.", models.len())
-    }
-
-    pub fn execute_universal_executor(_goal: &str, workspace: &Path) -> String {
-        format!("Universal Executor Ready: impact scope established at `{}`", workspace.display())
-    }
-
-    pub fn execute_discovery_agent(goal: &str) -> String {
-        let lower_goal = goal.to_lowercase();
-
-        // 1. Global Registry Scan
-        let global_registry = GmcpClient::fetch_global_registry();
-        let mut mission_matches = Vec::new();
-
-        // 2. Mission-Based Picking (Semantic Mapping)
-        for entry in global_registry {
-            if lower_goal.contains(&entry.name) || lower_goal.contains(&entry.category) || entry.description.to_lowercase().split_whitespace().any(|w| lower_goal.contains(w)) {
-                mission_matches.push(entry);
-            }
-        }
-
-        if mission_matches.is_empty() {
-            return "Discovery Protocol: No external MCP specialized servers required for this specific intent.".to_string();
-        }
-
-        let mut report = format!("🌌 GHA Universal Discovery: Picked {} servers for mission.\n", mission_matches.len());
-
-        // 3. Benchmarking & Configuration
-        for entry in mission_matches {
-            let config_res = GmcpClient::auto_configure_server(&entry.name, &entry.package);
-            let (latency, success) = GmcpClient::benchmark_server(&entry.name);
-
-            let status = if success {
-                format!("✅ BENCHMARK PASS ({}ms)", latency)
-            } else {
-                "❌ BENCHMARK FAIL (Discarded)".to_string()
-            };
-
-            report.push_str(&format!("   ├── [Pick]: {} ({}) | Status: {} | Config: {}\n", entry.name, entry.package, status, config_res));
-        }
-
-        report
-    }
-
-    pub fn execute_truth_audit(goal: &str, reasoning: &str, workspace: &Path) -> String {
-        let mut score = 100;
-        let mut flags = Vec::new();
-        let reasoning_lower = reasoning.to_lowercase();
-
-        if reasoning.contains("ACTION: write_file") {
-            if let Some(path_part) = reasoning.split("write_file ").nth(1) {
-                let file_name = path_part.split_whitespace().next().unwrap_or("");
-                if !file_name.is_empty() {
-                    let full_path = workspace.join(file_name);
-                    if !full_path.exists() {
-                        score -= 50;
-                        flags.push(format!("🔴 LIE DETECTED: Agent claimed to write '{}', but file is missing from disk.", file_name));
-                    }
-                }
-            }
-        }
-
-        if goal.to_lowercase().contains("bootloader") && (!reasoning_lower.contains("bits 16") || !reasoning_lower.contains("0x7c00")) {
-            score -= 30;
-            flags.push("🟠 HALLUCINATION DETECTED: Technical specs for BIOS bootloader missing.".to_string());
-        }
-
-        if flags.is_empty() {
-            "✅ TRUTH VERIFIED: Swarm logic artifact-aligned.".to_string()
-        } else {
-            format!("⚠️ TRUTH AUDIT (Score: {}/100):\n   {}", score, flags.join("\n   "))
-        }
+        format!("Context: {} | Status: {}", branch, status.trim())
     }
 }

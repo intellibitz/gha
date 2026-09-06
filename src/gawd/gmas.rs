@@ -1,5 +1,5 @@
 // 🌌 GMAS: Universal AI for AI Swarm Supervisor
-// Tier 1 AOA Protocol governing Full Autonomous World-Scale AI Agent Network
+// Tier 1 AOA Protocol governing Exponential Explosive Intelligence Swarms
 
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpStream, UdpSocket};
@@ -44,52 +44,22 @@ impl GmasSupervisor {
     }
 
     pub fn supervise_mission(goal: &str, workspace: &Path) -> (Vec<A2AMessage>, Vec<GawdAgentInfo>) {
-        let fleet = GawdAgentFleet::list_agents();
+        let fleet_info = GawdAgentFleet::synthesize_fleet(goal);
 
-        // 1. Swarm Flux Initiation (A2A Multi-Agent Coordination)
-        let (ctx_out, vault_out, reasoning_out, discovery_out, exec_out, safety_out) =
-            GawdAgentFleet::dispatch_parallel_fleet(goal.to_string(), workspace.to_path_buf());
+        // 🚀 Exponential Swarm Execution
+        let swarm_logs = GawdAgentFleet::dispatch_explosive_swarm(goal.to_string(), workspace.to_path_buf());
 
-        let logs = vec![
-            A2AMessage {
-                sender: "GMA-Master".to_string(),
-                recipient: "ContextAgent".to_string(),
-                action: "MISSION_SYNC".to_string(),
-                payload: ctx_out,
-            },
-            A2AMessage {
-                sender: "GMA-Master".to_string(),
-                recipient: "VaultAgent".to_string(),
-                action: "VAULT_DISCOVERY".to_string(),
-                payload: vault_out,
-            },
-            A2AMessage {
-                sender: "ContextAgent".to_string(),
-                recipient: "ReasoningAgent".to_string(),
-                action: "INFERENCE_FLUX".to_string(),
-                payload: reasoning_out,
-            },
-            A2AMessage {
-                sender: "ReasoningAgent".to_string(),
-                recipient: "DiscoveryAgent".to_string(),
-                action: "MCP_EXPLORATION".to_string(),
-                payload: discovery_out,
-            },
-            A2AMessage {
-                sender: "DiscoveryAgent".to_string(),
-                recipient: "ExecutorAgent".to_string(),
-                action: "TOOL_DISPATCH".to_string(),
-                payload: exec_out,
-            },
-            A2AMessage {
-                sender: "GMA-Master".to_string(),
-                recipient: "SafetyAgent".to_string(),
-                action: "SAFETY_GUARD".to_string(),
-                payload: safety_out,
-            },
-        ];
+        let mut a2a_logs = Vec::new();
+        for (name, output) in swarm_logs {
+            a2a_logs.push(A2AMessage {
+                sender: name,
+                recipient: "GMA-Master".to_string(),
+                action: "MISSION_FLUX".to_string(),
+                payload: output,
+            });
+        }
 
-        (logs, fleet)
+        (a2a_logs, fleet_info)
     }
 
     pub fn dispatch_peer_task(addr: &str, tool_name: &str, arg: &str) -> String {
@@ -110,7 +80,7 @@ impl GmasSupervisor {
     }
 
     pub fn broadcast_lan_ping() -> Vec<String> {
-        let mut active_peers = Vec::new();
+        let active_peers = Vec::new();
         if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
             let _ = socket.set_broadcast(true);
             let _ = socket.set_read_timeout(Some(Duration::from_millis(200)));
