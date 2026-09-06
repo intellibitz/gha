@@ -135,7 +135,8 @@ impl GemiEngine {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
             "model": "qwen/qwen3.6-27b",
-            "messages": [{"role": "user", "content": prompt}]
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 1000
         });
 
         let payload_file = std::env::temp_dir().join("gha_groq_payload.json");
@@ -157,7 +158,7 @@ impl GemiEngine {
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={}", key.trim());
+        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
 
         let payload_file = std::env::temp_dir().join("gha_gemini_payload.json");

@@ -283,8 +283,13 @@ impl ToolRegistry {
                         let path = workspace.join(word);
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
-                                // Limit inlined content to ~10k chars to avoid token blowup
-                                let snippet = if content.len() > 10000 { format!("{}... [TRUNCATED]", &content[..10000]) } else { content };
+                                // Meritocratic Context: Standardize on ~2000 chars for free-tier cloud brains
+                                let limit = 2000;
+                                let snippet = if content.len() > limit {
+                                    format!("{}... [TRUNCATED - use 'orchestrate' for full file processing]", &content[..limit])
+                                } else {
+                                    content
+                                };
                                 full_prompt = format!("{}\n\n[FILE CONTEXT: {}]\n{}", full_prompt, word, snippet);
                             }
                         }
