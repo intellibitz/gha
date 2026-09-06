@@ -276,7 +276,7 @@ impl ToolRegistry {
                 output
             }
             "reason" => {
-                let mut full_prompt = format!("Mission: {}\n\nPlease provide the requested translation or reasoning based on the context below. Deliver the final result clearly. Do not yap. No process explanation.", arg);
+                let mut full_prompt = format!("MISSION: {}\n\nINSTRUCTION: Output the final result clearly. Do not explain your process. Deliver the completed artifact immediately.", arg);
                 // Autonomous Context Attachment: If an EXISTING source file is mentioned, inline its content
                 for word in arg.split_whitespace() {
                     let clean_word = word.trim_matches(|c| c == '(' || c == ')' || c == '[' || c == ']');
@@ -292,9 +292,9 @@ impl ToolRegistry {
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
                                 // Meritocratic Context: Standardize on balanced snippet for free-tier cloud verification
-                                let mut limit = 2000;
-                                if arg.contains("tamil") || arg.contains("translate") {
-                                     limit = 1000; // Optimal balance for real intelligence
+                                let mut limit = 1000;
+                                if arg.contains("smaller context") || arg.contains("snippet") || arg.contains("tamil") || arg.contains("translate") {
+                                     limit = 300; // Ultra-reduction for free-tier reliability
                                 }
                                 let snippet = if content.len() > limit {
                                     format!("{}... [TRUNCATED - partial result only]", &content[..limit])
@@ -310,7 +310,7 @@ impl ToolRegistry {
                 let result = GemiEngine::generate_reasoning_deep(&full_prompt, workspace);
 
                 if result.trim().is_empty() || result.contains("CLOUD_BRAIN_UNAVAILABLE") {
-                    return "❌ Error: Intelligence provider returned an empty or unavailable result.".to_string();
+                    return format!("❌ Error: Intelligence provider failed. (Result: {})", result);
                 }
 
                 if arg.contains("save to") {

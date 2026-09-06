@@ -159,7 +159,7 @@ impl GmaMasterAgent {
                                      let fix_tool = fix_parts[0];
                                      let fix_arg = fix_parts.get(1).unwrap_or(&"");
                                      let fix_res = ToolRegistry::execute_tool(fix_tool, fix_arg, workspace);
-                                     res = format!("{} (Self-Healed: {})", res, fix_res);
+                                     res = fix_res; // Prioritize the successful self-healed result
                                 }
                             }
                         }
