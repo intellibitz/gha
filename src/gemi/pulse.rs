@@ -45,9 +45,13 @@ impl GhaPulse {
             return Ok("ACTION: verify_mcp_servers".to_string());
         }
 
-        if lower.contains("install mcp") || lower.contains("need capability") || lower.contains("search for") {
+        if lower.contains("install mcp") || lower.contains("need capability") {
              let name = lower.split_whitespace().last().unwrap_or("search");
              return Ok(format!("ACTION: provision_mcp {}", name));
+        }
+
+        if lower.contains("use brave search") || lower.contains("search for") {
+             return Ok("ACTION: brave_search:search_web {\"query\": \"gha news\"}".to_string());
         }
 
         if lower.contains("models") || lower.contains("inventory") || lower.contains("list_models") {
