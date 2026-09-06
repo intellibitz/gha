@@ -26,12 +26,13 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 For architecture, cloud gateways, clustering, self-healing, and multimodal guides, visit the **[GHA Wiki](https://github.com/intellibitz/gha/wiki)**.
 
-### Quick Verification
-Once installed, type these commands to verify your engine:
+### Quick Verification (Natural Language Mission)
+Once installed, talk to the **GMA Master Agent** to verify your engine:
+
 ```bash
-ghai :version         # Print native architecture report
-ghai :status          # Check workspace health & daemon
-ghai ai models        # List active cloud & local models
+ghai "what is your version?"    # Verify native architecture
+ghai "check system status"      # Verify workspace health & swarm
+ghai "list active models"       # Discover cloud & local models
 ```
 
 ---
