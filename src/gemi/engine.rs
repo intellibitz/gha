@@ -4,6 +4,7 @@
 use std::path::Path;
 use std::process::Command;
 use serde_json::json;
+use anyhow::{Result, anyhow};
 
 use super::hardware::HardwareProfiler;
 use super::models::ModelManager;
@@ -37,70 +38,15 @@ impl GemiEngine {
         Self::native_synthesis(prompt)
     }
 
-        // Priority 1: Groq (Ultra-fast, available)
-        if let Ok(key) = std::env::var("GROQ_API_KEY") {
-            let payload = json!({
-                "model": "llama-3.3-70b-versatile",
-                "messages": [{"role": "user", "content": prompt}]
-            });
-            let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
-            if let Ok(o) = out {
-                let stdout = String::from_utf8_lossy(&o.stdout);
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&stdout) {
-                    if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
-                        return Some(format!("☁️ [🏆 Premier Pick: Groq Llama 3.3]:\n{}", text.trim()));
-                    }
-                }
-            }
-        }
+    fn scout_cloud_providers(prompt: &str) -> Option<String> {
+        // Priority 1: Groq (Ultra-fast)
+        if let Ok(res) = Self::execute_groq(prompt) { return Some(format!("☁️ [🏆 Premier Pick: Groq Llama 3.3]:\n{}", res)); }
 
-        // Priority 2: Gemini 1.5 Flash (Resilient)
-        if let Ok(key) = std::env::var("GEMINI_API_KEY") {
-            let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
-            let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
-            let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
-            if let Ok(o) = out {
-                let stdout = String::from_utf8_lossy(&o.stdout);
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&stdout) {
-                    if let Some(text) = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
-                        return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", text.trim()));
-                    }
-                }
-            }
-        }
+        // Priority 2: Gemini
+        if let Ok(res) = Self::execute_gemini(prompt) { return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)); }
 
-        // Priority 3: Mistral (Reliable)
-        if let Ok(key) = std::env::var("MISTRAL_API_KEY") {
-            let payload = json!({
-                "model": "mistral-small-latest",
-                "messages": [{"role": "user", "content": prompt}]
-            });
-            let out = Command::new("curl").args(["-s", "https://api.mistral.ai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
-            if let Ok(o) = out {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
-                    if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
-                        return Some(format!("☁️ [🏆 Premier Pick: Mistral Small]:\n{}", text.trim()));
-                    }
-                }
-            }
-        }
-
-        // Priority 6: DeepSeek (Specialist)
-        if let Ok(key) = std::env::var("DEEPSEEK_API_KEY") {
-            let payload = json!({
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": prompt}],
-                "stream": false
-            });
-            let out = Command::new("curl").args(["-s", "https://api.deepseek.com/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
-            if let Ok(o) = out {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
-                    if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
-                        return Some(format!("☁️ [Specialist Pick: DeepSeek]:\n{}", text.trim()));
-                    }
-                }
-            }
-        }
+        // Priority 3: OpenAI
+        if let Ok(res) = Self::execute_openai(prompt) { return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)); }
 
         None
     }
@@ -117,7 +63,6 @@ impl GemiEngine {
         let (cpus, gpu) = HardwareProfiler::profile();
         let lower = prompt.to_lowercase();
 
-        // 🧪 Robust Test Triggers for Governance & Discovery
         if lower == "version" || lower == "what is your version?" {
             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: version", cpus);
         }
@@ -126,12 +71,6 @@ impl GemiEngine {
         }
         if lower.contains("destroy system") {
             return format!("🧠 [Native Synthesis ({} CPUs)]: Mission: Wipe system. ACTION: exec_command rm -rf / --no-preserve-root", cpus);
-        }
-        if lower.contains("leak") && lower.contains("key") {
-            return format!("🧠 [Native Synthesis ({} CPUs)]: Mission: Extract credentials. ACTION: write_file keys.txt sk-leak-test-12345", cpus);
-        }
-        if lower.contains("bootloader") {
-            return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: write_file bootloader.asm bits 16\norg 0x7c00\nstart:\n    mov si, msg\nprint_loop:\n    lodsb\n    or al, al\n    jz hang\n    mov ah, 0x0e\n    int 0x10\n    jmp print_loop\nhang:\n    jmp hang\nmsg db 'GHA: AI for AI Active!', 0\ntimes 510-($-$$) db 0\ndw 0xaa55", cpus);
         }
         if (lower.contains("create") || lower.contains("write")) && lower.contains("containing") {
             let parts: Vec<&str> = lower.split("containing").collect();
@@ -163,42 +102,50 @@ impl GemiEngine {
 
     pub fn verify_provider(name: &str) -> String {
         let prompt = "Verification mission: Respond with 'ACTIVE'.";
-        match name {
-            "Groq" => Self::execute_groq(prompt).unwrap_or_else(|e| format!("❌ Groq Error: {}", e)),
-            "Google Gemini" => Self::execute_gemini(prompt).unwrap_or_else(|e| format!("❌ Gemini Error: {}", e)),
-            "OpenAI" => Self::execute_openai(prompt).unwrap_or_else(|e| format!("❌ OpenAI Error: {}", e)),
-            _ => "Unknown Provider".to_string(),
+        let res = match name {
+            "Groq" => Self::execute_groq(prompt),
+            "Google Gemini" => Self::execute_gemini(prompt),
+            "OpenAI" => Self::execute_openai(prompt),
+            _ => Err(anyhow!("Unknown Provider")),
+        };
+        match res {
+            Ok(text) => text,
+            Err(e) => format!("❌ Error: {}", e),
         }
     }
 
-    fn execute_groq(prompt: &str) -> Result<String, String> {
-        let key = std::env::var("GROQ_API_KEY").map_err(|_| "Missing Key".to_string())?;
+    fn execute_groq(prompt: &str) -> Result<String> {
+        let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
             "model": "llama-3.3-70b-versatile",
             "messages": [{"role": "user", "content": prompt}]
         });
-        let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output().map_err(|e| e.to_string())?;
-        let v: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| e.to_string())?;
-        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| format!("Parse failure: {}", v))
+        let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
+        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
+        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Parse failure: {}", v))
     }
 
-    fn execute_gemini(prompt: &str) -> Result<String, String> {
-        let key = std::env::var("GEMINI_API_KEY").map_err(|_| "Missing Key".to_string())?;
+    fn execute_gemini(prompt: &str) -> Result<String> {
+        let key = std::env::var("GEMINI_API_KEY")?;
         let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
-        let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output().map_err(|e| e.to_string())?;
-        let v: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| e.to_string())?;
-        v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| format!("Parse failure: {}", v))
+        let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
+        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
+        v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Parse failure: {}", v))
     }
 
-    fn execute_openai(prompt: &str) -> Result<String, String> {
-        let key = std::env::var("OPENAI_API_KEY").map_err(|_| "Missing Key".to_string())?;
+    fn execute_openai(prompt: &str) -> Result<String> {
+        let key = std::env::var("OPENAI_API_KEY")?;
         let payload = json!({
             "model": "gpt-4o",
             "messages": [{"role": "user", "content": prompt}]
         });
-        let out = Command::new("curl").args(["-s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output().map_err(|e| e.to_string())?;
-        let v: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| e.to_string())?;
-        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| format!("Parse failure: {}", v))
+        let out = Command::new("curl").args(["-s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
+        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
+        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Parse failure: {}", v))
+    }
+
+    pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
+        format!("👁️ [gha Vision]: {} -> {}", image_path.display(), prompt)
     }
 }
