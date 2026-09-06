@@ -122,7 +122,7 @@ impl GmaMasterAgent {
         Ok(())
     }
 
-    fn execute_autonomous_flux(&self, _goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path) -> String {
+    fn execute_autonomous_flux(&self, goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path) -> String {
         let mut results = Vec::new();
         for msg in logs {
             if msg.payload.contains("ACTION:") {
@@ -132,7 +132,22 @@ impl GmaMasterAgent {
                     let arg = parts.get(1).unwrap_or(&"");
 
                     if !tool_name.is_empty() {
-                        let res = ToolRegistry::execute_tool(tool_name, arg, workspace);
+                        let mut res = ToolRegistry::execute_tool(tool_name, arg, workspace);
+
+                        // 🚀 Native Self-Healing Loop (2^0 intelligence)
+                        if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") {
+                            let fix_prompt = format!("Mission '{}' failed at tool '{}' with error: '{}'. Suggest a fixed command.", goal, tool_name, res);
+                            if let Ok(fixed_action) = crate::gemi::pulse::GhaPulse::reason(&fix_prompt, workspace) {
+                                if fixed_action.contains("ACTION:") {
+                                     let fix_parts: Vec<&str> = fixed_action.split("ACTION: ").nth(1).unwrap_or("").splitn(2, ' ').collect();
+                                     let fix_tool = fix_parts[0];
+                                     let fix_arg = fix_parts.get(1).unwrap_or(&"");
+                                     let fix_res = ToolRegistry::execute_tool(fix_tool, fix_arg, workspace);
+                                     res = format!("{} (Self-Healed: {})", res, fix_res);
+                                }
+                            }
+                        }
+
                         results.push(format!("   └── [Autonomous Tool: {}]: {}", tool_name, res));
                     }
                 }

@@ -30,28 +30,13 @@ impl ReflexEngine {
         ]
     }
 
-    /// Attempts to solve the mission using "Reflex Logic" (Protocol-level matching).
-    pub fn try_solve(intent: &str, _workspace: &Path) -> (ReflexDecision, u128) {
+    /// Attempts to solve the mission using the Tier 0 GHA-Pulse Bootstrap Brain.
+    pub fn try_solve(intent: &str, workspace: &Path) -> (ReflexDecision, u128) {
         let start = Instant::now();
-        let lower = intent.to_lowercase();
 
-        // 🚀 Tier 0 Reflex Logic: Instant patterns derived from PKB
-        let decision = if lower == "version" || lower == "what is your version?" {
-            ReflexDecision::Solved("ACTION: version".to_string())
-        } else if lower == "status" || lower == "check system status" || lower == "orchestrate status" {
-            ReflexDecision::Solved("ACTION: status".to_string())
-        } else if lower == "build" || lower == "run build" {
-            ReflexDecision::Solved("ACTION: self_heal_build".to_string())
-        } else if lower == "test" || lower == "run tests" {
-            ReflexDecision::Solved("ACTION: run_test_harness".to_string())
-        } else if lower == "models" || lower == "list models" || lower == "list_models" || lower == "orchestrate list_models" {
-            ReflexDecision::Solved("ACTION: list_models".to_string())
-        } else if lower.contains("clean") && (lower.contains("workspace") || lower.contains("build")) {
-            ReflexDecision::Solved("ACTION: exec_command cargo clean".to_string())
-        } else {
-            ReflexDecision::RequiresDeepReasoning
-        };
-
-        (decision, start.elapsed().as_micros())
+        match crate::gemi::pulse::GhaPulse::reason(intent, workspace) {
+            Ok(action) => (ReflexDecision::Solved(action), start.elapsed().as_micros()),
+            Err(_) => (ReflexDecision::RequiresDeepReasoning, start.elapsed().as_micros()),
+        }
     }
 }
