@@ -41,6 +41,15 @@ impl GhaPulse {
             return Ok("ACTION: verify_cloud_providers".to_string());
         }
 
+        if lower.contains("verify mcp") || lower.contains("test hands") {
+            return Ok("ACTION: verify_mcp_servers".to_string());
+        }
+
+        if lower.contains("install mcp") || lower.contains("need capability") || lower.contains("search for") {
+             let name = lower.split_whitespace().last().unwrap_or("search");
+             return Ok(format!("ACTION: provision_mcp {}", name));
+        }
+
         if lower.contains("models") || lower.contains("inventory") || lower.contains("list_models") {
             return Ok("ACTION: list_models".to_string());
         }

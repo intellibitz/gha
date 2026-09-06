@@ -163,6 +163,14 @@ impl ToolRegistry {
                 description: "Verify health and API keys of all active cloud intelligence models".to_string(),
             },
             McpTool {
+                name: "verify_mcp_servers".to_string(),
+                description: "Verify health and latency of all configured MCP servers".to_string(),
+            },
+            McpTool {
+                name: "provision_mcp".to_string(),
+                description: "Search for and auto-configure a new MCP server by name or capability (arg: 'name')".to_string(),
+            },
+            McpTool {
                 name: "debug_engine".to_string(),
                 description: "Autonomous self-debugging: Scan engine source for logic errors and fix them (arg: 'error_log')".to_string(),
             },
@@ -405,6 +413,46 @@ impl ToolRegistry {
                     }
                 }
                 output
+            }
+            "verify_mcp_servers" => {
+                let tools = GmcpClient::list_external_tools();
+                let mut output = "# 🔌 GHA MCP Hands Health Report\n\n".to_string();
+
+                if tools.is_empty() {
+                    return "⚠️ No external MCP servers configured. Run 'ghai \"I need web search capabilities\"' to provision one.".to_string();
+                }
+
+                for tool in tools {
+                    let server_name = tool.name.split(':').next().unwrap_or(&tool.name);
+                    let (latency, success) = GmcpClient::benchmark_server(server_name);
+
+                    output.push_str(&format!("## {} Verification\n", server_name));
+                    if success {
+                        output.push_str(&format!("- **Status**: ✅ ACTIVE\n"));
+                        output.push_str(&format!("- **Latency**: {}ms\n\n", latency));
+                    } else {
+                        output.push_str(&format!("- **Status**: ❌ OFFLINE or CONFIG ERROR\n\n"));
+                    }
+                }
+                output
+            }
+            "provision_mcp" => {
+                let registry = GmcpClient::fetch_global_registry();
+                let target = arg.to_lowercase();
+
+                let found = registry.iter().find(|e| e.name.contains(&target) || e.description.to_lowercase().contains(&target));
+
+                match found {
+                    Some(entry) => {
+                        let res = GmcpClient::auto_configure_server(&entry.name, &entry.package);
+                        if res == "SUCCESS_CONFIGURED" {
+                            format!("✅ [Autonomous Provisioning]: Successfully resolved and configured '{}' ({}) as a new swarm capability.", entry.name, entry.package)
+                        } else {
+                            format!("❌ [Autonomous Provisioning]: Failed to configure '{}'.", entry.name)
+                        }
+                    },
+                    None => format!("🔍 [Discovery]: No matching MCP capability found for '{}' in the global registry.", target)
+                }
             }
             "reflex_scout" => {
                 let assets = crate::gemi::reflex::ReflexEngine::scout_tier0_assets();

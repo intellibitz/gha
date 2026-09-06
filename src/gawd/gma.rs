@@ -81,6 +81,16 @@ impl GmaMasterAgent {
             return report;
         }
 
+        // 🔍 Capability Resolution: Check for uninstalled MCP servers before cloud fallback
+        if is_placeholder {
+             let registry = crate::gmcp::client::GmcpClient::fetch_global_registry();
+             if let Some(entry) = registry.iter().find(|e| goal.to_lowercase().contains(&e.name) || goal.to_lowercase().contains(&e.category)) {
+                 report.push_str("\n## 💡 Capability Discovery\n");
+                 report.push_str(&format!("   └── Discovered missing hand: '{}' ({})\n", entry.name, entry.package));
+                 report.push_str(&format!("   └── ACTION: Run 'ghai \"install mcp {}\"' to enable.\n", entry.name));
+             }
+        }
+
         // 🧪 Universal Capability Assert: Execute tool calls discovered in Swarm Flux
         let mission_result = self.execute_autonomous_flux(goal, &a2a_logs, workspace);
         if !mission_result.is_empty() {
