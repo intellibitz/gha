@@ -6,6 +6,13 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, Eq, Ord)]
+pub enum ModelTier {
+    Premier = 0,
+    Specialist = 1,
+    Standard = 2,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelInfo {
     pub name: String,
@@ -13,6 +20,7 @@ pub struct ModelInfo {
     pub model_id: String,
     pub description: String,
     pub is_local: bool,
+    pub tier: ModelTier,
     pub latency_ms: Option<u128>,
 }
 
@@ -30,6 +38,7 @@ impl ModelManager {
                 model_id: "google/gemini-1.5-flash".to_string(),
                 description: "1M+ token context cloud reasoning".to_string(),
                 is_local: false,
+                tier: ModelTier::Premier,
                 latency_ms: None,
             });
         }
@@ -40,6 +49,7 @@ impl ModelManager {
                 model_id: "openai/gpt-4o".to_string(),
                 description: "Industry-standard reasoning & tool-use".to_string(),
                 is_local: false,
+                tier: ModelTier::Premier,
                 latency_ms: None,
             });
         }
@@ -50,6 +60,7 @@ impl ModelManager {
                 model_id: "anthropic/claude-3.5-sonnet".to_string(),
                 description: "High-precision reasoning specialist".to_string(),
                 is_local: false,
+                tier: ModelTier::Premier,
                 latency_ms: None,
             });
         }
@@ -60,6 +71,7 @@ impl ModelManager {
                 model_id: "deepseek/deepseek-chat".to_string(),
                 description: "High-throughput code & logic reasoning".to_string(),
                 is_local: false,
+                tier: ModelTier::Specialist,
                 latency_ms: None,
             });
         }
@@ -78,6 +90,7 @@ impl ModelManager {
                                 model_id: name,
                                 description: "Native hardware-accelerated model".to_string(),
                                 is_local: true,
+                                tier: ModelTier::Standard,
                                 latency_ms: None,
                             });
                         }
@@ -99,6 +112,7 @@ impl ModelManager {
                             model_id: m.to_string(),
                             description: "High-throughput local inference".to_string(),
                             is_local: true,
+                            tier: ModelTier::Specialist,
                             latency_ms: None,
                         });
                     }
@@ -113,6 +127,7 @@ impl ModelManager {
                 model_id: "gha-native-synthesis".to_string(),
                 description: "Deterministic protocol-level reasoning".to_string(),
                 is_local: true,
+                tier: ModelTier::Standard,
                 latency_ms: Some(0),
             });
         }

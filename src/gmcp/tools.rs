@@ -217,8 +217,38 @@ impl ToolRegistry {
             }
             "list_models" => {
                 let models = ModelManager::list_models(workspace);
-                let names: Vec<String> = models.iter().map(|m| m.name.clone()).collect();
-                format!("Active Models ({}): {}", models.len(), names.join(", "))
+                let mut output = format!("Active Models ({}):\n", models.len());
+
+                let mut premier = Vec::new();
+                let mut specialist = Vec::new();
+                let mut standard = Vec::new();
+
+                for m in models {
+                    let entry = format!("   - {} ({})", m.name, m.registry);
+                    match m.tier {
+                        crate::gemi::models::ModelTier::Premier => premier.push(entry),
+                        crate::gemi::models::ModelTier::Specialist => specialist.push(entry),
+                        crate::gemi::models::ModelTier::Standard => standard.push(entry),
+                    }
+                }
+
+                if !premier.is_empty() {
+                    output.push_str("\n 🏆 Premier Tier (Best of the Best):\n");
+                    output.push_str(&premier.join("\n"));
+                    output.push('\n');
+                }
+                if !specialist.is_empty() {
+                    output.push_str("\n 🛠️ Specialist Tier:\n");
+                    output.push_str(&specialist.join("\n"));
+                    output.push('\n');
+                }
+                if !standard.is_empty() {
+                    output.push_str("\n 🔍 Standard Tier (Available):\n");
+                    output.push_str(&standard.join("\n"));
+                    output.push('\n');
+                }
+
+                output
             }
             "reason" => {
                 GemiEngine::generate_reasoning(arg, workspace)

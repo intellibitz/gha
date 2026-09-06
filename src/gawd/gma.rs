@@ -58,7 +58,12 @@ impl GmaMasterAgent {
                 let connector = if i == a2a_logs.len() - 1 { "└──" } else { "├──" };
                 report.push_str(&format!(" {} [{} -> GMA] {} ('{}')\n", connector, msg.sender, msg.action, msg.payload));
             }
-            let intelligence_tier = if is_reflex { "Tier 0: GHA-Alpha (Native Reflex)" } else { "Tier 2: GEMI (Deep Reasoning)" };
+            let mut intelligence_tier = if is_reflex { "Tier 0: GHA-Alpha (Native Reflex)" } else { "Tier 2: GEMI (Deep Reasoning)" };
+            if reasoning_content.contains("🏆 Premier") {
+                intelligence_tier = "Tier 2: GEMI (🏆 Premier Tier Brain)";
+            } else if reasoning_content.contains("Specialist") {
+                intelligence_tier = "Tier 2: GEMI (🛠️ Specialist Tier Brain)";
+            }
             report.push_str(&format!("\n🚀 [Orchestration Strategy]: {}\n", intelligence_tier));
         }
 
