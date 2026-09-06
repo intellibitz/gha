@@ -25,20 +25,6 @@ fn get_home_dir() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("."))
 }
 
-fn find_workspace(cwd: &Path) -> PathBuf {
-    let mut current = cwd.to_path_buf();
-    let home = get_home_dir();
-    while current != home && current.parent().is_some() {
-        if current.join(".gha").is_dir() {
-            return current;
-        }
-        if !current.pop() {
-            break;
-        }
-    }
-    cwd.to_path_buf()
-}
-
 fn print_help() {
     println!("🌌 gha: AI for AI — Anywhere for Anything.");
     println!("Usage: ghai \"<your intent>\"\n");
@@ -49,27 +35,23 @@ fn print_help() {
     println!("  ghai \"explain the universe\"");
     println!("  ghai \"<any goal or mission>\"\n");
     println!("⚙️ Internal Runtime Infrastructure:");
-    println!("  install                  Initialize gha environment");
-    println!("  uninstall                Remove gha environment");
+    println!("  install                  Initialize global gha environment");
+    println!("  uninstall                Remove global gha environment");
     println!("  mcp                      Start native GMA Master MCP Server");
     println!("  gemi                     Start GEMI OpenAI-compatible REST server");
 }
 
-fn run_install(workspace: &Path, global_dir: &Path) {
+fn run_install(global_dir: &Path) {
     println!("🚀 [gha] Initializing 100% Sandboxed Native AI Runtime...");
-    let _ = SandboxManager::ensure_sandbox(workspace);
-    let _ = SandboxManager::ensure_sandbox(global_dir);
-    GmaDaemon::ensure_daemon_running(workspace, global_dir);
-    println!("✅ [gha] Environment initialized & background swarm active.");
+    let _ = SandboxManager::ensure_global_sandbox(global_dir);
+    GmaDaemon::ensure_daemon_running(global_dir, global_dir);
+    println!("✅ [gha] Global environment initialized & background swarm active.");
 }
 
 fn main() {
     let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let home = get_home_dir();
     let global_dir = home.join(".gha");
-
-    // Internal workspace for context/config, but mission scope is always CWD
-    let workspace = find_workspace(&cwd);
 
     let args: Vec<String> = env::args().skip(1).collect();
 
@@ -86,23 +68,24 @@ fn main() {
             print_help();
         }
         "install" | ":install" => {
-            run_install(&cwd, &global_dir);
+            run_install(&global_dir);
         }
         "uninstall" | ":uninstall" => {
-            let _ = std::fs::remove_dir_all(cwd.join(".gha"));
-            println!("✅ [gha] Environment uninstalled.");
+            let _ = std::fs::remove_dir_all(&global_dir);
+            println!("✅ [gha] Global environment uninstalled.");
         }
         "daemon-start" => {
-            GmaDaemon::run_daemon_loop(workspace, global_dir);
+            GmaDaemon::run_daemon_loop(global_dir.clone(), global_dir);
         }
         "gmcp" | "mcp" => {
-            GmcpServer::run_stdio(&workspace, GHA_VERSION);
+            GmcpServer::run_stdio(&cwd, GHA_VERSION);
         }
         "gemi" | "gemi-server" => {
-            GemiServer::start_http_server(workspace, GemiServer::DEFAULT_PORT);
+            GemiServer::start_http_server(cwd, GemiServer::DEFAULT_PORT);
         }
         _ => {
             // Universal Mission: The Impact Scope is ALWAYS the Current Working Directory
+            // No local .gha folder required. 100% Pure anywhere execution.
             let goal = args.join(" ");
             let gma = GmaMasterAgent::new();
             let report = gma.solve(&goal, &cwd, GHA_VERSION);

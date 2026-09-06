@@ -185,12 +185,10 @@ impl ToolRegistry {
 
         match name {
             "status" => {
-                let is_active = SandboxManager::is_sandbox_active(workspace);
                 let (cpus, gpu) = HardwareProfiler::profile();
                 format!(
-                    "Workspace: {} | Sandbox: {} | Hardware: {} CPUs, {}",
+                    "Impact Scope: {} | Global Sandbox: ACTIVE | Hardware: {} CPUs, {}",
                     workspace.display(),
-                    if is_active { "ACTIVE" } else { "INACTIVE" },
                     cpus,
                     gpu
                 )
