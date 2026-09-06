@@ -316,11 +316,23 @@ impl ToolRegistry {
                 if arg.contains("save to") {
                      if let Some(target_file) = arg.split("save to ").nth(1).and_then(|s| s.split_whitespace().next()) {
                          let path = workspace.join(target_file);
-                         let file_content = if result.contains("]:\n") {
+
+                         // 🧼 Deep Cleanse: Ensure the file content is JUST the artifact
+                         let mut file_content = if result.contains("]:\n") {
                              result.splitn(2, "]:\n").nth(1).unwrap_or(&result).to_string()
                          } else {
                              result.clone()
                          };
+
+                         // Secondary cleanse if engine missed any markers
+                         if file_content.contains("<think>") {
+                              if let Some(pos) = file_content.rfind("</think>") {
+                                  file_content = file_content[pos + 8..].trim().to_string();
+                              } else if let Some(pos) = file_content.find("<think>") {
+                                  file_content = file_content[..pos].trim().to_string();
+                              }
+                         }
+
                          let _ = std::fs::write(&path, &file_content);
                          return format!("✅ Mission fulfilled. Result saved to {}.\n\nSUMMARY:\n{}", target_file, file_content.chars().take(200).collect::<String>());
                      }

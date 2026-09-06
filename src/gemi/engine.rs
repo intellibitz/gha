@@ -34,24 +34,9 @@ impl GemiEngine {
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
-        // Priority 1: Groq (Cap tokens for free tier)
-        match Self::execute_groq(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)),
-            Err(_) => {},
-        }
-
-        // Priority 2: Gemini
-        match Self::execute_gemini(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)),
-            Err(_) => {},
-        }
-
-        // Priority 3: OpenAI
-        match Self::execute_openai(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)),
-            Err(_) => {},
-        }
-
+        if let Ok(res) = Self::execute_groq(prompt) { return Some(res); }
+        if let Ok(res) = Self::execute_gemini(prompt) { return Some(res); }
+        if let Ok(res) = Self::execute_openai(prompt) { return Some(res); }
         None
     }
 
@@ -60,7 +45,7 @@ impl GemiEngine {
         let payload = json!({
             "model": "qwen/qwen3.6-27b",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 100
+            "max_tokens": 1000
         });
         let out = Self::curl_pipe("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
@@ -111,20 +96,37 @@ impl GemiEngine {
 
     fn cleanse_artifact(text: &str) -> String {
         let mut final_text = text.trim().to_string();
+
+        // Remove ALL content between <think> and </think> tags
+        while let Some(start) = final_text.find("<think>") {
+            if let Some(end) = final_text.find("</think>") {
+                let mut new_text = final_text[..start].to_string();
+                new_text.push_str(&final_text[end + 8..]);
+                final_text = new_text.trim().to_string();
+            } else {
+                // If it's a leading <think> without an end tag, just strip everything from it
+                final_text = final_text[..start].trim().to_string();
+                break;
+            }
+        }
+
+        // Handle case where some models might use other reasoning headers
         if let Some(pos) = final_text.rfind("</think>") {
             final_text = final_text[pos + 8..].trim().to_string();
         }
+
         final_text
     }
 
     pub fn verify_provider(name: &str) -> String {
         let prompt = "Verification mission: Respond with 'ACTIVE'.";
-        match name {
-            "Groq" => Self::execute_groq(prompt).unwrap_or_else(|e| format!("❌ Error: {}", e)),
-            "Google Gemini" => Self::execute_gemini(prompt).unwrap_or_else(|e| format!("❌ Error: {}", e)),
-            "OpenAI" => Self::execute_openai(prompt).unwrap_or_else(|e| format!("❌ Error: {}", e)),
-            _ => "❌ Error: Unknown Provider".to_string(),
-        }
+        let res = match name {
+            "Groq" => Self::execute_groq(prompt),
+            "Google Gemini" => Self::execute_gemini(prompt),
+            "OpenAI" => Self::execute_openai(prompt),
+            _ => Err(anyhow!("Unknown Provider")),
+        };
+        match res { Ok(t) => t, Err(e) => format!("❌ Error: {}", e) }
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
