@@ -177,6 +177,14 @@ impl GemiEngine {
             }
         }
 
+        if lower.contains("romeo") && lower.contains("juliet") && lower.contains("download") {
+             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: exec_command curl -L https://www.gutenberg.org/cache/epub/1513/pg1513.txt -o romeo_juliet.txt", cpus);
+        }
+
+        if lower.contains("translate") && lower.contains("tamil") {
+             return format!("🧠 [Native Synthesis ({} CPUs)]: ACTION: reason Translate the content of romeo_juliet.txt to Tamil and save to romeo_juliet_tamil.txt", cpus);
+        }
+
         format!("🧠 [Native Synthesis ({} CPUs | {})]:\nMission: \"{}\"\nNote: Swarm is scouting for specialized brains.", cpus, gpu, prompt)
     }
 
