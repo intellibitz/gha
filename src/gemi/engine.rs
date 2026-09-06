@@ -48,7 +48,8 @@ impl GemiEngine {
             });
             let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
             if let Ok(o) = out {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
+                let stdout = String::from_utf8_lossy(&o.stdout);
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&stdout) {
                     if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
                         return Some(format!("☁️ [🏆 Premier Pick: Groq Llama 3.3]:\n{}", text.trim()));
                     }
@@ -62,7 +63,8 @@ impl GemiEngine {
             let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
             let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output();
             if let Ok(o) = out {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&String::from_utf8_lossy(&o.stdout)) {
+                let stdout = String::from_utf8_lossy(&o.stdout);
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&stdout) {
                     if let Some(text) = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
                         return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", text.trim()));
                     }
