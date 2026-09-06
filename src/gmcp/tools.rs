@@ -293,9 +293,9 @@ impl ToolRegistry {
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
                                 // Meritocratic Context: Standardize on balanced snippet for free-tier cloud verification
-                                let mut limit = 1000;
+                                let mut limit = 2000; // Standard limit for most providers
                                 if arg.contains("tamil") || arg.contains("translate") {
-                                     limit = 400; // Optimal balance for free-tier rate limits
+                                     limit = 2000; // Give enough for the title and prologue
                                 }
                                 let snippet = if content.len() > limit {
                                     format!("{}... [TRUNCATED]", &content[..limit])

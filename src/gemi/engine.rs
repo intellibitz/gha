@@ -45,33 +45,18 @@ impl GemiEngine {
         }
 
         // 4. Native GHA Synthesis (Protocol-Level Fallback)
-        format!("❌ CLOUD_BRAIN_UNAVAILABLE: No providers responded to mission. Suggest smaller context or check API health. (Native: {})", Self::native_synthesis(prompt))
+        format!("❌ CLOUD_BRAIN_UNAVAILABLE: No providers responded to mission. (Native: Scouting for brains...)")
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
-        let mut errors = Vec::new();
-
         // Priority 1: Gemini (Reliable for artifacts)
-        match Self::execute_gemini(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)),
-            Err(e) => errors.push(format!("Gemini: {}", e)),
-        }
+        if let Ok(res) = Self::execute_gemini(prompt) { return Some(res); }
 
-        // Priority 2: Groq (Fast)
-        match Self::execute_groq(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)),
-            Err(e) => errors.push(format!("Groq: {}", e)),
-        }
+        // Priority 2: Groq
+        if let Ok(res) = Self::execute_groq(prompt) { return Some(res); }
 
         // Priority 3: OpenAI
-        match Self::execute_openai(prompt) {
-            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)),
-            Err(e) => errors.push(format!("OpenAI: {}", e)),
-        }
-
-        if !errors.is_empty() {
-            eprintln!("⚠️ Cloud Intelligence Scouting Failures:\n  {}", errors.join("\n  "));
-        }
+        if let Ok(res) = Self::execute_openai(prompt) { return Some(res); }
 
         None
     }
@@ -85,13 +70,6 @@ impl GemiEngine {
     }
 
     fn native_synthesis(prompt: &str) -> String {
-        let _ = HardwareProfiler::profile();
-        let lower = prompt.to_lowercase();
-
-        if lower == "version" || lower == "what is your version?" {
-            return "ACTION: version".to_string();
-        }
-
         format!("Scouting for brains to fulfill: \"{}\"", prompt)
     }
 
@@ -116,15 +94,9 @@ impl GemiEngine {
             "max_tokens": 4096,
             "messages": [{"role": "user", "content": prompt}]
         });
-
-        let payload_file = std::env::temp_dir().join("gha_anthropic_payload.json");
-        std::fs::write(&payload_file, payload.to_string())?;
-
-        let out = Command::new("curl").args(["-s", "https://api.anthropic.com/v1/messages", "-H", &format!("x-api-key: {}", key.trim()), "-H", "anthropic-version: 2023-06-01", "-H", "Content-Type: application/json", "-d", &format!("@{}", payload_file.display())]).output()?;
-        let _ = std::fs::remove_file(payload_file);
-
-        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Anthropic failure: {}", v))
+        let out = Self::curl_json("https://api.anthropic.com/v1/messages", vec![("x-api-key", &key), ("anthropic-version", "2023-06-01")], payload)?;
+        let text = out.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Anthropic failure"))?;
+        Ok(Self::cleanse_artifact(text))
     }
 
     fn execute_groq(prompt: &str) -> Result<String> {
@@ -134,30 +106,18 @@ impl GemiEngine {
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": 500
         });
-
-        let payload_file = std::env::temp_dir().join("gha_groq_payload.json");
-        std::fs::write(&payload_file, payload.to_string())?;
-
-        let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &format!("@{}", payload_file.display())]).output()?;
-        let _ = std::fs::remove_file(payload_file);
-
-        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Groq failure: {}", v))
+        let out = Self::curl_json("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
+        let text = out.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq failure"))?;
+        Ok(Self::cleanse_artifact(text))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
         let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
-
-        let payload_file = std::env::temp_dir().join("gha_gemini_payload.json");
-        std::fs::write(&payload_file, payload.to_string())?;
-
-        let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &format!("@{}", payload_file.display())]).output()?;
-        let _ = std::fs::remove_file(payload_file);
-
-        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Gemini failure: {}", v))
+        let out = Self::curl_json(&url, vec![], payload)?;
+        let text = out.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure"))?;
+        Ok(Self::cleanse_artifact(text))
     }
 
     fn execute_openai(prompt: &str) -> Result<String> {
@@ -166,9 +126,54 @@ impl GemiEngine {
             "model": "gpt-4o",
             "messages": [{"role": "user", "content": prompt}]
         });
-        let out = Command::new("curl").args(["-s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
+        let out = Self::curl_json("https://api.openai.com/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
+        let text = out.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI failure"))?;
+        Ok(Self::cleanse_artifact(text))
+    }
+
+    fn curl_json(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<serde_json::Value> {
+        let payload_file = std::env::temp_dir().join(format!("gha_payload_{}.json", std::process::id()));
+        std::fs::write(&payload_file, payload.to_string())?;
+
+        let mut cmd = Command::new("curl");
+        cmd.args(["-s", url, "-H", "Content-Type: application/json"]);
+        for (k, v) in headers {
+            cmd.args(["-H", &format!("{}: {}", k, v)]);
+        }
+        cmd.args(["-d", &format!("@{}", payload_file.display())]);
+
+        let out = cmd.output()?;
+        let _ = std::fs::remove_file(payload_file);
+
+        if !out.status.success() {
+             return Err(anyhow!("Curl failed"));
+        }
+
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("OpenAI failure: {}", v))
+        Ok(v)
+    }
+
+    fn cleanse_artifact(text: &str) -> String {
+        let mut final_text = text.trim().to_string();
+
+        if let Some(start) = final_text.find("<GHA_ARTIFACT>") {
+            if let Some(end) = final_text.find("</GHA_ARTIFACT>") {
+                return final_text[start + 14..end].trim().to_string();
+            }
+        }
+
+        while let Some(start) = final_text.find("<think>") {
+            if let Some(end) = final_text.find("</think>") {
+                let mut new_text = final_text[..start].to_string();
+                new_text.push_str(&final_text[end + 8..]);
+                final_text = new_text.trim().to_string();
+            } else {
+                final_text = final_text[..start].trim().to_string();
+                break;
+            }
+        }
+
+        final_text
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
