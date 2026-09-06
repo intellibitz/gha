@@ -1,5 +1,5 @@
 // 🔌 GMCP Universal Tool Registry & Dynamic Tool Execution Engine
-// 100% Rust implementation supporting dynamic tool registration, self-healing builds, auto-branching & test harness
+// 100% Rust implementation supporting dynamic tool registration, self-healing builds, auto-branching & multi-node A2A clustering
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -7,6 +7,7 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 
+use crate::gawd::gmas::GmasSupervisor;
 use crate::gemi::hardware::HardwareProfiler;
 use crate::gemi::models::ModelManager;
 use crate::sandbox::SandboxManager;
@@ -73,6 +74,18 @@ impl ToolRegistry {
             McpTool {
                 name: "self_heal_build".to_string(),
                 description: "Run self-healing code compilation loop with error diagnostics".to_string(),
+            },
+            McpTool {
+                name: "cluster_status".to_string(),
+                description: "Inspect active multi-node A2A agent cluster nodes across LAN & Cloud".to_string(),
+            },
+            McpTool {
+                name: "cluster_ping".to_string(),
+                description: "Broadcast UDP discovery ping to local LAN peer nodes".to_string(),
+            },
+            McpTool {
+                name: "cluster_dispatch".to_string(),
+                description: "Dispatch A2A task payload to remote cluster node".to_string(),
             },
         ];
 
@@ -147,6 +160,28 @@ impl ToolRegistry {
             }
             "self_heal_build" => {
                 Self::self_heal_build(workspace)
+            }
+            "cluster_status" => {
+                let nodes = GmasSupervisor::list_cluster_nodes();
+                let summary: Vec<String> = nodes
+                    .iter()
+                    .map(|n| format!("{} ({}) [{}]", n.node_id, n.address, if n.is_active { "ACTIVE" } else { "OFFLINE" }))
+                    .collect();
+                format!("🌐 Active A2A Cluster Nodes ({} Nodes): {}", nodes.len(), summary.join(", "))
+            }
+            "cluster_ping" => {
+                let lan_peers = GmasSupervisor::broadcast_lan_ping();
+                if lan_peers.is_empty() {
+                    "🌐 UDP LAN Discovery: Broadcast sent on port 9092 — Local master node active.".to_string()
+                } else {
+                    format!("🌐 UDP LAN Discovery Peers: {}", lan_peers.join(" | "))
+                }
+            }
+            "cluster_dispatch" => {
+                let parts: Vec<&str> = arg.splitn(2, ' ').collect();
+                let peer_addr = parts.first().copied().unwrap_or("127.0.0.1:9090");
+                let task = parts.get(1).copied().unwrap_or("status");
+                GmasSupervisor::dispatch_peer_task(peer_addr, "status", task)
             }
             "list_directory" => {
                 let target = if arg.is_empty() { workspace } else { Path::new(arg) };

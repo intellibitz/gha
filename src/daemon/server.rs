@@ -1,7 +1,8 @@
 // 🚀 Always-On GMA Master Daemon Process Manager
-// 100% Rust implementation managing GMCP (Port 9090) and GEMI (Port 9091) in background
+// 100% Rust implementation managing GMCP (Port 9090), GEMI (Port 9091) & A2A Cluster UDP (Port 9092)
 
 use std::fs;
+use std::net::UdpSocket;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -18,6 +19,7 @@ pub struct GmaDaemon;
 impl GmaDaemon {
     pub const GMCP_PORT: u16 = 9090;
     pub const GEMI_PORT: u16 = 9091;
+    pub const UDP_DISCOVERY_PORT: u16 = 9092;
 
     pub fn get_lock_file(global_dir: &Path) -> PathBuf {
         global_dir.join("gma.lock")
@@ -79,9 +81,29 @@ impl GmaDaemon {
             Self::start_gmcp_tcp_server(workspace_gmcp, Self::GMCP_PORT);
         });
 
-        // 3. Keep main daemon thread alive
+        // 3. Spawn A2A Cluster UDP Discovery Listener Thread (Port 9092)
+        thread::spawn(|| {
+            Self::start_udp_discovery_server(Self::UDP_DISCOVERY_PORT);
+        });
+
+        // 4. Keep main daemon thread alive
         loop {
             thread::sleep(Duration::from_secs(3600));
+        }
+    }
+
+    fn start_udp_discovery_server(port: u16) {
+        let addr = format!("0.0.0.0:{}", port);
+        if let Ok(socket) = UdpSocket::bind(&addr) {
+            eprintln!("🌐 [A2A Cluster UDP] Discovery listener active on {}", addr);
+            let mut buf = [0u8; 512];
+            while let Ok((amt, src)) = socket.recv_from(&mut buf) {
+                let msg = String::from_utf8_lossy(&buf[..amt]);
+                if msg.contains("GHA_LAN_PING") {
+                    let pong = format!("GHA_LAN_PONG:gha-daemon-node:{}", Self::GMCP_PORT);
+                    let _ = socket.send_to(pong.as_bytes(), src);
+                }
+            }
         }
     }
 
@@ -118,7 +140,7 @@ impl GmaDaemon {
                     if trimmed.contains("\"method\":\"initialize\"") {
                         let id = extract_json_id(trimmed).unwrap_or(1);
                         let resp = format!(
-                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gmcp-native-server\",\"version\":\"0.1.73\"}}}}}}\n",
+                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gmcp-native-server\",\"version\":\"0.1.87\"}}}}}}\n",
                             id
                         );
                         let _ = writer.write_all(resp.as_bytes());

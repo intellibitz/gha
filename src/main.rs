@@ -11,13 +11,14 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use daemon::GmaDaemon;
+use gawd::gmas::GmasSupervisor;
 use gawd::GmaMasterAgent;
 use gemi::{GemiEngine, GemiServer, ModelManager};
 use gmcp::tools::ToolRegistry;
 use gmcp::{GmcpClient, GmcpServer};
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.86";
+const GHA_VERSION: &str = "0.1.88";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -60,6 +61,8 @@ fn print_help() {
     println!("  gemi, gemi-server        Start GEMI OpenAI-compatible REST server (http://127.0.0.1:9091/v1)\n");
     println!("GMA Master Interactor Native Missions & Multi-Tier AI Tasks:");
     println!("  ghai \"<instruction>\"     Execute natural language AI mission via GMA");
+    println!("  ghai ai cluster          Inspect multi-node A2A agent network cluster nodes");
+    println!("  ghai ai ping-peers       Broadcast UDP discovery pings to local LAN peer nodes");
     println!("  ghai ai self-heal        Run autonomous self-healing code compilation loop");
     println!("  ghai ai auto-branch      Create isolated git mission feature branch");
     println!("  ghai ai run-tests        Run automated workspace unit test harness");
@@ -83,13 +86,15 @@ fn print_status(workspace: &Path, global_dir: &Path) {
 
     let (cpus, gpu, models) = GemiEngine::get_intelligence_report(workspace);
     let tools = GmcpClient::list_tools();
+    let cluster_nodes = GmasSupervisor::list_cluster_nodes();
     println!("   ├── Hardware Profile : {} CPU Cores | {}", cpus, gpu);
     println!("   ├── Coordinated Tiers: Tier 1 (GAWD) | Tier 2 (GEMI Port 9091) | Tier 3 (GMCP Port 9090)");
     println!("   ├── Active Models    : {} GGUF/Web Models Registered", models.len());
     println!("   ├── MCP Tools Hub    : {} Tools Exposed over JSON-RPC 2.0", tools.len());
+    println!("   ├── A2A Cluster Nodes: {} Nodes Connected Across LAN/Cloud", cluster_nodes.len());
 
     match GmaDaemon::check_status(global_dir) {
-        Some(pid) => println!("   └── GMA Daemon       : RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091)", pid),
+        Some(pid) => println!("   └── GMA Daemon       : RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091) | UDP (Port 9092)", pid),
         None => println!("   └── GMA Daemon       : INACTIVE"),
     }
 }
@@ -100,7 +105,7 @@ fn run_install(workspace: &Path, global_dir: &Path) {
     let _ = SandboxManager::ensure_sandbox(global_dir);
 
     GmaDaemon::ensure_daemon_running(workspace, global_dir);
-    println!("🚀 [GMA Daemon] Always-On Services Primed: GMCP (Port 9090) | GEMI (Port 9091)");
+    println!("🚀 [GMA Daemon] Always-On Services Primed: GMCP (Port 9090) | GEMI (Port 9091) | A2A UDP (Port 9092)");
     println!("✅ [ghai Native] Environment initialized & background daemon active in < 1ms!");
 }
 
@@ -172,10 +177,10 @@ fn main() {
         }
         "daemon" => {
             match GmaDaemon::check_status(&global_dir) {
-                Some(pid) => println!("🚀 [GMA Daemon] Status: RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091)", pid),
+                Some(pid) => println!("🚀 [GMA Daemon] Status: RUNNING (PID {}) | GMCP (Port 9090) | GEMI (Port 9091) | UDP (Port 9092)", pid),
                 None => {
                     GmaDaemon::ensure_daemon_running(&workspace, &global_dir);
-                    println!("🚀 [GMA Daemon] Started background daemon: GMCP (Port 9090) | GEMI (Port 9091)");
+                    println!("🚀 [GMA Daemon] Started background daemon: GMCP (Port 9090) | GEMI (Port 9091) | UDP (Port 9092)");
                 }
             }
         }
@@ -183,6 +188,14 @@ fn main() {
             if cmd == "ai" && args.len() > 1 {
                 let sub = &args[1];
                 match sub.as_str() {
+                    "cluster" => {
+                        println!("{}", ToolRegistry::execute_tool("cluster_status", "", &workspace));
+                        return;
+                    }
+                    "ping-peers" => {
+                        println!("{}", ToolRegistry::execute_tool("cluster_ping", "", &workspace));
+                        return;
+                    }
                     "self-heal" => {
                         println!("{}", ToolRegistry::self_heal_build(&workspace));
                         return;
