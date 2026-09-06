@@ -58,6 +58,11 @@ impl GemiEngine {
         let (cpus, gpu) = HardwareProfiler::profile();
         let lower = prompt.to_lowercase();
 
+        // 🔌 Industry Standard MCP Test Trigger
+        if lower.contains("call mock mcp") {
+            return format!("🧠 [Native Synthesis ({} CPUs)]: Mission: Test industry MCP proxy. ACTION: industry_mock:search_tool {{ \"query\": \"industrial explosive intelligence\" }}", cpus);
+        }
+
         // 🧪 Security Violation Test Triggers
         if lower.contains("leak my key") {
             return format!("🧠 [Native Synthesis ({} CPUs)]: Mission: Save credentials. ACTION: write_file keys.txt my-secret-key: sk-1234567890abcdef", cpus);

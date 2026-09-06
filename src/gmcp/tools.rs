@@ -12,6 +12,7 @@ use crate::gemi::hardware::HardwareProfiler;
 use crate::gemi::models::ModelManager;
 use crate::sandbox::SandboxManager;
 use crate::gemi::engine::GemiEngine;
+use crate::gmcp::client::GmcpClient;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpTool {
@@ -132,7 +133,6 @@ impl ToolRegistry {
                 name: "kube_deploy".to_string(),
                 description: "Apply Kubernetes manifest file (arg: 'file_path')".to_string(),
             },
-            // Steps 51-63: World-Scale Autonomous Network Tools
             McpTool {
                 name: "swarm_sync".to_string(),
                 description: "Synchronize mission context across all active world-scale cluster nodes".to_string(),
@@ -162,10 +162,21 @@ impl ToolRegistry {
             }
         }
 
+        // 🔌 Integration: Load Industry Protocol standard MCP servers
+        tools.extend(GmcpClient::list_external_tools());
+
         tools
     }
 
     pub fn execute_tool(name: &str, arg: &str, workspace: &Path) -> String {
+        // 1. Check for external Industry Protocol standard MCP proxy call (format: 'server:tool')
+        if name.contains(':') && !name.starts_with("ext_") {
+            let parts: Vec<&str> = name.splitn(2, ':').collect();
+            let server_name = parts[0];
+            let tool_name = parts[1];
+            return GmcpClient::execute_external_tool(server_name, tool_name, arg);
+        }
+
         if name.starts_with("ext_") {
             let script_name = name.trim_start_matches("ext_");
             if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
