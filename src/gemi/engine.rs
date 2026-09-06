@@ -63,13 +63,13 @@ impl GemiEngine {
             Err(e) => errors.push(format!("Groq: {}", e)),
         }
 
-        // Priority 2: Gemini
+        // Priority 3: Gemini
         match Self::execute_gemini(prompt) {
             Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)),
             Err(e) => errors.push(format!("Gemini: {}", e)),
         }
 
-        // Priority 3: OpenAI
+        // Priority 4: OpenAI
         match Self::execute_openai(prompt) {
             Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)),
             Err(e) => errors.push(format!("OpenAI: {}", e)),
@@ -152,8 +152,11 @@ impl GemiEngine {
         let _ = std::fs::remove_file(payload_file);
 
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Anthropic failure: {}", v))
+        let text = v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Anthropic failure: {}", v))?;
+        Ok(Self::cleanse_artifact(&text))
     }
+
+    fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
             "model": "qwen/qwen3.6-27b",
@@ -169,13 +172,7 @@ impl GemiEngine {
 
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
         let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Groq failure: {}", v))?;
-
-        // 🧼 Aggressive Cleanse: Remove all internal thinking blocks
-        let mut final_text = text.clone();
-        if let Some(pos) = text.rfind("</think>") {
-            final_text = text[pos + 8..].trim().to_string();
-        }
-        Ok(final_text)
+        Ok(Self::cleanse_artifact(&text))
     }
 
     fn execute_gemini(prompt: &str) -> Result<String> {
@@ -191,13 +188,7 @@ impl GemiEngine {
 
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
         let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Gemini failure: {}", v))?;
-
-        // 🧼 Aggressive Cleanse: Remove all internal thinking blocks
-        let mut final_text = text.clone();
-        if let Some(pos) = text.rfind("</think>") {
-            final_text = text[pos + 8..].trim().to_string();
-        }
-        Ok(final_text)
+        Ok(Self::cleanse_artifact(&text))
     }
 
     fn execute_openai(prompt: &str) -> Result<String> {
@@ -208,7 +199,24 @@ impl GemiEngine {
         });
         let out = Command::new("curl").args(["-s", "https://api.openai.com/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
-        v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("OpenAI failure: {}", v))
+        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("OpenAI failure: {}", v))?;
+        Ok(Self::cleanse_artifact(&text))
+    }
+
+    fn cleanse_artifact(text: &str) -> String {
+        // 🧼 Precision Cleanse: Extract only the content between GHA tags
+        if let Some(start) = text.find("<GHA_ARTIFACT>") {
+            if let Some(end) = text.find("</GHA_ARTIFACT>") {
+                return text[start + 14..end].trim().to_string();
+            }
+        }
+
+        // Fallback: Remove all internal thinking blocks if GHA tags missed
+        let mut final_text = text.to_string();
+        if let Some(pos) = text.rfind("</think>") {
+            final_text = text[pos + 8..].trim().to_string();
+        }
+        final_text
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {

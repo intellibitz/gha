@@ -276,7 +276,7 @@ impl ToolRegistry {
                 output
             }
             "reason" => {
-                let mut full_prompt = format!("MISSION: {}\n\nINSTRUCTION: Output ONLY the final result. Do not explain your process. Do not show internal thinking. Deliver the completed artifact immediately.", arg);
+                let mut full_prompt = format!("MISSION: {}\n\nINSTRUCTION: Output the final result. Wrap the final completed artifact inside <GHA_ARTIFACT>...</GHA_ARTIFACT> tags. Do not explain your process outside these tags.", arg);
                 // Autonomous Context Attachment: If a filename is mentioned, inline its content
                 for word in arg.split_whitespace() {
                     if word.ends_with(".txt") || word.ends_with(".rs") || word.ends_with(".toml") {
