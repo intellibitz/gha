@@ -51,7 +51,13 @@ impl GemiEngine {
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
         let mut errors = Vec::new();
 
-        // Priority 1: Groq
+        // Priority 1: Anthropic Claude 3.5 Sonnet (Best for Artifacts)
+        match Self::execute_anthropic(prompt) {
+            Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Anthropic Claude]:\n{}", res)),
+            Err(e) => errors.push(format!("Anthropic: {}", e)),
+        }
+
+        // Priority 2: Groq
         match Self::execute_groq(prompt) {
             Ok(res) => return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)),
             Err(e) => errors.push(format!("Groq: {}", e)),
@@ -131,7 +137,23 @@ impl GemiEngine {
         }
     }
 
-    fn execute_groq(prompt: &str) -> Result<String> {
+    fn execute_anthropic(prompt: &str) -> Result<String> {
+        let key = std::env::var("ANTHROPIC_API_KEY")?;
+        let payload = json!({
+            "model": "claude-3-5-sonnet-20240620",
+            "max_tokens": 4096,
+            "messages": [{"role": "user", "content": prompt}]
+        });
+
+        let payload_file = std::env::temp_dir().join("gha_anthropic_payload.json");
+        std::fs::write(&payload_file, payload.to_string())?;
+
+        let out = Command::new("curl").args(["-s", "https://api.anthropic.com/v1/messages", "-H", &format!("x-api-key: {}", key.trim()), "-H", "anthropic-version: 2023-06-01", "-H", "Content-Type: application/json", "-d", &format!("@{}", payload_file.display())]).output()?;
+        let _ = std::fs::remove_file(payload_file);
+
+        let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
+        v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).map(|s| s.to_string()).ok_or_else(|| anyhow!("Anthropic failure: {}", v))
+    }
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
             "model": "qwen/qwen3.6-27b",
