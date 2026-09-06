@@ -41,16 +41,22 @@ impl GemiEngine {
     }
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
+        // Priority 1: Groq (Ultra-fast, non-reasoning)
         if let Ok(res) = Self::execute_groq(prompt) { return Some(res); }
+
+        // Priority 2: Gemini
         if let Ok(res) = Self::execute_gemini(prompt) { return Some(res); }
+
+        // Priority 3: OpenAI
         if let Ok(res) = Self::execute_openai(prompt) { return Some(res); }
+
         None
     }
 
     fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
-            "model": "qwen/qwen3.6-27b",
+            "model": "qwen-2.5-32b",
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": 1000
         });
@@ -62,7 +68,7 @@ impl GemiEngine {
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
+        let url = format!("https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Self::curl_pipe(&url, vec![], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
@@ -114,15 +120,8 @@ impl GemiEngine {
 
     fn cleanse_artifact(text: &str) -> String {
         let mut final_text = text.trim().to_string();
-        while let Some(start) = final_text.find("<think>") {
-            if let Some(end) = final_text.find("</think>") {
-                let mut new_text = final_text[..start].to_string();
-                new_text.push_str(&final_text[end + 8..]);
-                final_text = new_text.trim().to_string();
-            } else {
-                final_text = final_text[..start].trim().to_string();
-                break;
-            }
+        if let Some(pos) = final_text.rfind("</think>") {
+            final_text = final_text[pos + 8..].trim().to_string();
         }
         final_text
     }

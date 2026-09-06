@@ -276,14 +276,13 @@ impl ToolRegistry {
                 output
             }
             "reason" => {
-                let mut full_prompt = format!("Mission: {}\n\nPlease provide the requested translation or reasoning based on the context below. Deliver the final result clearly.", arg);
+                let mut full_prompt = format!("Mission: {}\n\nPlease provide the requested translation or reasoning based on the context below. Deliver the final result clearly. Do not yap. No process explanation.", arg);
                 // Autonomous Context Attachment: If an EXISTING source file is mentioned, inline its content
                 for word in arg.split_whitespace() {
                     let clean_word = word.trim_matches(|c| c == '(' || c == ')' || c == '[' || c == ']');
                     if (clean_word.ends_with(".txt") || clean_word.ends_with(".rs") || clean_word.ends_with(".toml")) && !arg.contains(&format!("save to {}", clean_word)) {
                         let mut path = workspace.join(clean_word);
                         if !path.exists() {
-                             // Deep Discovery: Check common subdirectories
                              for sub in &["Downloads", "Documents", "target"] {
                                  let p = workspace.join(sub).join(clean_word);
                                  if p.exists() { path = p; break; }
@@ -292,10 +291,13 @@ impl ToolRegistry {
 
                         if path.is_file() {
                             if let Ok(content) = std::fs::read_to_string(&path) {
-                                // Meritocratic Context: Standardize on tiny snippet for free-tier cloud verification
-                                let limit = 30; // Absolute minimum to avoid rate limits
+                                // Meritocratic Context: Standardize on balanced snippet for free-tier cloud verification
+                                let mut limit = 2000;
+                                if arg.contains("tamil") || arg.contains("translate") {
+                                     limit = 1000; // Optimal balance for real intelligence
+                                }
                                 let snippet = if content.len() > limit {
-                                    format!("{}... [TRUNCATED]", &content[..limit])
+                                    format!("{}... [TRUNCATED - partial result only]", &content[..limit])
                                 } else {
                                     content
                                 };
@@ -308,21 +310,17 @@ impl ToolRegistry {
                 let result = GemiEngine::generate_reasoning_deep(&full_prompt, workspace);
 
                 if result.trim().is_empty() || result.contains("CLOUD_BRAIN_UNAVAILABLE") {
-                    return "❌ Error: Intelligence provider returned an empty or unavailable result. Retrying...".to_string();
+                    return "❌ Error: Intelligence provider returned an empty or unavailable result.".to_string();
                 }
 
-                // Autonomous Artifact Delivery: If "save to [file]" is in the prompt, fulfill it
                 if arg.contains("save to") {
                      if let Some(target_file) = arg.split("save to ").nth(1).and_then(|s| s.split_whitespace().next()) {
                          let path = workspace.join(target_file);
-
-                         // 🧼 Cleanse for storage: Remove the cloud picker label from the saved file
                          let file_content = if result.contains("]:\n") {
                              result.splitn(2, "]:\n").nth(1).unwrap_or(&result).to_string()
                          } else {
                              result.clone()
                          };
-
                          let _ = std::fs::write(&path, &file_content);
                          return format!("✅ Mission fulfilled. Result saved to {}.\n\nSUMMARY:\n{}", target_file, file_content.chars().take(200).collect::<String>());
                      }
