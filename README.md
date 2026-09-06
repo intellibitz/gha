@@ -22,11 +22,7 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps
 
 ---
 
-## 📖 Explore the World-Scale AI Network
-
-For architecture, cloud gateways, clustering, self-healing, and multimodal guides, visit the **[GHA Wiki](https://github.com/intellibitz/gha/wiki)**.
-
-### Quick Verification (Natural Language Mission)
+## 🚀 Quick Verification (Natural Language Mission)
 Once installed, talk to the **GMA Master Agent** to verify your engine:
 
 ```bash
