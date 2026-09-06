@@ -276,7 +276,21 @@ impl ToolRegistry {
                 output
             }
             "reason" => {
-                GemiEngine::generate_reasoning_deep(arg, workspace)
+                let mut full_prompt = arg.to_string();
+                // Autonomous Context Attachment: If a filename is mentioned, inline its content
+                for word in arg.split_whitespace() {
+                    if word.ends_with(".txt") || word.ends_with(".rs") || word.ends_with(".toml") {
+                        let path = workspace.join(word);
+                        if path.is_file() {
+                            if let Ok(content) = std::fs::read_to_string(&path) {
+                                // Limit inlined content to ~10k chars to avoid token blowup
+                                let snippet = if content.len() > 10000 { format!("{}... [TRUNCATED]", &content[..10000]) } else { content };
+                                full_prompt = format!("{}\n\n[FILE CONTEXT: {}]\n{}", full_prompt, word, snippet);
+                            }
+                        }
+                    }
+                }
+                GemiEngine::generate_reasoning_deep(&full_prompt, workspace)
             }
             "git_auto_branch" => {
                 Self::git_auto_branch(workspace)
