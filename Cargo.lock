@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "gha"
-version = "0.1.97"
+version = "0.1.99"
 dependencies = [
  "serde",
  "serde_json",

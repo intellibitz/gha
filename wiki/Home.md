@@ -1,50 +1,26 @@
 # 🌌 gha: AI for AI — Universal Multi-Agent AI Runtime & MCP Engine
 
-> **100% Platform Independent • 100% Sandboxed • 100% IDE Independent • 0% Effort • 100% Gains**
+> **gha: AI for AI, anywhere for anything.**
 
-**gha** is a **100% self-contained, standalone native Rust binary engine** powering **AI for AI, anywhere for anything**.
-
----
-
-## ⚡ 1-Line Universal Installation
-
-```bash
-# Linux, macOS, & WSL:
-curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/init/install.sh | bash
-
-# Windows PowerShell:
-iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/init/install.ps1 | iex
-```
+**gha** is a **100% self-contained, standalone native Rust binary engine** powering a full autonomous world-scale AI agent network.
 
 ---
 
-## 🌟 The GMA "Sole Interactor" Architecture
+## 🌟 The 3 Uncompromising Pillars of `gha`
 
-```text
- 👤 GHA USER / IDE / CLIENT ──► 🤖 GMA Master Agent (Sole Interactor)
-                                        │
-             ┌──────────────────────────┼──────────────────────────┐
-             ▼                          ▼                          ▼
-   🤖 Tier 1: GAWD             🧠 Tier 2: GEMI           🔌 Tier 3: GMCP
-   (A2A Worker Agent Fleet)    (Port 9091 REST API)      (Port 9090 / Stdio MCP)
-```
+1.  **Lean & Blazing Fast Forever (< 2ms)**: The native Rust binary (`ghai`) remains razor-thin, rock-solid, and 100% platform-independent with **0 JVM, 0 Node, 0 Python** dependencies.
+2.  **Exponential Capability Compounding**: Intelligence multiplies via the **Vault** (`~/.gha/models/`) and **MCP Hub** tool plugins. Every new model or script registered doubles the engine's task surface area without bloating the core.
+3.  **GMA as the Sole Interactor**: Users interact strictly with the **GHA Master Agent (GMA)**. Behind the scenes, GMA governs Tier 1 (GAWD Fleet), Tier 2 (GEMI Inference), and Tier 3 (GMCP Tools) in parallel.
 
 ---
 
-## 📖 Integration Summary
+## 📖 Complete Documentation
 
-### 1. Terminal CLI (`ghai`)
-- `ghai "natural language goal"` — GMA Master Interactor goal execution.
-- `ghai :status` — Workspace health, hardware profile & daemon status.
-- `ghai ai server` — Start GEMI OpenAI REST server on Port 9091.
-- `ghai mcp` — Start GMCP stdio MCP server for IDEs.
-
-### 2. IDE Integration (`mcp.json`)
-- Android Studio / JetBrains: `~/.config/Google/AndroidStudio*/mcp.json`.
-- VS Code / Cursor: `.vscode/mcp.json`.
-- Claude Desktop: `claude_desktop_config.json`.
-- Trigger tools in IDE chat: `@gha status`, `@gha reason`, `@gha orchestrate`.
-
-### 3. External LLM & Frameworks (Port 9091)
-- Base URL: `http://127.0.0.1:9091/v1`
-- Compatible with OpenAI Python SDK, LangChain, AutoGen, LlamaIndex, cURL.
+*   [🚀 Exponential Explosive Intelligence](Exponential-Intelligence.md) — The 63-Step scale and roadmap.
+*   [🏗️ Architecture & Governance](Architecture.md) — GMA Sole Interactor and the 3-Tier Multi-Agent system.
+*   [☁️ Zero-Download Cloud Gateways](Cloud-Gateways.md) — Connecting to Gemini, DeepSeek, Groq, Mistral, and Hugging Face.
+*   [🌐 Multi-Node A2A Clustering](Multi-Agent-Clustering.md) — LAN UDP Auto-Discovery and World-Scale Swarm networking.
+*   [🔧 Autonomous & Self-Healing](Autonomous-Self-Healing.md) — Build loops, git auto-branching, and tool self-evolution.
+*   [👁️ Multimodal Capabilities](Multimodal-Capabilities.md) — Native Vision, OCR, and Audio processing tool plugins.
+*   [🛡️ Security & Sandboxing](Security-and-Sandboxing.md) — 2-Layer sandbox isolation model.
+*   [⚡ Installation Guide](Installation.md) — 1-Click universal installation and platform binary details.
