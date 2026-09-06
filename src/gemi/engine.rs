@@ -172,7 +172,7 @@ impl GemiEngine {
     }
 
     fn execute_groq(prompt: &str) -> Result<String, String> {
-        let key = std::env::var("GROQ_API_KEY").map_err(|_| "Missing Key")?;
+        let key = std::env::var("GROQ_API_KEY").map_err(|_| "Missing Key".to_string())?;
         let payload = json!({
             "model": "llama-3.3-70b-versatile",
             "messages": [{"role": "user", "content": prompt}]
@@ -183,7 +183,7 @@ impl GemiEngine {
     }
 
     fn execute_gemini(prompt: &str) -> Result<String, String> {
-        let key = std::env::var("GEMINI_API_KEY").map_err(|_| "Missing Key")?;
+        let key = std::env::var("GEMINI_API_KEY").map_err(|_| "Missing Key".to_string())?;
         let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output().map_err(|e| e.to_string())?;
@@ -192,7 +192,7 @@ impl GemiEngine {
     }
 
     fn execute_openai(prompt: &str) -> Result<String, String> {
-        let key = std::env::var("OPENAI_API_KEY").map_err(|_| "Missing Key")?;
+        let key = std::env::var("OPENAI_API_KEY").map_err(|_| "Missing Key".to_string())?;
         let payload = json!({
             "model": "gpt-4o",
             "messages": [{"role": "user", "content": prompt}]
