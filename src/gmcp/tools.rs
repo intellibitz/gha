@@ -158,6 +158,10 @@ impl ToolRegistry {
                 name: "services".to_string(),
                 description: "List running GHA background services (Daemon, GEMI, GMCP)".to_string(),
             },
+            McpTool {
+                name: "debug_engine".to_string(),
+                description: "Autonomous self-debugging: Scan engine source for logic errors and fix them (arg: 'error_log')".to_string(),
+            },
         ];
 
         // Dynamic Tool Discovery
@@ -403,6 +407,13 @@ impl ToolRegistry {
                 }
                 output
             }
+            "debug_engine" => {
+                let source_path = workspace.join("src/gemi/pulse.rs");
+                let source = std::fs::read_to_string(&source_path).unwrap_or_default();
+                let prompt = format!("Analyze GHA Pulse Brain source for errors related to: '{}'. \n\nSOURCE:\n{}", arg, source);
+                let reasoning = GemiEngine::generate_reasoning(&prompt, workspace);
+                format!("🛠️ [Autonomous Debugger]:\n{}", reasoning)
+            }
             "vision_analyze" => {
                 let parts: Vec<&str> = arg.splitn(2, ' ').collect();
                 if parts.len() < 2 {
@@ -465,7 +476,7 @@ impl ToolRegistry {
                 if parts.len() < 2 {
                     return "❌ Usage: write_file <path> <content>".to_string();
                 }
-                let file_path = workspace.join(parts[0]);
+                let file_path = workspace.join(parts[0].trim());
                 match std::fs::write(&file_path, parts[1]) {
                     Ok(_) => format!("✅ Successfully wrote to {}", file_path.display()),
                     Err(e) => format!("❌ Error writing file: {}", e),
