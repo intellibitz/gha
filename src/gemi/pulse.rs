@@ -26,7 +26,8 @@ impl GhaPulse {
                     .replace("file", "")
                     .replace("named", "")
                     .replace(" a ", " ")
-                    .trim();
+                    .trim()
+                    .to_string();
                  let content = parts[1].trim();
                  return Ok(format!("ACTION: write_file {} {}", file_name, content));
              }
