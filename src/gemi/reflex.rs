@@ -21,13 +21,13 @@ impl ReflexEngine {
         // 🚀 Tier 0 Reflex Logic: Instant patterns derived from PKB
         let decision = if lower == "version" || lower == "what is your version?" {
             ReflexDecision::Solved("ACTION: version".to_string())
-        } else if lower == "status" || lower == "check system status" {
+        } else if lower == "status" || lower == "check system status" || lower == "orchestrate status" {
             ReflexDecision::Solved("ACTION: status".to_string())
         } else if lower == "build" || lower == "run build" {
             ReflexDecision::Solved("ACTION: self_heal_build".to_string())
         } else if lower == "test" || lower == "run tests" {
             ReflexDecision::Solved("ACTION: run_test_harness".to_string())
-        } else if lower == "models" || lower == "list models" || lower == "list_models" {
+        } else if lower == "models" || lower == "list models" || lower == "list_models" || lower == "orchestrate list_models" {
             ReflexDecision::Solved("ACTION: list_models".to_string())
         } else if lower.contains("clean") && (lower.contains("workspace") || lower.contains("build")) {
             ReflexDecision::Solved("ACTION: exec_command cargo clean".to_string())

@@ -22,35 +22,50 @@ impl GmaMasterAgent {
         let (a2a_logs, fleet) = GmasSupervisor::supervise_mission(goal, workspace);
         let active_tools = ToolRegistry::list_tools();
 
-        let mut report = String::new();
+        let mut is_reflex = false;
+        let mut reasoning_content = String::new();
+        for msg in &a2a_logs {
+            if msg.sender == "GhaReasoningAgent" {
+                reasoning_content = msg.payload.clone();
+                if msg.payload.contains("Tier 0") {
+                    is_reflex = true;
+                }
+            }
+        }
 
+        let is_orchestration = goal.contains("orchestrate") || goal.contains("mission");
+        let is_placeholder = reasoning_content.contains("scouting for specialized brains");
+
+        let mut report = String::new();
         report.push_str("# 🌌 gha: AI for AI - Sole Interactor Report\n\n");
 
-        report.push_str("## 🧠 Tier 0: GHA-Alpha (Native Reflex)\n");
-        report.push_str("- **Logic**: Hyper-Optimized Protocol Routing (< 1ms)\n\n");
+        if is_orchestration || !is_reflex {
+            report.push_str("## 🧠 Tier 0: GHA-Alpha (Native Reflex)\n");
+            report.push_str("- **Logic**: Hyper-Optimized Protocol Routing (< 1ms)\n\n");
 
-        report.push_str("## 🤖 Tier 1: GAWD (Universal Swarm Supervisor)\n");
-        report.push_str("- **Identity**: GMA Master Agent (A2A Protocol Root)\n");
-        report.push_str(&format!("- **Fleet**: {} Specialized GAWD Agents Active\n", fleet.len()));
-        report.push_str(&format!("- **Hardware**: {} CPUs | {}\n", num_cpus, gpu_info));
-        report.push_str(&format!("- **Engine**: v{} (100% Native Rust)\n\n", version));
+            report.push_str("## 🤖 Tier 1: GAWD (Universal Swarm Supervisor)\n");
+            report.push_str("- **Identity**: GMA Master Agent (A2A Protocol Root)\n");
+            report.push_str(&format!("- **Fleet**: {} Specialized GAWD Agents Active\n", fleet.len()));
+            report.push_str(&format!("- **Hardware**: {} CPUs | {}\n", num_cpus, gpu_info));
+            report.push_str(&format!("- **Engine**: v{} (100% Native Rust)\n\n", version));
+        }
 
         report.push_str("## 🎯 Mission Execution (A2A Swarm Flux)\n");
         report.push_str(&format!("🤖 [GMA] Universal Intent: \"{}\"\n", goal));
 
-        let mut intelligence_tier = "Tier 2: GEMI (Deep Reasoning)";
-        for (i, msg) in a2a_logs.iter().enumerate() {
-            if msg.sender == "GhaReasoningAgent" && msg.payload.contains("Tier 0") {
-                intelligence_tier = "Tier 0: GHA-Alpha (Native Reflex)";
+        if is_orchestration || !is_reflex {
+            for (i, msg) in a2a_logs.iter().enumerate() {
+                let connector = if i == a2a_logs.len() - 1 { "└──" } else { "├──" };
+                report.push_str(&format!(" {} [{} -> GMA] {} ('{}')\n", connector, msg.sender, msg.action, msg.payload));
             }
-            let connector = if i == a2a_logs.len() - 1 { "└──" } else { "├──" };
-            report.push_str(&format!(" {} [{} -> GMA] {} ('{}')\n", connector, msg.sender, msg.action, msg.payload));
+            let intelligence_tier = if is_reflex { "Tier 0: GHA-Alpha (Native Reflex)" } else { "Tier 2: GEMI (Deep Reasoning)" };
+            report.push_str(&format!("\n🚀 [Orchestration Strategy]: {}\n", intelligence_tier));
         }
 
-        report.push_str(&format!("\n🚀 [Orchestration Strategy]: {}\n", intelligence_tier));
-
-        report.push_str("\n## 🔌 GMCP (Universal Tool Capabilities)\n");
-        report.push_str(&format!("- **Registry**: {} Tools Registered\n", active_tools.len()));
+        if is_orchestration {
+            report.push_str("\n## 🔌 GMCP (Universal Tool Capabilities)\n");
+            report.push_str(&format!("- **Registry**: {} Tools Registered\n", active_tools.len()));
+        }
 
         // 🛡️ Governance Protocol: Pre-Execution Safety & Security Audit
         let governance_check = self.audit_governance(&a2a_logs);
@@ -71,9 +86,17 @@ impl GmaMasterAgent {
         // ⚖️ GMA Trust Audit (Reality Check)
         let audit = self.audit_truth(goal, &a2a_logs, workspace);
         report.push_str("\n## ⚖️ GMA Trust Audit (Reality Check)\n");
-        report.push_str(&format!(" └── {}\n", audit));
+        if is_placeholder {
+            report.push_str(" └── ⚠️ MISSION INCOMPLETE: Reasoning agent is scouting for brains. No solution provided.\n");
+        } else {
+            report.push_str(&format!(" └── {}\n", audit));
+        }
 
-        report.push_str("\n✅ [gha Intelligence] Flux executed natively (0-Effort, 100% Gains).\n");
+        if is_reflex && !is_orchestration {
+             report.push_str("\n✅ [gha Intelligence] Reflex executed natively (0-Effort, 100% Gains).\n");
+        } else {
+             report.push_str("\n✅ [gha Intelligence] Flux executed natively (0-Effort, 100% Gains).\n");
+        }
 
         report
     }
