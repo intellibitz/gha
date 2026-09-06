@@ -101,7 +101,7 @@ impl GmaMasterAgent {
         // ⚖️ GMA Trust Audit (Reality Check)
         let audit = self.audit_truth(goal, &a2a_logs, workspace);
         report.push_str("\n## ⚖️ GMA Trust Audit (Reality Check)\n");
-        if is_placeholder {
+        if is_placeholder || mission_result.contains("scouting for specialized brains") {
             report.push_str(" └── ⚠️ MISSION INCOMPLETE: Reasoning agent is scouting for brains. No solution provided.\n");
         } else {
             report.push_str(&format!(" └── {}\n", audit));

@@ -50,7 +50,7 @@ impl GemiEngine {
 
     fn scout_cloud_providers(prompt: &str) -> Option<String> {
         // Priority 1: Groq (Ultra-fast)
-        if let Ok(res) = Self::execute_groq(prompt) { return Some(format!("☁️ [🏆 Premier Pick: Groq Llama 3.3]:\n{}", res)); }
+        if let Ok(res) = Self::execute_groq(prompt) { return Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)); }
 
         // Priority 2: Gemini
         if let Ok(res) = Self::execute_gemini(prompt) { return Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)); }
@@ -119,7 +119,7 @@ impl GemiEngine {
     fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
-            "model": "llama-3.1-70b-versatile",
+            "model": "qwen/qwen3.6-27b",
             "messages": [{"role": "user", "content": prompt}]
         });
         let out = Command::new("curl").args(["-s", "https://api.groq.com/openai/v1/chat/completions", "-H", &format!("Authorization: Bearer {}", key.trim()), "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
@@ -129,7 +129,7 @@ impl GemiEngine {
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={}", key.trim());
+        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Command::new("curl").args(["-s", &url, "-H", "Content-Type: application/json", "-d", &payload.to_string()]).output()?;
         let v: serde_json::Value = serde_json::from_slice(&out.stdout)?;
