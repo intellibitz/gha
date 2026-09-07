@@ -180,6 +180,37 @@ impl ModelManager {
         None
     }
 
+    pub fn get_active_engine_and_model() -> (String, String) {
+        let model = Self::get_selected_model().unwrap_or_else(|| "Auto-Scout".to_string());
+        let lower = model.to_lowercase();
+
+        let engine = if lower.contains("ollama") {
+            "Ollama".to_string()
+        } else if lower.contains("candle") || lower.contains("safetensors") || lower.contains("gha-alpha") {
+            "Candle".to_string()
+        } else if lower.contains("gemini") || lower.contains("google") {
+            "Google AI".to_string()
+        } else if lower.contains("openai") || lower.contains("gpt") {
+            "OpenAI".to_string()
+        } else if lower.contains("groq") {
+            "Groq".to_string()
+        } else if lower.contains("anthropic") || lower.contains("claude") {
+            "Anthropic".to_string()
+        } else if lower.contains("deepseek") {
+            "DeepSeek".to_string()
+        } else if lower.contains("qwen") || lower.contains("llama") {
+            if Command::new("ollama").arg("list").output().is_ok() {
+                "Ollama".to_string()
+            } else {
+                "Candle".to_string()
+            }
+        } else {
+            "GEMI".to_string()
+        };
+
+        (engine, model)
+    }
+
     pub fn scout_and_benchmark(workspace: &Path) -> Vec<ModelInfo> {
         let mut models = Self::list_models(workspace);
         for m in &mut models {
