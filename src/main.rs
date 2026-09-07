@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.156";
+const GHA_VERSION: &str = "0.1.157";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -59,8 +59,9 @@ fn print_help() {
 
 fn print_header(cwd: &Path, debug_mode: bool) {
     let mode_label = if debug_mode { "DEBUG TRACE" } else { "CONVERSATIONAL" };
+    let active_model = crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "Auto-Scout".to_string());
     println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
-    println!("{}Ask GHA (v{}){} | Mode: {}{}{}", COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
+    println!("{}Ask GHA (v{}){} | Model: {}{}{} | Mode: {}{}{}", COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_CYAN, active_model, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
     println!("{}Workspace: {}{}", COLOR_DIM, cwd.display(), COLOR_RESET);
 
     let proactive_prompts = crate::gawd::agents::GhaUserAgent::generate_proactive_prompts(cwd);
@@ -90,8 +91,9 @@ fn run_interactive_shell(cwd: &Path) {
     let gma = GmaMasterAgent::new();
 
     loop {
+        let active_model = crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "Auto-Scout".to_string());
         println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
-        print!("{}{}Ask GHA (v{}){}{}>{} ", COLOR_CYAN, COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
+        print!("{}{}Ask GHA (v{}){} {}{}[{}]{}{}>{} ", COLOR_CYAN, COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_DIM, COLOR_CYAN, active_model, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
         if io::stdout().flush().is_err() {
             break;
         }
