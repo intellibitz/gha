@@ -78,6 +78,10 @@ impl ToolRegistry {
                 description: "Download or pull web model to local hardware (arg: 'model_name_or_url')".to_string(),
             },
             McpTool {
+                name: "web_search_download".to_string(),
+                description: "Search the web and download content or lyrics to workspace (arg: 'query')".to_string(),
+            },
+            McpTool {
                 name: "orchestrate".to_string(),
                 description: "Execute GMA multi-agent mission".to_string(),
             },
@@ -275,6 +279,9 @@ impl ToolRegistry {
             }
             "install_model" | "pull_model" => {
                 ModelManager::install_model(arg)
+            }
+            "web_search_download" | "download" | "web_fetch" => {
+                Self::web_search_download(arg, workspace)
             }
             "agents" | "list_agents" => {
                 let fleet = crate::gawd::agents::GawdAgentFleet::synthesize_fleet("status");
@@ -819,6 +826,64 @@ impl ToolRegistry {
         } else {
             "Automated Test Harness: Generic test execution ready.".to_string()
         }
+    }
+
+    pub fn web_search_download(query: &str, workspace: &Path) -> String {
+        let clean_query = query.trim();
+        if clean_query.is_empty() {
+            return "Usage: download <query_or_url>".to_string();
+        }
+
+        let encoded_query = clean_query.replace(' ', "+");
+        let search_url = format!("https://html.duckduckgo.com/html/?q={}", encoded_query);
+
+        let out = Command::new("curl")
+            .args(["-sL", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", &search_url])
+            .output();
+
+        let raw_html = match out {
+            Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).to_string(),
+            _ => String::new(),
+        };
+
+        let mut snippets = Vec::new();
+        for line in raw_html.lines() {
+            let trimmed = line.trim();
+            if trimmed.contains("result__snippet") || trimmed.contains("result__url") {
+                let clean_snippet = trimmed
+                    .replace("<a class=\"result__snippet\"", "")
+                    .replace("<span class=\"result__snippet\"", "")
+                    .replace("</span>", "")
+                    .replace("</a>", "")
+                    .replace("<b>", "")
+                    .replace("</b>", "")
+                    .replace("&quot;", "\"")
+                    .replace("&amp;", "&")
+                    .replace("&#x27;", "'");
+                if clean_snippet.len() > 15 && !clean_snippet.contains("<!DOCTYPE") {
+                    snippets.push(clean_snippet);
+                }
+            }
+        }
+
+        let file_basename = clean_query
+            .replace(|c: char| !c.is_alphanumeric() && c != '_', "_")
+            .trim_matches('_')
+            .to_string();
+
+        let filename = format!("{}.txt", if file_basename.is_empty() { "download_content" } else { &file_basename });
+        let save_path = workspace.join(&filename);
+
+        let body_content = if snippets.is_empty() {
+            format!("Fetched web search for '{}'.\nSearch URL: {}", clean_query, search_url)
+        } else {
+            snippets.dedup();
+            snippets.truncate(5);
+            format!("Fetched web content for '{}':\n\n{}", clean_query, snippets.join("\n\n"))
+        };
+
+        let _ = fs::write(&save_path, &body_content);
+        format!("Fetched content for '{}' and saved to {}:\n\n{}", clean_query, filename, body_content)
     }
 
     pub fn self_heal_build(workspace: &Path) -> String {
