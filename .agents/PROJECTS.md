@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.116`
+* **Current Engine Version**: `v0.1.117`
 * **Architecture**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Core Terminology & Acronyms

@@ -70,6 +70,19 @@ if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
             echo "   ✅ Added to $config"
         fi
     done
+
+    # Fish Shell PATH integration (e.g. CachyOS, Arch, Fedora Fish users)
+    FISH_CONFIG="$HOME/.config/fish/config.fish"
+    if [ -d "$HOME/.config/fish" ] || command -v fish >/dev/null 2>&1; then
+        mkdir -p "$HOME/.config/fish"
+        if [ -f "$FISH_CONFIG" ] && ! grep -q ".gha/bin" "$FISH_CONFIG"; then
+            echo -e "\n# gha: Universal Multi-Agent AI Runtime\nfish_add_path \$HOME/.gha/bin" >> "$FISH_CONFIG"
+            echo "   ✅ Added to $FISH_CONFIG"
+        elif [ ! -f "$FISH_CONFIG" ]; then
+            echo -e "# gha: Universal Multi-Agent AI Runtime\nfish_add_path \$HOME/.gha/bin" > "$FISH_CONFIG"
+            echo "   ✅ Created $FISH_CONFIG"
+        fi
+    fi
 fi
 
 echo ""
