@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.179`
+* **Current Engine Version**: `v0.1.180`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Core Terminology & Acronyms
@@ -28,6 +28,13 @@
 * **Pure Anywhere Execution**: Users can invoke `gha` simultaneously in any folder or directory across their system (`env::current_dir()`). Every instance executes isolated within its target workspace without file locks or process conflicts.
 * **Hardware-Bounded Scaling**: Concurrent `gha` instances are bounded strictly by physical hardware limits (CPU cores, RAM, I/O, VRAM).
 * **Ultra-Low Memory Footprint**: Because each native `gha` binary instance requires only ~15–30 MB base RAM and starts in < 2ms, users can run dozens of concurrent GHA agent sessions across their system simultaneously.
+
+## 100% Safety, Security & Governance Architecture
+
+* **Pre-Execution Governance Protocol**: `SafetyDetector::audit_action` & `SecurityDetector::audit_action` inspect all tool execution signatures prior to execution, blocking destructive commands (`rm -rf /`, raw disk formatting) and credential/secret leaks (`OPENAI_API_KEY`, `AWS_SECRET_ACCESS_KEY`, private keys).
+* **Sandboxed State Isolation**: All engine states, temporary build artifacts, and configuration settings are isolated inside `.gha` sandbox containers, preventing host OS corruption.
+* **Real-Time Audit Trail Logging**: `GhaAuditLogger` logs every intent, governance check result, tool invocation, and truth audit score into `.gha/audit.log` for full external system interrogation (`gha audit` / `/audit`).
+* **Truth & Hallucination Audit**: `GhaTruthAgent` verifies that claimed action artifacts (written files, build status) actually exist and match technical specifications before completing a mission.
 
 ## Fail-Safe Cluster Architecture
 
