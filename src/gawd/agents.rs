@@ -7,8 +7,6 @@ use std::sync::mpsc::channel;
 use std::thread;
 use serde::{Deserialize, Serialize};
 
-use crate::gmcp::tools::ToolRegistry;
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GawdAgentInfo {
     pub name: String,
@@ -89,16 +87,26 @@ impl GawdAgentFleet {
     }
 
     pub fn execute_context_agent(workspace: &Path) -> String {
-        let branch = ToolRegistry::git_auto_branch(workspace);
+        let branch = Command::new("git")
+            .args(["rev-parse", "--abbrev-ref", "HEAD"])
+            .current_dir(workspace)
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .unwrap_or_else(|| "main".to_string())
+            .trim()
+            .to_string();
+
         let status = Command::new("git")
             .args(["status", "--short"])
             .current_dir(workspace)
             .output()
             .ok()
             .and_then(|o| String::from_utf8(o.stdout).ok())
-            .unwrap_or_else(|| "detached".to_string());
+            .unwrap_or_else(|| "clean".to_string());
 
-        format!("Context: {} | Status: {}", branch, status.trim())
+        let clean_status = if status.trim().is_empty() { "clean".to_string() } else { status.trim().to_string() };
+        format!("Branch: {} | Status: {}", branch, clean_status)
     }
 
     pub fn scout_tier1_assets() -> Vec<DiscoverableAsset> {
