@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.152";
+const GHA_VERSION: &str = "0.1.153";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -60,7 +60,7 @@ fn print_help() {
 fn print_header(debug_mode: bool) {
     let mode_label = if debug_mode { "DEBUG TRACE" } else { "CONVERSATIONAL" };
     println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
-    println!("{}Ask AI{} | {}gha v{}{} | Mode: {}{}{}", COLOR_BOLD, COLOR_RESET, COLOR_CYAN, GHA_VERSION, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
+    println!("{}Ask GHA (v{}){} | Mode: {}{}{}", COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
     println!("{}Type any question or instruction below (or /help, /renew, /debug, /clear, /exit).{}", COLOR_DIM, COLOR_RESET);
     println!("{}─────────────────────────────────────────────────────────────{}\n", COLOR_DIM, COLOR_RESET);
 }
@@ -83,7 +83,7 @@ fn run_interactive_shell(cwd: &Path) {
 
     loop {
         println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
-        print!("{}{}Ask AI{}{}>{} ", COLOR_CYAN, COLOR_BOLD, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
+        print!("{}{}Ask GHA (v{}){}{}>{} ", COLOR_CYAN, COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
         if io::stdout().flush().is_err() {
             break;
         }
