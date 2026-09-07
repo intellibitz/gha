@@ -76,15 +76,10 @@ if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
     fi
 fi
 
-echo "Installation complete. Starting interactive gha session..."
-echo ""
-
-if [ -x "$GLOBAL_BIN_DIR/gha" ]; then
-    if [ -t 0 ]; then
-        exec "$GLOBAL_BIN_DIR/gha"
-    elif [ -c /dev/tty ]; then
-        exec "$GLOBAL_BIN_DIR/gha" < /dev/tty
-    else
-        exec "$GLOBAL_BIN_DIR/gha"
-    fi
+if [ -t 0 ] && [ -t 1 ] && [ -z "$NONINTERACTIVE" ] && [ -x "$GLOBAL_BIN_DIR/gha" ]; then
+    echo "Installation complete. Starting interactive gha session..."
+    echo ""
+    exec "$GLOBAL_BIN_DIR/gha"
+else
+    echo "Installation complete. Run 'gha' to start."
 fi
