@@ -14,6 +14,34 @@ impl GmaMasterAgent {
         GmaMasterAgent
     }
 
+    pub fn solve_clean(&self, goal: &str, workspace: &Path, version: &str) -> String {
+        let (a2a_logs, _) = GmasSupervisor::supervise_mission(goal, workspace);
+
+        let governance_check = self.audit_governance(&a2a_logs);
+        if let Err(violation_msg) = governance_check {
+            return format!("Governance Alert: Mission aborted. {}", violation_msg);
+        }
+
+        let mission_result = self.execute_autonomous_flux(goal, &a2a_logs, workspace);
+        if !mission_result.is_empty() {
+            let mut lines = Vec::new();
+            for l in mission_result.lines() {
+                if l.contains("└── [Tool:") {
+                    if let Some(res) = l.split("]: ").nth(1) {
+                        lines.push(res.to_string());
+                    } else {
+                        lines.push(l.to_string());
+                    }
+                } else {
+                    lines.push(l.to_string());
+                }
+            }
+            return lines.join("\n");
+        }
+
+        self.solve(goal, workspace, version)
+    }
+
     pub fn solve(&self, goal: &str, workspace: &Path, version: &str) -> String {
         let (num_cpus, gpu_info) = HardwareProfiler::profile();
 
