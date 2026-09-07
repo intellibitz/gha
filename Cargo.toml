@@ -1,6 +1,6 @@
 [package]
 name = "gha"
-version = "0.1.112"
+version = "0.1.113"
 edition = "2024"
 authors = ["IntelliBitz", "Muthu Ramadoss", "Gemini (Google AI)"]
 description = "gha: EAI: Exponential Intelligence for Any AI. - GAWD, GEMI & GMCP Multi-Agent Engine"
@@ -16,8 +16,9 @@ hf-hub = "0.4.1"
 anyhow = "1.0"
 
 [profile.release]
-opt-level = "z"
-lto = true
-codegen-units = 1
+opt-level = 3 # High performance
+lto = "thin" # Faster parallel LTO
+codegen-units = 256 # Saturate all 28 cores
+incremental = true # Speed up iterative builds
 panic = "abort"
 strip = true
