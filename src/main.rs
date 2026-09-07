@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.148";
+const GHA_VERSION: &str = "0.1.149";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -38,6 +38,7 @@ fn print_help() {
     println!("Usage: Type any prompt or natural language instruction.\n");
     println!("Slash Commands:");
     println!("  /help, :help             Display this help menu");
+    println!("  /renew, :renew           Reload session with latest installed gha binary");
     println!("  /debug, :debug           Toggle developer debug mode (execution trace)");
     println!("  /models, :models         List available cloud and local models");
     println!("  /services, :services     List running background services");
@@ -55,7 +56,7 @@ fn print_header(debug_mode: bool) {
     let mode_label = if debug_mode { "DEBUG TRACE" } else { "CONVERSATIONAL" };
     println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
     println!("{}Ask AI{} | {}gha v{}{} | Mode: {}{}{}", COLOR_BOLD, COLOR_RESET, COLOR_CYAN, GHA_VERSION, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
-    println!("{}Type any question or instruction below (or /help, /debug, /clear, /exit).{}", COLOR_DIM, COLOR_RESET);
+    println!("{}Type any question or instruction below (or /help, /renew, /debug, /clear, /exit).{}", COLOR_DIM, COLOR_RESET);
     println!("{}─────────────────────────────────────────────────────────────{}\n", COLOR_DIM, COLOR_RESET);
 }
 
@@ -114,6 +115,13 @@ fn run_interactive_shell(cwd: &Path) {
         match command_lower.as_str() {
             "0" | "/exit" | ":exit" | "/quit" | ":quit" | "exit" | "quit" => {
                 println!("{}Exiting session.{}", COLOR_DIM, COLOR_RESET);
+                break;
+            }
+            "/renew" | ":renew" | "/reload" | ":reload" | "/update" | ":update" => {
+                println!("{}Renewing session (loading latest installed gha binary)...{}", COLOR_DIM, COLOR_RESET);
+                let bin_path = get_home_dir().join(".gha/bin/gha");
+                let target_bin = if bin_path.exists() { bin_path } else { env::current_exe().unwrap_or_else(|_| PathBuf::from("gha")) };
+                let _ = std::process::Command::new(target_bin).status();
                 break;
             }
             "/debug" | ":debug" | "debug" => {
