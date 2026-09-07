@@ -180,32 +180,54 @@ impl ModelManager {
         None
     }
 
+    pub fn set_selected_engine(engine_name: &str) -> Result<String, String> {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let gha_dir = home.join(".gha");
+        let _ = fs::create_dir_all(&gha_dir);
+        let engine_file = gha_dir.join("selected_engine.txt");
+        fs::write(&engine_file, engine_name.trim()).map_err(|e| e.to_string())?;
+        Ok(format!("Active execution engine set to: '{}'", engine_name.trim()))
+    }
+
+    pub fn get_selected_engine() -> Option<String> {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let engine_file = home.join(".gha/selected_engine.txt");
+        if engine_file.is_file() {
+            if let Ok(content) = fs::read_to_string(&engine_file) {
+                let trimmed = content.trim();
+                if !trimmed.is_empty() {
+                    return Some(trimmed.to_string());
+                }
+            }
+        }
+        None
+    }
+
     pub fn get_active_engine_and_model() -> (String, String) {
         let model = Self::get_selected_model().unwrap_or_else(|| "Auto-Scout".to_string());
-        let lower = model.to_lowercase();
+        let engine_override = Self::get_selected_engine();
 
-        let engine = if lower.contains("ollama") {
-            "Ollama".to_string()
-        } else if lower.contains("candle") || lower.contains("safetensors") || lower.contains("gha-alpha") {
-            "Candle".to_string()
-        } else if lower.contains("gemini") || lower.contains("google") {
-            "Google AI".to_string()
-        } else if lower.contains("openai") || lower.contains("gpt") {
-            "OpenAI".to_string()
-        } else if lower.contains("groq") {
-            "Groq".to_string()
-        } else if lower.contains("anthropic") || lower.contains("claude") {
-            "Anthropic".to_string()
-        } else if lower.contains("deepseek") {
-            "DeepSeek".to_string()
-        } else if lower.contains("qwen") || lower.contains("llama") {
-            if Command::new("ollama").arg("list").output().is_ok() {
-                "Ollama".to_string()
-            } else {
-                "Candle".to_string()
-            }
+        let engine = if let Some(e) = engine_override {
+            e
         } else {
-            "GEMI".to_string()
+            let lower = model.to_lowercase();
+            if lower.contains("ollama") {
+                "Ollama".to_string()
+            } else if lower.contains("candle") || lower.contains("safetensors") || lower.contains("gha-alpha") {
+                "Candle".to_string()
+            } else if lower.contains("gemini") || lower.contains("google") {
+                "Google AI".to_string()
+            } else if lower.contains("openai") || lower.contains("gpt") {
+                "OpenAI".to_string()
+            } else if lower.contains("groq") {
+                "Groq".to_string()
+            } else if lower.contains("anthropic") || lower.contains("claude") {
+                "Anthropic".to_string()
+            } else if lower.contains("deepseek") {
+                "DeepSeek".to_string()
+            } else {
+                "GEMI".to_string()
+            }
         };
 
         (engine, model)

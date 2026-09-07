@@ -46,6 +46,10 @@ impl ToolRegistry {
                 description: "List all active execution and inference engines".to_string(),
             },
             McpTool {
+                name: "use_engine".to_string(),
+                description: "Select active execution engine (arg: 'gemi|ollama|candle|auto')".to_string(),
+            },
+            McpTool {
                 name: "clients".to_string(),
                 description: "List configured MCP clients and proxy connections".to_string(),
             },
@@ -262,6 +266,12 @@ impl ToolRegistry {
             }
             "version" => {
                 format!("gha Native Engine v{}", crate::GHA_VERSION)
+            }
+            "use_engine" | "set_engine" => {
+                match ModelManager::set_selected_engine(arg) {
+                    Ok(msg) => msg,
+                    Err(e) => format!("Error setting active engine: {}", e),
+                }
             }
             "install_model" | "pull_model" => {
                 ModelManager::install_model(arg)

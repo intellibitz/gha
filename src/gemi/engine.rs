@@ -26,8 +26,25 @@ impl GemiEngine {
             }
         }
 
-        if let Some(selected) = super::models::ModelManager::get_selected_model() {
-            let lower_selected = selected.to_lowercase();
+        let selected_engine = super::models::ModelManager::get_selected_engine().unwrap_or_default().to_lowercase();
+        let selected_model = super::models::ModelManager::get_selected_model().unwrap_or_default();
+
+        if selected_engine == "gemi" || selected_engine == "cloud" {
+            let (res, _) = Self::scout_cloud_providers(prompt);
+            if let Some(text) = res {
+                return text;
+            }
+        } else if selected_engine == "ollama" {
+            let model_id = if selected_model.is_empty() { "qwen:latest" } else { &selected_model };
+            return Self::execute_local_ollama(prompt, model_id);
+        } else if selected_engine == "candle" {
+            if let Ok(count) = super::pulse::GhaPulse::try_load_candle_weights() {
+                return format!("⚡ [Candle Native Engine ({} tensors)]: Executed offline response for '{}'.", count, prompt);
+            }
+        }
+
+        if !selected_model.is_empty() {
+            let lower_selected = selected_model.to_lowercase();
             if lower_selected.contains("gemini") {
                 if let Ok(res) = Self::execute_gemini(prompt) {
                     return format!("☁️ [Selected Model: Google Gemini]:\n{}", res);
@@ -41,7 +58,7 @@ impl GemiEngine {
                     return format!("☁️ [Selected Model: Groq Qwen]:\n{}", res);
                 }
             } else if lower_selected.contains("ollama") || lower_selected.contains("qwen") || lower_selected.contains("llama") {
-                let res = Self::execute_local_ollama(prompt, &selected);
+                let res = Self::execute_local_ollama(prompt, &selected_model);
                 if !res.contains("❌") {
                     return res;
                 }

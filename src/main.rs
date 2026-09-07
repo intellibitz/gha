@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.160";
+const GHA_VERSION: &str = "0.1.161";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -127,6 +127,25 @@ fn run_interactive_shell(cwd: &Path) {
         }
 
         let command_lower = command.to_lowercase();
+
+        if command_lower.starts_with("/use_engine") || command_lower.starts_with(":use_engine") || command_lower.starts_with("use_engine") || command_lower.starts_with("use engine") || command_lower.starts_with("select engine") || command_lower.starts_with("set_engine") || command_lower.starts_with("set engine") {
+            let engine_arg = command
+                .trim_start_matches("/use_engine")
+                .trim_start_matches(":use_engine")
+                .trim_start_matches("use_engine")
+                .trim_start_matches("use engine")
+                .trim_start_matches("select engine")
+                .trim_start_matches("set_engine")
+                .trim_start_matches("set engine")
+                .trim();
+            let target_engine = if engine_arg.is_empty() { "Auto" } else { engine_arg };
+            match crate::gemi::models::ModelManager::set_selected_engine(target_engine) {
+                Ok(msg) => println!("{}{}{}", COLOR_GREEN, msg, COLOR_RESET),
+                Err(e) => println!("Error setting engine: {}", e),
+            }
+            println!();
+            continue;
+        }
 
         if command_lower.starts_with("/use_model") || command_lower.starts_with(":use_model") || command_lower.starts_with("use_model") || command_lower.starts_with("use model") || command_lower.starts_with("select model") || command_lower.starts_with("set_model") || command_lower.starts_with("set model") {
             let model_arg = command
