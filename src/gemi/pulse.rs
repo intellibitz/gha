@@ -49,7 +49,7 @@ impl GhaPulse {
             return Ok("ACTION: status".to_string());
         }
 
-        if lower.contains("verify cloud") || lower.contains("test api keys") {
+        if lower.contains("verify cloud") || lower.contains("test api keys") || lower.contains("verify_cloud") || lower.contains("verify keys") || lower.contains("test keys") || lower.contains("check api keys") {
             return Ok("ACTION: verify_cloud_providers".to_string());
         }
 

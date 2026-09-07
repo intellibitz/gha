@@ -477,30 +477,36 @@ impl ToolRegistry {
                 output
             }
             "verify_cloud_providers" => {
-                let mut output = "# ☁️ GHA Cloud Health Report\n\n".to_string();
+                let mut output = "# Cloud API Key Verification Report\n\n".to_string();
                 let keys = vec![
-                    ("MISTRAL_API_KEY", "Mistral"),
                     ("GROQ_API_KEY", "Groq"),
                     ("GEMINI_API_KEY", "Google Gemini"),
                     ("OPENAI_API_KEY", "OpenAI"),
                     ("ANTHROPIC_API_KEY", "Anthropic"),
                     ("DEEPSEEK_API_KEY", "DeepSeek"),
+                    ("MISTRAL_API_KEY", "Mistral"),
                 ];
 
+                let mut checked = 0;
                 for (env_var, name) in keys {
-                    if std::env::var(env_var).is_ok() {
-                        output.push_str(&format!("## {} Verification\n", name));
-                        let res = GemiEngine::verify_provider(name);
-
-                        if res.to_lowercase().contains("active") || (res.len() > 5 && !res.contains("❌")) {
-                            output.push_str(&format!("- **Status**: ✅ ACTIVE (Key Verified)\n"));
-                            output.push_str(&format!("- **Response**: \"{}\"\n\n", res.trim()));
-                        } else {
-                            output.push_str(&format!("- **Status**: ❌ FAILED or LIMITED\n"));
-                            output.push_str(&format!("- **Detail**: \"{}\"\n\n", res.trim()));
+                    if let Ok(key) = std::env::var(env_var) {
+                        if !key.trim().is_empty() {
+                            checked += 1;
+                            let masked_key = if key.len() > 8 {
+                                format!("{}...{}", &key[..4], &key[key.len() - 4..])
+                            } else {
+                                "****".to_string()
+                            };
+                            let res = GemiEngine::verify_provider(name);
+                            output.push_str(&format!("- **{}** (Env: `{}` | Key: `{}`): {}\n", name, env_var, masked_key, res.trim()));
                         }
                     }
                 }
+
+                if checked == 0 {
+                    output.push_str("No cloud API keys set in environment.\nSet GROQ_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, or DEEPSEEK_API_KEY to activate cloud inference.");
+                }
+
                 output
             }
             "verify_mcp_servers" => {
