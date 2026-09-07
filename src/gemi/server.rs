@@ -77,13 +77,9 @@ impl GemiServer {
                     let _ = writer.flush();
                 } else if first_line.starts_with("POST /v1/chat/completions") || first_line.starts_with("POST /chat/completions") {
                     let is_streaming = body_str.contains("\"stream\":true") || body_str.contains("\"stream\": true") || body_str.contains("stream");
-                    let model_name = if body_str.contains("llama") {
-                        "meta-llama/Llama-3.3-70B-Instruct"
-                    } else if body_str.contains("deepseek") {
-                        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF"
-                    } else {
-                        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B-GGUF"
-                    };
+                    let active_model = crate::gemi::models::ModelManager::get_selected_model()
+                        .unwrap_or_else(|| "gha-native-synthesis".to_string());
+                    let model_name = active_model.as_str();
 
                     // Extract actual user prompt from JSON payload
                     let user_prompt = extract_prompt_from_json(&body_str).unwrap_or_else(|| "list workspace health".to_string());
