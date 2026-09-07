@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.168";
+const GHA_VERSION: &str = "0.1.169";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -84,6 +84,10 @@ fn run_install(global_dir: &Path) {
 fn run_interactive_shell(cwd: &Path) {
     use std::io::{self, Write};
 
+    let bin_path = get_home_dir().join(".gha/bin/gha");
+    let target_bin = if bin_path.exists() { bin_path } else { env::current_exe().unwrap_or_else(|_| PathBuf::from("gha")) };
+    let initial_mtime = std::fs::metadata(&target_bin).and_then(|m| m.modified()).ok();
+
     let mut debug_mode = false;
     print!("{}", CLEAR_SCREEN);
     print_header(cwd, debug_mode);
@@ -91,6 +95,18 @@ fn run_interactive_shell(cwd: &Path) {
     let gma = GmaMasterAgent::new();
 
     loop {
+        if let Some(initial_time) = initial_mtime {
+            if let Ok(m) = std::fs::metadata(&target_bin) {
+                if let Ok(current_mtime) = m.modified() {
+                    if current_mtime > initial_time {
+                        println!("{}⚡ Runtime binary update detected on disk. Auto-renewing session...{}", COLOR_CYAN, COLOR_RESET);
+                        let _ = std::process::Command::new(&target_bin).status();
+                        break;
+                    }
+                }
+            }
+        }
+
         let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
         println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
         print!("{}{}Ask GHA (v{}){} {}{}[{}]{} {}{}[{}]{}{}>{} ", COLOR_CYAN, COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_DIM, COLOR_CYAN, engine, COLOR_RESET, COLOR_DIM, COLOR_CYAN, model, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
