@@ -207,3 +207,133 @@ impl GhaAuditLogger {
         "No audit trail recorded for this workspace.".to_string()
     }
 }
+
+pub struct GhaBackupManager;
+
+impl GhaBackupManager {
+    pub fn backup_work(workspace: &Path) -> Result<String, String> {
+        let backups_dir = workspace.join(".gha/backups");
+        fs::create_dir_all(&backups_dir).map_err(|e| e.to_string())?;
+
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        let backup_file = backups_dir.join(format!("work_backup_{}.tar.gz", timestamp));
+
+        let status = std::process::Command::new("tar")
+            .args(["-czf", backup_file.to_str().unwrap_or("backup.tar.gz"), "--exclude=.gha/backups", "."])
+            .current_dir(workspace)
+            .status();
+
+        match status {
+            Ok(s) if s.success() => Ok(format!("Workspace work backed up successfully to {}", backup_file.display())),
+            _ => Err("Failed to create workspace backup archive using tar.".to_string()),
+        }
+    }
+
+    pub fn restore_work(workspace: &Path, backup_path: &str) -> Result<String, String> {
+        let archive = if backup_path.trim().is_empty() {
+            let backups_dir = workspace.join(".gha/backups");
+            let mut latest = PathBuf::new();
+            let mut max_time = 0;
+            if let Ok(entries) = fs::read_dir(&backups_dir) {
+                for entry in entries.flatten() {
+                    if let Ok(m) = entry.metadata() {
+                        if let Ok(time) = m.modified() {
+                            let secs = time.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+                            if secs > max_time {
+                                max_time = secs;
+                                latest = entry.path();
+                            }
+                        }
+                    }
+                }
+            }
+            if !latest.exists() {
+                return Err("No backup archive found in .gha/backups/".to_string());
+            }
+            latest
+        } else {
+            PathBuf::from(backup_path.trim())
+        };
+
+        if !archive.is_file() {
+            return Err(format!("Backup archive file not found: {}", archive.display()));
+        }
+
+        let status = std::process::Command::new("tar")
+            .args(["-xzf", archive.to_str().unwrap_or("")])
+            .current_dir(workspace)
+            .status();
+
+        match status {
+            Ok(s) if s.success() => Ok(format!("Workspace work restored successfully from {}", archive.display())),
+            _ => Err(format!("Failed to restore workspace work from {}", archive.display())),
+        }
+    }
+
+    pub fn backup_engine(global_dir: &Path) -> Result<String, String> {
+        let backups_dir = global_dir.join("backups");
+        fs::create_dir_all(&backups_dir).map_err(|e| e.to_string())?;
+
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        let backup_file = backups_dir.join(format!("gha_engine_backup_{}.tar.gz", timestamp));
+
+        let status = std::process::Command::new("tar")
+            .args(["-czf", backup_file.to_str().unwrap_or("engine_backup.tar.gz"), "--exclude=backups", "."])
+            .current_dir(global_dir)
+            .status();
+
+        match status {
+            Ok(s) if s.success() => Ok(format!("GHA engine backed up successfully to {}", backup_file.display())),
+            _ => Err("Failed to create engine backup archive.".to_string()),
+        }
+    }
+
+    pub fn restore_engine(global_dir: &Path, backup_path: &str) -> Result<String, String> {
+        let archive = if backup_path.trim().is_empty() {
+            let backups_dir = global_dir.join("backups");
+            let mut latest = PathBuf::new();
+            let mut max_time = 0;
+            if let Ok(entries) = fs::read_dir(&backups_dir) {
+                for entry in entries.flatten() {
+                    if let Ok(m) = entry.metadata() {
+                        if let Ok(time) = m.modified() {
+                            let secs = time.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+                            if secs > max_time {
+                                max_time = secs;
+                                latest = entry.path();
+                            }
+                        }
+                    }
+                }
+            }
+            if !latest.exists() {
+                return Err("No engine backup archive found in ~/.gha/backups/".to_string());
+            }
+            latest
+        } else {
+            PathBuf::from(backup_path.trim())
+        };
+
+        if !archive.is_file() {
+            return Err(format!("Engine backup archive file not found: {}", archive.display()));
+        }
+
+        let status = std::process::Command::new("tar")
+            .args(["-xzf", archive.to_str().unwrap_or("")])
+            .current_dir(global_dir)
+            .status();
+
+        match status {
+            Ok(s) if s.success() => Ok(format!("GHA engine restored successfully from {}", archive.display())),
+            _ => Err(format!("Failed to restore engine from {}", archive.display())),
+        }
+    }
+}

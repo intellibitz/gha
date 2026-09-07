@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.178";
+const GHA_VERSION: &str = "0.1.179";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -38,6 +38,8 @@ fn print_help() {
     println!("Usage: Type any prompt or natural language instruction.\n");
     println!("Slash Commands:");
     println!("  /help, :help             Display this help menu");
+    println!("  /backup, :backup         Backup workspace files and state to archive");
+    println!("  /restore, :restore       Restore workspace files and state from backup archive");
     println!("  /audit, :audit           Inspect workspace audit trail and self-audit records");
     println!("  /memory, :memory         Inspect workspace session memory and history");
     println!("  /forget, :forget         Clear workspace session memory");
@@ -233,6 +235,14 @@ fn run_interactive_shell(cwd: &Path) {
             "/debug" | ":debug" | "debug" => {
                 debug_mode = !debug_mode;
                 println!("{}Developer Debug Mode set to: {}{}", COLOR_DIM, if debug_mode { "ON (Full Execution Trace)" } else { "OFF (Clean Conversational Answer)" }, COLOR_RESET);
+            }
+            "/backup" | ":backup" | "backup" => {
+                let res = ToolRegistry::execute_tool("backup_work", "", cwd);
+                println!("\n{}", res);
+            }
+            "/restore" | ":restore" | "restore" => {
+                let res = ToolRegistry::execute_tool("restore_work", "", cwd);
+                println!("\n{}", res);
             }
             "/audit" | ":audit" | "audit" | "audit_log" => {
                 let res = ToolRegistry::execute_tool("audit", "", cwd);

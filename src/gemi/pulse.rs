@@ -89,6 +89,23 @@ impl GhaPulse {
             return Ok(format!("ACTION: install_model {}", model_arg));
         }
 
+        if lower.contains("backup") || lower.contains("restore") || lower.contains("sync work") || lower.contains("sync engine") {
+            if lower.contains("engine") || lower.contains("gha") {
+                if lower.contains("restore") {
+                    return Ok("ACTION: restore_engine".to_string());
+                }
+                return Ok("ACTION: backup_engine".to_string());
+            } else {
+                if lower.contains("restore") {
+                    return Ok("ACTION: restore_work".to_string());
+                }
+                if lower.contains("sync") {
+                    return Ok("ACTION: sync_work".to_string());
+                }
+                return Ok("ACTION: backup_work".to_string());
+            }
+        }
+
         if lower.contains("memory") || lower.contains("history") || lower.contains("what did we do") || lower.contains("earlier") {
             if lower.contains("clear") || lower.contains("forget") {
                 return Ok("ACTION: clear_memory".to_string());

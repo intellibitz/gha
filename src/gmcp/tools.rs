@@ -50,6 +50,26 @@ impl ToolRegistry {
                 description: "Interrogate and inspect workspace audit log and self-audit records".to_string(),
             },
             McpTool {
+                name: "backup_work".to_string(),
+                description: "Backup active workspace files and state into compressed archive".to_string(),
+            },
+            McpTool {
+                name: "restore_work".to_string(),
+                description: "Restore workspace files and state from backup archive (arg: 'backup_path')".to_string(),
+            },
+            McpTool {
+                name: "backup_engine".to_string(),
+                description: "Backup global GHA engine runtime binary and models into archive".to_string(),
+            },
+            McpTool {
+                name: "restore_engine".to_string(),
+                description: "Restore global GHA engine runtime binary from backup archive (arg: 'backup_path')".to_string(),
+            },
+            McpTool {
+                name: "sync_work".to_string(),
+                description: "Synchronize workspace files and context across active P2P cluster nodes".to_string(),
+            },
+            McpTool {
                 name: "agents".to_string(),
                 description: "List all active agents in the GAWD fleet".to_string(),
             },
@@ -288,6 +308,37 @@ impl ToolRegistry {
             }
             "clear_memory" | "forget" => {
                 crate::sandbox::manager::GhaMemory::clear_memory(workspace)
+            }
+            "backup_work" | "backup" => {
+                match crate::sandbox::manager::GhaBackupManager::backup_work(workspace) {
+                    Ok(msg) => msg,
+                    Err(e) => format!("Error backing up workspace work: {}", e),
+                }
+            }
+            "restore_work" | "restore" => {
+                match crate::sandbox::manager::GhaBackupManager::restore_work(workspace, arg) {
+                    Ok(msg) => msg,
+                    Err(e) => format!("Error restoring workspace work: {}", e),
+                }
+            }
+            "backup_engine" | "backup_gha" => {
+                let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+                let global_dir = home.join(".gha");
+                match crate::sandbox::manager::GhaBackupManager::backup_engine(&global_dir) {
+                    Ok(msg) => msg,
+                    Err(e) => format!("Error backing up GHA engine: {}", e),
+                }
+            }
+            "restore_engine" | "restore_gha" => {
+                let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+                let global_dir = home.join(".gha");
+                match crate::sandbox::manager::GhaBackupManager::restore_engine(&global_dir, arg) {
+                    Ok(msg) => msg,
+                    Err(e) => format!("Error restoring GHA engine: {}", e),
+                }
+            }
+            "sync_work" => {
+                GmasSupervisor::sync_cluster_state(workspace, "FULL_WORKSPACE_SYNC")
             }
             "audit" | "audit_log" => {
                 crate::sandbox::manager::GhaAuditLogger::read_audit_log(workspace, 20)
