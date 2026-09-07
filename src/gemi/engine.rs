@@ -38,8 +38,11 @@ impl GemiEngine {
             let model_id = if selected_model.is_empty() { "qwen:latest" } else { &selected_model };
             return Self::execute_local_ollama(prompt, model_id);
         } else if selected_engine == "candle" {
+            if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
+                return format!("⚡ [Candle Engine]: {}", action);
+            }
             if let Ok(count) = super::pulse::GhaPulse::try_load_candle_weights() {
-                return format!("⚡ [Candle Native Engine ({} tensors)]: Executed offline response for '{}'.", count, prompt);
+                return format!("⚡ [Candle Engine ({} Tensors)]: Executed offline response for '{}'.", count, prompt);
             }
         }
 

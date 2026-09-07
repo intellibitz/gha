@@ -96,6 +96,10 @@ impl GhaPulse {
              return Ok("ACTION: brave_search:search_web {\"query\": \"gha news\"}".to_string());
         }
 
+        if lower.contains("list dir") || lower.contains("list directory") || lower.contains("list files") || lower.contains("show files") || lower == "ls" || lower == "dir" || lower.contains("list workspace") {
+            return Ok("ACTION: list_directory".to_string());
+        }
+
         if lower.contains("models") || lower.contains("inventory") || lower.contains("list_models") {
             return Ok("ACTION: list_models".to_string());
         }
