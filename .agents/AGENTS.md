@@ -23,3 +23,4 @@
 7. **100% Platform Independent**: GHA is 100% platform independent, self-contained, and cross-platform across Linux, macOS, Windows, WSL, and mobile architectures.
 8. **Zero Configuration, Self-Tuning & Self-Healing**: GHA is 100% zero configuration, self-tuning, and self-healing. It automatically adapts, discovers local hardware and models, and self-heals runtime errors without requiring manual user setup.
 9. **Workspace Boundaries**: Project root (`.`) is the main workspace. `./test/world` is designated as the testspace (ignored in `.gitignore`).
+10. **Testspace Auto-Install on Push**: After a successful git push, execute a one-line install (`../../install.sh`) in the testspace (`./test/world`).
