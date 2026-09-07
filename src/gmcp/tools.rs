@@ -38,6 +38,10 @@ impl ToolRegistry {
                 description: "Get GHA engine version info".to_string(),
             },
             McpTool {
+                name: "connect_provider".to_string(),
+                description: "Check or connect model provider (arg: 'openai|gemini|anthropic')".to_string(),
+            },
+            McpTool {
                 name: "profile_hardware".to_string(),
                 description: "Profile CPU cores and GPU capabilities".to_string(),
             },
@@ -234,6 +238,30 @@ impl ToolRegistry {
             }
             "version" => {
                 format!("gha Native Engine v{}", crate::GHA_VERSION)
+            }
+            "connect_provider" => {
+                let provider = arg.to_lowercase();
+                if provider.contains("chat") || provider.contains("openai") {
+                    if std::env::var("OPENAI_API_KEY").is_ok() {
+                        "OpenAI / ChatGPT (gpt-4o) model provider is active.".to_string()
+                    } else {
+                        "OPENAI_API_KEY is not set. Set OPENAI_API_KEY environment variable to connect to ChatGPT / OpenAI models.".to_string()
+                    }
+                } else if provider.contains("gemini") {
+                    if std::env::var("GEMINI_API_KEY").is_ok() {
+                        "Google Gemini 1.5 Flash provider is active.".to_string()
+                    } else {
+                        "GEMINI_API_KEY is not set. Set GEMINI_API_KEY environment variable to connect to Google Gemini.".to_string()
+                    }
+                } else if provider.contains("claude") || provider.contains("anthropic") {
+                    if std::env::var("ANTHROPIC_API_KEY").is_ok() {
+                        "Anthropic Claude 3.5 Sonnet provider is active.".to_string()
+                    } else {
+                        "ANTHROPIC_API_KEY is not set. Set ANTHROPIC_API_KEY environment variable to connect to Anthropic Claude.".to_string()
+                    }
+                } else {
+                    format!("Provider status check complete for '{}'. Use 'gha list_models' to view all active models.", arg)
+                }
             }
             "list_models" => {
                 let models = ModelManager::list_models(workspace);

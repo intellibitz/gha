@@ -33,6 +33,18 @@ impl GhaPulse {
              }
         }
 
+        if lower.contains("chat gpt") || lower.contains("chatgpt") || lower.contains("openai") {
+            return Ok("ACTION: connect_provider openai".to_string());
+        }
+
+        if lower.contains("gemini") && (lower.contains("connect") || lower.contains("use")) {
+            return Ok("ACTION: connect_provider gemini".to_string());
+        }
+
+        if lower.contains("claude") || lower.contains("anthropic") {
+            return Ok("ACTION: connect_provider anthropic".to_string());
+        }
+
         if lower.contains("status") || lower.contains("aware") {
             return Ok("ACTION: status".to_string());
         }
