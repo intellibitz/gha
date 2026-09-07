@@ -834,17 +834,71 @@ impl ToolRegistry {
             return "Usage: download <query_or_url>".to_string();
         }
 
+        let file_basename = clean_query
+            .replace(|c: char| !c.is_alphanumeric() && c != '_', "_")
+            .trim_matches('_')
+            .to_string();
+
+        let filename = format!("{}.txt", if file_basename.is_empty() { "download_content" } else { &file_basename });
+        let save_path = workspace.join(&filename);
+
+        if clean_query.starts_with("http://") || clean_query.starts_with("https://") {
+            let page_out = Command::new("curl")
+                .args(["-sL", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", clean_query])
+                .output();
+            if let Ok(o) = page_out {
+                if o.status.success() {
+                    let page_html = String::from_utf8_lossy(&o.stdout);
+                    let page_text = Self::extract_plain_text_from_html(&page_html);
+                    let _ = fs::write(&save_path, &page_text);
+                    return format!("Downloaded web content from {} to {}:\n\n{}", clean_query, filename, page_text.chars().take(500).collect::<String>());
+                }
+            }
+        }
+
         let encoded_query = clean_query.replace(' ', "+");
         let search_url = format!("https://html.duckduckgo.com/html/?q={}", encoded_query);
 
         let out = Command::new("curl")
-            .args(["-sL", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", &search_url])
+            .args(["-sL", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", &search_url])
             .output();
 
         let raw_html = match out {
             Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).to_string(),
             _ => String::new(),
         };
+
+        let mut target_link = String::new();
+        for line in raw_html.lines() {
+            if line.contains("uddg=") {
+                if let Some(pos) = line.find("uddg=") {
+                    let rest = &line[pos + 5..];
+                    let end_pos = rest.find('&').unwrap_or(rest.len());
+                    let raw_url = &rest[..end_pos];
+                    let decoded_url = raw_url.replace("%3A", ":").replace("%2F", "/").replace("%3F", "?").replace("%3D", "=").replace("%26", "&");
+                    if decoded_url.starts_with("http://") || decoded_url.starts_with("https://") {
+                        target_link = decoded_url;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if !target_link.is_empty() {
+            let page_out = Command::new("curl")
+                .args(["-sL", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", &target_link])
+                .output();
+            if let Ok(o) = page_out {
+                if o.status.success() {
+                    let page_html = String::from_utf8_lossy(&o.stdout);
+                    let page_text = Self::extract_plain_text_from_html(&page_html);
+                    if page_text.len() > 100 {
+                        let _ = fs::write(&save_path, &page_text);
+                        return format!("Fetched full content for '{}' from {} and saved to {}:\n\n{}", clean_query, target_link, filename, page_text);
+                    }
+                }
+            }
+        }
 
         let mut snippets = Vec::new();
         for line in raw_html.lines() {
@@ -866,24 +920,61 @@ impl ToolRegistry {
             }
         }
 
-        let file_basename = clean_query
-            .replace(|c: char| !c.is_alphanumeric() && c != '_', "_")
-            .trim_matches('_')
-            .to_string();
-
-        let filename = format!("{}.txt", if file_basename.is_empty() { "download_content" } else { &file_basename });
-        let save_path = workspace.join(&filename);
-
         let body_content = if snippets.is_empty() {
             format!("Fetched web search for '{}'.\nSearch URL: {}", clean_query, search_url)
         } else {
             snippets.dedup();
             snippets.truncate(5);
-            format!("Fetched web content for '{}':\n\n{}", clean_query, snippets.join("\n\n"))
+            format!("Fetched content for '{}':\n\n{}", clean_query, snippets.join("\n\n"))
         };
 
         let _ = fs::write(&save_path, &body_content);
         format!("Fetched content for '{}' and saved to {}:\n\n{}", clean_query, filename, body_content)
+    }
+
+    fn extract_plain_text_from_html(html: &str) -> String {
+        let mut text_lines = Vec::new();
+        let mut in_script_or_style = false;
+
+        for line in html.lines() {
+            let trimmed = line.trim();
+            let lower = trimmed.to_lowercase();
+
+            if lower.contains("<script") || lower.contains("<style") {
+                in_script_or_style = true;
+            }
+            if lower.contains("</script>") || lower.contains("</style>") {
+                in_script_or_style = false;
+                continue;
+            }
+
+            if in_script_or_style || trimmed.is_empty() {
+                continue;
+            }
+
+            let mut clean_line = String::new();
+            let mut inside_tag = false;
+            for c in trimmed.chars() {
+                if c == '<' { inside_tag = true; }
+                else if c == '>' { inside_tag = false; }
+                else if !inside_tag { clean_line.push(c); }
+            }
+
+            let final_line = clean_line
+                .replace("&quot;", "\"")
+                .replace("&amp;", "&")
+                .replace("&#x27;", "'")
+                .replace("&nbsp;", " ")
+                .trim()
+                .to_string();
+
+            if final_line.len() > 15 && !final_line.starts_with('{') && !final_line.starts_with("var ") {
+                text_lines.push(final_line);
+            }
+        }
+
+        text_lines.dedup();
+        text_lines.join("\n")
     }
 
     pub fn self_heal_build(workspace: &Path) -> String {
