@@ -375,13 +375,24 @@ impl ToolRegistry {
                 GmasSupervisor::dispatch_peer_task(peer_addr, "status", task)
             }
             "swarm_sync" => {
-                "🌌 [Swarm Sync]: Successfully synchronized mission context across world-scale agent nodes.".to_string()
+                let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+                let gha_dir = home.join(".gha");
+                let sync_file = gha_dir.join("sync.json");
+                let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+                let _ = fs::write(&sync_file, format!("{{\"last_sync\": {}, \"workspace\": \"{}\"}}", now, workspace.display()));
+                format!("Sync complete: {}", sync_file.display())
             }
             "self_evolve" => {
-                "🌱 [Autonomous Self-Evolution]: Swarm is currently evaluating capability gaps across all nodes.".to_string()
+                let registry = GmcpClient::fetch_global_registry();
+                let configured = GmcpClient::list_external_tools();
+                let configured_names: Vec<String> = configured.iter().map(|t| t.name.split(':').next().unwrap_or(&t.name).to_string()).collect();
+                let missing: Vec<&str> = registry.iter().filter(|e| !configured_names.contains(&e.name)).map(|e| e.name.as_str()).collect();
+                format!("Capability Analysis: {} MCP tools configured, {} available for provisioning ({})", configured.len(), missing.len(), missing.join(", "))
             }
             "global_registry_scan" => {
-                "🌌 [Global Registry]: Scanning world-wide GHA network... Discovered 1,024+ verified agent service nodes across 6 continents.".to_string()
+                let registry = GmcpClient::fetch_global_registry();
+                let entries: Vec<String> = registry.iter().map(|e| format!("- {} ({}): {}", e.name, e.category, e.description)).collect();
+                format!("Global Registry Entries ({}):\n{}", registry.len(), entries.join("\n"))
             }
             "self_train" => {
                 let count = arg.parse::<usize>().unwrap_or(10);
@@ -396,8 +407,8 @@ impl ToolRegistry {
                 }
 
                 match crate::gawd::pkb::PkbSynthesizer::save_training_data(entries, &global_dir) {
-                    Ok(msg) => format!("🌱 [Self-Training]: Swarm synthesis complete. {}", msg),
-                    Err(e) => format!("❌ [Self-Training Error]: {}", e),
+                    Ok(msg) => format!("Synthesis complete. {}", msg),
+                    Err(e) => format!("Error: {}", e),
                 }
             }
             "scout" => {
@@ -407,14 +418,13 @@ impl ToolRegistry {
                 assets.extend(crate::gemi::models::ModelManager::scout_tier2_assets());
                 assets.extend(crate::gmcp::client::GmcpClient::scout_tier3_assets());
 
-                let mut output = "# 🌌 Universal GHA Discovery Report\n\n".to_string();
+                let mut output = "# Discovery Report\n\n".to_string();
                 for asset in assets {
                     output.push_str(&format!("## {}\n", asset.tier));
-                    output.push_str(&format!("- **Asset**: {}\n", asset.name));
-                    output.push_str(&format!("- **Provider**: {}\n", asset.provider));
-                    output.push_str(&format!("- **URL**: {}\n\n", asset.url));
+                    output.push_str(&format!("- Asset: {}\n", asset.name));
+                    output.push_str(&format!("- Provider: {}\n", asset.provider));
+                    output.push_str(&format!("- URL: {}\n\n", asset.url));
                 }
-                output.push_str("✅ Sticking to industry standard protocols at all tiers.");
                 output
             }
             "services" => {
