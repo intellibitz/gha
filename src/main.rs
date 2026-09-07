@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.153";
+const GHA_VERSION: &str = "0.1.154";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -57,11 +57,19 @@ fn print_help() {
     println!("  gemi                     Start GEMI REST server");
 }
 
-fn print_header(debug_mode: bool) {
+fn print_header(cwd: &Path, debug_mode: bool) {
     let mode_label = if debug_mode { "DEBUG TRACE" } else { "CONVERSATIONAL" };
     println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
     println!("{}Ask GHA (v{}){} | Mode: {}{}{}", COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
-    println!("{}Type any question or instruction below (or /help, /renew, /debug, /clear, /exit).{}", COLOR_DIM, COLOR_RESET);
+    println!("{}Workspace: {}{}", COLOR_DIM, cwd.display(), COLOR_RESET);
+
+    let proactive_prompts = crate::gawd::agents::GhaUserAgent::generate_proactive_prompts(cwd);
+    if !proactive_prompts.is_empty() {
+        println!("\n{}💡 Proactive Suggestions for this Workspace:{}", COLOR_GREEN, COLOR_RESET);
+        for (num, prompt) in &proactive_prompts {
+            println!("  [{}] {}", num, prompt);
+        }
+    }
     println!("{}─────────────────────────────────────────────────────────────{}\n", COLOR_DIM, COLOR_RESET);
 }
 
@@ -77,7 +85,7 @@ fn run_interactive_shell(cwd: &Path) {
 
     let mut debug_mode = false;
     print!("{}", CLEAR_SCREEN);
-    print_header(debug_mode);
+    print_header(cwd, debug_mode);
 
     let gma = GmaMasterAgent::new();
 
@@ -187,7 +195,7 @@ fn run_interactive_shell(cwd: &Path) {
             "/clear" | ":clear" | "clear" => {
                 print!("{}", CLEAR_SCREEN);
                 let _ = io::stdout().flush();
-                print_header(debug_mode);
+                print_header(cwd, debug_mode);
                 continue;
             }
             "/version" | ":version" | "version" => {
@@ -195,11 +203,19 @@ fn run_interactive_shell(cwd: &Path) {
             }
             _ => {
                 println!();
+                let proactive_prompts = crate::gawd::agents::GhaUserAgent::generate_proactive_prompts(cwd);
+                let target_command = if let Some((_, prompt_text)) = proactive_prompts.iter().find(|(n, _)| n == command) {
+                    println!("{}Selected Proactive Mission: {}{}\n", COLOR_GREEN, prompt_text, COLOR_RESET);
+                    prompt_text.as_str()
+                } else {
+                    command
+                };
+
                 if debug_mode {
-                    let report = gma.solve(command, cwd, GHA_VERSION);
+                    let report = gma.solve(target_command, cwd, GHA_VERSION);
                     println!("{}", report);
                 } else {
-                    let clean_answer = gma.solve_clean(command, cwd, GHA_VERSION);
+                    let clean_answer = gma.solve_clean(target_command, cwd, GHA_VERSION);
                     println!("{}", clean_answer);
                 }
             }

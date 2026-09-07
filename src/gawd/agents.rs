@@ -20,11 +20,43 @@ pub struct DiscoverableAsset {
     pub url: String,
 }
 
+pub struct GhaUserAgent;
+
+impl GhaUserAgent {
+    pub fn generate_proactive_prompts(workspace: &Path) -> Vec<(String, String)> {
+        let mut prompts = Vec::new();
+
+        if workspace.join("Cargo.toml").is_file() {
+            prompts.push(("1".to_string(), "Build workspace project cleanly".to_string()));
+            prompts.push(("2".to_string(), "Run workspace unit test harness".to_string()));
+            prompts.push(("3".to_string(), "Inspect workspace health & system status".to_string()));
+        } else {
+            let mut file_count = 0;
+            if let Ok(entries) = std::fs::read_dir(workspace) {
+                file_count = entries.flatten().filter(|e| e.path().is_file()).count();
+            }
+
+            if file_count > 0 {
+                prompts.push(("1".to_string(), format!("Inspect and organize {} workspace files", file_count)));
+                prompts.push(("2".to_string(), "Check system health & hardware status".to_string()));
+                prompts.push(("3".to_string(), "List active models and local inference engines".to_string()));
+            } else {
+                prompts.push(("1".to_string(), "Check system health & hardware status".to_string()));
+                prompts.push(("2".to_string(), "List active models and local inference engines".to_string()));
+                prompts.push(("3".to_string(), "Create a new project workspace".to_string()));
+            }
+        }
+
+        prompts
+    }
+}
+
 pub struct GawdAgentFleet;
 
 impl GawdAgentFleet {
     pub fn synthesize_fleet(goal: &str) -> Vec<GawdAgentInfo> {
         let mut fleet = vec![
+            GawdAgentInfo { name: "GhaUserAgent".to_string(), role: "World User Advocate & Proactive Prompter".to_string(), protocol: "A2A".to_string() },
             GawdAgentInfo { name: "GhaContextAgent".to_string(), role: "Environment Context".to_string(), protocol: "A2A".to_string() },
             GawdAgentInfo { name: "GhaReasoningAgent".to_string(), role: "Core Inference".to_string(), protocol: "A2A".to_string() },
         ];
@@ -63,6 +95,7 @@ impl GawdAgentFleet {
 
             let handle = thread::spawn(move || {
                 let output = match t_agent.name.as_str() {
+                    "GhaUserAgent" => format!("Proactive user guidance active for workspace '{}'.", t_ws.display()),
                     "GhaContextAgent" => Self::execute_context_agent(&t_ws),
                     "GhaReasoningAgent" => crate::gemi::engine::GemiEngine::generate_reasoning(&t_goal, &t_ws),
                     "GhaKernelAgent" => format!("Low-level synthesis engaged for '{}'.", t_goal),
