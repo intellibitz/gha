@@ -46,8 +46,14 @@ impl GhaPulse {
              }
         }
 
-        if lower.starts_with("use_model") || lower.starts_with("use model") || lower.starts_with("select model") || lower.starts_with("set_model") {
-            let model_arg = lower.split_whitespace().skip(1).collect::<Vec<&str>>().join(" ");
+        if lower.starts_with("use_model") || lower.starts_with("use model") || lower.starts_with("select model") || lower.starts_with("set_model") || lower.starts_with("set model") {
+            let model_arg = lower
+                .trim_start_matches("use_model")
+                .trim_start_matches("use model")
+                .trim_start_matches("select model")
+                .trim_start_matches("set_model")
+                .trim_start_matches("set model")
+                .trim();
             return Ok(format!("ACTION: use_model {}", model_arg));
         }
 

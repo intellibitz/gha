@@ -39,6 +39,20 @@ impl GmaMasterAgent {
             return lines.join("\n");
         }
 
+        for msg in &a2a_logs {
+            if msg.sender == "GhaReasoningAgent" {
+                let payload = &msg.payload;
+                let clean_text = if payload.contains("]:\n") {
+                    payload.splitn(2, "]:\n").nth(1).unwrap_or(payload)
+                } else if payload.contains("]: ") {
+                    payload.splitn(2, "]: ").nth(1).unwrap_or(payload)
+                } else {
+                    payload
+                };
+                return clean_text.trim().to_string();
+            }
+        }
+
         self.solve(goal, workspace, version)
     }
 
