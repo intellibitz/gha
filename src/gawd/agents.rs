@@ -95,6 +95,23 @@ impl GawdAgentFleet {
         fleet
     }
 
+    pub fn get_domain_context_guideline(goal: &str) -> String {
+        let lower = goal.to_lowercase();
+        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") {
+            "[DOMAIN CONTEXT: Agronomy & Crop Science — Focus on soil pH, N-P-K nutrient ratios, crop yield, and sustainable soil management]".to_string()
+        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") {
+            "[DOMAIN CONTEXT: Medical & Clinical Guidance — Focus on evidence-based health information, patient-friendly explanations, and safety disclaimers]".to_string()
+        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") {
+            "[DOMAIN CONTEXT: Legal & Regulatory Analysis — Focus on contract terms, risk obligations, compliance, and clear layperson summaries]".to_string()
+        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") {
+            "[DOMAIN CONTEXT: Education & Pedagogy — Focus on step-by-step conceptual explanations, examples, and clear learning progressions]".to_string()
+        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") {
+            "[DOMAIN CONTEXT: Renewable Energy & Climate Science — Focus on efficiency, wattage, grid capacity, and environmental sustainability]".to_string()
+        } else {
+            String::new()
+        }
+    }
+
     pub fn dispatch_explosive_swarm(goal: String, workspace: PathBuf) -> Vec<(String, String)> {
         let fleet = Self::synthesize_fleet(&goal);
         let mut handles = Vec::new();
@@ -110,14 +127,22 @@ impl GawdAgentFleet {
                 let output = match t_agent.name.as_str() {
                     "GhaUserAgent" => format!("Proactive user guidance active for workspace '{}'.", t_ws.display()),
                     "GhaContextAgent" => Self::execute_context_agent(&t_ws),
-                    "GhaReasoningAgent" => crate::gemi::engine::GemiEngine::generate_reasoning(&t_goal, &t_ws),
+                    "GhaReasoningAgent" => {
+                        let domain_guideline = Self::get_domain_context_guideline(&t_goal);
+                        let enriched_goal = if domain_guideline.is_empty() {
+                            t_goal.clone()
+                        } else {
+                            format!("{}\n\nINTENT: {}", domain_guideline, t_goal)
+                        };
+                        crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, &t_ws)
+                    }
                     "GhaKernelAgent" => format!("Low-level synthesis engaged for '{}'.", t_goal),
                     "GhaEconomicAgent" => format!("Financial flux analysis applied to '{}'.", t_goal),
-                    "GhaAgronomyAgent" => format!("Agronomy domain analysis applied to '{}'.", t_goal),
-                    "GhaMedicalAgent" => format!("Clinical health analysis applied to '{}'.", t_goal),
-                    "GhaLegalAgent" => format!("Legal contract analysis applied to '{}'.", t_goal),
-                    "GhaEducationAgent" => format!("Pedagogical domain synthesis applied to '{}'.", t_goal),
-                    "GhaEnergyAgent" => format!("Renewable energy domain analysis applied to '{}'.", t_goal),
+                    "GhaAgronomyAgent" => "Agronomy domain context active (soil pH, N-P-K nutrient ratios, crop yield guidance).".to_string(),
+                    "GhaMedicalAgent" => "Clinical health domain context active (evidence-based wellness guidance).".to_string(),
+                    "GhaLegalAgent" => "Legal contract domain context active (liability & compliance analysis).".to_string(),
+                    "GhaEducationAgent" => "Pedagogical domain context active (step-by-step educational breakdown).".to_string(),
+                    "GhaEnergyAgent" => "Renewable energy domain context active (efficiency & wattage analysis).".to_string(),
                     "GhaSafetyAgent" => "Governance protocols active.".to_string(),
                     _ => format!("Specialized agent '{}' executing intent.", t_agent.name),
                 };
