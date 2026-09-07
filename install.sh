@@ -82,6 +82,10 @@ if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
             echo -e "# gha: Universal Multi-Agent AI Runtime\nfish_add_path \$HOME/.gha/bin" > "$FISH_CONFIG"
             echo "   ✅ Created $FISH_CONFIG"
         fi
+        if command -v fish >/dev/null 2>&1; then
+            fish -c "fish_add_path $GLOBAL_BIN_DIR" >/dev/null 2>&1 || true
+            echo "   ✅ Applied live fish_add_path ($GLOBAL_BIN_DIR)"
+        fi
     fi
 fi
 
