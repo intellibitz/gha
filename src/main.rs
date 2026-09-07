@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.151";
+const GHA_VERSION: &str = "0.1.152";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -40,6 +40,10 @@ fn print_help() {
     println!("  /help, :help             Display this help menu");
     println!("  /setkey <KEY> <VAL>      Save API key to ~/.gha/env (e.g. /setkey OPENAI_API_KEY sk-...)");
     println!("  /renew, :renew           Reload session with latest installed gha binary");
+    println!("  /agents, :agents         List active agents in GAWD fleet");
+    println!("  /engines, :engines       List active execution & inference engines");
+    println!("  /clients, :clients       List configured MCP clients & proxies");
+    println!("  /servers, :servers       List running MCP servers & background hosts");
     println!("  /debug, :debug           Toggle developer debug mode (execution trace)");
     println!("  /models, :models         List available cloud and local models");
     println!("  /services, :services     List running background services");
@@ -148,6 +152,22 @@ fn run_interactive_shell(cwd: &Path) {
                 debug_mode = !debug_mode;
                 println!("{}Developer Debug Mode set to: {}{}", COLOR_DIM, if debug_mode { "ON (Full Execution Trace)" } else { "OFF (Clean Conversational Answer)" }, COLOR_RESET);
             }
+            "/agents" | ":agents" | "agents" => {
+                let res = ToolRegistry::execute_tool("agents", "", cwd);
+                println!("\n{}", res);
+            }
+            "/engines" | ":engines" | "engines" => {
+                let res = ToolRegistry::execute_tool("engines", "", cwd);
+                println!("\n{}", res);
+            }
+            "/clients" | ":clients" | "clients" => {
+                let res = ToolRegistry::execute_tool("clients", "", cwd);
+                println!("\n{}", res);
+            }
+            "/servers" | ":servers" | "servers" => {
+                let res = ToolRegistry::execute_tool("servers", "", cwd);
+                println!("\n{}", res);
+            }
             "/models" | ":models" | "models" => {
                 let report = gma.solve("list_models", cwd, GHA_VERSION);
                 println!("\n{}", report);
@@ -208,6 +228,22 @@ fn main() {
         }
         "version" | "--version" | "-v" => {
             println!("gha v{}", GHA_VERSION);
+        }
+        "agents" | ":agents" | "/agents" => {
+            let res = ToolRegistry::execute_tool("agents", "", &cwd);
+            println!("{}", res);
+        }
+        "engines" | ":engines" | "/engines" => {
+            let res = ToolRegistry::execute_tool("engines", "", &cwd);
+            println!("{}", res);
+        }
+        "clients" | ":clients" | "/clients" => {
+            let res = ToolRegistry::execute_tool("clients", "", &cwd);
+            println!("{}", res);
+        }
+        "servers" | ":servers" | "/servers" => {
+            let res = ToolRegistry::execute_tool("servers", "", &cwd);
+            println!("{}", res);
         }
         "models" | ":models" | "/models" => {
             let gma = GmaMasterAgent::new();
