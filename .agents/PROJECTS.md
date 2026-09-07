@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.125`
+* **Current Engine Version**: `v0.1.126`
 * **Architecture**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Core Terminology & Acronyms
@@ -19,9 +19,15 @@
 
 ## Intelligence Tiers
 
-* **Tier 0: GHA-Alpha (Native Reflex Engine)**: Microsecond (<1ms) protocol routing and deterministic reflexes.
-* **Tier 1: GAWD / GMA (Universal Swarm Supervisor)**: A2A swarm dispatch, governance auditing, and mission supervision.
+* **Tier 0: GHA-Alpha (Native Reflex Engine)**: Microsecond (<1ms) protocol routing and deterministic reflexes ($2^0$ Primitive).
+* **Tier 1: GAWD / GMA (Universal Swarm Supervisor)**: A2A swarm dispatch, governance auditing, and mission supervision ($2^{63}$ Swarm Pipeline).
 * **Tier 2: GEMI (Deep Reasoning & Multi-Model Inference)**: Multi-cloud provider scouting and local model fallback inference.
+
+## Recursive Distillation Architecture
+
+* **Model Cycle**: $2^0 \text{ (Reflex)} \longrightarrow 2^{63} \text{ (63-Step Swarm)} \longrightarrow \text{PKB Distillation} \longrightarrow \text{New } 2^0 \text{ Primitive}$.
+* **Mechanism**: 63-step agentic execution traces and swarm flux logs are synthesized via PKB into $O(1)$ Tier 0 microsecond reflexes.
+* **Compounding Effect**: Collapsing previous $2^{63}$ pipeline complexity into $2^0$ primitives raises the base capability level for subsequent 63-step swarm explorations.
 
 ## GMCP Action Substrate & Interop Bus
 
