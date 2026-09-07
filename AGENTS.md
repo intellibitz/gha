@@ -24,3 +24,4 @@ Primary configuration files reside in `.agents/`:
 2. **Lightning Fast Compilation**: GHA must compile lightning fast through optimized build configurations, aggressive caching, and minimal overhead.
 3. **Maximum Resource Utilization**: GHA is configured to utilize maximum available hardware resources (all available CPU threads, RAM, and parallel compilation jobs).
 4. **Terminology & Component Sync on Push**: Every GitHub push must update `.agents/PROJECTS.md` with the latest terminology, architecture components, and current GHA version.
+5. **Natural Language Only**: GHA interactions with world users are natural language only.
