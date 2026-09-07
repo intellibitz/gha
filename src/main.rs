@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.135";
+const GHA_VERSION: &str = "0.1.136";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -49,6 +49,24 @@ fn print_help() {
     println!("  gemi                     Start GEMI REST server");
 }
 
+fn print_tui_dashboard() {
+    let (cpus, gpu) = crate::gemi::hardware::HardwareProfiler::profile();
+    let gpu_label = if gpu.contains("CUDA") { "GPU Acceleration Active" } else { "CPU Native" };
+
+    println!("{}┌─────────────────────────────────────────────────────────────┐{}", COLOR_CYAN, COLOR_RESET);
+    println!("{}│ gha v{} — Guided Multi-Agent Console                    │{}", COLOR_CYAN, GHA_VERSION, COLOR_RESET);
+    println!("{}│ Status: ACTIVE | Hardware: {} CPUs | {} │{}", COLOR_CYAN, cpus, gpu_label, COLOR_RESET);
+    println!("{}└─────────────────────────────────────────────────────────────┘{}", COLOR_CYAN, COLOR_RESET);
+    println!("{}Quick Actions:{}", COLOR_GREEN, COLOR_RESET);
+    println!("  [1] Natural Language Mission (Type intent)");
+    println!("  [2] List Available Models");
+    println!("  [3] System Status & Hardware");
+    println!("  [4] Swarm Services");
+    println!("  [5] Help Menu");
+    println!("  [0] Exit Console");
+    println!("\n{}Type a option [0-5] or enter any natural language intent directly:{}\n", COLOR_DIM, COLOR_RESET);
+}
+
 fn run_install(global_dir: &Path) {
     println!("Initializing gha runtime...");
     let _ = SandboxManager::ensure_global_sandbox(global_dir);
@@ -59,8 +77,7 @@ fn run_install(global_dir: &Path) {
 fn run_interactive_shell(cwd: &Path) {
     use std::io::{self, Write};
 
-    println!("{}{}gha v{} interactive console{}", COLOR_CYAN, "\x1b[1m", GHA_VERSION, COLOR_RESET);
-    println!("{}Type intent, or /help, /models, /services, /clear, /exit to quit.{}\n", COLOR_DIM, COLOR_RESET);
+    print_tui_dashboard();
 
     let gma = GmaMasterAgent::new();
 
@@ -100,32 +117,45 @@ fn run_interactive_shell(cwd: &Path) {
 
         let command_lower = command.to_lowercase();
         match command_lower.as_str() {
-            "/exit" | ":exit" | "/quit" | ":quit" | "exit" | "quit" => {
+            "0" | "/exit" | ":exit" | "/quit" | ":quit" | "exit" | "quit" => {
                 println!("{}Exiting console.{}", COLOR_DIM, COLOR_RESET);
                 break;
+            }
+            "1" => {
+                print!("{}Enter your natural language intent:{} ", COLOR_GREEN, COLOR_RESET);
+                let _ = io::stdout().flush();
+                let mut intent = String::new();
+                if io::stdin().read_line(&mut intent).is_ok() {
+                    let trimmed = intent.trim();
+                    if !trimmed.is_empty() {
+                        let report = gma.solve(trimmed, cwd, GHA_VERSION);
+                        println!("{}", report);
+                    }
+                }
+            }
+            "2" | "/models" | ":models" | "models" => {
+                let report = gma.solve("list_models", cwd, GHA_VERSION);
+                println!("{}", report);
+            }
+            "3" | "/status" | ":status" | "status" => {
+                let res = ToolRegistry::execute_tool("status", "", cwd);
+                println!("{}", res);
+            }
+            "4" | "/services" | ":services" | "services" => {
+                let res = ToolRegistry::execute_tool("services", "", cwd);
+                println!("{}", res);
+            }
+            "5" | "/help" | ":help" | "help" => {
+                print_help();
             }
             "/clear" | ":clear" | "clear" => {
                 print!("{}", CLEAR_SCREEN);
                 let _ = io::stdout().flush();
+                print_tui_dashboard();
                 continue;
-            }
-            "/help" | ":help" | "help" => {
-                print_help();
             }
             "/version" | ":version" | "version" => {
                 println!("gha v{}", GHA_VERSION);
-            }
-            "/models" | ":models" | "models" => {
-                let report = gma.solve("list_models", cwd, GHA_VERSION);
-                println!("{}", report);
-            }
-            "/services" | ":services" | "services" => {
-                let res = ToolRegistry::execute_tool("services", "", cwd);
-                println!("{}", res);
-            }
-            "/status" | ":status" | "status" => {
-                let res = ToolRegistry::execute_tool("status", "", cwd);
-                println!("{}", res);
             }
             _ => {
                 let report = gma.solve(command, cwd, GHA_VERSION);
