@@ -46,6 +46,11 @@ impl GhaPulse {
              }
         }
 
+        if lower.starts_with("use_model") || lower.starts_with("use model") || lower.starts_with("select model") || lower.starts_with("set_model") {
+            let model_arg = lower.split_whitespace().skip(1).collect::<Vec<&str>>().join(" ");
+            return Ok(format!("ACTION: use_model {}", model_arg));
+        }
+
         if lower.contains("chat gpt") || lower.contains("chatgpt") || lower.contains("openai") {
             return Ok("ACTION: connect_provider openai".to_string());
         }

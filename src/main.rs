@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.157";
+const GHA_VERSION: &str = "0.1.158";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -127,6 +127,27 @@ fn run_interactive_shell(cwd: &Path) {
         }
 
         let command_lower = command.to_lowercase();
+
+        if command_lower.starts_with("/use_model") || command_lower.starts_with(":use_model") || command_lower.starts_with("use_model") || command_lower.starts_with("use model") || command_lower.starts_with("select model") || command_lower.starts_with("set_model") {
+            let parts: Vec<&str> = command.split_whitespace().collect();
+            let model_arg = parts.iter().skip(1).cloned().collect::<Vec<&str>>().join(" ");
+            let target_model = if model_arg.is_empty() { "Auto-Scout" } else { &model_arg };
+            match crate::gemi::models::ModelManager::set_selected_model(target_model) {
+                Ok(msg) => println!("{}{}{}", COLOR_GREEN, msg, COLOR_RESET),
+                Err(e) => println!("Error setting model: {}", e),
+            }
+            println!();
+            continue;
+        }
+
+        if command_lower == "auto_scout" || command_lower == "/auto_scout" || command_lower == ":auto_scout" || command_lower == "auto scout" {
+            match crate::gemi::models::ModelManager::set_selected_model("Auto-Scout") {
+                Ok(msg) => println!("{}{}{}", COLOR_GREEN, msg, COLOR_RESET),
+                Err(e) => println!("Error setting model: {}", e),
+            }
+            println!();
+            continue;
+        }
 
         if command_lower.starts_with("/setkey") || command_lower.starts_with(":setkey") {
             let parts: Vec<&str> = command.split_whitespace().collect();
