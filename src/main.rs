@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.167";
+const GHA_VERSION: &str = "0.1.168";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -293,6 +293,20 @@ fn main() {
         }
         "version" | "--version" | "-v" => {
             println!("gha v{}", GHA_VERSION);
+        }
+        "use_engine" | "use-engine" => {
+            let engine_arg = args.get(1).map(|s| s.as_str()).unwrap_or("auto");
+            match crate::gemi::models::ModelManager::set_selected_engine(engine_arg) {
+                Ok(msg) => println!("{}", msg),
+                Err(e) => println!("Error setting engine: {}", e),
+            }
+        }
+        "use_model" | "use-model" => {
+            let model_arg = args.get(1).map(|s| s.as_str()).unwrap_or("Auto-Scout");
+            match crate::gemi::models::ModelManager::set_selected_model(model_arg) {
+                Ok(msg) => println!("{}", msg),
+                Err(e) => println!("Error setting model: {}", e),
+            }
         }
         "agents" | ":agents" | "/agents" => {
             let res = ToolRegistry::execute_tool("agents", "", &cwd);
