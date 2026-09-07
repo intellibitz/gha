@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.180`
+* **Current Engine Version**: `v0.1.181`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Core Terminology & Acronyms
@@ -35,6 +35,15 @@
 * **Sandboxed State Isolation**: All engine states, temporary build artifacts, and configuration settings are isolated inside `.gha` sandbox containers, preventing host OS corruption.
 * **Real-Time Audit Trail Logging**: `GhaAuditLogger` logs every intent, governance check result, tool invocation, and truth audit score into `.gha/audit.log` for full external system interrogation (`gha audit` / `/audit`).
 * **Truth & Hallucination Audit**: `GhaTruthAgent` verifies that claimed action artifacts (written files, build status) actually exist and match technical specifications before completing a mission.
+
+## Self-Instrumentation, Optimization & External Monitoring Architecture
+
+* **Self-Instrumentation & Monitoring**: `GhaPulse` and `HardwareProfiler` continuously measure runtime execution latency (in microseconds), memory usage, CPU thread saturation, and tool execution metrics.
+* **Autonomous Self-Optimization**: `ModelManager::scout_and_benchmark` continuously benchmarks local and cloud inference endpoints to self-optimize routing to the fastest available model. `self_evolve` and `self_train` evaluate capability gaps and synthesize PKB training dataset pairs for Tier 0 distillation.
+* **Open Interrogation & External Monitoring**: External monitoring systems, IDEs, and security inspection agents can monitor and instrument GHA state at any time via:
+  1. **GMCP JSON-RPC 2.0 (Port 9090 & Stdio)**: Tools `profile_hardware`, `status`, `services`, `audit_log`, `inspect_trace`.
+  2. **GemiServer REST Endpoints (Port 9091)**: OpenAI-compatible HTTP endpoints for live telemetry.
+  3. **Structured Telemetry Logs**: Real-time logs written to `.gha/audit.log`, `.gha/sync.json`, and `.gha/train/pkb_dataset_*.jsonl`.
 
 ## Fail-Safe Cluster Architecture
 
