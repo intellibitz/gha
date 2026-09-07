@@ -1,42 +1,38 @@
-# 🌌 gha: EAI: Exponential Intelligence for Any AI.
+# gha
 
-> **100% Platform Independent • 100% Sandboxed • 100% IDE Independent • 0% Effort • 100% Gains**
+Native Rust Multi-Agent Engine.
 
-**gha** is a **100% self-contained, standalone native Rust binary engine** powering a full autonomous world-scale AI agent network.
+## Installation
 
----
-
-## ⚡ 1-Line Universal Installation (0-Effort, 100% Gains)
-
-Install `gha` globally and start your autonomous AI mission in 1 second:
-
-### 🐧 Linux, 🍏 macOS, & 🐚 WSL:
+### Linux / macOS / WSL
 ```bash
 curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/install.sh | bash
 ```
 
-### 🪟 Windows PowerShell:
+### Windows (PowerShell)
 ```powershell
 iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/install.ps1 | iex
 ```
 
----
-
-## 🚀 Quick Verification (Natural Language Mission)
-Once installed, talk to the **GMA Master Agent** to verify your engine:
+## Usage
 
 ```bash
-gha "what is your version?"    # Verify native architecture
-gha "check system status"      # Verify workspace health & swarm
-gha "list active models"       # Discover cloud & local models
+gha "what is your version?"
+gha "check system status"
+gha "list_models"
 ```
 
----
+Interactive mode:
+```bash
+gha
+```
 
-## Contributors
+## Maintainers
 
-`gha` is co-created and maintained by **IntelliBitz**, **Muthu Ramadoss**, and **Gemini (Google AI)**.
+* IntelliBitz
+* Muthu Ramadoss
+* Gemini (Google AI)
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT License](LICENSE).
