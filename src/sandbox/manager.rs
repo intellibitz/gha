@@ -16,6 +16,7 @@ impl SandboxManager {
         global_dir.to_path_buf()
     }
 
+    #[allow(dead_code)]
     pub fn is_global_sandbox_active(global_dir: &Path) -> bool {
         global_dir.join("bin").is_dir()
     }

@@ -6,4 +6,3 @@ pub mod safety;
 pub mod security;
 
 pub use gma::GmaMasterAgent;
-pub use pkb::PkbSynthesizer;

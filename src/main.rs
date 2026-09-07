@@ -14,10 +14,10 @@ use crate::gmcp::tools::ToolRegistry;
 use daemon::GmaDaemon;
 use gawd::GmaMasterAgent;
 use gemi::GemiServer;
-use gmcp::GmcpServer;
+use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.120";
+const GHA_VERSION: &str = "0.1.121";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")

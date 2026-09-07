@@ -7,7 +7,6 @@ use std::sync::mpsc::channel;
 use std::thread;
 use serde::{Deserialize, Serialize};
 
-use crate::gemi::models::ModelManager;
 use crate::gmcp::tools::ToolRegistry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
