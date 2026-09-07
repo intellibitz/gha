@@ -87,6 +87,18 @@ impl GawdAgentFleet {
             fleet.push(GawdAgentInfo { name: "GhaEducationAgent".to_string(), role: "Pedagogical & Science Specialist".to_string(), protocol: "A2A".to_string() });
         } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") {
             fleet.push(GawdAgentInfo { name: "GhaEnergyAgent".to_string(), role: "Climate & Renewable Energy Specialist".to_string(), protocol: "A2A".to_string() });
+        } else {
+            // Infinite Dynamic Domain Agent Synthesis
+            let topic = goal.split_whitespace().find(|w| w.len() > 3).unwrap_or("Domain");
+            let mut capitalized = topic.to_string();
+            if let Some(r) = capitalized.get_mut(0..1) {
+                r.make_ascii_uppercase();
+            }
+            fleet.push(GawdAgentInfo {
+                name: format!("Gha{}SpecialistAgent", capitalized),
+                role: format!("Dynamic Specialist for '{}'", goal),
+                protocol: "A2A".to_string(),
+            });
         }
 
         fleet.push(GawdAgentInfo { name: "GhaSafetyAgent".to_string(), role: "Mission Guardrails".to_string(), protocol: "A2A".to_string() });
