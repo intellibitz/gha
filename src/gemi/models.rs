@@ -182,7 +182,7 @@ impl ModelManager {
                 tier: "Tier 2: GEMI (Intelligence)".to_string(),
                 name: "vLLM-Server-Binary".to_string(),
                 provider: "vLLM Project".to_string(),
-                url: "https://github.com/vllm-project/vllm".to_string(),
+                url: "https://vllm.ai".to_string(),
             },
         ]
     }

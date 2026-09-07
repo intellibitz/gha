@@ -7,7 +7,7 @@ impl SecurityDetector {
     pub fn audit_action(_tool_name: &str, arg: &str) -> Result<(), String> {
         let secret_patterns = vec![
             "sk-", // OpenAI
-            "ghp_", // GitHub
+            "ghp_", // Personal Access Token
             "AIza", // Google Gemini/Cloud
             "xoxb-", // Slack
             "AWS_ACCESS_KEY_ID",

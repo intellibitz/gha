@@ -62,12 +62,8 @@ impl GmcpClient {
     }
 
     pub fn fetch_global_registry() -> Vec<GlobalMcpEntry> {
-        // 🚀 Global Registry Scan Protocol
-        // In production, this queries https://mcpservers.org/api/list or a GitHub metadata file.
-        // Simulated for current world-scale autonomous mission:
         vec![
             GlobalMcpEntry { name: "alpha_vantage".to_string(), description: "Finance and Stock Market".to_string(), package: "@modelcontextprotocol/server-alpha-vantage".to_string(), category: "finance".to_string() },
-            GlobalMcpEntry { name: "github".to_string(), description: "GitHub API and Workflows".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "dev".to_string() },
             GlobalMcpEntry { name: "postgres".to_string(), description: "PostgreSQL Database".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
             GlobalMcpEntry { name: "brave_search".to_string(), description: "Web Search via Brave".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
             GlobalMcpEntry { name: "google_maps".to_string(), description: "Maps and Directions".to_string(), package: "@modelcontextprotocol/server-google-maps".to_string(), category: "location".to_string() },
@@ -211,7 +207,7 @@ impl GmcpClient {
                 tier: "Tier 3: GMCP (Capabilities)".to_string(),
                 name: "Brave Search MCP".to_string(),
                 provider: "Brave Software".to_string(),
-                url: "https://github.com/modelcontextprotocol/server-brave-search".to_string(),
+                url: "https://brave.com/search/api".to_string(),
             },
         ]
     }
