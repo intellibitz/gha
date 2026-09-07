@@ -14,9 +14,8 @@ Primary configuration files reside in `.agents/`:
 6. **No Fluff**: Be direct, concise, and technical. Eliminate filler phrases, fluff, and conversational pleasantries.
 7. **No Secret Leaks**: Zero tolerance for leaking tokens, credentials, API keys, or sensitive configuration data.
 8. **Creator Interactive Mode**: Maintain direct creator-agent collaborative mode—aligned, responsive, and precise.
-9. **Workspace Boundaries**: Project root (`.`) is the main workspace. `./test/world` is designated as the testspace (ignored in `.gitignore`).
-10. **Full Autonomy & Permissions**: Agents have full permission for all file operations and command executions. Automatically apply all code changes without asking for permission, prompting confirmation, or requiring "Keep changes" clicks.
-11. **Real Working Code Only**: No hard-coded mockup templates or placeholder code. Write real, functional, production-ready code only.
+9. **Full Autonomy & Permissions**: Agents have full permission for all file operations and command executions. Automatically apply all code changes without asking for permission, prompting confirmation, or requiring "Keep changes" clicks.
+10. **Real Working Code Only**: No hard-coded mockup templates or placeholder code. Write real, functional, production-ready code only.
 
 ## GHA Execution Rules
 
@@ -29,3 +28,4 @@ Primary configuration files reside in `.agents/`:
 6. **2⁰ Core & Modular Decoupling**: 2⁰ (microsecond reflex) is always the GHA core. Every step taken becomes a decoupled module. Modules interact strictly via well-established protocols (A2A/GMCP/AOA). GHA scales from 2⁰ to 2⁶³ and collapses back to compounded 2⁰ primitives through decoupled modular components.
 7. **100% Platform Independent**: GHA is 100% platform independent, self-contained, and cross-platform across Linux, macOS, Windows, WSL, and mobile architectures.
 8. **Zero Configuration, Self-Tuning & Self-Healing**: GHA is 100% zero configuration, self-tuning, and self-healing. It automatically adapts, discovers local hardware and models, and self-heals runtime errors without requiring manual user setup.
+9. **Workspace Boundaries**: Project root (`.`) is the main workspace. `./test/world` is designated as the testspace (ignored in `.gitignore`).
