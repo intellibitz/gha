@@ -157,6 +157,29 @@ impl ModelManager {
         list
     }
 
+    pub fn set_selected_model(model_name: &str) -> Result<String, String> {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let gha_dir = home.join(".gha");
+        let _ = fs::create_dir_all(&gha_dir);
+        let model_file = gha_dir.join("selected_model.txt");
+        fs::write(&model_file, model_name.trim()).map_err(|e| e.to_string())?;
+        Ok(format!("Selected active model set to: '{}'", model_name.trim()))
+    }
+
+    pub fn get_selected_model() -> Option<String> {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let model_file = home.join(".gha/selected_model.txt");
+        if model_file.is_file() {
+            if let Ok(content) = fs::read_to_string(&model_file) {
+                let trimmed = content.trim();
+                if !trimmed.is_empty() {
+                    return Some(trimmed.to_string());
+                }
+            }
+        }
+        None
+    }
+
     pub fn scout_and_benchmark(workspace: &Path) -> Vec<ModelInfo> {
         let mut models = Self::list_models(workspace);
         for m in &mut models {

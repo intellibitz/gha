@@ -63,7 +63,11 @@ impl ToolRegistry {
             },
             McpTool {
                 name: "list_models".to_string(),
-                description: "Inspect GGUF local & web models".to_string(),
+                description: "Inspect local offline models & online cloud models".to_string(),
+            },
+            McpTool {
+                name: "use_model".to_string(),
+                description: "Select active model override for reasoning (arg: 'model_name')".to_string(),
             },
             McpTool {
                 name: "install_model".to_string(),
@@ -340,37 +344,45 @@ impl ToolRegistry {
                     format!("Provider status check complete for '{}'. Use 'gha list_models' to view all active models.", arg)
                 }
             }
+            "use_model" | "set_model" => {
+                match ModelManager::set_selected_model(arg) {
+                    Ok(msg) => msg,
+                    Err(e) => format!("Error setting active model: {}", e),
+                }
+            }
             "list_models" => {
                 let models = ModelManager::list_models(workspace);
-                let mut output = format!("Active Models ({}):\n", models.len());
+                let selected = ModelManager::get_selected_model();
+                let mut output = format!("Active Models ({})\n", models.len());
 
-                let mut premier = Vec::new();
-                let mut specialist = Vec::new();
-                let mut standard = Vec::new();
+                let mut local_models = Vec::new();
+                let mut cloud_models = Vec::new();
 
                 for m in models {
-                    let entry = format!("   - {} ({})", m.name, m.registry);
-                    match m.tier {
-                        crate::gemi::models::ModelTier::Premier => premier.push(entry),
-                        crate::gemi::models::ModelTier::Specialist => specialist.push(entry),
-                        crate::gemi::models::ModelTier::Standard => standard.push(entry),
+                    let badge = if m.is_local { "🟢 OFFLINE / LOCAL" } else { "🌐 ONLINE / CLOUD" };
+                    let entry = format!("   - [{}] {} ({}) — {}", badge, m.name, m.registry, m.description);
+                    if m.is_local {
+                        local_models.push(entry);
+                    } else {
+                        cloud_models.push(entry);
                     }
                 }
 
-                if !premier.is_empty() {
-                    output.push_str("\n 🏆 Premier Tier (Best of the Best):\n");
-                    output.push_str(&premier.join("\n"));
+                if !local_models.is_empty() {
+                    output.push_str("\n🟢 OFFLINE / LOCAL HARDWARE MODELS (No Internet Needed):\n");
+                    output.push_str(&local_models.join("\n"));
                     output.push('\n');
                 }
-                if !specialist.is_empty() {
-                    output.push_str("\n 🛠️ Specialist Tier:\n");
-                    output.push_str(&specialist.join("\n"));
+
+                if !cloud_models.is_empty() {
+                    output.push_str("\n🌐 ONLINE / CLOUD API MODELS (Internet Required):\n");
+                    output.push_str(&cloud_models.join("\n"));
                     output.push('\n');
                 }
-                if !standard.is_empty() {
-                    output.push_str("\n 🔍 Standard Tier (Available):\n");
-                    output.push_str(&standard.join("\n"));
-                    output.push('\n');
+
+                match selected {
+                    Some(s) => output.push_str(&format!("\nActive Selected Model Override: '{}'\nTo reset or change model, run: 'use_model <model_name>'", s)),
+                    None => output.push_str("\nActive Selected Model: Auto-Scout (Dynamic Best Fit)\nTo select a specific model, run: 'use_model <model_name>'"),
                 }
 
                 output

@@ -26,6 +26,28 @@ impl GemiEngine {
             }
         }
 
+        if let Some(selected) = super::models::ModelManager::get_selected_model() {
+            let lower_selected = selected.to_lowercase();
+            if lower_selected.contains("gemini") {
+                if let Ok(res) = Self::execute_gemini(prompt) {
+                    return format!("☁️ [Selected Model: Google Gemini]:\n{}", res);
+                }
+            } else if lower_selected.contains("openai") || lower_selected.contains("gpt") {
+                if let Ok(res) = Self::execute_openai(prompt) {
+                    return format!("☁️ [Selected Model: OpenAI GPT-4o]:\n{}", res);
+                }
+            } else if lower_selected.contains("groq") {
+                if let Ok(res) = Self::execute_groq(prompt) {
+                    return format!("☁️ [Selected Model: Groq Qwen]:\n{}", res);
+                }
+            } else if lower_selected.contains("ollama") || lower_selected.contains("qwen") || lower_selected.contains("llama") {
+                let res = Self::execute_local_ollama(prompt, &selected);
+                if !res.contains("❌") {
+                    return res;
+                }
+            }
+        }
+
         let (res, errors) = Self::scout_cloud_providers(prompt);
         if let Some(text) = res {
             return text;
