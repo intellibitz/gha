@@ -12,8 +12,9 @@ mkdir -p "$GLOBAL_GHA_DIR/models"
 echo "⚡ [gha] Initializing 100% Sandboxed Native AI Runtime..."
 
 # Determine source location (Local vs Remote Swarm Flux)
-if [[ -n "${BASH_SOURCE[0]}" ]] && [[ -f "$(dirname "${BASH_SOURCE[0]}")/../Cargo.toml" ]]; then
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR_DETECT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR_DETECT/Cargo.toml" ]]; then
+    SCRIPT_DIR="$SCRIPT_DIR_DETECT"
     echo "🏠 [gha Local] Detected local installation from source..."
 else
     echo "🌐 [gha Remote] Detected remote installation mission..."
