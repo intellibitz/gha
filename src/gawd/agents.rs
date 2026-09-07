@@ -76,6 +76,19 @@ impl GawdAgentFleet {
             fleet.push(GawdAgentInfo { name: "GhaLinguistAgent".to_string(), role: "Universal Translation".to_string(), protocol: "A2A".to_string() });
         }
 
+        // Real-World Problem Domain Agent Synthesis
+        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") {
+            fleet.push(GawdAgentInfo { name: "GhaAgronomyAgent".to_string(), role: "Agricultural & Crop Specialist".to_string(), protocol: "A2A".to_string() });
+        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") {
+            fleet.push(GawdAgentInfo { name: "GhaMedicalAgent".to_string(), role: "Clinical & Health Specialist".to_string(), protocol: "A2A".to_string() });
+        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") {
+            fleet.push(GawdAgentInfo { name: "GhaLegalAgent".to_string(), role: "Legal & Contract Specialist".to_string(), protocol: "A2A".to_string() });
+        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") {
+            fleet.push(GawdAgentInfo { name: "GhaEducationAgent".to_string(), role: "Pedagogical & Science Specialist".to_string(), protocol: "A2A".to_string() });
+        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") {
+            fleet.push(GawdAgentInfo { name: "GhaEnergyAgent".to_string(), role: "Climate & Renewable Energy Specialist".to_string(), protocol: "A2A".to_string() });
+        }
+
         fleet.push(GawdAgentInfo { name: "GhaSafetyAgent".to_string(), role: "Mission Guardrails".to_string(), protocol: "A2A".to_string() });
         fleet.push(GawdAgentInfo { name: "GhaTruthAgent".to_string(), role: "Hallucination Detection".to_string(), protocol: "A2A".to_string() });
 
@@ -100,6 +113,11 @@ impl GawdAgentFleet {
                     "GhaReasoningAgent" => crate::gemi::engine::GemiEngine::generate_reasoning(&t_goal, &t_ws),
                     "GhaKernelAgent" => format!("Low-level synthesis engaged for '{}'.", t_goal),
                     "GhaEconomicAgent" => format!("Financial flux analysis applied to '{}'.", t_goal),
+                    "GhaAgronomyAgent" => format!("Agronomy domain analysis applied to '{}'.", t_goal),
+                    "GhaMedicalAgent" => format!("Clinical health analysis applied to '{}'.", t_goal),
+                    "GhaLegalAgent" => format!("Legal contract analysis applied to '{}'.", t_goal),
+                    "GhaEducationAgent" => format!("Pedagogical domain synthesis applied to '{}'.", t_goal),
+                    "GhaEnergyAgent" => format!("Renewable energy domain analysis applied to '{}'.", t_goal),
                     "GhaSafetyAgent" => "Governance protocols active.".to_string(),
                     _ => format!("Specialized agent '{}' executing intent.", t_agent.name),
                 };
