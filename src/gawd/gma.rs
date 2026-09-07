@@ -1,6 +1,6 @@
 // GAWD Tier 1 Master Agent
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use super::gmas::GmasSupervisor;
 use super::safety::SafetyDetector;
 use super::security::SecurityDetector;
@@ -47,6 +47,17 @@ impl GmaMasterAgent {
 
         let (a2a_logs, fleet) = GmasSupervisor::supervise_mission(goal, workspace);
         let active_tools = ToolRegistry::list_tools();
+
+        // Automatic PKB Distillation Logging (Phase 2)
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let global_dir = home.join(".gha");
+        let entry = crate::gawd::pkb::PkbTrainingEntry {
+            instruction: goal.to_string(),
+            swarm_flux: a2a_logs.clone(),
+            tool_calls: vec![goal.to_string()],
+            outcome: "SUCCESS".to_string(),
+        };
+        let _ = crate::gawd::pkb::PkbSynthesizer::save_training_data(vec![entry], &global_dir);
 
         let mut is_reflex = false;
         let mut reasoning_content = String::new();

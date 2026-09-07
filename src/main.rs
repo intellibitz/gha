@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.149";
+const GHA_VERSION: &str = "0.1.150";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -38,6 +38,7 @@ fn print_help() {
     println!("Usage: Type any prompt or natural language instruction.\n");
     println!("Slash Commands:");
     println!("  /help, :help             Display this help menu");
+    println!("  /setkey <KEY> <VAL>      Save API key to ~/.gha/env (e.g. /setkey OPENAI_API_KEY sk-...)");
     println!("  /renew, :renew           Reload session with latest installed gha binary");
     println!("  /debug, :debug           Toggle developer debug mode (execution trace)");
     println!("  /models, :models         List available cloud and local models");
@@ -112,6 +113,25 @@ fn run_interactive_shell(cwd: &Path) {
         }
 
         let command_lower = command.to_lowercase();
+
+        if command_lower.starts_with("/setkey") || command_lower.starts_with(":setkey") {
+            let parts: Vec<&str> = command.split_whitespace().collect();
+            if parts.len() >= 3 {
+                let key = parts[1];
+                let val = parts[2];
+                let home = get_home_dir();
+                let global_dir = home.join(".gha");
+                match SandboxManager::save_env_key(&global_dir, key, val) {
+                    Ok(msg) => println!("{}{}{}", COLOR_GREEN, msg, COLOR_RESET),
+                    Err(e) => println!("Error saving key: {}", e),
+                }
+            } else {
+                println!("Usage: /setkey <KEY_NAME> <KEY_VALUE> (e.g. /setkey OPENAI_API_KEY sk-...)");
+            }
+            println!();
+            continue;
+        }
+
         match command_lower.as_str() {
             "0" | "/exit" | ":exit" | "/quit" | ":quit" | "exit" | "quit" => {
                 println!("{}Exiting session.{}", COLOR_DIM, COLOR_RESET);

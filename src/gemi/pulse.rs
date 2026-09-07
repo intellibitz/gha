@@ -3,11 +3,24 @@
 
 use anyhow::{Result, anyhow};
 use candle_core::Device;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub struct GhaPulse;
 
 impl GhaPulse {
+    #[allow(dead_code)]
+    pub fn try_load_candle_weights() -> Result<usize> {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let weights_path = home.join(".gha/models/gha-alpha.safetensors");
+        if weights_path.is_file() {
+            let device = Device::Cpu;
+            let tensors = candle_core::safetensors::load(&weights_path, &device)?;
+            Ok(tensors.len())
+        } else {
+            Err(anyhow!("No native safetensors model weights found at ~/.gha/models/gha-alpha.safetensors"))
+        }
+    }
+
     pub fn reason(prompt: &str, _workspace: &Path) -> Result<String> {
         let _device = Device::Cpu;
 
