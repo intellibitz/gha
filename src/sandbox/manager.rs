@@ -103,3 +103,74 @@ impl SandboxManager {
         }
     }
 }
+
+pub struct GhaMemory;
+
+impl GhaMemory {
+    pub fn append_interaction(workspace: &Path, intent: &str, response: &str) {
+        let gha_dir = workspace.join(".gha");
+        let _ = fs::create_dir_all(&gha_dir);
+        let memory_file = gha_dir.join("memory.jsonl");
+
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        let entry = serde_json::json!({
+            "timestamp": timestamp,
+            "user_intent": intent,
+            "assistant_response": response.chars().take(500).collect::<String>()
+        });
+
+        if let Ok(line) = serde_json::to_string(&entry) {
+            let mut content = fs::read_to_string(&memory_file).unwrap_or_default();
+            content.push_str(&line);
+            content.push('\n');
+            let _ = fs::write(&memory_file, content);
+        }
+    }
+
+    pub fn load_recent_history(workspace: &Path, limit: usize) -> Vec<(String, String)> {
+        let memory_file = workspace.join(".gha/memory.jsonl");
+        let mut history = Vec::new();
+        if memory_file.is_file() {
+            if let Ok(content) = fs::read_to_string(&memory_file) {
+                for line in content.lines().rev().take(limit) {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(line) {
+                        let intent = val.get("user_intent").and_then(|i| i.as_str()).unwrap_or_default().to_string();
+                        let resp = val.get("assistant_response").and_then(|r| r.as_str()).unwrap_or_default().to_string();
+                        if !intent.is_empty() {
+                            history.push((intent, resp));
+                        }
+                    }
+                }
+            }
+        }
+        history.reverse();
+        history
+    }
+
+    pub fn format_memory_summary(workspace: &Path) -> String {
+        let history = Self::load_recent_history(workspace, 10);
+        if history.is_empty() {
+            return "No previous interaction history recorded for this workspace.".to_string();
+        }
+        let mut out = format!("Workspace Memory History ({} Previous Sessions):\n\n", history.len());
+        for (i, (intent, resp)) in history.iter().enumerate() {
+            let first_line = resp.lines().next().unwrap_or(resp);
+            out.push_str(&format!("{}. User: \"{}\"\n   GHA: {}\n\n", i + 1, intent, first_line));
+        }
+        out
+    }
+
+    pub fn clear_memory(workspace: &Path) -> String {
+        let memory_file = workspace.join(".gha/memory.jsonl");
+        if memory_file.exists() {
+            let _ = fs::remove_file(memory_file);
+            "Workspace memory cleared.".to_string()
+        } else {
+            "No workspace memory file to clear.".to_string()
+        }
+    }
+}

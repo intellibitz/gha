@@ -36,7 +36,9 @@ impl GmaMasterAgent {
                     lines.push(l.to_string());
                 }
             }
-            return lines.join("\n");
+            let res_text = lines.join("\n");
+            crate::sandbox::manager::GhaMemory::append_interaction(workspace, goal, &res_text);
+            return res_text;
         }
 
         for msg in &a2a_logs {
@@ -49,7 +51,9 @@ impl GmaMasterAgent {
                 } else {
                     payload
                 };
-                return clean_text.trim().to_string();
+                let ans = clean_text.trim().to_string();
+                crate::sandbox::manager::GhaMemory::append_interaction(workspace, goal, &ans);
+                return ans;
             }
         }
 

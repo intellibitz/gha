@@ -38,6 +38,14 @@ impl ToolRegistry {
                 description: "Get GHA engine version info".to_string(),
             },
             McpTool {
+                name: "memory".to_string(),
+                description: "Inspect workspace session memory and interaction history".to_string(),
+            },
+            McpTool {
+                name: "clear_memory".to_string(),
+                description: "Clear recorded session memory for this workspace".to_string(),
+            },
+            McpTool {
                 name: "agents".to_string(),
                 description: "List all active agents in the GAWD fleet".to_string(),
             },
@@ -270,6 +278,12 @@ impl ToolRegistry {
             }
             "version" => {
                 format!("gha Native Engine v{}", crate::GHA_VERSION)
+            }
+            "memory" | "history" => {
+                crate::sandbox::manager::GhaMemory::format_memory_summary(workspace)
+            }
+            "clear_memory" | "forget" => {
+                crate::sandbox::manager::GhaMemory::clear_memory(workspace)
             }
             "use_engine" | "set_engine" => {
                 match ModelManager::set_selected_engine(arg) {

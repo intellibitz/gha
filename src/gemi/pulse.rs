@@ -89,6 +89,13 @@ impl GhaPulse {
             return Ok(format!("ACTION: install_model {}", model_arg));
         }
 
+        if lower.contains("memory") || lower.contains("history") || lower.contains("what did we do") || lower.contains("earlier") {
+            if lower.contains("clear") || lower.contains("forget") {
+                return Ok("ACTION: clear_memory".to_string());
+            }
+            return Ok("ACTION: memory".to_string());
+        }
+
         if lower.contains("status") || lower.contains("aware") {
             return Ok("ACTION: status".to_string());
         }
