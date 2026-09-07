@@ -65,4 +65,41 @@ impl SandboxManager {
     pub fn is_global_sandbox_active(global_dir: &Path) -> bool {
         global_dir.join("bin").is_dir()
     }
+
+    pub fn save_mission_checkpoint(workspace: &Path, intent: &str, completed_tools: &[String], status: &str) {
+        let gha_dir = workspace.join(".gha");
+        let _ = fs::create_dir_all(&gha_dir);
+        let checkpoint_file = gha_dir.join("mission_checkpoint.json");
+        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        let checkpoint = serde_json::json!({
+            "intent": intent,
+            "timestamp": timestamp,
+            "completed_tools": completed_tools,
+            "status": status
+        });
+        let _ = fs::write(&checkpoint_file, checkpoint.to_string());
+    }
+
+    pub fn check_interrupted_checkpoint(workspace: &Path) -> Option<String> {
+        let checkpoint_file = workspace.join(".gha/mission_checkpoint.json");
+        if checkpoint_file.is_file() {
+            if let Ok(content) = fs::read_to_string(&checkpoint_file) {
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if val.get("status").and_then(|s| s.as_str()) == Some("IN_PROGRESS") {
+                        if let Some(intent) = val.get("intent").and_then(|i| i.as_str()) {
+                            return Some(intent.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    pub fn clear_mission_checkpoint(workspace: &Path) {
+        let checkpoint_file = workspace.join(".gha/mission_checkpoint.json");
+        if checkpoint_file.exists() {
+            let _ = fs::remove_file(checkpoint_file);
+        }
+    }
 }

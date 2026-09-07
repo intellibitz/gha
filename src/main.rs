@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.175";
+const GHA_VERSION: &str = "0.1.176";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -93,6 +93,12 @@ fn run_interactive_shell(cwd: &Path) {
     print_header(cwd, debug_mode);
 
     let gma = GmaMasterAgent::new();
+
+    if let Some(interrupted_intent) = SandboxManager::check_interrupted_checkpoint(cwd) {
+        println!("{}> Interrupted mission detected: \"{}\". Resuming execution...{}\n", COLOR_GREEN, interrupted_intent, COLOR_RESET);
+        let clean_answer = gma.solve_clean(&interrupted_intent, cwd, GHA_VERSION);
+        println!("{}\n", clean_answer);
+    }
 
     loop {
         if let Some(initial_time) = initial_mtime {

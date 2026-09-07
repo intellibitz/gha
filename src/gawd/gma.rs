@@ -166,6 +166,10 @@ impl GmaMasterAgent {
 
     fn execute_autonomous_flux(&self, goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path) -> String {
         let mut results = Vec::new();
+        let mut completed_tools = Vec::new();
+
+        crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, goal, &completed_tools, "IN_PROGRESS");
+
         for msg in logs {
             if msg.payload.contains("ACTION:") {
                 if let Some(action_part) = msg.payload.split("ACTION: ").nth(1) {
@@ -194,11 +198,15 @@ impl GmaMasterAgent {
                             }
                         }
 
+                        completed_tools.push(tool_name.to_string());
+                        crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, goal, &completed_tools, "IN_PROGRESS");
                         results.push(format!("   └── [Tool: {}]: {}", tool_name, res));
                     }
                 }
             }
         }
+
+        crate::sandbox::manager::SandboxManager::clear_mission_checkpoint(workspace);
         results.join("\n")
     }
 
