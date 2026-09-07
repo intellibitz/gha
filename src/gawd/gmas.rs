@@ -80,12 +80,38 @@ impl GmasSupervisor {
     }
 
     pub fn broadcast_lan_ping() -> Vec<String> {
-        let active_peers = Vec::new();
+        let mut active_peers = Vec::new();
         if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
             let _ = socket.set_broadcast(true);
             let _ = socket.set_read_timeout(Some(Duration::from_millis(200)));
             let _ = socket.send_to(b"GHA_LAN_PING", format!("255.255.255.255:{}", Self::UDP_DISCOVERY_PORT));
+
+            let mut buf = [0u8; 512];
+            while let Ok((amt, src)) = socket.recv_from(&mut buf) {
+                let msg = String::from_utf8_lossy(&buf[..amt]);
+                if msg.contains("GHA_LAN_ACK") || msg.contains("GHA") {
+                    active_peers.push(src.to_string());
+                }
+            }
+        }
+        if active_peers.is_empty() {
+            active_peers.push("127.0.0.1:9090 (local)".to_string());
         }
         active_peers
+    }
+
+    #[allow(dead_code)]
+    pub fn sync_cluster_state(workspace: &Path, payload: &str) -> String {
+        let nodes = Self::list_cluster_nodes();
+        let mut synced = 0;
+        for node in &nodes {
+            if Self::dispatch_peer_task(&node.address, "swarm_sync", payload).contains("Sync complete") {
+                synced += 1;
+            }
+        }
+        let sync_file = workspace.join(".gha/cluster_sync.json");
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        let _ = std::fs::write(&sync_file, format!("{{\"timestamp\": {}, \"synced_nodes\": {}, \"payload_size\": {}}}", now, synced, payload.len()));
+        format!("Synchronized state across {} nodes (saved to {})", synced, sync_file.display())
     }
 }

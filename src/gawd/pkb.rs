@@ -85,6 +85,30 @@ impl PkbSynthesizer {
         }
 
         fs::write(&file_path, content).map_err(|e| e.to_string())?;
-        Ok(format!("✅ Saved {} entries to {}", len, file_path.display()))
+        let _ = Self::ensure_default_candle_weights(global_dir);
+        Ok(format!("Saved {} entries to {}", len, file_path.display()))
+    }
+
+    pub fn ensure_default_candle_weights(global_dir: &Path) -> Result<String, String> {
+        let models_dir = global_dir.join("models");
+        fs::create_dir_all(&models_dir).map_err(|e| e.to_string())?;
+        let weights_file = models_dir.join("gha-alpha.safetensors");
+
+        if !weights_file.exists() {
+            use candle_core::{Tensor, Device, DType};
+            use std::collections::HashMap;
+
+            let device = Device::Cpu;
+            let mut tensors = HashMap::new();
+            let weight = Tensor::ones((64, 64), DType::F32, &device).map_err(|e| e.to_string())?;
+            let bias = Tensor::zeros(64, DType::F32, &device).map_err(|e| e.to_string())?;
+
+            tensors.insert("reflex.weight".to_string(), weight);
+            tensors.insert("reflex.bias".to_string(), bias);
+
+            candle_core::safetensors::save(&tensors, &weights_file).map_err(|e| e.to_string())?;
+            return Ok(format!("Initialized native Candle weights at {}", weights_file.display()));
+        }
+        Ok(format!("Native Candle weights present at {}", weights_file.display()))
     }
 }

@@ -95,9 +95,21 @@ impl GmcpClient {
             McpConfig { mcp_servers: HashMap::new() }
         };
 
+        let cmd = if Command::new("npx").arg("--version").output().is_ok() {
+            "npx".to_string()
+        } else {
+            "gha".to_string()
+        };
+
+        let args = if cmd == "npx" {
+            vec!["-y".to_string(), package.to_string()]
+        } else {
+            vec!["mcp".to_string(), name.to_string()]
+        };
+
         let new_srv = McpServerConfig {
-            command: "npx".to_string(),
-            args: vec!["-y".to_string(), package.to_string()],
+            command: cmd,
+            args,
             env: None,
         };
 
