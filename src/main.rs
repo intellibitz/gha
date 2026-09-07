@@ -16,7 +16,14 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.134";
+const GHA_VERSION: &str = "0.1.135";
+
+// ANSI Formatting Codes
+const COLOR_CYAN: &str = "\x1b[1;36m";
+const COLOR_GREEN: &str = "\x1b[1;32m";
+const COLOR_DIM: &str = "\x1b[90m";
+const COLOR_RESET: &str = "\x1b[0m";
+const CLEAR_SCREEN: &str = "\x1b[2J\x1b[1;1H";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -28,12 +35,18 @@ fn get_home_dir() -> PathBuf {
 fn print_help() {
     println!("gha v{}", GHA_VERSION);
     println!("Usage: gha \"<intent>\"\n");
-    println!("Commands:");
+    println!("Commands / Slash Commands:");
+    println!("  /help, :help             Display this help menu");
+    println!("  /models, :models         List available cloud and local models");
+    println!("  /services, :services     List running background services");
+    println!("  /status, :status         Inspect workspace health & hardware status");
+    println!("  /clear, :clear           Clear terminal screen");
+    println!("  /exit, :exit, exit       Exit interactive console");
+    println!("\nSystem Commands:");
     println!("  install                  Initialize global gha runtime");
     println!("  uninstall                Remove global gha runtime");
     println!("  mcp                      Start native MCP server");
     println!("  gemi                     Start GEMI REST server");
-    println!("  services                 List running services");
 }
 
 fn run_install(global_dir: &Path) {
@@ -46,50 +59,78 @@ fn run_install(global_dir: &Path) {
 fn run_interactive_shell(cwd: &Path) {
     use std::io::{self, Write};
 
-    println!("gha v{} interactive mode", GHA_VERSION);
-    println!("Type intent, or :help, :models, :services, :exit to quit.\n");
+    println!("{}{}gha v{} interactive console{}", COLOR_CYAN, "\x1b[1m", GHA_VERSION, COLOR_RESET);
+    println!("{}Type intent, or /help, /models, /services, /clear, /exit to quit.{}\n", COLOR_DIM, COLOR_RESET);
 
     let gma = GmaMasterAgent::new();
 
     loop {
-        print!("gha> ");
+        print!("{}{}gha{}{}>{} ", COLOR_CYAN, "\x1b[1m", COLOR_RESET, COLOR_GREEN, COLOR_RESET);
         if io::stdout().flush().is_err() {
             break;
         }
 
-        let mut input = String::new();
-        match io::stdin().read_line(&mut input) {
-            Ok(0) => break,
-            Ok(_) => {
-                let line = input.trim();
-                if line.is_empty() {
-                    continue;
-                }
+        let mut input_buffer = String::new();
 
-                let line_lower = line.to_lowercase();
-                match line_lower.as_str() {
-                    ":exit" | ":quit" | "exit" | "quit" => break,
-                    ":help" | "help" => {
-                        print_help();
-                    }
-                    ":version" | "version" => {
-                        println!("gha v{}", GHA_VERSION);
-                    }
-                    ":models" | "models" => {
-                        let report = gma.solve("list_models", cwd, GHA_VERSION);
-                        println!("{}", report);
-                    }
-                    ":services" | "services" => {
-                        let res = ToolRegistry::execute_tool("services", "", cwd);
-                        println!("{}", res);
-                    }
-                    _ => {
-                        let report = gma.solve(line, cwd, GHA_VERSION);
-                        println!("{}", report);
+        loop {
+            let mut line = String::new();
+            match io::stdin().read_line(&mut line) {
+                Ok(0) => return,
+                Ok(_) => {
+                    let trimmed = line.trim_end();
+                    if trimmed.ends_with('\\') {
+                        input_buffer.push_str(&trimmed[..trimmed.len() - 1]);
+                        input_buffer.push('\n');
+                        print!("{}...{} ", COLOR_DIM, COLOR_RESET);
+                        let _ = io::stdout().flush();
+                        continue;
+                    } else {
+                        input_buffer.push_str(trimmed);
+                        break;
                     }
                 }
+                Err(_) => return,
             }
-            Err(_) => break,
+        }
+
+        let command = input_buffer.trim();
+        if command.is_empty() {
+            continue;
+        }
+
+        let command_lower = command.to_lowercase();
+        match command_lower.as_str() {
+            "/exit" | ":exit" | "/quit" | ":quit" | "exit" | "quit" => {
+                println!("{}Exiting console.{}", COLOR_DIM, COLOR_RESET);
+                break;
+            }
+            "/clear" | ":clear" | "clear" => {
+                print!("{}", CLEAR_SCREEN);
+                let _ = io::stdout().flush();
+                continue;
+            }
+            "/help" | ":help" | "help" => {
+                print_help();
+            }
+            "/version" | ":version" | "version" => {
+                println!("gha v{}", GHA_VERSION);
+            }
+            "/models" | ":models" | "models" => {
+                let report = gma.solve("list_models", cwd, GHA_VERSION);
+                println!("{}", report);
+            }
+            "/services" | ":services" | "services" => {
+                let res = ToolRegistry::execute_tool("services", "", cwd);
+                println!("{}", res);
+            }
+            "/status" | ":status" | "status" => {
+                let res = ToolRegistry::execute_tool("status", "", cwd);
+                println!("{}", res);
+            }
+            _ => {
+                let report = gma.solve(command, cwd, GHA_VERSION);
+                println!("{}", report);
+            }
         }
         println!();
     }
@@ -116,15 +157,15 @@ fn main() {
         "version" | "--version" | "-v" => {
             println!("gha v{}", GHA_VERSION);
         }
-        "models" | ":models" => {
+        "models" | ":models" | "/models" => {
             let gma = GmaMasterAgent::new();
             let report = gma.solve("list_models", &cwd, GHA_VERSION);
             println!("{}", report);
         }
-        "install" | ":install" => {
+        "install" | ":install" | "/install" => {
             run_install(&global_dir);
         }
-        "uninstall" | ":uninstall" => {
+        "uninstall" | ":uninstall" | "/uninstall" => {
             let _ = std::fs::remove_dir_all(&global_dir);
             println!("gha runtime removed.");
         }
@@ -153,15 +194,19 @@ fn main() {
         "gemi-server" => {
             GemiServer::start_http_server(cwd, GemiServer::DEFAULT_PORT);
         }
-        "scout" | ":scout" => {
+        "scout" | ":scout" | "/scout" => {
             let res = ToolRegistry::execute_tool("scout", "", &cwd);
             println!("{}", res);
         }
-        "services" | ":services" => {
+        "services" | ":services" | "/services" => {
             let res = ToolRegistry::execute_tool("services", "", &cwd);
             println!("{}", res);
         }
-        "verify-cloud" | ":verify-cloud" => {
+        "status" | ":status" | "/status" => {
+            let res = ToolRegistry::execute_tool("status", "", &cwd);
+            println!("{}", res);
+        }
+        "verify-cloud" | ":verify-cloud" | "/verify-cloud" => {
             let res = ToolRegistry::execute_tool("verify_cloud_providers", "", &cwd);
             println!("{}", res);
         }
