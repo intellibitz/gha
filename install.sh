@@ -36,14 +36,14 @@ if command -v cargo >/dev/null 2>&1 && [ -f "$SCRIPT_DIR/Cargo.toml" ]; then
         cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/gha"
         chmod +x "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
         INSTALLED=1
-        echo "   └── Installed native binary engine to $GLOBAL_BIN_DIR/gha (< 2ms startup)"
+        echo "   └── Deployed native binary engine to $GLOBAL_BIN_DIR/gha (< 2ms binary execution latency)"
     fi
 elif [ -f "$SCRIPT_DIR/target/release/gha" ]; then
     cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/gha-engine"
     cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/gha"
     chmod +x "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
     INSTALLED=1
-    echo "   └── Installed pre-built native binary engine to $GLOBAL_BIN_DIR/gha (< 2ms startup)"
+    echo "   └── Deployed pre-built native binary engine to $GLOBAL_BIN_DIR/gha (< 2ms binary execution latency)"
 fi
 
 if [ "$INSTALLED" = "0" ]; then
