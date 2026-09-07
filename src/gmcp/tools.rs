@@ -46,6 +46,10 @@ impl ToolRegistry {
                 description: "Clear recorded session memory for this workspace".to_string(),
             },
             McpTool {
+                name: "audit".to_string(),
+                description: "Interrogate and inspect workspace audit log and self-audit records".to_string(),
+            },
+            McpTool {
                 name: "agents".to_string(),
                 description: "List all active agents in the GAWD fleet".to_string(),
             },
@@ -284,6 +288,9 @@ impl ToolRegistry {
             }
             "clear_memory" | "forget" => {
                 crate::sandbox::manager::GhaMemory::clear_memory(workspace)
+            }
+            "audit" | "audit_log" => {
+                crate::sandbox::manager::GhaAuditLogger::read_audit_log(workspace, 20)
             }
             "use_engine" | "set_engine" => {
                 match ModelManager::set_selected_engine(arg) {

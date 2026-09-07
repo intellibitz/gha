@@ -174,3 +174,36 @@ impl GhaMemory {
         }
     }
 }
+
+pub struct GhaAuditLogger;
+
+impl GhaAuditLogger {
+    pub fn log_event(workspace: &Path, event_type: &str, details: &str) {
+        let gha_dir = workspace.join(".gha");
+        let _ = fs::create_dir_all(&gha_dir);
+        let audit_file = gha_dir.join("audit.log");
+
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        let log_entry = format!("[{}] [{}] {}\n", timestamp, event_type, details);
+        let mut content = fs::read_to_string(&audit_file).unwrap_or_default();
+        content.push_str(&log_entry);
+        let _ = fs::write(&audit_file, content);
+    }
+
+    pub fn read_audit_log(workspace: &Path, limit: usize) -> String {
+        let audit_file = workspace.join(".gha/audit.log");
+        if audit_file.is_file() {
+            if let Ok(content) = fs::read_to_string(&audit_file) {
+                let lines: Vec<&str> = content.lines().collect();
+                let take_count = limit.min(lines.len());
+                let recent = &lines[lines.len().saturating_sub(take_count)..];
+                return format!("Workspace Audit Trail ({} Recent Entries):\n\n{}", recent.len(), recent.join("\n"));
+            }
+        }
+        "No audit trail recorded for this workspace.".to_string()
+    }
+}

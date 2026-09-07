@@ -61,6 +61,7 @@ impl GmaMasterAgent {
     }
 
     pub fn solve(&self, goal: &str, workspace: &Path, version: &str) -> String {
+        crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "MISSION_START", goal);
         let (num_cpus, gpu_info) = HardwareProfiler::profile();
 
         let (a2a_logs, fleet) = GmasSupervisor::supervise_mission(goal, workspace);

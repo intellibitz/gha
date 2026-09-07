@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.177";
+const GHA_VERSION: &str = "0.1.178";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -38,6 +38,7 @@ fn print_help() {
     println!("Usage: Type any prompt or natural language instruction.\n");
     println!("Slash Commands:");
     println!("  /help, :help             Display this help menu");
+    println!("  /audit, :audit           Inspect workspace audit trail and self-audit records");
     println!("  /memory, :memory         Inspect workspace session memory and history");
     println!("  /forget, :forget         Clear workspace session memory");
     println!("  /setkey <KEY> <VAL>      Save API key to ~/.gha/env (e.g. /setkey OPENAI_API_KEY sk-...)");
@@ -232,6 +233,10 @@ fn run_interactive_shell(cwd: &Path) {
             "/debug" | ":debug" | "debug" => {
                 debug_mode = !debug_mode;
                 println!("{}Developer Debug Mode set to: {}{}", COLOR_DIM, if debug_mode { "ON (Full Execution Trace)" } else { "OFF (Clean Conversational Answer)" }, COLOR_RESET);
+            }
+            "/audit" | ":audit" | "audit" | "audit_log" => {
+                let res = ToolRegistry::execute_tool("audit", "", cwd);
+                println!("\n{}", res);
             }
             "/memory" | ":memory" | "/history" | ":history" | "memory" | "history" => {
                 let res = ToolRegistry::execute_tool("memory", "", cwd);
