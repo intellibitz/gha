@@ -1,8 +1,6 @@
-// 🌌 GAWD: EAI: Exponential Intelligence for Any AI.
-// 100% Rust implementation for Dynamic Agent Synthesis & Swarm Flux
+// GAWD Agent Fleet
 
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::sync::mpsc::channel;
 use std::thread;
 use serde::{Deserialize, Serialize};
@@ -87,27 +85,7 @@ impl GawdAgentFleet {
     }
 
     pub fn execute_context_agent(workspace: &Path) -> String {
-        let is_git = workspace.join(".git").exists() || Command::new("git")
-            .args(["rev-parse", "--is-inside-work-tree"])
-            .current_dir(workspace)
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false);
-
-        if is_git {
-            let branch = Command::new("git")
-                .args(["rev-parse", "--abbrev-ref", "HEAD"])
-                .current_dir(workspace)
-                .output()
-                .ok()
-                .and_then(|o| String::from_utf8(o.stdout).ok())
-                .unwrap_or_else(|| "main".to_string())
-                .trim()
-                .to_string();
-            format!("Workspace: {} (Git: {})", workspace.display(), branch)
-        } else {
-            format!("Workspace: {}", workspace.display())
-        }
+        format!("Workspace: {}", workspace.display())
     }
 
     pub fn scout_tier1_assets() -> Vec<DiscoverableAsset> {

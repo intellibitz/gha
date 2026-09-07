@@ -70,12 +70,8 @@ impl ToolRegistry {
                 description: "Inspect filesystem disk usage (df -h)".to_string(),
             },
             McpTool {
-                name: "git_auto_branch".to_string(),
-                description: "Auto-create isolated git feature branch for mission safety".to_string(),
-            },
-            McpTool {
                 name: "run_test_harness".to_string(),
-                description: "Run automated workspace unit test harness (cargo test / gradlew test)".to_string(),
+                description: "Run automated workspace unit test harness (cargo test)".to_string(),
             },
             McpTool {
                 name: "self_heal_build".to_string(),
@@ -342,9 +338,6 @@ impl ToolRegistry {
                      }
                 }
                 result
-            }
-            "git_auto_branch" => {
-                Self::git_auto_branch(workspace)
             }
             "run_test_harness" => {
                 Self::run_test_harness(workspace)
@@ -672,36 +665,6 @@ impl ToolRegistry {
         }
     }
 
-    pub fn git_auto_branch(workspace: &Path) -> String {
-        let current_branch = Command::new("git")
-            .args(["rev-parse", "--abbrev-ref", "HEAD"])
-            .current_dir(workspace)
-            .output()
-            .ok()
-            .and_then(|o| String::from_utf8(o.stdout).ok())
-            .unwrap_or_else(|| "main".to_string())
-            .trim()
-            .to_string();
-
-        if current_branch == "main" || current_branch == "master" {
-            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-            let branch_name = format!("gha/auto-mission-{}", now);
-            let created = Command::new("git")
-                .args(["checkout", "-b", &branch_name])
-                .current_dir(workspace)
-                .output();
-
-            match created {
-                Ok(out) if out.status.success() => {
-                    format!("🌿 [Git Auto-Branching]: Switched from '{}' to isolated mission branch '{}'", current_branch, branch_name)
-                }
-                _ => format!("🌿 [Git Auto-Branching]: Active branch '{}'", current_branch),
-            }
-        } else {
-            format!("🌿 [Git Auto-Branching]: Active isolated branch '{}'", current_branch)
-        }
-    }
-
     pub fn run_test_harness(workspace: &Path) -> String {
         if workspace.join("Cargo.toml").is_file() {
             let out = Command::new("cargo")
@@ -712,18 +675,16 @@ impl ToolRegistry {
             match out {
                 Ok(o) => {
                     if o.status.success() {
-                        "🧪 [Automated Test Harness (Rust)]: Unit test suite compiled cleanly — 100% PASS.".to_string()
+                        "Automated Test Harness (Rust): Unit test suite compiled cleanly — PASS.".to_string()
                     } else {
                         let stderr = String::from_utf8_lossy(&o.stderr);
-                        format!("🧪 [Automated Test Harness (Rust)]: Test suite error:\n{}", stderr)
+                        format!("Automated Test Harness (Rust): Test suite error:\n{}", stderr)
                     }
                 }
                 Err(e) => format!("Test harness error: {}", e),
             }
-        } else if workspace.join("build.gradle").is_file() || workspace.join("build.gradle.kts").is_file() {
-            "🧪 [Automated Test Harness (Gradle)]: Android/Gradle test target detected.".to_string()
         } else {
-            "🧪 [Automated Test Harness]: Generic test execution ready.".to_string()
+            "Automated Test Harness: Generic test execution ready.".to_string()
         }
     }
 
