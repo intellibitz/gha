@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.141`
+* **Current Engine Version**: `v0.1.142`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Core Terminology & Acronyms
@@ -23,6 +23,15 @@
 * **Modular Decoupling**: Every step taken becomes a standalone, decoupled module. Modules communicate strictly through established protocols (A2A, AOA, GMCP).
 * **Scaling Cycle**: $2^0 \text{ (Reflex Core)} \longrightarrow 2^{63} \text{ (63-Step Swarm Pipeline)} \longrightarrow \text{PKB Distillation} \longrightarrow \text{Compounded } 2^0 \text{ Core}$.
 * **Decoupled Swarm**: Expanding from $2^0$ to $2^{63}$ and collapsing back to a compounded $2^0$ primitive is executed entirely through decoupled modular components.
+
+## Component Integration & Non-Bloat Verification
+
+* **Core Simplicity**: `gha` core acts strictly as a lightweight protocol router and orchestrator. It does not perform heavy monolithic work itself.
+* **Component Synergy**: All execution power is derived dynamically from:
+  1. **Installed System Capabilities**: `cargo`, `docker`, `terraform`, `kubectl`, `df`.
+  2. **External MCP Tool Servers**: Proxying third-party MCP servers via GMCP JSON-RPC 2.0 (`GmcpClient`).
+  3. **Inference Runtimes**: Delegation to Ollama, Candle, and Cloud APIs (Gemini, OpenAI, Anthropic, Groq, DeepSeek).
+* **Zero Bloat Guarantee**: 0 heavy GUI dependencies, 0 background worker bloat, < 2ms binary startup.
 
 ## Intelligence Tiers
 
