@@ -13,6 +13,7 @@
 
 ## GHA Execution Rules
 
+0. **Clean Build Auto-Push**: Once `gha` cleanly compiles (build success, 0 warnings, 0 errors, no functionality broken), automatically push to GitHub.
 1. **Version Increment on Push**: Every push to GitHub must automatically increment the project version.
 2. **Lightning Fast Compilation**: GHA must compile lightning fast through optimized build configurations, aggressive caching, and minimal overhead.
 3. **Maximum Resource Utilization**: GHA is configured to utilize maximum available hardware resources (all available CPU threads, RAM, and parallel compilation jobs).
