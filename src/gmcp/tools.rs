@@ -916,7 +916,7 @@ impl ToolRegistry {
 
         if clean_query.starts_with("http://") || clean_query.starts_with("https://") {
             let page_out = Command::new("curl")
-                .args(["-sL", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", clean_query])
+                .args(["-sL", "-C", "-", "--retry", "3", "--retry-connrefused", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", clean_query])
                 .output();
             if let Ok(o) = page_out {
                 if o.status.success() {
@@ -932,7 +932,7 @@ impl ToolRegistry {
         let search_url = format!("https://html.duckduckgo.com/html/?q={}", encoded_query);
 
         let out = Command::new("curl")
-            .args(["-sL", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", &search_url])
+            .args(["-sL", "--retry", "3", "--retry-connrefused", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", &search_url])
             .output();
 
         let raw_html = match out {

@@ -257,11 +257,11 @@ impl ModelManager {
             let file_name = target.split('/').last().unwrap_or("model.gguf");
             let dest_path = models_dir.join(file_name);
             let status = Command::new("curl")
-                .args(["-L", "-o", dest_path.to_str().unwrap_or("model.gguf"), target])
+                .args(["-L", "-C", "-", "--retry", "3", "--retry-connrefused", "-o", dest_path.to_str().unwrap_or("model.gguf"), target])
                 .status();
 
             match status {
-                Ok(s) if s.success() => format!("Downloaded native model weight to {}", dest_path.display()),
+                Ok(s) if s.success() => format!("Resumed/Downloaded native model weight to {}", dest_path.display()),
                 _ => format!("Failed to download model from {}", target),
             }
         } else if Command::new("ollama").arg("pull").arg(target).status().map_or(false, |s| s.success()) {
@@ -277,11 +277,11 @@ impl ModelManager {
             let dest_path = models_dir.join(&file_name);
 
             let status = Command::new("curl")
-                .args(["-L", "-o", dest_path.to_str().unwrap_or("model.gguf"), &hf_url])
+                .args(["-L", "-C", "-", "--retry", "3", "--retry-connrefused", "-o", dest_path.to_str().unwrap_or("model.gguf"), &hf_url])
                 .status();
 
             match status {
-                Ok(s) if s.success() => format!("Downloaded GGUF weights for '{}' to {}", target, dest_path.display()),
+                Ok(s) if s.success() => format!("Resumed/Downloaded GGUF weights for '{}' to {}", target, dest_path.display()),
                 _ => format!("Model download failed. Usage: 'gha install_model <model_name_or_url>'"),
             }
         }
