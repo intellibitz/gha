@@ -1,4 +1,4 @@
-# gha
+# gha (Global Hyper-intelligence Agents)
 
 Native Rust Multi-Agent Engine.
 
