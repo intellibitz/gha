@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.172`
+* **Current Engine Version**: `v0.1.173`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Core Terminology & Acronyms
@@ -22,6 +22,12 @@
 * **Zero Setup**: All GHA components (GMA, GAWD, GEMI, GMCP, GmaDaemon, GemiServer) run out-of-the-box with **0 manual configuration**.
 * **Auto-Discovery**: Hardware acceleration (CPUs, CUDA/Metal GPU), local models (Candle, Ollama), and network interfaces are discovered and benchmarked automatically on startup.
 * **Auto-Fallback**: If internet or cloud API keys are absent, GHA operates 100% offline using native Candle tensor weights (`~/.gha/models/gha-alpha.safetensors`) or local GGUF vaults without erroring.
+
+## Fail-Safe Cluster Architecture
+
+* **Node Unreachability Failover**: `GmasSupervisor` monitors peer nodes over TCP/UDP (`9090`/`9092`). If a cluster node drops offline, task execution automatically falls back to local master or active surviving nodes with 0 mission loss.
+* **Inference Failover Chain**: Cloud APIs (Gemini $\longrightarrow$ Groq $\longrightarrow$ OpenAI $\longrightarrow$ Anthropic $\longrightarrow$ DeepSeek) $\longrightarrow$ Local Ollama GGUF $\longrightarrow$ Native Candle Tensor Engine (`gha-alpha.safetensors`).
+* **Self-Healing Loop**: `GmaMasterAgent` intercepts tool execution errors (e.g. rate limits, context overflow), prompts `GhaPulse` for context-reduced fixes, and retries natively.
 
 ## EAI Architecture & Decoupled Modular Dynamics
 
