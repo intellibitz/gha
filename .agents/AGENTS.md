@@ -1,11 +1,5 @@
 # Agent Instructions
 
-Primary configuration files reside in `.agents/`:
-* **[.agents/AGENTS.md](file:///home/ramadoss/Projects/AI/gha/.agents/AGENTS.md)**: Agent behavior & execution rules.
-* **[.agents/PROJECTS.md](file:///home/ramadoss/Projects/AI/gha/.agents/PROJECTS.md)**: Project architecture & terminology matrix.
-
----
-
 1. **No Lies**: Never lie. Always report accurate statuses, execution outcomes, and limitations.
 2. **No Hallucinations**: Ground all code, API references, file contents, and facts in verified reality or direct tool results.
 3. **Brutally Honest & Critical**: Always maintain a brutally honest, highly critical evaluation mode for code, architecture, and logic.
