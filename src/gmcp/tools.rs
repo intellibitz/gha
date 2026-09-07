@@ -66,6 +66,10 @@ impl ToolRegistry {
                 description: "Inspect GGUF local & web models".to_string(),
             },
             McpTool {
+                name: "install_model".to_string(),
+                description: "Download or pull web model to local hardware (arg: 'model_name_or_url')".to_string(),
+            },
+            McpTool {
                 name: "orchestrate".to_string(),
                 description: "Execute GMA multi-agent mission".to_string(),
             },
@@ -254,6 +258,9 @@ impl ToolRegistry {
             }
             "version" => {
                 format!("gha Native Engine v{}", crate::GHA_VERSION)
+            }
+            "install_model" | "pull_model" => {
+                ModelManager::install_model(arg)
             }
             "agents" | "list_agents" => {
                 let fleet = crate::gawd::agents::GawdAgentFleet::synthesize_fleet("status");

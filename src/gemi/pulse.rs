@@ -58,6 +58,12 @@ impl GhaPulse {
             return Ok("ACTION: connect_provider anthropic".to_string());
         }
 
+        if lower.contains("download model") || lower.contains("install model") || lower.contains("pull model") {
+            let parts: Vec<&str> = lower.split_whitespace().collect();
+            let model_arg = parts.last().copied().unwrap_or("qwen");
+            return Ok(format!("ACTION: install_model {}", model_arg));
+        }
+
         if lower.contains("status") || lower.contains("aware") {
             return Ok("ACTION: status".to_string());
         }

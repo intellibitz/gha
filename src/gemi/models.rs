@@ -170,6 +170,47 @@ impl ModelManager {
         models
     }
 
+    pub fn install_model(query_or_url: &str) -> String {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let models_dir = home.join(".gha/models");
+        let _ = fs::create_dir_all(&models_dir);
+
+        let target = query_or_url.trim();
+
+        if target.starts_with("http://") || target.starts_with("https://") {
+            let file_name = target.split('/').last().unwrap_or("model.gguf");
+            let dest_path = models_dir.join(file_name);
+            let status = Command::new("curl")
+                .args(["-L", "-o", dest_path.to_str().unwrap_or("model.gguf"), target])
+                .status();
+
+            match status {
+                Ok(s) if s.success() => format!("Downloaded native model weight to {}", dest_path.display()),
+                _ => format!("Failed to download model from {}", target),
+            }
+        } else if Command::new("ollama").arg("pull").arg(target).status().map_or(false, |s| s.success()) {
+            format!("Pulled model '{}' into local Ollama engine.", target)
+        } else {
+            let hf_url = if target.contains('/') {
+                format!("https://huggingface.co/{}/resolve/main/model.gguf", target)
+            } else {
+                format!("https://huggingface.co/TheBloke/{}-GGUF/resolve/main/{}.Q4_K_M.gguf", target, target)
+            };
+
+            let file_name = format!("{}.gguf", target.replace('/', "_"));
+            let dest_path = models_dir.join(&file_name);
+
+            let status = Command::new("curl")
+                .args(["-L", "-o", dest_path.to_str().unwrap_or("model.gguf"), &hf_url])
+                .status();
+
+            match status {
+                Ok(s) if s.success() => format!("Downloaded GGUF weights for '{}' to {}", target, dest_path.display()),
+                _ => format!("Model download failed. Usage: 'gha install_model <model_name_or_url>'"),
+            }
+        }
+    }
+
     pub fn scout_tier2_assets() -> Vec<crate::gawd::agents::DiscoverableAsset> {
         vec![
             crate::gawd::agents::DiscoverableAsset {
