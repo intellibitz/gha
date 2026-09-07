@@ -1,5 +1,4 @@
-// 🌌 gha: EAI: Exponential Intelligence for Any AI. — Tier 1 Master Interactor
-// 100% Rust implementation for Universal EAI Execution
+// GAWD Tier 1 Master Agent
 
 use std::path::Path;
 use super::gmas::GmasSupervisor;
@@ -18,7 +17,6 @@ impl GmaMasterAgent {
     pub fn solve(&self, goal: &str, workspace: &Path, version: &str) -> String {
         let (num_cpus, gpu_info) = HardwareProfiler::profile();
 
-        // 🚀 World-Scale GAWD Mission Supervision (A2A Swarm Flux)
         let (a2a_logs, fleet) = GmasSupervisor::supervise_mission(goal, workspace);
         let active_tools = ToolRegistry::list_tools();
 
@@ -37,80 +35,61 @@ impl GmaMasterAgent {
         let is_placeholder = reasoning_content.contains("scouting for specialized brains");
 
         let mut report = String::new();
-        report.push_str("# 🌌 gha: EAI: Exponential Intelligence for Any AI. - Sole Interactor Report\n\n");
+        report.push_str("# gha Execution Report\n\n");
 
         if is_orchestration || !is_reflex {
-            report.push_str("## 🧠 Tier 0: GHA-Alpha (Native Reflex)\n");
-            report.push_str("- **Logic**: Hyper-Optimized Protocol Routing (< 1ms)\n\n");
-
-            report.push_str("## 🤖 Tier 1: GAWD (Universal Swarm Supervisor)\n");
-            report.push_str("- **Identity**: GMA Master Agent (A2A Protocol Root)\n");
-            report.push_str(&format!("- **Fleet**: {} Specialized GAWD Agents Active\n", fleet.len()));
-            report.push_str(&format!("- **Hardware**: {} CPUs | {}\n", num_cpus, gpu_info));
-            report.push_str(&format!("- **Engine**: v{} (100% Native Rust)\n\n", version));
+            report.push_str("## Environment\n");
+            report.push_str(&format!("- Engine: v{}\n", version));
+            report.push_str(&format!("- Fleet: {} agents active\n", fleet.len()));
+            report.push_str(&format!("- Hardware: {} CPUs | {}\n\n", num_cpus, gpu_info));
         }
 
-        report.push_str("## 🎯 Mission Execution (A2A Swarm Flux)\n");
-        report.push_str(&format!("🤖 [GMA] Universal Intent: \"{}\"\n", goal));
+        report.push_str("## Intent\n");
+        report.push_str(&format!("\"{}\"\n\n", goal));
 
         if is_orchestration || !is_reflex {
+            report.push_str("## Execution Trace\n");
             for (i, msg) in a2a_logs.iter().enumerate() {
                 let connector = if i == a2a_logs.len() - 1 { "└──" } else { "├──" };
-                report.push_str(&format!(" {} [{} -> GMA] {} ('{}')\n", connector, msg.sender, msg.action, msg.payload));
+                report.push_str(&format!(" {} [{}] {} ('{}')\n", connector, msg.sender, msg.action, msg.payload));
             }
-            let mut intelligence_tier = if is_reflex { "Tier 0: GHA-Alpha (Native Reflex)" } else { "Tier 2: GEMI (Deep Reasoning)" };
-            if reasoning_content.contains("🏆 Premier") {
-                intelligence_tier = "Tier 2: GEMI (🏆 Premier Tier Brain)";
-            } else if reasoning_content.contains("Specialist") {
-                intelligence_tier = "Tier 2: GEMI (🛠️ Specialist Tier Brain)";
-            }
-            report.push_str(&format!("\n🚀 [Orchestration Strategy]: {}\n", intelligence_tier));
         }
 
         if is_orchestration {
-            report.push_str("\n## 🔌 GMCP (Universal Tool Capabilities)\n");
-            report.push_str(&format!("- **Registry**: {} Tools Registered\n", active_tools.len()));
+            report.push_str("\n## Tools\n");
+            report.push_str(&format!("- Active Registry: {} tools\n", active_tools.len()));
         }
 
-        // 🛡️ Governance Protocol: Pre-Execution Safety & Security Audit
+        // Governance Protocol: Safety & Security Audit
         let governance_check = self.audit_governance(&a2a_logs);
         if let Err(violation_msg) = governance_check {
-            report.push_str("\n## 🚨 GOVERNANCE INTERVENTION\n");
-            report.push_str(&format!("   └── {}\n", violation_msg));
-            report.push_str("\n❌ [gha Intelligence] Mission aborted for system integrity.\n");
+            report.push_str("\n## Governance Status\n");
+            report.push_str(&format!("   └── Aborted: {}\n", violation_msg));
             return report;
         }
 
-        // 🔍 Capability Resolution: Check for uninstalled MCP servers before cloud fallback
         if is_placeholder {
              let registry = crate::gmcp::client::GmcpClient::fetch_global_registry();
              if let Some(entry) = registry.iter().find(|e| goal.to_lowercase().contains(&e.name) || goal.to_lowercase().contains(&e.category)) {
-                 report.push_str("\n## 💡 Capability Discovery\n");
-                 report.push_str(&format!("   └── Discovered missing hand: '{}' ({})\n", entry.name, entry.package));
-                 report.push_str(&format!("   └── ACTION: Run 'gha \"install mcp {}\"' to enable.\n", entry.name));
+                 report.push_str("\n## Capability Required\n");
+                 report.push_str(&format!("   └── Missing: '{}' ({})\n", entry.name, entry.package));
+                 report.push_str(&format!("   └── Install command: 'gha \"install mcp {}\"'\n", entry.name));
              }
         }
 
-        // 🧪 Universal Capability Assert: Execute tool calls discovered in Swarm Flux
         let mission_result = self.execute_autonomous_flux(goal, &a2a_logs, workspace);
         if !mission_result.is_empty() {
-            report.push_str("\n## 🏁 GAWD Accomplishment\n");
+            report.push_str("\n## Output\n");
             report.push_str(&mission_result);
+            report.push('\n');
         }
 
-        // ⚖️ GMA Trust Audit (Reality Check)
         let audit = self.audit_truth(goal, &a2a_logs, workspace);
-        report.push_str("\n## ⚖️ GMA Trust Audit (Reality Check)\n");
+        report.push_str("\n## Validation\n");
         if is_placeholder || mission_result.contains("scouting for specialized brains") {
-            report.push_str(" └── ⚠️ MISSION INCOMPLETE: Reasoning agent is scouting for brains. No solution provided.\n");
+            report.push_str(" └── Pending solution synthesis.\n");
         } else {
             report.push_str(&format!(" └── {}\n", audit));
-        }
-
-        if is_reflex && !is_orchestration {
-             report.push_str("\n✅ [gha Intelligence] Reflex executed natively (0-Effort, 100% Gains).\n");
-        } else {
-             report.push_str("\n✅ [gha Intelligence] Flux executed natively (0-Effort, 100% Gains).\n");
         }
 
         report
@@ -144,11 +123,9 @@ impl GmaMasterAgent {
                     if !tool_name.is_empty() {
                         let mut res = ToolRegistry::execute_tool(tool_name, arg, workspace);
 
-                        // 🚀 Native Self-Healing Loop (2^0 intelligence)
                         if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") || res.to_lowercase().contains("cloud_brain_unavailable") {
                             let mut fix_prompt = format!("Mission '{}' failed at tool '{}' with error: '{}'. Suggest a fixed command.", goal, tool_name, res);
 
-                            // Specific Self-Healing: Context Reduction for Rate Limits or Large Requests
                             if res.contains("rate_limit") || res.contains("too large") || res.contains("CLOUD_BRAIN_UNAVAILABLE") {
                                 fix_prompt = format!("Mission '{}' failed due to intelligence limits. Suggest the same command but with a 'smaller context' or 'snippet' of any referenced files.", goal);
                             }
@@ -159,12 +136,12 @@ impl GmaMasterAgent {
                                      let fix_tool = fix_parts[0];
                                      let fix_arg = fix_parts.get(1).unwrap_or(&"");
                                      let fix_res = ToolRegistry::execute_tool(fix_tool, fix_arg, workspace);
-                                     res = fix_res; // Successfully self-healed
+                                     res = fix_res;
                                 }
                             }
                         }
 
-                        results.push(format!("   └── [Autonomous Tool: {}]: {}", tool_name, res));
+                        results.push(format!("   └── [Tool: {}]: {}", tool_name, res));
                     }
                 }
             }
@@ -191,7 +168,7 @@ impl GmaMasterAgent {
                     let full_path = workspace.join(file_name);
                     if !full_path.exists() {
                         score -= 50;
-                        flags.push(format!("🔴 LIE DETECTED: Agent claimed to write '{}', but file is missing.", file_name));
+                        flags.push(format!("File '{}' missing after write action.", file_name));
                     }
                 }
             }
@@ -201,13 +178,13 @@ impl GmaMasterAgent {
         let lower_reasoning = reasoning.to_lowercase();
         if lower_goal.contains("bootloader") && (!lower_reasoning.contains("bits 16") || !lower_reasoning.contains("0x7c00")) {
             score -= 30;
-            flags.push("🟠 HALLUCINATION DETECTED: Technical specs for BIOS bootloader missing.".to_string());
+            flags.push("Missing technical specification for bootloader.".to_string());
         }
 
         if flags.is_empty() {
-            "✅ TRUTH VERIFIED: Swarm logic is semantically sound and artifact-aligned.".to_string()
+            "Verified.".to_string()
         } else {
-            format!("⚠️ TRUTH AUDIT (Score: {}/100):\n   {}", score, flags.join("\n   "))
+            format!("Audit score: {}/100\n   {}", score, flags.join("\n   "))
         }
     }
 }

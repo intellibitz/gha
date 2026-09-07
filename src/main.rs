@@ -1,5 +1,4 @@
-// 🌌 gha: EAI: Exponential Intelligence for Any AI. — GAWD, GEMI & GMCP Multi-Agent Engine
-// 100% Standalone Native Executable — 0 JVM, 0 Git, 0 Gradle Dependency
+// gha: Multi-Agent Engine
 
 mod daemon;
 mod gawd;
@@ -17,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.123";
+const GHA_VERSION: &str = "0.1.124";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -27,49 +26,40 @@ fn get_home_dir() -> PathBuf {
 }
 
 fn print_help() {
-    println!("🌌 gha: EAI: Exponential Intelligence for Any AI.");
-    println!("Usage: gha \"<your intent>\"\n");
-    println!("🤖 GHA Master Agent (GMA) Sole Interactor:");
-    println!("  gha \"what is your version?\"");
-    println!("  gha \"check system status\"");
-    println!("  gha \"build a simple bootloader\"");
-    println!("  gha \"explain the universe\"");
-    println!("  gha \"<any goal or mission>\"\n");
-    println!("⚙️ Internal Runtime Infrastructure:");
-    println!("  install                  Initialize global gha environment");
-    println!("  uninstall                Remove global gha environment");
-    println!("  mcp                      Start native GMA Master MCP Server (for external AI clients)");
-    println!("  gemi                     Start GEMI OpenAI-compatible REST server");
-    println!("  services                 List running GHA background services");
+    println!("gha v{}", GHA_VERSION);
+    println!("Usage: gha \"<intent>\"\n");
+    println!("Commands:");
+    println!("  install                  Initialize global gha runtime");
+    println!("  uninstall                Remove global gha runtime");
+    println!("  mcp                      Start native MCP server");
+    println!("  gemi                     Start GEMI REST server");
+    println!("  services                 List running services");
 }
 
 fn run_install(global_dir: &Path) {
-    println!("🚀 [gha] Initializing 100% Sandboxed Native AI Runtime...");
+    println!("Initializing gha runtime...");
     let _ = SandboxManager::ensure_global_sandbox(global_dir);
     GmaDaemon::ensure_daemon_running(global_dir, global_dir);
-    println!("✅ [gha] Global environment initialized & background swarm active.");
+    println!("gha runtime initialized.");
 }
 
 fn run_interactive_shell(cwd: &Path) {
     use std::io::{self, Write};
 
-    println!("⚡ gha v{} (100% Native Rust Interactive AI Engine)", GHA_VERSION);
-    println!("Type your mission/intent below, or ':help', ':models', ':services', ':exit' to quit.\n");
+    println!("gha v{} interactive mode", GHA_VERSION);
+    println!("Type intent, or :help, :models, :services, :exit to quit.\n");
 
     let gma = GmaMasterAgent::new();
 
     loop {
-        print!("🤖 gha> ");
+        print!("gha> ");
         if io::stdout().flush().is_err() {
             break;
         }
 
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
-            Ok(0) => {
-                println!("\n👋 Exiting gha interactive mode.");
-                break;
-            }
+            Ok(0) => break,
             Ok(_) => {
                 let line = input.trim();
                 if line.is_empty() {
@@ -78,15 +68,12 @@ fn run_interactive_shell(cwd: &Path) {
 
                 let line_lower = line.to_lowercase();
                 match line_lower.as_str() {
-                    ":exit" | ":quit" | "exit" | "quit" => {
-                        println!("👋 Exiting gha interactive mode.");
-                        break;
-                    }
+                    ":exit" | ":quit" | "exit" | "quit" => break,
                     ":help" | "help" => {
                         print_help();
                     }
                     ":version" | "version" => {
-                        println!("⚡ gha Native Engine v{}", GHA_VERSION);
+                        println!("gha v{}", GHA_VERSION);
                     }
                     ":models" | "models" => {
                         let report = gma.solve("list_models", cwd, GHA_VERSION);
@@ -127,14 +114,7 @@ fn main() {
             print_help();
         }
         "version" | "--version" | "-v" => {
-            println!("# 🌌 gha: EAI: Exponential Intelligence for Any AI. - Sole Interactor Report");
-            println!("\n## 🎯 Mission Execution (A2A Swarm Flux)");
-            println!("🤖 [GMA] Universal Intent: \"version\"");
-            println!("\n## 🏁 GAWD Accomplishment");
-            println!("   └── [Autonomous Tool: version]: gha Native Engine v{}", GHA_VERSION);
-            println!("\n## ⚖️ GMA Trust Audit (Reality Check)");
-            println!(" └── ✅ TRUTH VERIFIED: Swarm logic is semantically sound and artifact-aligned.");
-            println!("\n✅ [gha Intelligence] Reflex executed natively (0-Effort, 100% Gains).");
+            println!("gha v{}", GHA_VERSION);
         }
         "models" | ":models" => {
             let gma = GmaMasterAgent::new();
@@ -146,7 +126,7 @@ fn main() {
         }
         "uninstall" | ":uninstall" => {
             let _ = std::fs::remove_dir_all(&global_dir);
-            println!("✅ [gha] Global environment uninstalled.");
+            println!("gha runtime removed.");
         }
         "daemon-start" => {
             GmaDaemon::run_daemon_loop(global_dir.clone(), global_dir);
@@ -186,8 +166,6 @@ fn main() {
             println!("{}", res);
         }
         _ => {
-            // Universal Mission: The Impact Scope is ALWAYS the Current Working Directory
-            // No local .gha folder required. 100% Pure anywhere execution.
             let goal = args.join(" ");
             let gma = GmaMasterAgent::new();
             let report = gma.solve(&goal, &cwd, GHA_VERSION);
