@@ -17,7 +17,7 @@ use gemi::GemiServer;
 use gmcp::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.113";
+const GHA_VERSION: &str = "0.1.114";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -50,6 +50,64 @@ fn run_install(global_dir: &Path) {
     println!("✅ [gha] Global environment initialized & background swarm active.");
 }
 
+fn run_interactive_shell(cwd: &Path) {
+    use std::io::{self, Write};
+
+    println!("⚡ gha v{} (100% Native Rust Interactive AI Engine)", GHA_VERSION);
+    println!("Type your mission/intent below, or ':help', ':models', ':services', ':exit' to quit.\n");
+
+    let gma = GmaMasterAgent::new();
+
+    loop {
+        print!("🤖 gha> ");
+        if io::stdout().flush().is_err() {
+            break;
+        }
+
+        let mut input = String::new();
+        match io::stdin().read_line(&mut input) {
+            Ok(0) => {
+                println!("\n👋 Exiting gha interactive mode.");
+                break;
+            }
+            Ok(_) => {
+                let line = input.trim();
+                if line.is_empty() {
+                    continue;
+                }
+
+                let line_lower = line.to_lowercase();
+                match line_lower.as_str() {
+                    ":exit" | ":quit" | "exit" | "quit" => {
+                        println!("👋 Exiting gha interactive mode.");
+                        break;
+                    }
+                    ":help" | "help" => {
+                        print_help();
+                    }
+                    ":version" | "version" => {
+                        println!("⚡ gha Native Engine v{}", GHA_VERSION);
+                    }
+                    ":models" | "models" => {
+                        let report = gma.solve("list_models", cwd, GHA_VERSION);
+                        println!("{}", report);
+                    }
+                    ":services" | "services" => {
+                        let res = ToolRegistry::execute_tool("services", "", cwd);
+                        println!("{}", res);
+                    }
+                    _ => {
+                        let report = gma.solve(line, cwd, GHA_VERSION);
+                        println!("{}", report);
+                    }
+                }
+            }
+            Err(_) => break,
+        }
+        println!();
+    }
+}
+
 fn main() {
     let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let home = get_home_dir();
@@ -58,8 +116,7 @@ fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
-        println!("⚡ gha v{} (100% Native Rust AI Engine)", GHA_VERSION);
-        print_help();
+        run_interactive_shell(&cwd);
         return;
     }
 
