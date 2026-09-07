@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.132`
+* **Current Engine Version**: `v0.1.133`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Core Terminology & Acronyms
@@ -17,16 +17,18 @@
 * **GMCP**: GHA Model Context Protocol — Native tool execution engine, interop bus, and Model Context Protocol server/client.
 * **PKB**: Protocol Knowledge Base — Reflex data synthesizer for Tier 0 training distillation.
 
-## EAI Architecture & Recursive Distillation
+## EAI Architecture & Decoupled Modular Dynamics
 
-EAI scales intelligence recursively through state collapse and distillation:
+* **2⁰ Core**: 2⁰ (microsecond reflex engine) is the immutable core of GHA.
+* **Modular Decoupling**: Every step taken becomes a standalone, decoupled module. Modules communicate strictly through established protocols (A2A, AOA, GMCP).
+* **Scaling Cycle**: $2^0 \text{ (Reflex Core)} \longrightarrow 2^{63} \text{ (63-Step Swarm Pipeline)} \longrightarrow \text{PKB Distillation} \longrightarrow \text{Compounded } 2^0 \text{ Core}$.
+* **Decoupled Swarm**: Expanding from $2^0$ to $2^{63}$ and collapsing back to a compounded $2^0$ primitive is executed entirely through decoupled modular components.
 
-* **Distillation Cycle**: $2^0 \text{ (Microsecond Reflex)} \longrightarrow 2^{63} \text{ (63-Step Swarm Pipeline)} \longrightarrow \text{PKB Compilation} \longrightarrow \text{Compounded } 2^0 \text{ Primitive}$.
-* **Intelligence Tiers**:
-  * **Tier 0: GHA-Alpha (Native Reflex Engine)**: Microsecond (<1ms) protocol routing and deterministic reflexes ($2^0$ Primitive).
-  * **Tier 1: GAWD / GMA (Universal Swarm Supervisor)**: A2A swarm dispatch, governance auditing, and mission supervision ($2^{63}$ Swarm Pipeline).
-  * **Tier 2: GEMI (Deep Reasoning & Multi-Model Inference)**: Multi-cloud provider scouting and local model fallback inference.
-* **Compounding Mechanics**: Collapsing 63-step swarm traces into $O(1)$ Tier 0 reflexes raises the base capability level for subsequent 63-step swarm explorations.
+## Intelligence Tiers
+
+* **Tier 0: GHA-Alpha (Native Reflex Engine)**: Microsecond (<1ms) protocol routing and deterministic reflexes ($2^0$ Primitive).
+* **Tier 1: GAWD / GMA (Universal Swarm Supervisor)**: A2A swarm dispatch, governance auditing, and mission supervision ($2^{63}$ Swarm Pipeline).
+* **Tier 2: GEMI (Deep Reasoning & Multi-Model Inference)**: Multi-cloud provider scouting and local model fallback inference.
 
 ## GMCP Action Substrate & Interop Bus
 
