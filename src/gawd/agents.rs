@@ -87,26 +87,27 @@ impl GawdAgentFleet {
     }
 
     pub fn execute_context_agent(workspace: &Path) -> String {
-        let branch = Command::new("git")
-            .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        let is_git = workspace.join(".git").exists() || Command::new("git")
+            .args(["rev-parse", "--is-inside-work-tree"])
             .current_dir(workspace)
             .output()
-            .ok()
-            .and_then(|o| String::from_utf8(o.stdout).ok())
-            .unwrap_or_else(|| "main".to_string())
-            .trim()
-            .to_string();
+            .map(|o| o.status.success())
+            .unwrap_or(false);
 
-        let status = Command::new("git")
-            .args(["status", "--short"])
-            .current_dir(workspace)
-            .output()
-            .ok()
-            .and_then(|o| String::from_utf8(o.stdout).ok())
-            .unwrap_or_else(|| "clean".to_string());
-
-        let clean_status = if status.trim().is_empty() { "clean".to_string() } else { status.trim().to_string() };
-        format!("Branch: {} | Status: {}", branch, clean_status)
+        if is_git {
+            let branch = Command::new("git")
+                .args(["rev-parse", "--abbrev-ref", "HEAD"])
+                .current_dir(workspace)
+                .output()
+                .ok()
+                .and_then(|o| String::from_utf8(o.stdout).ok())
+                .unwrap_or_else(|| "main".to_string())
+                .trim()
+                .to_string();
+            format!("Workspace: {} (Git: {})", workspace.display(), branch)
+        } else {
+            format!("Workspace: {}", workspace.display())
+        }
     }
 
     pub fn scout_tier1_assets() -> Vec<DiscoverableAsset> {
