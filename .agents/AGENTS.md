@@ -21,3 +21,4 @@
 4. **Terminology & Component Sync on Push**: Every GitHub push must update `.agents/PROJECTS.md` with the latest terminology, architecture components, and current GHA version.
 5. **Natural Language Only**: GHA interactions with world users are natural language only.
 6. **2⁰ Core & Modular Decoupling**: 2⁰ (microsecond reflex) is always the GHA core. Every step taken becomes a decoupled module. Modules interact strictly via well-established protocols (A2A/GMCP/AOA). GHA scales from 2⁰ to 2⁶³ and collapses back to compounded 2⁰ primitives through decoupled modular components.
+7. **100% Platform Independent**: GHA is 100% platform independent, self-contained, and cross-platform across Linux, macOS, Windows, WSL, and mobile architectures.
