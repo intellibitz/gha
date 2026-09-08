@@ -20,6 +20,7 @@ Primary configuration files reside in `.agents/`:
 12. **Source of Truth**: All agent behavior and project rules are defined exclusively in `AGENTS.md` and `PROJECTS.md`. Agents are strictly required to follow these documents as their sole source of truth.
 13. **Intelligence Substrate, Not Static Tooling**: `gha` is an Intelligence Reflex & Execution Substrate. While it empowers users (Product Managers, Developers, Creators) to execute complex missions like project management, scaffolding, and code generation, its identity is the **Intelligence Layer** that enables these actions, not a static plumbing or template tool.
 14. **Universal Access & Mission**: `gha` is designed for **any world user** for **any mission**. It scales from high-end corporate environments to standard home hardware, enabling any user to harness exponential intelligence for their specific goals.
+15. **Indestructible Identity**: The identity of `gha` as an Intelligence Substrate for any world user is permanent. All future versions, autonomous evolutions, and distilled reflex models must strictly adhere to this core DNA. Drift is not permitted.
 
 ## GHA Execution Rules
 
