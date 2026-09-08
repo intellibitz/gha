@@ -104,40 +104,40 @@ impl ModelManager {
             if let Ok(entries) = fs::read_dir(dir) {
                 for entry in entries.flatten() {
                     let p = entry.path();
-                    if p.extension().map_or(false, |ext| ext == "gguf") {
-                        if let Ok(name) = entry.file_name().into_string() {
-                            list.push(ModelInfo {
-                                name: name.clone(),
-                                registry: "Local GGUF Vault".to_string(),
-                                model_id: name,
-                                description: "Native hardware-accelerated model".to_string(),
-                                is_local: true,
-                                tier: ModelTier::Standard,
-                                latency_ms: None,
-                            });
-                        }
+                    if p.extension().is_some_and(|ext| ext == "gguf")
+                        && let Ok(name) = entry.file_name().into_string()
+                    {
+                        list.push(ModelInfo {
+                            name: name.clone(),
+                            registry: "Local GGUF Vault".to_string(),
+                            model_id: name,
+                            description: "Native hardware-accelerated model".to_string(),
+                            is_local: true,
+                            tier: ModelTier::Standard,
+                            latency_ms: None,
+                        });
                     }
                 }
             }
         }
 
         // 3. 🚀 Autonomous Scouting
-        if let Ok(o) = Command::new("ollama").arg("list").output() {
-            if o.status.success() {
-                let stdout = String::from_utf8_lossy(&o.stdout);
-                for line in stdout.lines().skip(1) {
-                    let parts: Vec<&str> = line.split_whitespace().collect();
-                    if let Some(m) = parts.get(0) {
-                        list.push(ModelInfo {
-                            name: format!("Ollama: {}", m),
-                            registry: "Local Ollama Engine".to_string(),
-                            model_id: m.to_string(),
-                            description: "High-throughput local inference".to_string(),
-                            is_local: true,
-                            tier: ModelTier::Specialist,
-                            latency_ms: None,
-                        });
-                    }
+        if let Ok(o) = Command::new("ollama").arg("list").output()
+            && o.status.success()
+        {
+            let stdout = String::from_utf8_lossy(&o.stdout);
+            for line in stdout.lines().skip(1) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if let Some(m) = parts.first() {
+                    list.push(ModelInfo {
+                        name: format!("Ollama: {}", m),
+                        registry: "Local Ollama Engine".to_string(),
+                        model_id: m.to_string(),
+                        description: "High-throughput local inference".to_string(),
+                        is_local: true,
+                        tier: ModelTier::Specialist,
+                        latency_ms: None,
+                    });
                 }
             }
         }
@@ -169,12 +169,12 @@ impl ModelManager {
     pub fn get_selected_model() -> Option<String> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let model_file = home.join(".gha/selected_model.txt");
-        if model_file.is_file() {
-            if let Ok(content) = fs::read_to_string(&model_file) {
-                let trimmed = content.trim();
-                if !trimmed.is_empty() {
-                    return Some(trimmed.to_string());
-                }
+        if model_file.is_file()
+            && let Ok(content) = fs::read_to_string(&model_file)
+        {
+            let trimmed = content.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
             }
         }
         None
@@ -192,12 +192,12 @@ impl ModelManager {
     pub fn get_selected_engine() -> Option<String> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let engine_file = home.join(".gha/selected_engine.txt");
-        if engine_file.is_file() {
-            if let Ok(content) = fs::read_to_string(&engine_file) {
-                let trimmed = content.trim();
-                if !trimmed.is_empty() {
-                    return Some(trimmed.to_string());
-                }
+        if engine_file.is_file()
+            && let Ok(content) = fs::read_to_string(&engine_file)
+        {
+            let trimmed = content.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
             }
         }
         None
@@ -254,7 +254,7 @@ impl ModelManager {
         let target = query_or_url.trim();
 
         if target.starts_with("http://") || target.starts_with("https://") {
-            let file_name = target.split('/').last().unwrap_or("model.gguf");
+            let file_name = target.split('/').next_back().unwrap_or("model.gguf");
             let dest_path = models_dir.join(file_name);
             let status = Command::new("curl")
                 .args(["-L", "-C", "-", "--retry", "3", "--retry-connrefused", "-o", dest_path.to_str().unwrap_or("model.gguf"), target])
@@ -264,7 +264,7 @@ impl ModelManager {
                 Ok(s) if s.success() => format!("Resumed/Downloaded native model weight to {}", dest_path.display()),
                 _ => format!("Failed to download model from {}", target),
             }
-        } else if Command::new("ollama").arg("pull").arg(target).status().map_or(false, |s| s.success()) {
+        } else if Command::new("ollama").arg("pull").arg(target).status().is_ok_and(|s| s.success()) {
             format!("Pulled model '{}' into local Ollama engine.", target)
         } else {
             let hf_url = if target.contains('/') {
@@ -282,7 +282,7 @@ impl ModelManager {
 
             match status {
                 Ok(s) if s.success() => format!("Resumed/Downloaded GGUF weights for '{}' to {}", target, dest_path.display()),
-                _ => format!("Model download failed. Usage: 'gha install_model <model_name_or_url>'"),
+                _ => "Model download failed. Usage: 'gha install_model <model_name_or_url>'".to_string(),
             }
         }
     }

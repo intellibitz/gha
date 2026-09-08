@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.209";
+const GHA_VERSION: &str = "0.1.210";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -106,16 +106,14 @@ fn run_interactive_shell(cwd: &Path) {
     }
 
     loop {
-        if let Some(initial_time) = initial_mtime {
-            if let Ok(m) = std::fs::metadata(&target_bin) {
-                if let Ok(current_mtime) = m.modified() {
-                    if current_mtime > initial_time {
-                        println!("{}⚡ Runtime binary update detected on disk. Auto-renewing session...{}", COLOR_CYAN, COLOR_RESET);
-                        let _ = std::process::Command::new(&target_bin).status();
-                        break;
-                    }
-                }
-            }
+        if let Some(initial_time) = initial_mtime
+            && let Ok(m) = std::fs::metadata(&target_bin)
+            && let Ok(current_mtime) = m.modified()
+            && current_mtime > initial_time
+        {
+            println!("{}⚡ Runtime binary update detected on disk. Auto-renewing session...{}", COLOR_CYAN, COLOR_RESET);
+            let _ = std::process::Command::new(&target_bin).status();
+            break;
         }
 
         let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
@@ -133,8 +131,8 @@ fn run_interactive_shell(cwd: &Path) {
                 Ok(0) => return,
                 Ok(_) => {
                     let trimmed = line.trim_end();
-                    if trimmed.ends_with('\\') {
-                        input_buffer.push_str(&trimmed[..trimmed.len() - 1]);
+                    if let Some(stripped) = trimmed.strip_suffix('\\') {
+                        input_buffer.push_str(stripped);
                         input_buffer.push('\n');
                         print!("{}...{} ", COLOR_DIM, COLOR_RESET);
                         let _ = io::stdout().flush();

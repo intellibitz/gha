@@ -60,40 +60,38 @@ impl GmcpServer {
 }
 
 pub fn extract_json_id(line: &str) -> Option<u64> {
-    if let Ok(v) = serde_json::from_str::<serde_json::Value>(line) {
-        if let Some(id) = v.get("id").and_then(|i| i.as_u64()) {
-            return Some(id);
-        }
+    if let Ok(v) = serde_json::from_str::<serde_json::Value>(line)
+        && let Some(id) = v.get("id").and_then(|i| i.as_u64())
+    {
+        return Some(id);
     }
     None
 }
 
 pub fn extract_tool_name(line: &str) -> Option<String> {
-    if let Ok(v) = serde_json::from_str::<serde_json::Value>(line) {
-        if let Some(params) = v.get("params") {
-            if let Some(name) = params.get("name").and_then(|n| n.as_str()) {
-                return Some(name.to_string());
-            }
-        }
+    if let Ok(v) = serde_json::from_str::<serde_json::Value>(line)
+        && let Some(params) = v.get("params")
+        && let Some(name) = params.get("name").and_then(|n| n.as_str())
+    {
+        return Some(name.to_string());
     }
     None
 }
 
 pub fn extract_tool_arg(line: &str) -> Option<String> {
-    if let Ok(v) = serde_json::from_str::<serde_json::Value>(line) {
-        if let Some(params) = v.get("params") {
-            if let Some(arguments) = params.get("arguments") {
-                return if let Some(s) = arguments.as_str() {
-                    Some(s.to_string())
-                } else if let Some(command) = arguments.get("command").and_then(|c| c.as_str()) {
-                    Some(command.to_string())
-                } else if let Some(path) = arguments.get("path").and_then(|p| p.as_str()) {
-                    Some(path.to_string())
-                } else {
-                    Some(arguments.to_string())
-                };
-            }
-        }
+    if let Ok(v) = serde_json::from_str::<serde_json::Value>(line)
+        && let Some(params) = v.get("params")
+        && let Some(arguments) = params.get("arguments")
+    {
+        return if let Some(s) = arguments.as_str() {
+            Some(s.to_string())
+        } else if let Some(command) = arguments.get("command").and_then(|c| c.as_str()) {
+            Some(command.to_string())
+        } else if let Some(path) = arguments.get("path").and_then(|p| p.as_str()) {
+            Some(path.to_string())
+        } else {
+            Some(arguments.to_string())
+        };
     }
     None
 }

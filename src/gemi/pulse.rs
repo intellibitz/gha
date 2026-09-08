@@ -69,18 +69,18 @@ impl GhaPulse {
             return Ok("ACTION: connect_provider anthropic".to_string());
         }
 
-        if lower.contains("download") || lower.contains("fetch") || lower.contains("lyrics") {
-            if !lower.contains("model") {
-                let query = lower
-                    .replace("download", "")
-                    .replace("fetch", "")
-                    .replace("lyrics", "")
-                    .replace("song", "")
-                    .trim()
-                    .to_string();
-                let clean_query = if query.is_empty() { lower.clone() } else { format!("{} song lyrics", query) };
-                return Ok(format!("ACTION: web_search_download {}", clean_query));
-            }
+        if (lower.contains("download") || lower.contains("fetch") || lower.contains("lyrics"))
+            && !lower.contains("model")
+        {
+            let query = lower
+                .replace("download", "")
+                .replace("fetch", "")
+                .replace("lyrics", "")
+                .replace("song", "")
+                .trim()
+                .to_string();
+            let clean_query = if query.is_empty() { lower.clone() } else { format!("{} song lyrics", query) };
+            return Ok(format!("ACTION: web_search_download {}", clean_query));
         }
 
         if lower.contains("download model") || lower.contains("install model") || lower.contains("pull model") {

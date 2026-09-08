@@ -50,3 +50,26 @@ impl SafetyDetector {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_safety_audit_safe_commands() {
+        assert!(SafetyDetector::audit_action("exec_command", "cargo check").is_ok());
+        assert!(SafetyDetector::audit_action("write_file", "src/main.rs println!(\"hello\");").is_ok());
+    }
+
+    #[test]
+    fn test_safety_audit_destructive_patterns() {
+        assert!(SafetyDetector::audit_action("exec_command", "rm -rf /").is_err());
+        assert!(SafetyDetector::audit_action("exec_command", "mkfs.ext4 /dev/sda1").is_err());
+    }
+
+    #[test]
+    fn test_safety_audit_critical_paths() {
+        assert!(SafetyDetector::audit_action("write_file", "/etc/passwd").is_err());
+        assert!(SafetyDetector::audit_action("exec_command", "cat /etc/shadow").is_err());
+    }
+}

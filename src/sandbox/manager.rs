@@ -20,20 +20,20 @@ impl SandboxManager {
 
     pub fn load_env_file(global_dir: &Path) {
         let env_file = global_dir.join("env");
-        if env_file.is_file() {
-            if let Ok(content) = fs::read_to_string(&env_file) {
-                for line in content.lines() {
-                    let trimmed = line.trim();
-                    if trimmed.is_empty() || trimmed.starts_with('#') {
-                        continue;
-                    }
-                    if let Some((k, v)) = trimmed.split_once('=') {
-                        let key = k.trim();
-                        let val = v.trim().trim_matches('"').trim_matches('\'');
-                        if !key.is_empty() && !val.is_empty() && std::env::var(key).is_err() {
-                            unsafe {
-                                std::env::set_var(key, val);
-                            }
+        if env_file.is_file()
+            && let Ok(content) = fs::read_to_string(&env_file)
+        {
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.is_empty() || trimmed.starts_with('#') {
+                    continue;
+                }
+                if let Some((k, v)) = trimmed.split_once('=') {
+                    let key = k.trim();
+                    let val = v.trim().trim_matches('"').trim_matches('\'');
+                    if !key.is_empty() && !val.is_empty() && std::env::var(key).is_err() {
+                        unsafe {
+                            std::env::set_var(key, val);
                         }
                     }
                 }
@@ -44,12 +44,12 @@ impl SandboxManager {
     pub fn save_env_key(global_dir: &Path, key: &str, val: &str) -> Result<String, String> {
         let env_file = global_dir.join("env");
         let mut lines = Vec::new();
-        if env_file.is_file() {
-            if let Ok(content) = fs::read_to_string(&env_file) {
-                for l in content.lines() {
-                    if !l.trim().starts_with(&format!("{}=", key)) {
-                        lines.push(l.to_string());
-                    }
+        if env_file.is_file()
+            && let Ok(content) = fs::read_to_string(&env_file)
+        {
+            for l in content.lines() {
+                if !l.trim().starts_with(&format!("{}=", key)) {
+                    lines.push(l.to_string());
                 }
             }
         }
@@ -82,16 +82,13 @@ impl SandboxManager {
 
     pub fn check_interrupted_checkpoint(workspace: &Path) -> Option<String> {
         let checkpoint_file = workspace.join(".gha/mission_checkpoint.json");
-        if checkpoint_file.is_file() {
-            if let Ok(content) = fs::read_to_string(&checkpoint_file) {
-                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
-                    if val.get("status").and_then(|s| s.as_str()) == Some("IN_PROGRESS") {
-                        if let Some(intent) = val.get("intent").and_then(|i| i.as_str()) {
-                            return Some(intent.to_string());
-                        }
-                    }
-                }
-            }
+        if checkpoint_file.is_file()
+            && let Ok(content) = fs::read_to_string(&checkpoint_file)
+            && let Ok(val) = serde_json::from_str::<serde_json::Value>(&content)
+            && val.get("status").and_then(|s| s.as_str()) == Some("IN_PROGRESS")
+            && let Some(intent) = val.get("intent").and_then(|i| i.as_str())
+        {
+            return Some(intent.to_string());
         }
         None
     }
@@ -134,15 +131,15 @@ impl GhaMemory {
     pub fn load_recent_history(workspace: &Path, limit: usize) -> Vec<(String, String)> {
         let memory_file = workspace.join(".gha/memory.jsonl");
         let mut history = Vec::new();
-        if memory_file.is_file() {
-            if let Ok(content) = fs::read_to_string(&memory_file) {
-                for line in content.lines().rev().take(limit) {
-                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(line) {
-                        let intent = val.get("user_intent").and_then(|i| i.as_str()).unwrap_or_default().to_string();
-                        let resp = val.get("assistant_response").and_then(|r| r.as_str()).unwrap_or_default().to_string();
-                        if !intent.is_empty() {
-                            history.push((intent, resp));
-                        }
+        if memory_file.is_file()
+            && let Ok(content) = fs::read_to_string(&memory_file)
+        {
+            for line in content.lines().rev().take(limit) {
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(line) {
+                    let intent = val.get("user_intent").and_then(|i| i.as_str()).unwrap_or_default().to_string();
+                    let resp = val.get("assistant_response").and_then(|r| r.as_str()).unwrap_or_default().to_string();
+                    if !intent.is_empty() {
+                        history.push((intent, resp));
                     }
                 }
             }
@@ -196,13 +193,13 @@ impl GhaAuditLogger {
 
     pub fn read_audit_log(workspace: &Path, limit: usize) -> String {
         let audit_file = workspace.join(".gha/audit.log");
-        if audit_file.is_file() {
-            if let Ok(content) = fs::read_to_string(&audit_file) {
-                let lines: Vec<&str> = content.lines().collect();
-                let take_count = limit.min(lines.len());
-                let recent = &lines[lines.len().saturating_sub(take_count)..];
-                return format!("Workspace Audit Trail ({} Recent Entries):\n\n{}", recent.len(), recent.join("\n"));
-            }
+        if audit_file.is_file()
+            && let Ok(content) = fs::read_to_string(&audit_file)
+        {
+            let lines: Vec<&str> = content.lines().collect();
+            let take_count = limit.min(lines.len());
+            let recent = &lines[lines.len().saturating_sub(take_count)..];
+            return format!("Workspace Audit Trail ({} Recent Entries):\n\n{}", recent.len(), recent.join("\n"));
         }
         "No audit trail recorded for this workspace.".to_string()
     }
@@ -240,13 +237,13 @@ impl GhaBackupManager {
             let mut max_time = 0;
             if let Ok(entries) = fs::read_dir(&backups_dir) {
                 for entry in entries.flatten() {
-                    if let Ok(m) = entry.metadata() {
-                        if let Ok(time) = m.modified() {
-                            let secs = time.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-                            if secs > max_time {
-                                max_time = secs;
-                                latest = entry.path();
-                            }
+                    if let Ok(m) = entry.metadata()
+                        && let Ok(time) = m.modified()
+                    {
+                        let secs = time.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+                        if secs > max_time {
+                            max_time = secs;
+                            latest = entry.path();
                         }
                     }
                 }
@@ -303,13 +300,13 @@ impl GhaBackupManager {
             let mut max_time = 0;
             if let Ok(entries) = fs::read_dir(&backups_dir) {
                 for entry in entries.flatten() {
-                    if let Ok(m) = entry.metadata() {
-                        if let Ok(time) = m.modified() {
-                            let secs = time.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-                            if secs > max_time {
-                                max_time = secs;
-                                latest = entry.path();
-                            }
+                    if let Ok(m) = entry.metadata()
+                        && let Ok(time) = m.modified()
+                    {
+                        let secs = time.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+                        if secs > max_time {
+                            max_time = secs;
+                            latest = entry.path();
                         }
                     }
                 }
@@ -335,5 +332,44 @@ impl GhaBackupManager {
             Ok(s) if s.success() => Ok(format!("GHA engine restored successfully from {}", archive.display())),
             _ => Err(format!("Failed to restore engine from {}", archive.display())),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_checkpoint_lifecycle() {
+        let temp_dir = std::env::temp_dir().join("gha_test_checkpoint");
+        let _ = fs::create_dir_all(&temp_dir);
+
+        SandboxManager::save_mission_checkpoint(&temp_dir, "test mission", &["tool1".to_string()], "IN_PROGRESS");
+        let interrupted = SandboxManager::check_interrupted_checkpoint(&temp_dir);
+        assert_eq!(interrupted, Some("test mission".to_string()));
+
+        SandboxManager::clear_mission_checkpoint(&temp_dir);
+        assert!(SandboxManager::check_interrupted_checkpoint(&temp_dir).is_none());
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_gha_memory_lifecycle() {
+        let temp_dir = std::env::temp_dir().join("gha_test_memory");
+        let _ = fs::create_dir_all(&temp_dir);
+
+        GhaMemory::append_interaction(&temp_dir, "test intent", "test response");
+        let history = GhaMemory::load_recent_history(&temp_dir, 5);
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].0, "test intent");
+
+        let summary = GhaMemory::format_memory_summary(&temp_dir);
+        assert!(summary.contains("test intent"));
+
+        let clear_res = GhaMemory::clear_memory(&temp_dir);
+        assert!(clear_res.contains("cleared"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

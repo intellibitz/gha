@@ -27,12 +27,12 @@ impl GmaDaemon {
 
     pub fn check_status(global_dir: &Path) -> Option<u32> {
         let lock_file = Self::get_lock_file(global_dir);
-        if let Ok(content) = fs::read_to_string(&lock_file) {
-            if let Ok(pid) = content.trim().parse::<u32>() {
-                let proc_path = PathBuf::from(format!("/proc/{}", pid));
-                if proc_path.exists() {
-                    return Some(pid);
-                }
+        if let Ok(content) = fs::read_to_string(&lock_file)
+            && let Ok(pid) = content.trim().parse::<u32>()
+        {
+            let proc_path = PathBuf::from(format!("/proc/{}", pid));
+            if proc_path.exists() {
+                return Some(pid);
             }
         }
         None

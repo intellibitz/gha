@@ -46,10 +46,10 @@ impl GmaMasterAgent {
         for msg in &a2a_logs {
             if msg.sender == "GhaReasoningAgent" {
                 let payload = &msg.payload;
-                let clean_text = if payload.contains("]:\n") {
-                    payload.splitn(2, "]:\n").nth(1).unwrap_or(payload)
-                } else if payload.contains("]: ") {
-                    payload.splitn(2, "]: ").nth(1).unwrap_or(payload)
+                let clean_text = if let Some((_, rest)) = payload.split_once("]:\n") {
+                    rest
+                } else if let Some((_, rest)) = payload.split_once("]: ") {
+                    rest
                 } else {
                     payload
                 };
@@ -157,15 +157,15 @@ impl GmaMasterAgent {
 
     fn audit_governance(&self, logs: &[super::gmas::A2AMessage]) -> Result<(), String> {
         for msg in logs {
-            if msg.payload.contains("ACTION:") {
-                if let Some(action_part) = msg.payload.split("ACTION: ").nth(1) {
-                    let parts: Vec<&str> = action_part.splitn(2, ' ').collect();
-                    let tool_name = parts[0];
-                    let arg = parts.get(1).unwrap_or(&"");
+            if msg.payload.contains("ACTION:")
+                && let Some(action_part) = msg.payload.split("ACTION: ").nth(1)
+            {
+                let parts: Vec<&str> = action_part.splitn(2, ' ').collect();
+                let tool_name = parts[0];
+                let arg = parts.get(1).unwrap_or(&"");
 
-                    SafetyDetector::audit_action(tool_name, arg)?;
-                    SecurityDetector::audit_action(tool_name, arg)?;
-                }
+                SafetyDetector::audit_action(tool_name, arg)?;
+                SecurityDetector::audit_action(tool_name, arg)?;
             }
         }
         Ok(())
@@ -178,37 +178,37 @@ impl GmaMasterAgent {
         crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, goal, &completed_tools, "IN_PROGRESS");
 
         for msg in logs {
-            if msg.payload.contains("ACTION:") {
-                if let Some(action_part) = msg.payload.split("ACTION: ").nth(1) {
-                    let parts: Vec<&str> = action_part.splitn(2, ' ').collect();
-                    let tool_name = parts[0];
-                    let arg = parts.get(1).unwrap_or(&"");
+            if msg.payload.contains("ACTION:")
+                && let Some(action_part) = msg.payload.split("ACTION: ").nth(1)
+            {
+                let parts: Vec<&str> = action_part.splitn(2, ' ').collect();
+                let tool_name = parts[0];
+                let arg = parts.get(1).unwrap_or(&"");
 
-                    if !tool_name.is_empty() {
-                        let mut res = ToolRegistry::execute_tool(tool_name, arg, workspace);
+                if !tool_name.is_empty() {
+                    let mut res = ToolRegistry::execute_tool(tool_name, arg, workspace);
 
-                        if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") || res.to_lowercase().contains("cloud_brain_unavailable") {
-                            let mut fix_prompt = format!("Mission '{}' failed at tool '{}' with error: '{}'. Suggest a fixed command.", goal, tool_name, res);
+                    if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") || res.to_lowercase().contains("cloud_brain_unavailable") {
+                        let mut fix_prompt = format!("Mission '{}' failed at tool '{}' with error: '{}'. Suggest a fixed command.", goal, tool_name, res);
 
-                            if res.contains("rate_limit") || res.contains("too large") || res.contains("CLOUD_BRAIN_UNAVAILABLE") {
-                                fix_prompt = format!("Mission '{}' failed due to intelligence limits. Suggest the same command but with a 'smaller context' or 'snippet' of any referenced files.", goal);
-                            }
-
-                            if let Ok(fixed_action) = crate::gemi::pulse::GhaPulse::reason(&fix_prompt, workspace) {
-                                if fixed_action.contains("ACTION:") {
-                                     let fix_parts: Vec<&str> = fixed_action.split("ACTION: ").nth(1).unwrap_or("").splitn(2, ' ').collect();
-                                     let fix_tool = fix_parts[0];
-                                     let fix_arg = fix_parts.get(1).unwrap_or(&"");
-                                     let fix_res = ToolRegistry::execute_tool(fix_tool, fix_arg, workspace);
-                                     res = fix_res;
-                                }
-                            }
+                        if res.contains("rate_limit") || res.contains("too large") || res.contains("CLOUD_BRAIN_UNAVAILABLE") {
+                            fix_prompt = format!("Mission '{}' failed due to intelligence limits. Suggest the same command but with a 'smaller context' or 'snippet' of any referenced files.", goal);
                         }
 
-                        completed_tools.push(tool_name.to_string());
-                        crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, goal, &completed_tools, "IN_PROGRESS");
-                        results.push(format!("   └── [Tool: {}]: {}", tool_name, res));
+                        if let Ok(fixed_action) = crate::gemi::pulse::GhaPulse::reason(&fix_prompt, workspace)
+                            && fixed_action.contains("ACTION:")
+                        {
+                            let fix_parts: Vec<&str> = fixed_action.split("ACTION: ").nth(1).unwrap_or("").splitn(2, ' ').collect();
+                            let fix_tool = fix_parts[0];
+                            let fix_arg = fix_parts.get(1).unwrap_or(&"");
+                            let fix_res = ToolRegistry::execute_tool(fix_tool, fix_arg, workspace);
+                            res = fix_res;
+                        }
                     }
+
+                    completed_tools.push(tool_name.to_string());
+                    crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, goal, &completed_tools, "IN_PROGRESS");
+                    results.push(format!("   └── [Tool: {}]: {}", tool_name, res));
                 }
             }
         }
@@ -229,15 +229,15 @@ impl GmaMasterAgent {
             }
         }
 
-        if reasoning.contains("ACTION: write_file") {
-            if let Some(path_part) = reasoning.split("write_file ").nth(1) {
-                let file_name = path_part.split_whitespace().next().unwrap_or("");
-                if !file_name.is_empty() {
-                    let full_path = workspace.join(file_name);
-                    if !full_path.exists() {
-                        score -= 50;
-                        flags.push(format!("File '{}' missing after write action.", file_name));
-                    }
+        if reasoning.contains("ACTION: write_file")
+            && let Some(path_part) = reasoning.split("write_file ").nth(1)
+        {
+            let file_name = path_part.split_whitespace().next().unwrap_or("");
+            if !file_name.is_empty() {
+                let full_path = workspace.join(file_name);
+                if !full_path.exists() {
+                    score -= 50;
+                    flags.push(format!("File '{}' missing after write action.", file_name));
                 }
             }
         }

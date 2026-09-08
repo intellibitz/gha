@@ -35,3 +35,15 @@ impl HardwareProfiler {
         (cpus, gpu_info)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hardware_profiler() {
+        let (cpus, gpu_info) = HardwareProfiler::profile();
+        assert!(cpus > 0);
+        assert!(!gpu_info.is_empty());
+    }
+}

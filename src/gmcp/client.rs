@@ -48,14 +48,14 @@ impl GmcpClient {
         let mut tools = Vec::new();
         let config_path = Self::get_config_path();
 
-        if let Ok(content) = fs::read_to_string(&config_path) {
-            if let Ok(config) = serde_json::from_str::<McpConfig>(&content) {
-                for (name, _srv) in config.mcp_servers {
-                    tools.push(McpTool {
-                        name: format!("{}:*", name),
-                        description: format!("Proxy for industry standard MCP server: {}", name),
-                    });
-                }
+        if let Ok(content) = fs::read_to_string(&config_path)
+            && let Ok(config) = serde_json::from_str::<McpConfig>(&content)
+        {
+            for (name, _srv) in config.mcp_servers {
+                tools.push(McpTool {
+                    name: format!("{}:*", name),
+                    description: format!("Proxy for industry standard MCP server: {}", name),
+                });
             }
         }
         tools
@@ -74,15 +74,14 @@ impl GmcpClient {
     pub fn benchmark_server(name: &str) -> (u128, bool) {
         let start = Instant::now();
         let config_path = Self::get_config_path();
-        if let Ok(content) = fs::read_to_string(&config_path) {
-            if let Ok(config) = serde_json::from_str::<McpConfig>(&content) {
-                if let Some(srv) = config.mcp_servers.get(name) {
-                    // Quick spawn test
-                    let child = Command::new(&srv.command).args(&srv.args).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn();
-                    let success = child.is_ok();
-                    return (start.elapsed().as_millis(), success);
-                }
-            }
+        if let Ok(content) = fs::read_to_string(&config_path)
+            && let Ok(config) = serde_json::from_str::<McpConfig>(&content)
+            && let Some(srv) = config.mcp_servers.get(name)
+        {
+            // Quick spawn test
+            let child = Command::new(&srv.command).args(&srv.args).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn();
+            let success = child.is_ok();
+            return (start.elapsed().as_millis(), success);
         }
         (0, false)
     }
@@ -114,10 +113,10 @@ impl GmcpClient {
         };
 
         config.mcp_servers.insert(name.to_string(), new_srv);
-        if let Ok(updated) = serde_json::to_string_pretty(&config) {
-            if fs::write(&config_path, updated).is_ok() {
-                return "SUCCESS_CONFIGURED".to_string();
-            }
+        if let Ok(updated) = serde_json::to_string_pretty(&config)
+            && fs::write(&config_path, updated).is_ok()
+        {
+            return "SUCCESS_CONFIGURED".to_string();
         }
         "ERROR_FAILED".to_string()
     }
@@ -168,7 +167,7 @@ impl GmcpClient {
                 "clientInfo": { "name": "gha-master", "version": "0.1.112" }
             }
         });
-        let _ = writeln!(stdin, "{}", init_req.to_string());
+        let _ = writeln!(stdin, "{}", init_req);
         let mut line = String::new();
         let _ = reader.read_line(&mut line);
 
@@ -189,7 +188,7 @@ impl GmcpClient {
         });
 
         line.clear();
-        let _ = writeln!(stdin, "{}", call_req.to_string());
+        let _ = writeln!(stdin, "{}", call_req);
         if reader.read_line(&mut line).is_ok() {
             let resp: serde_json::Value = serde_json::from_str(&line).unwrap_or(json!({}));
             if let Some(content) = resp.get("result").and_then(|r| r.get("content")).and_then(|c| c.get(0)).and_then(|i| i.get("text")).and_then(|t| t.as_str()) {

@@ -32,15 +32,13 @@ impl GmasSupervisor {
     pub const UDP_DISCOVERY_PORT: u16 = 9092;
 
     pub fn list_cluster_nodes() -> Vec<ClusterPeerNode> {
-        let mut nodes = Vec::new();
-        nodes.push(ClusterPeerNode {
+        vec![ClusterPeerNode {
             node_id: "gha-local-master".to_string(),
             address: "127.0.0.1:9090".to_string(),
             node_type: "LOCAL_MASTER".to_string(),
             is_active: true,
             capabilities: vec!["CORE".to_string(), "INFERENCE".to_string(), "TOOLING".to_string()],
-        });
-        nodes
+        }]
     }
 
     pub fn supervise_mission(goal: &str, workspace: &Path) -> (Vec<A2AMessage>, Vec<GawdAgentInfo>) {

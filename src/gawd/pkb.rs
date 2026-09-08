@@ -51,7 +51,7 @@ impl PkbSynthesizer {
                     sender: "GhaReasoningAgent".to_string(),
                     recipient: "GMA".to_string(),
                     action: "MISSION_FLUX".to_string(),
-                    payload: format!("🧠 [Native Synthesis]: ACTION: status"),
+                    payload: "🧠 [Native Synthesis]: ACTION: status".to_string(),
                 });
                 tool_calls.push("status".to_string());
             }

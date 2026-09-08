@@ -525,20 +525,20 @@ impl ToolRegistry {
                              }
                         }
 
-                        if path.is_file() {
-                            if let Ok(content) = std::fs::read_to_string(&path) {
-                                // Meritocratic Context: Standardize on balanced snippet for free-tier cloud verification
-                                let mut limit = 2000;
-                                if arg.contains("tamil") || arg.contains("translate") {
-                                     limit = 400; // Optimal balance for free-tier rate limits
-                                }
-                                let snippet = if content.len() > limit {
-                                    format!("{}... [TRUNCATED]", &content[..limit])
-                                } else {
-                                    content
-                                };
-                                full_prompt = format!("{}\n\n[SOURCE FILE CONTEXT: {}]\n{}", full_prompt, clean_word, snippet);
+                        if path.is_file()
+                            && let Ok(content) = std::fs::read_to_string(&path)
+                        {
+                            // Meritocratic Context: Standardize on balanced snippet for free-tier cloud verification
+                            let mut limit = 2000;
+                            if arg.contains("tamil") || arg.contains("translate") {
+                                 limit = 400; // Optimal balance for free-tier rate limits
                             }
+                            let snippet = if content.len() > limit {
+                                format!("{}... [TRUNCATED]", &content[..limit])
+                            } else {
+                                content
+                            };
+                            full_prompt = format!("{}\n\n[SOURCE FILE CONTEXT: {}]\n{}", full_prompt, clean_word, snippet);
                         }
                     }
                 }
@@ -549,29 +549,29 @@ impl ToolRegistry {
                     return format!("❌ Error: Intelligence provider failed. (Result: {})", result);
                 }
 
-                if arg.contains("save to") {
-                     if let Some(target_file) = arg.split("save to ").nth(1).and_then(|s| s.split_whitespace().next()) {
-                         let path = workspace.join(target_file);
+                if arg.contains("save to")
+                    && let Some(target_file) = arg.split("save to ").nth(1).and_then(|s| s.split_whitespace().next())
+                {
+                    let path = workspace.join(target_file);
 
-                         // 🧼 Deep Cleanse: Ensure the file content is JUST the artifact
-                         let mut file_content = if result.contains("]:\n") {
-                             result.splitn(2, "]:\n").nth(1).unwrap_or(&result).to_string()
-                         } else {
-                             result.clone()
-                         };
+                    // 🧼 Deep Cleanse: Ensure the file content is JUST the artifact
+                    let mut file_content = if let Some((_, rest)) = result.split_once("]:\n") {
+                        rest.to_string()
+                    } else {
+                        result.clone()
+                    };
 
-                         // Secondary cleanse if engine missed any markers
-                         if file_content.contains("<think>") {
-                              if let Some(pos) = file_content.rfind("</think>") {
-                                  file_content = file_content[pos + 8..].trim().to_string();
-                              } else if let Some(pos) = file_content.find("<think>") {
-                                  file_content = file_content[..pos].trim().to_string();
-                              }
+                    // Secondary cleanse if engine missed any markers
+                    if file_content.contains("<think>") {
+                         if let Some(pos) = file_content.rfind("</think>") {
+                             file_content = file_content[pos + 8..].trim().to_string();
+                         } else if let Some(pos) = file_content.find("<think>") {
+                             file_content = file_content[..pos].trim().to_string();
                          }
+                    }
 
-                         let _ = std::fs::write(&path, &file_content);
-                         return format!("✅ Mission fulfilled. Result saved to {}.\n\nSUMMARY:\n{}", target_file, file_content.chars().take(200).collect::<String>());
-                     }
+                    let _ = std::fs::write(&path, &file_content);
+                    return format!("✅ Mission fulfilled. Result saved to {}.\n\nSUMMARY:\n{}", target_file, file_content.chars().take(200).collect::<String>());
                 }
                 result
             }
@@ -628,7 +628,7 @@ impl ToolRegistry {
                 let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
                 let global_dir = home.join(".gha");
 
-                let intents = vec!["version", "status", "build", "test", "clean", "explain the universe"];
+                let intents = ["version", "status", "build", "test", "clean", "explain the universe"];
                 let mut entries = Vec::new();
                 for i in 0..count {
                     let intent = intents[i % intents.len()];
@@ -697,17 +697,17 @@ impl ToolRegistry {
 
                 let mut checked = 0;
                 for (env_var, name) in keys {
-                    if let Ok(key) = std::env::var(env_var) {
-                        if !key.trim().is_empty() {
-                            checked += 1;
-                            let masked_key = if key.len() > 8 {
-                                format!("{}...{}", &key[..4], &key[key.len() - 4..])
-                            } else {
-                                "****".to_string()
-                            };
-                            let res = GemiEngine::verify_provider(name);
-                            output.push_str(&format!("- **{}** (Env: `{}` | Key: `{}`): {}\n", name, env_var, masked_key, res.trim()));
-                        }
+                    if let Ok(key) = std::env::var(env_var)
+                        && !key.trim().is_empty()
+                    {
+                        checked += 1;
+                        let masked_key = if key.len() > 8 {
+                            format!("{}...{}", &key[..4], &key[key.len() - 4..])
+                        } else {
+                            "****".to_string()
+                        };
+                        let res = GemiEngine::verify_provider(name);
+                        output.push_str(&format!("- **{}** (Env: `{}` | Key: `{}`): {}\n", name, env_var, masked_key, res.trim()));
                     }
                 }
 
@@ -731,10 +731,10 @@ impl ToolRegistry {
 
                     output.push_str(&format!("## {} Verification\n", server_name));
                     if success {
-                        output.push_str(&format!("- **Status**: ✅ ACTIVE\n"));
+                        output.push_str("- **Status**: ✅ ACTIVE\n");
                         output.push_str(&format!("- **Latency**: {}ms\n\n", latency));
                     } else {
-                        output.push_str(&format!("- **Status**: ❌ OFFLINE or CONFIG ERROR\n\n"));
+                        output.push_str("- **Status**: ❌ OFFLINE or CONFIG ERROR\n\n");
                     }
                 }
                 output
@@ -948,13 +948,13 @@ impl ToolRegistry {
             let page_out = Command::new("curl")
                 .args(["-sL", "-C", "-", "--retry", "3", "--retry-connrefused", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", clean_query])
                 .output();
-            if let Ok(o) = page_out {
-                if o.status.success() {
-                    let page_html = String::from_utf8_lossy(&o.stdout);
-                    let page_text = Self::extract_plain_text_from_html(&page_html);
-                    let _ = fs::write(&save_path, &page_text);
-                    return format!("Downloaded web content from {} to {}:\n\n{}", clean_query, filename, page_text.chars().take(500).collect::<String>());
-                }
+            if let Ok(o) = page_out
+                && o.status.success()
+            {
+                let page_html = String::from_utf8_lossy(&o.stdout);
+                let page_text = Self::extract_plain_text_from_html(&page_html);
+                let _ = fs::write(&save_path, &page_text);
+                return format!("Downloaded web content from {} to {}:\n\n{}", clean_query, filename, page_text.chars().take(500).collect::<String>());
             }
         }
 
@@ -972,16 +972,16 @@ impl ToolRegistry {
 
         let mut target_link = String::new();
         for line in raw_html.lines() {
-            if line.contains("uddg=") {
-                if let Some(pos) = line.find("uddg=") {
-                    let rest = &line[pos + 5..];
-                    let end_pos = rest.find('&').unwrap_or(rest.len());
-                    let raw_url = &rest[..end_pos];
-                    let decoded_url = raw_url.replace("%3A", ":").replace("%2F", "/").replace("%3F", "?").replace("%3D", "=").replace("%26", "&");
-                    if decoded_url.starts_with("http://") || decoded_url.starts_with("https://") {
-                        target_link = decoded_url;
-                        break;
-                    }
+            if line.contains("uddg=")
+                && let Some(pos) = line.find("uddg=")
+            {
+                let rest = &line[pos + 5..];
+                let end_pos = rest.find('&').unwrap_or(rest.len());
+                let raw_url = &rest[..end_pos];
+                let decoded_url = raw_url.replace("%3A", ":").replace("%2F", "/").replace("%3F", "?").replace("%3D", "=").replace("%26", "&");
+                if decoded_url.starts_with("http://") || decoded_url.starts_with("https://") {
+                    target_link = decoded_url;
+                    break;
                 }
             }
         }
@@ -990,14 +990,14 @@ impl ToolRegistry {
             let page_out = Command::new("curl")
                 .args(["-sL", "-A", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36", &target_link])
                 .output();
-            if let Ok(o) = page_out {
-                if o.status.success() {
-                    let page_html = String::from_utf8_lossy(&o.stdout);
-                    let page_text = Self::extract_plain_text_from_html(&page_html);
-                    if page_text.len() > 100 {
-                        let _ = fs::write(&save_path, &page_text);
-                        return format!("Fetched full content for '{}' from {} and saved to {}:\n\n{}", clean_query, target_link, filename, page_text);
-                    }
+            if let Ok(o) = page_out
+                && o.status.success()
+            {
+                let page_html = String::from_utf8_lossy(&o.stdout);
+                let page_text = Self::extract_plain_text_from_html(&page_html);
+                if page_text.len() > 100 {
+                    let _ = fs::write(&save_path, &page_text);
+                    return format!("Fetched full content for '{}' from {} and saved to {}:\n\n{}", clean_query, target_link, filename, page_text);
                 }
             }
         }
@@ -1104,5 +1104,33 @@ impl ToolRegistry {
         } else {
             "🔧 [Self-Healing Build Harness]: No compilation errors detected.".to_string()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tool_registry_list_tools() {
+        let tools = ToolRegistry::list_tools();
+        assert!(!tools.is_empty());
+        assert!(tools.iter().any(|t| t.name == "status"));
+        assert!(tools.iter().any(|t| t.name == "version"));
+    }
+
+    #[test]
+    fn test_tool_registry_execute_version() {
+        let temp_dir = std::env::temp_dir();
+        let res = ToolRegistry::execute_tool("version", "", &temp_dir);
+        assert!(res.contains("v"));
+    }
+
+    #[test]
+    fn test_plain_text_from_html() {
+        let html = "<html><body><h1>Title</h1><p>Hello World</p></body></html>";
+        let text = ToolRegistry::extract_plain_text_from_html(html);
+        assert!(text.contains("Hello World"));
+        assert!(!text.contains("<html>"));
     }
 }
