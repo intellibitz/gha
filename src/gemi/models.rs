@@ -291,9 +291,11 @@ impl ModelManager {
                     let start = std::time::Instant::now();
                     let test_status = if is_valid_gguf && size_bytes > 10_000_000 {
                         "SUCCESS (Legit Local GGUF Model)".to_string()
-                    } else {
+                    } else if path.to_string_lossy().contains(".gha/models") {
                         let _ = fs::remove_file(&path);
                         "FAILED (Corrupted File Purged - Auto-Redownload Enqueued)".to_string()
+                    } else {
+                        "NON_GGUF_FILE (Skipped)".to_string()
                     };
 
                     let latency_ms = start.elapsed().as_millis();
@@ -336,7 +338,10 @@ impl ModelManager {
         if depth > 6 { return; }
 
         let folder_name = dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
-        if folder_name == ".git" || folder_name == "node_modules" || folder_name == "target" || folder_name == "vendor" || folder_name == ".cargo" || folder_name == ".rustup" || folder_name == "proc" || folder_name == "sys" {
+        if folder_name == ".git" || folder_name == "node_modules" || folder_name == "target" || folder_name == "vendor"
+            || folder_name == ".cargo" || folder_name == ".rustup" || folder_name == ".gradle" || folder_name == "proc" || folder_name == "sys"
+            || folder_name == "GLCache" || folder_name == "startupCache" || folder_name == "snapshots" || folder_name == "lint"
+        {
             return;
         }
 
