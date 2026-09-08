@@ -74,32 +74,32 @@ impl HardwareProfiler {
             ladder.push(ModelLadderStep {
                 step: 2,
                 label: "7B Parameters (Mid-Range Desktop)",
-                hf_repo: "Qwen/Qwen2.5-7B-Instruct-GGUF",
-                hf_file: "qwen2.5-7b-instruct-q4_k_m.gguf",
+                hf_repo: "bartowski/Qwen2.5-7B-Instruct-GGUF",
+                hf_file: "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
             });
         }
         if ram_gb >= 16 {
             ladder.push(ModelLadderStep {
                 step: 3,
                 label: "14B Parameters (High-Accuracy Workstation)",
-                hf_repo: "Qwen/Qwen2.5-14B-Instruct-GGUF",
-                hf_file: "qwen2.5-14b-instruct-q4_k_m.gguf",
+                hf_repo: "bartowski/Qwen2.5-14B-Instruct-GGUF",
+                hf_file: "Qwen2.5-14B-Instruct-Q4_K_M.gguf",
             });
         }
         if ram_gb >= 32 {
             ladder.push(ModelLadderStep {
                 step: 4,
                 label: "32B Parameters (High-End Workstation)",
-                hf_repo: "Qwen/Qwen2.5-32B-Instruct-GGUF",
-                hf_file: "qwen2.5-32b-instruct-q4_k_m.gguf",
+                hf_repo: "bartowski/Qwen2.5-32B-Instruct-GGUF",
+                hf_file: "Qwen2.5-32B-Instruct-Q4_K_M.gguf",
             });
         }
         if ram_gb >= 64 {
             ladder.push(ModelLadderStep {
                 step: 5,
                 label: "72B Parameters (Ultra-Capacity Workstation)",
-                hf_repo: "Qwen/Qwen2.5-72B-Instruct-GGUF",
-                hf_file: "qwen2.5-72b-instruct-q4_k_m.gguf",
+                hf_repo: "bartowski/Qwen2.5-72B-Instruct-GGUF",
+                hf_file: "Qwen2.5-72B-Instruct-Q4_K_M.gguf",
             });
         }
 
