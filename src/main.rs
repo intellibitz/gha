@@ -23,7 +23,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-const GHA_VERSION: &str = "0.1.213";
+const GHA_VERSION: &str = "0.1.214";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -153,8 +153,10 @@ fn run_install(global_dir: &Path) {
 }
 
 fn run_interactive_shell(cwd: &Path) {
-    let bin_path = get_home_dir().join(".gha/bin/gha");
-    let target_bin = if bin_path.exists() { bin_path } else { env::current_exe().unwrap_or_else(|_| PathBuf::from("gha")) };
+    let bin_filename = if cfg!(target_os = "windows") { ".gha/bin/gha.exe" } else { ".gha/bin/gha" };
+    let fallback_name = if cfg!(target_os = "windows") { "gha.exe" } else { "gha" };
+    let bin_path = get_home_dir().join(bin_filename);
+    let target_bin = if bin_path.exists() { bin_path } else { env::current_exe().unwrap_or_else(|_| PathBuf::from(fallback_name)) };
     let initial_mtime = std::fs::metadata(&target_bin).and_then(|m| m.modified()).ok();
 
     let mut debug_mode = false;

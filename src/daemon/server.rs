@@ -2,7 +2,8 @@
 // 100% Rust implementation managing GMCP (Port 9090), GEMI (Port 9091) & A2A Cluster UDP (Port 9092)
 
 use std::fs;
-use std::net::UdpSocket;
+use std::io::{BufRead, BufReader, Write};
+use std::net::{TcpListener, TcpStream, UdpSocket};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -11,8 +12,6 @@ use std::time::Duration;
 use crate::gemi::GemiServer;
 use crate::gmcp::server::{extract_json_id, extract_tool_arg, extract_tool_name};
 use crate::gmcp::tools::ToolRegistry;
-use std::io::{BufRead, BufReader, Write};
-use std::net::TcpListener;
 
 pub struct GmaDaemon;
 
@@ -30,9 +29,19 @@ impl GmaDaemon {
         if let Ok(content) = fs::read_to_string(&lock_file)
             && let Ok(pid) = content.trim().parse::<u32>()
         {
-            let proc_path = PathBuf::from(format!("/proc/{}", pid));
-            if proc_path.exists() {
-                return Some(pid);
+            if cfg!(target_os = "linux") {
+                let proc_path = PathBuf::from(format!("/proc/{}", pid));
+                if proc_path.exists() {
+                    return Some(pid);
+                }
+            } else {
+                // Cross-platform fallback for Windows & macOS: TCP ping on GMCP server port 9090
+                let addr = format!("127.0.0.1:{}", Self::GMCP_PORT);
+                if let Ok(addr_parsed) = addr.parse()
+                    && TcpStream::connect_timeout(&addr_parsed, Duration::from_millis(100)).is_ok()
+                {
+                    return Some(pid);
+                }
             }
         }
         None
@@ -44,24 +53,35 @@ impl GmaDaemon {
         }
 
         let current_exe = std::env::current_exe().ok();
-        let global_bin = global_dir.join("bin/gha-engine");
+        let bin_name = if cfg!(target_os = "windows") { "bin/gha-engine.exe" } else { "bin/gha-engine" };
+        let global_bin = global_dir.join(bin_name);
 
         let bin_to_run = if let Some(ref exe) = current_exe {
             exe.clone()
         } else if global_bin.exists() {
             global_bin
         } else {
-            PathBuf::from("gha")
+            PathBuf::from(if cfg!(target_os = "windows") { "gha.exe" } else { "gha" })
         };
 
-        let _ = Command::new("nohup")
-            .arg(bin_to_run)
-            .arg("daemon-start")
-            .arg(workspace.to_str().unwrap_or("."))
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn();
+        if cfg!(target_os = "windows") {
+            let _ = Command::new(&bin_to_run)
+                .arg("daemon-start")
+                .arg(workspace.to_str().unwrap_or("."))
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn();
+        } else {
+            let _ = Command::new("nohup")
+                .arg(bin_to_run)
+                .arg("daemon-start")
+                .arg(workspace.to_str().unwrap_or("."))
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn();
+        }
     }
 
     pub fn run_daemon_loop(workspace: PathBuf, global_dir: PathBuf) {
