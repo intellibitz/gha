@@ -227,6 +227,16 @@ impl GmaMasterAgent {
             }
         }
 
+        if results.is_empty() {
+            let lower_goal = goal.trim();
+            let (cmd, arg) = lower_goal.split_once(' ').unwrap_or((lower_goal, ""));
+            let registered_tools = ToolRegistry::list_tools();
+            if registered_tools.iter().any(|t| t.name == cmd) {
+                let res = ToolRegistry::execute_tool(cmd, arg, workspace);
+                results.push(format!("   └── [Tool: {}]: {}", cmd, res));
+            }
+        }
+
         crate::sandbox::manager::SandboxManager::clear_mission_checkpoint(workspace);
         results.join("\n")
     }
