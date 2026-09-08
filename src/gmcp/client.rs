@@ -62,13 +62,29 @@ impl GmcpClient {
     }
 
     pub fn fetch_global_registry() -> Vec<GlobalMcpEntry> {
-        vec![
+        let home = std::env::var("HOME").unwrap_or_default();
+        let registry_path = PathBuf::from(home).join(".gha/global_mcp_registry.json");
+
+        if registry_path.is_file()
+            && let Ok(content) = fs::read_to_string(&registry_path)
+            && let Ok(custom_entries) = serde_json::from_str::<Vec<GlobalMcpEntry>>(&content)
+        {
+            return custom_entries;
+        }
+
+        let default_entries = vec![
             GlobalMcpEntry { name: "alpha_vantage".to_string(), description: "Finance and Stock Market".to_string(), package: "@modelcontextprotocol/server-alpha-vantage".to_string(), category: "finance".to_string() },
             GlobalMcpEntry { name: "postgres".to_string(), description: "PostgreSQL Database".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
             GlobalMcpEntry { name: "brave_search".to_string(), description: "Web Search via Brave".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
             GlobalMcpEntry { name: "google_maps".to_string(), description: "Maps and Directions".to_string(), package: "@modelcontextprotocol/server-google-maps".to_string(), category: "location".to_string() },
             GlobalMcpEntry { name: "slack".to_string(), description: "Messaging and Collaboration".to_string(), package: "@modelcontextprotocol/server-slack".to_string(), category: "productivity".to_string() },
-        ]
+            GlobalMcpEntry { name: "filesystem".to_string(), description: "Local Filesystem Search & Operations".to_string(), package: "@modelcontextprotocol/server-filesystem".to_string(), category: "system".to_string() },
+            GlobalMcpEntry { name: "github".to_string(), description: "GitHub Repositories, PRs & Issues".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
+            GlobalMcpEntry { name: "memory".to_string(), description: "Knowledge Graph & Memory Persistence".to_string(), package: "@modelcontextprotocol/server-memory".to_string(), category: "memory".to_string() },
+        ];
+
+        let _ = fs::write(&registry_path, serde_json::to_string_pretty(&default_entries).unwrap_or_default());
+        default_entries
     }
 
     pub fn benchmark_server(name: &str) -> (u128, bool) {
