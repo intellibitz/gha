@@ -5,7 +5,7 @@ use std::fs;
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 
-const GHA_VERSION: &str = "0.1.202";
+const GHA_VERSION: &str = "0.1.203";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")

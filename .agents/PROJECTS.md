@@ -3,8 +3,8 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.202`
-* **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
+* **Current Engine Version**: `v0.1.203`
+* **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate (Not a Project Manager or Scaffolding Tool)
 
 ## Unified System Identity
 
@@ -97,6 +97,7 @@ All agents within the GHA ecosystem, including the IDE-integrated assistant (Tie
 10. **Real Working Code Only**: No mockups or placeholders. Functional, production-ready code only.
 11. **Native Integration**: Add functionality directly to the core engine; do not "fake" capabilities.
 12. **Source of Truth**: `AGENTS.md` and `PROJECTS.md` are the sole and absolute source of truth.
+13. **Not a Scaffolding Tool**: GHA focuses on intelligence distillation and hardware execution, not workspace plumbing or project management.
 
 ## 100% GPU Acceleration & Hardware Saturation
 
