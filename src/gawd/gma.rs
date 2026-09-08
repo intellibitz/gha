@@ -98,12 +98,18 @@ impl GmaMasterAgent {
         let is_orchestration = goal.contains("orchestrate") || goal.contains("mission");
         let is_placeholder = reasoning_content.contains("scouting for specialized brains");
 
+        let auto_prov = crate::gemi::models::ModelManager::auto_provision_model_for_intent(goal, workspace);
+
         let mut report = String::new();
         report.push_str("# gha Execution Report\n\n");
 
         report.push_str("## Domain Substrate\n");
         report.push_str(&format!("- **Mode**: {}\n", badge));
-        report.push_str(&format!("- **Scope**: {}\n\n", badge_desc));
+        report.push_str(&format!("- **Scope**: {}\n", badge_desc));
+        if let Some(ref prov_msg) = auto_prov {
+            report.push_str(&format!("- **Provisioning**: {}\n", prov_msg));
+        }
+        report.push('\n');
 
         if is_orchestration || !is_reflex {
             report.push_str("## Environment\n");

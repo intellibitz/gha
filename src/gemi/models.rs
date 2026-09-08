@@ -287,6 +287,28 @@ impl ModelManager {
         }
     }
 
+    pub fn auto_provision_model_for_intent(goal: &str, workspace: &Path) -> Option<String> {
+        let existing = Self::list_models(workspace);
+        if existing.iter().any(|m| m.is_local && (m.registry.contains("GGUF") || m.registry.contains("Ollama"))) {
+            return None;
+        }
+
+        let lower = goal.to_lowercase();
+        if lower.contains("download model") || lower.contains("pull model") || lower.contains("offline model") || lower.contains("install model") {
+            let target_model = if lower.contains("code") || lower.contains("rust") || lower.contains("bug") || lower.contains("python") {
+                "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF"
+            } else {
+                "Qwen/Qwen2.5-1.5B-Instruct-GGUF"
+            };
+
+            let res = Self::install_model(target_model);
+            let _ = Self::set_selected_model(target_model);
+            return Some(format!("🤖 [Autonomous Model Provisioning]: {}", res));
+        }
+
+        None
+    }
+
     pub fn scout_tier2_assets() -> Vec<crate::gawd::agents::DiscoverableAsset> {
         vec![
             crate::gawd::agents::DiscoverableAsset {
