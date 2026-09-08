@@ -52,15 +52,25 @@ impl GhaUserAgent {
         let lower = goal.to_lowercase();
         if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") || lower.contains("harvest") {
             ("🌾 Agronomy", "Agricultural & Crop Intelligence")
-        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") || lower.contains("clinic") {
+        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") || lower.contains("clinic") || lower.contains("patient") || lower.contains("fever") {
             ("⚕️ Medical", "Clinical & Health Intelligence")
-        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") || lower.contains("court") {
-            ("⚖️ Legal", "Legal & Contract Analysis")
-        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") || lower.contains("learn") {
+        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") || lower.contains("court") || lower.contains("attorney") {
+            ("⚖️ Legal", "Legal & Regulatory Compliance")
+        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") || lower.contains("learn") || lower.contains("homework") || lower.contains("essay") {
             ("🎓 Education", "Pedagogical & Science Learning")
-        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") {
+        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") || lower.contains("grid") {
             ("⚡ Energy", "Renewable Energy & Climate Science")
-        } else if lower.contains("code") || lower.contains("build") || lower.contains("cargo") || lower.contains("fn ") || lower.contains("rust") || lower.contains("bug") || lower.contains("fix") {
+        } else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") || lower.contains("hvac") || lower.contains("carpenter") || lower.contains("mechanic") || lower.contains("wire") {
+            ("🔧 Skilled Trades", "Field Engineering & Building Codes")
+        } else if lower.contains("story") || lower.contains("script") || lower.contains("video") || lower.contains("design") || lower.contains("music") || lower.contains("content") || lower.contains("art") {
+            ("🎨 Creative & Media", "Content & Visual Storytelling")
+        } else if lower.contains("recipe") || lower.contains("cook") || lower.contains("dinner") || lower.contains("family") || lower.contains("budget") || lower.contains("diy") || lower.contains("chore") || lower.contains("mom") || lower.contains("home") {
+            ("🏠 Home & Family", "Household, Budget & Family Life")
+        } else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") || lower.contains("disaster") || lower.contains("civil") || lower.contains("safety") {
+            ("🏛️ Public Safety", "Emergency Response & Infrastructure")
+        } else if lower.contains("ceo") || lower.contains("product") || lower.contains("agile") || lower.contains("business") || lower.contains("sales") || lower.contains("corporate") || lower.contains("market") {
+            ("💼 Enterprise", "Business & Corporate Operations")
+        } else if lower.contains("code") || lower.contains("build") || lower.contains("cargo") || lower.contains("fn ") || lower.contains("rust") || lower.contains("bug") || lower.contains("fix") || lower.contains("dev") || lower.contains("api") {
             ("💻 Engineering", "Software & Systems Architecture")
         } else {
             ("🌍 Universal", "Intelligence Reflex & Execution Substrate")
@@ -93,17 +103,27 @@ impl GawdAgentFleet {
             fleet.push(GawdAgentInfo { name: "GhaLinguistAgent".to_string(), role: "Universal Translation".to_string(), protocol: "A2A".to_string() });
         }
 
-        // Real-World Problem Domain Agent Synthesis
-        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") {
+        // Real-World Problem Domain Agent Synthesis (10 Major World Sectors)
+        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") || lower.contains("harvest") {
             fleet.push(GawdAgentInfo { name: "GhaAgronomyAgent".to_string(), role: "Agricultural & Crop Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") {
+        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") || lower.contains("clinic") || lower.contains("patient") || lower.contains("fever") {
             fleet.push(GawdAgentInfo { name: "GhaMedicalAgent".to_string(), role: "Clinical & Health Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") {
+        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") || lower.contains("court") {
             fleet.push(GawdAgentInfo { name: "GhaLegalAgent".to_string(), role: "Legal & Contract Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") {
+        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") || lower.contains("learn") || lower.contains("homework") {
             fleet.push(GawdAgentInfo { name: "GhaEducationAgent".to_string(), role: "Pedagogical & Science Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") {
+        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") {
             fleet.push(GawdAgentInfo { name: "GhaEnergyAgent".to_string(), role: "Climate & Renewable Energy Specialist".to_string(), protocol: "A2A".to_string() });
+        } else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") || lower.contains("hvac") || lower.contains("wire") {
+            fleet.push(GawdAgentInfo { name: "GhaTradesAgent".to_string(), role: "Skilled Trades & Building Codes Specialist".to_string(), protocol: "A2A".to_string() });
+        } else if lower.contains("recipe") || lower.contains("cook") || lower.contains("dinner") || lower.contains("family") || lower.contains("mom") || lower.contains("diy") {
+            fleet.push(GawdAgentInfo { name: "GhaHouseholdAgent".to_string(), role: "Home & Family Operations Specialist".to_string(), protocol: "A2A".to_string() });
+        } else if lower.contains("story") || lower.contains("script") || lower.contains("video") || lower.contains("design") || lower.contains("music") {
+            fleet.push(GawdAgentInfo { name: "GhaCreativeAgent".to_string(), role: "Narrative & Media Specialist".to_string(), protocol: "A2A".to_string() });
+        } else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") || lower.contains("disaster") || lower.contains("safety") {
+            fleet.push(GawdAgentInfo { name: "GhaPublicSafetyAgent".to_string(), role: "Emergency & Public Safety Specialist".to_string(), protocol: "A2A".to_string() });
+        } else if lower.contains("ceo") || lower.contains("product") || lower.contains("agile") || lower.contains("business") || lower.contains("corporate") {
+            fleet.push(GawdAgentInfo { name: "GhaEnterpriseAgent".to_string(), role: "Corporate & Enterprise Specialist".to_string(), protocol: "A2A".to_string() });
         } else {
             // Infinite Dynamic Domain Agent Synthesis
             let topic = goal.split_whitespace().find(|w| w.len() > 3).unwrap_or("Domain");
@@ -128,14 +148,24 @@ impl GawdAgentFleet {
         let lower = goal.to_lowercase();
         if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") {
             "[DOMAIN CONTEXT: Agronomy & Crop Science — Focus on soil pH, N-P-K nutrient ratios, crop yield, and sustainable soil management]".to_string()
-        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") {
+        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") || lower.contains("clinic") || lower.contains("patient") || lower.contains("fever") {
             "[DOMAIN CONTEXT: Medical & Clinical Guidance — Focus on evidence-based health information, patient-friendly explanations, and safety disclaimers]".to_string()
-        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") {
+        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") || lower.contains("court") {
             "[DOMAIN CONTEXT: Legal & Regulatory Analysis — Focus on contract terms, risk obligations, compliance, and clear layperson summaries]".to_string()
-        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") {
+        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") || lower.contains("learn") || lower.contains("homework") {
             "[DOMAIN CONTEXT: Education & Pedagogy — Focus on step-by-step conceptual explanations, examples, and clear learning progressions]".to_string()
-        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") {
+        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") {
             "[DOMAIN CONTEXT: Renewable Energy & Climate Science — Focus on efficiency, wattage, grid capacity, and environmental sustainability]".to_string()
+        } else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") || lower.contains("hvac") || lower.contains("wire") {
+            "[DOMAIN CONTEXT: Skilled Trades & Field Services — Focus on building codes (NEC/UPC/IMC), safety compliance, diagnostic steps, and cost estimation]".to_string()
+        } else if lower.contains("recipe") || lower.contains("cook") || lower.contains("dinner") || lower.contains("family") || lower.contains("mom") || lower.contains("diy") {
+            "[DOMAIN CONTEXT: Home & Family Operations — Focus on quick preparation steps, budget management, safety, and clear household guidance]".to_string()
+        } else if lower.contains("story") || lower.contains("script") || lower.contains("video") || lower.contains("design") || lower.contains("music") {
+            "[DOMAIN CONTEXT: Creative & Media Synthesis — Focus on narrative arcs, audience engagement, visual layout, and content branding]".to_string()
+        } else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") || lower.contains("disaster") || lower.contains("safety") {
+            "[DOMAIN CONTEXT: Public Safety & Emergency Response — Focus on emergency triage protocols, safety compliance, and crisis coordination]".to_string()
+        } else if lower.contains("ceo") || lower.contains("product") || lower.contains("agile") || lower.contains("business") || lower.contains("corporate") {
+            "[DOMAIN CONTEXT: Enterprise & Corporate Strategy — Focus on ROI, product roadmaps, operational efficiency, and executive summaries]".to_string()
         } else {
             String::new()
         }
@@ -172,6 +202,10 @@ impl GawdAgentFleet {
                     "GhaLegalAgent" => "Legal contract domain context active (liability & compliance analysis).".to_string(),
                     "GhaEducationAgent" => "Pedagogical domain context active (step-by-step educational breakdown).".to_string(),
                     "GhaEnergyAgent" => "Renewable energy domain context active (efficiency & wattage analysis).".to_string(),
+                    "GhaTradesAgent" => "Skilled trades domain context active (NEC/UPC/IMC building code compliance & field diagnostic).".to_string(),
+                    "GhaHouseholdAgent" => "Home & family operations domain context active (budget, recipes, household care).".to_string(),
+                    "GhaPublicSafetyAgent" => "Public safety domain context active (emergency response & crisis coordination).".to_string(),
+                    "GhaEnterpriseAgent" => "Enterprise domain context active (product roadmaps, ROI & executive summary).".to_string(),
                     "GhaSafetyAgent" => "Governance protocols active.".to_string(),
                     _ => format!("Specialized agent '{}' executing intent.", t_agent.name),
                 };
@@ -222,6 +256,11 @@ mod tests {
         assert_eq!(GhaUserAgent::detect_domain_badge("legal contract law").0, "⚖️ Legal");
         assert_eq!(GhaUserAgent::detect_domain_badge("math education school").0, "🎓 Education");
         assert_eq!(GhaUserAgent::detect_domain_badge("solar panel energy").0, "⚡ Energy");
+        assert_eq!(GhaUserAgent::detect_domain_badge("plumber pipe wiring hvac").0, "🔧 Skilled Trades");
+        assert_eq!(GhaUserAgent::detect_domain_badge("story script video design").0, "🎨 Creative & Media");
+        assert_eq!(GhaUserAgent::detect_domain_badge("dinner recipe cook family mom").0, "🏠 Home & Family");
+        assert_eq!(GhaUserAgent::detect_domain_badge("fire emergency disaster police").0, "🏛️ Public Safety");
+        assert_eq!(GhaUserAgent::detect_domain_badge("ceo product agile business corporate").0, "💼 Enterprise");
         assert_eq!(GhaUserAgent::detect_domain_badge("cargo build rust code").0, "💻 Engineering");
         assert_eq!(GhaUserAgent::detect_domain_badge("general mission").0, "🌍 Universal");
     }
