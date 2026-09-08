@@ -11,6 +11,7 @@
 9. **Full Autonomy & Permissions**: Agents have full permission for all file operations and command executions. Automatically apply all code changes without asking for permission, prompting confirmation, or requiring "Keep changes" clicks.
 10. **Real Working Code Only**: No hard-coded mockup templates or placeholder code. Write real, functional, production-ready code only.
 11. **Native Integration**: Agents must add functionality directly to the `gha` engine. Agents must not simulate or "fake" `gha` capabilities by performing logic themselves that should reside within the `gha` core.
+12. **Source of Truth**: All agent behavior and project rules are defined exclusively in `AGENTS.md` and `PROJECTS.md`. Agents are strictly required to follow these documents as their sole source of truth.
 
 ## GHA Execution Rules
 
