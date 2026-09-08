@@ -389,40 +389,45 @@ impl ModelManager {
             format!("Pulled model '{}' into local Ollama engine.", target)
         } else {
             let ladder = HardwareProfiler::get_progressive_model_ladder();
-            let exact_file = ladder.iter().find(|s| s.hf_repo == target).map(|s| s.hf_file);
+            let exact_file = ladder.iter().find(|s| s.hf_repo == target).map(|s| s.hf_file).unwrap_or("model.gguf");
 
-            let hf_url = if let Some(filename) = exact_file {
-                format!("https://huggingface.co/{}/resolve/main/{}", target, filename)
-            } else if target.contains('/') {
-                let file_part = target.split('/').next_back().unwrap_or("model").to_lowercase().replace("-gguf", "-q4_k_m.gguf");
-                format!("https://huggingface.co/{}/resolve/main/{}", target, file_part)
-            } else {
-                format!("https://huggingface.co/TheBloke/{}-GGUF/resolve/main/{}.Q4_K_M.gguf", target, target)
-            };
+            let candidate_urls = vec![
+                format!("https://models.gha.ai/{}", exact_file),
+                format!("https://modelscope.cn/api/v1/models/{}/repo?Revision=master&FilePath={}", target, exact_file),
+                format!("https://huggingface.co/{}/resolve/main/{}", target, exact_file),
+                format!("https://huggingface.co/TheBloke/{}-GGUF/resolve/main/{}.Q4_K_M.gguf", target, target),
+            ];
 
             let file_name = format!("{}.gguf", target.replace('/', "_"));
             let dest_path = models_dir.join(&file_name);
 
-            let status = Command::new("curl")
-                .args(["-L", "-C", "-", "--retry", "3", "--retry-connrefused", "-o", dest_path.to_str().unwrap_or("model.gguf"), &hf_url])
-                .status();
+            let mut downloaded_bytes = 0;
+            let mut success_url = String::new();
 
-            match status {
-                Ok(s) if s.success() => {
+            for mirror_url in candidate_urls {
+                let status = Command::new("curl")
+                    .args(["-L", "-C", "-", "--retry", "2", "--connect-timeout", "5", "--retry-connrefused", "-o", dest_path.to_str().unwrap_or("model.gguf"), &mirror_url])
+                    .status();
+
+                if status.is_ok_and(|s| s.success()) {
                     let len = dest_path.metadata().map(|m| m.len()).unwrap_or(0);
-                    if len < 10_000_000 {
-                        let _ = fs::remove_file(&dest_path);
-                        Self::save_download_progress(target, 0, expected_bytes, "FAILED");
-                        format!("Model file download incomplete or invalid URL ({} bytes). Removed empty file.", len)
+                    if len > 10_000_000 {
+                        downloaded_bytes = len;
+                        success_url = mirror_url;
+                        break;
                     } else {
-                        Self::save_download_progress(target, len, expected_bytes, "COMPLETED");
-                        format!("Resumed/Downloaded GGUF weights for '{}' ({:.1} GB) to {}", target, len as f32 / (1024.0 * 1024.0 * 1024.0), dest_path.display())
+                        let _ = fs::remove_file(&dest_path);
                     }
                 }
-                _ => {
-                    Self::save_download_progress(target, 0, expected_bytes, "FAILED");
-                    "Model download failed. Usage: 'gha install_model <model_name_or_url>'".to_string()
-                }
+            }
+
+            if downloaded_bytes > 10_000_000 {
+                Self::save_download_progress(target, downloaded_bytes, expected_bytes, "COMPLETED");
+                format!("Resumed/Downloaded GGUF weights for '{}' ({:.1} GB) via mirror {}", target, downloaded_bytes as f32 / (1024.0 * 1024.0 * 1024.0), success_url)
+            } else {
+                let _ = fs::remove_file(&dest_path);
+                Self::save_download_progress(target, 0, expected_bytes, "FAILED");
+                "Model download failed across all mirrors (GHA CDN, ModelScope, HuggingFace). Usage: 'gha install_model <model_name_or_url>'".to_string()
             }
         }
     }
