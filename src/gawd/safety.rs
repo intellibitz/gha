@@ -1,5 +1,7 @@
 // 🛡️ GHA Safety & System Destruction Detector
 // 100% Rust implementation for real-time mission safety auditing
+// RULE 4: Reality Check Always On
+// RULE 11: Native Integration Enforcement
 
 pub struct SafetyDetector;
 

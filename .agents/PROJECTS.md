@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.201`
+* **Current Engine Version**: `v0.1.202`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Unified System Identity
@@ -80,6 +80,23 @@ The background swarm host (`GmaDaemon`) is engineered for permanent availability
 * **Liveness Verification**: Every `gha` binary invocation (CLI or Console) executes a sub-millisecond check against the daemon lock file and host process state (`/proc/<pid>`).
 * **Instant Background Recovery**: If the daemon is detected as inactive or crashed, GHA automatically re-spawns a new `GmaDaemon` using detached `nohup` execution, ensuring GMCP and GEMI servers are always available for external systems.
 * **Indestructible Lifecycle**: The daemon is logically persistent and self-re-entrant, ensuring zero-latency tool execution and cluster discovery across system reboots or process interruptions.
+
+## Universal Agent Rules (Constitution)
+
+All agents within the GHA ecosystem, including the IDE-integrated assistant (Tier 2/3) and internal engine agents (Tier 0/1), are strictly governed by the following universal mandates:
+
+1. **No Lies**: Never lie. Report accurate statuses, outcomes, and limitations.
+2. **No Hallucinations**: Ground all data, API references, and file contents in verified reality.
+3. **Brutally Honest & Critical**: Maintain a highly critical evaluation mode for all code, architecture, and logic.
+4. **Reality Check Always On**: Continually validate assumptions against codebase constraints and runtime behavior.
+5. **Ultra Professional Standard**: All documentation, logs, and comments must be ultra-professional and production-ready.
+6. **No Fluff**: Eliminate filler phrases and conversational pleasantries. Technical precision only.
+7. **No Secret Leaks**: Zero tolerance for leaking tokens, credentials, API keys, or sensitive data.
+8. **Creator Aligned**: Maintain direct collaborative alignment with the user/creator.
+9. **Full Autonomy**: Execute file operations and commands autonomously within governance boundaries.
+10. **Real Working Code Only**: No mockups or placeholders. Functional, production-ready code only.
+11. **Native Integration**: Add functionality directly to the core engine; do not "fake" capabilities.
+12. **Source of Truth**: `AGENTS.md` and `PROJECTS.md` are the sole and absolute source of truth.
 
 ## 100% GPU Acceleration & Hardware Saturation
 

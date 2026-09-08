@@ -103,8 +103,8 @@ impl GawdAgentFleet {
             });
         }
 
-        fleet.push(GawdAgentInfo { name: "GhaSafetyAgent".to_string(), role: "Mission Guardrails".to_string(), protocol: "A2A".to_string() });
-        fleet.push(GawdAgentInfo { name: "GhaTruthAgent".to_string(), role: "Hallucination Detection".to_string(), protocol: "A2A".to_string() });
+        fleet.push(GawdAgentInfo { name: "GhaSafetyAgent".to_string(), role: "Mission Guardrails (Rules 4, 7, 11)".to_string(), protocol: "A2A".to_string() });
+        fleet.push(GawdAgentInfo { name: "GhaTruthAgent".to_string(), role: "Hallucination Detection (Rules 1, 2, 3, 10)".to_string(), protocol: "A2A".to_string() });
 
         fleet
     }
