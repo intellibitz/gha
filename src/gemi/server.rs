@@ -60,7 +60,11 @@ impl GemiServer {
 
                 let mut writer = stream;
 
-                if first_line.starts_with("GET / ") || first_line.starts_with("GET /index.html") || first_line.starts_with("GET /ui") || first_line.starts_with("GET /app") {
+                let req_parts: Vec<&str> = first_line.split_whitespace().collect();
+                let method = req_parts.first().copied().unwrap_or("");
+                let path = req_parts.get(1).copied().unwrap_or("");
+
+                if method == "GET" && (path == "/" || path == "/index.html" || path.starts_with("/ui") || path.starts_with("/app") || path == "/favicon.ico") {
                     let html = get_web_app_html();
                     let resp = format!(
                         "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: {}\r\n\r\n{}",
@@ -69,7 +73,7 @@ impl GemiServer {
                     );
                     let _ = writer.write_all(resp.as_bytes());
                     let _ = writer.flush();
-                } else if first_line.starts_with("GET /v1/models") || first_line.starts_with("GET /models") {
+                } else if method == "GET" && (path.starts_with("/v1/models") || path.starts_with("/models")) {
                     let models = ModelManager::list_models(&workspace);
                     let json_models: Vec<String> = models
                         .iter()
@@ -84,7 +88,7 @@ impl GemiServer {
                     );
                     let _ = writer.write_all(resp.as_bytes());
                     let _ = writer.flush();
-                } else if first_line.starts_with("POST /v1/chat/completions") || first_line.starts_with("POST /chat/completions") {
+                } else if method == "POST" && (path.starts_with("/v1/chat/completions") || path.starts_with("/chat/completions")) {
                     let is_streaming = body_str.contains("\"stream\":true") || body_str.contains("\"stream\": true") || body_str.contains("stream");
                     let active_model = crate::gemi::models::ModelManager::get_selected_model()
                         .unwrap_or_else(|| "gha-native-synthesis".to_string());
@@ -149,7 +153,7 @@ impl GemiServer {
                         let _ = writer.write_all(resp.as_bytes());
                         let _ = writer.flush();
                     }
-                } else if first_line.starts_with("OPTIONS") {
+                } else if method == "OPTIONS" {
                     let resp = "HTTP/1.1 200 OK\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, OPTIONS\r\nAccess-Control-Allow-Headers: *\r\nContent-Length: 0\r\n\r\n";
                     let _ = writer.write_all(resp.as_bytes());
                     let _ = writer.flush();
