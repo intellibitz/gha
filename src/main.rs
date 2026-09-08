@@ -23,7 +23,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-const GHA_VERSION: &str = "0.1.234";
+const GHA_VERSION: &str = "0.1.235";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -419,6 +419,10 @@ fn run_interactive_shell(cwd: &Path) {
                 let report = gma.solve("list_models", cwd, GHA_VERSION);
                 println!("\n{}", report);
             }
+            "/verify_models" | ":verify_models" | "verify_models" => {
+                let res = ToolRegistry::execute_tool("verify_models", "", cwd);
+                println!("\n{}", res);
+            }
             "/domain" | ":domain" | "domain" | "/domains" | ":domains" => {
                 println!("\n{}🌍 GHA Intelligence Substrates for World Missions:{}", COLOR_GREEN, COLOR_RESET);
                 println!("  🌾 Agronomy & Crop Intelligence     (e.g. soil pH, N-P-K ratios, crop yield)");
@@ -544,6 +548,10 @@ fn main() {
             let gma = GmaMasterAgent::new();
             let report = gma.solve("list_models", &cwd, GHA_VERSION);
             println!("{}", report);
+        }
+        "verify_models" | "verify-models" | ":verify_models" | "/verify_models" => {
+            let res = ToolRegistry::execute_tool("verify_models", "", &cwd);
+            println!("{}", res);
         }
         "install" | ":install" | "/install" => {
             run_install(&global_dir);

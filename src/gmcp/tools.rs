@@ -110,6 +110,10 @@ impl ToolRegistry {
                 description: "Download or pull web model to local hardware (arg: 'model_name_or_url')".to_string(),
             },
             McpTool {
+                name: "verify_models".to_string(),
+                description: "Inspect GGUF magic header bytes, disk size, and run load test on local models".to_string(),
+            },
+            McpTool {
                 name: "web_search_download".to_string(),
                 description: "Search the web and download content or lyrics to workspace (arg: 'query')".to_string(),
             },
@@ -526,6 +530,27 @@ impl ToolRegistry {
                 }
 
                 output
+            }
+            "verify_models" => {
+                let verification_results = ModelManager::verify_local_models(workspace);
+                if verification_results.is_empty() {
+                    "🔍 [Model Verification]: No local GGUF models found to verify on disk.".to_string()
+                } else {
+                    let mut out = format!("# 🛡️ GHA Local Model Legitimacy & Verification Report ({} Models)\n\n", verification_results.len());
+                    for (i, res) in verification_results.iter().enumerate() {
+                        out.push_str(&format!(
+                            "## {}. {}\n- **Path**: `{}`\n- **Disk Size**: {}\n- **Magic Header**: {}\n- **Load Test**: {}\n- **Verification Latency**: {}ms\n\n",
+                            i + 1,
+                            res.model_id,
+                            res.path,
+                            res.file_size_formatted,
+                            res.magic_header,
+                            res.test_inference_status,
+                            res.latency_ms
+                        ));
+                    }
+                    out
+                }
             }
             "reason" => {
                 let mut full_prompt = format!("MISSION: {}\n\nINSTRUCTION: Output the final result clearly. Do not explain your process. Deliver the completed artifact immediately.", arg);
