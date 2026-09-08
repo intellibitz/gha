@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.187`
+* **Current Engine Version**: `v0.1.188`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Unified System Identity
@@ -20,6 +20,16 @@ GHA is a 100% self-contained, unified AI ecosystem that operates simultaneously 
 * **CLI**: High-speed, < 2ms latency native command-line interface.
 * **IDE**: Guided TUI console and proactive workspace orchestrator.
 * **Self-Hosting**: Fully autonomous, zero-dependency runtime that manages its own sandbox, state, and versioning.
+
+## Recursive & Universal Interoperability
+
+GHA is architecturally open and fractal. It is not limited to its own internal implementation:
+
+* **fractal gha**: Any `gha` instance can work with any other external `gha` instance.
+* **Tier 0 Pluggability**: GHA can use any external GHA-Alpha engine as its Tier 0 reflex provider.
+* **Tier 1 Pluggability**: GHA can delegate swarm supervision to any external GAWD/GMA Tier 1 supervisor.
+* **Tier 2 Pluggability**: GHA can route deep reasoning tasks to any external GEMI Tier 2 inference engine.
+* **Universal Composition**: A GHA node can simultaneously act as a Tier 0, 1, or 2 provider for other GHA nodes in a global decentralized swarm.
 
 ## Core Terminology & Acronyms
 
@@ -102,7 +112,7 @@ GHA is designed as a plug-and-play backend for any external system or developmen
 
 * **Tier 0: GHA-Alpha (Native Reflex Engine)**: Microsecond (<1ms) protocol routing and deterministic reflexes ($2^0$ Primitive). GHA supports native internal reflex or any external Tier 0 GHA-Alpha engine.
 * **Tier 1: GAWD / GMA (Universal Swarm Supervisor)**: A2A swarm dispatch, governance auditing, and mission supervision ($2^{63}$ Swarm Pipeline). GHA supports internal GMA or any external Tier 1 GAWD supervisor/orchestrator.
-* **Tier 2: GEMI (Deep Reasoning & Multi-Model Inference)**: Multi-cloud provider scouting and pluggable local/external inference engines (Ollama, vLLM, etc.).ngines (Ollama, vLLM, etc.).
+* **Tier 2: GEMI (Deep Reasoning & Multi-Model Inference)**: Multi-cloud provider scouting and pluggable local/external inference engines (Ollama, vLLM, etc.).
 
 ## GMCP Action Substrate & Interop Bus
 
