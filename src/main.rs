@@ -23,7 +23,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-const GHA_VERSION: &str = "0.1.215";
+const GHA_VERSION: &str = "0.1.216";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -295,6 +295,44 @@ fn run_interactive_shell(cwd: &Path) {
             continue;
         }
 
+        if command_lower.starts_with("/attach") || command_lower.starts_with(":attach") {
+            let arg = command.trim_start_matches("/attach").trim_start_matches(":attach").trim();
+            let parts: Vec<&str> = arg.splitn(2, ' ').collect();
+            let file_path = parts.first().copied().unwrap_or("").trim();
+            let instruction = parts.get(1).copied().unwrap_or("analyze attached file").trim();
+
+            if file_path.is_empty() {
+                println!("Usage: /attach <file_path> [instruction]");
+                println!("Example: /attach ~/Documents/budget.csv summarize expenses");
+            } else {
+                let full_path = if PathBuf::from(file_path).is_absolute() {
+                    PathBuf::from(file_path)
+                } else {
+                    cwd.join(file_path)
+                };
+
+                if full_path.is_file() {
+                    if let Ok(content) = std::fs::read_to_string(&full_path) {
+                        let attached_prompt = format!("{}\n\n[ATTACHED FILE CONTENT: {}]\n{}", instruction, file_path, content);
+                        println!("📎 Attached file: '{}' ({} bytes)", file_path, content.len());
+                        if debug_mode {
+                            let report = gma.solve(&attached_prompt, cwd, GHA_VERSION);
+                            println!("{}", report);
+                        } else {
+                            let clean_answer = gma.solve_clean(&attached_prompt, cwd, GHA_VERSION);
+                            println!("{}", clean_answer);
+                        }
+                    } else {
+                        println!("❌ Error: Could not read file content at '{}'", full_path.display());
+                    }
+                } else {
+                    println!("❌ Error: File not found at '{}'", full_path.display());
+                }
+            }
+            println!();
+            continue;
+        }
+
         if command_lower.starts_with("/export_doc") || command_lower.starts_with(":export_doc") {
             let arg = command.trim_start_matches("/export_doc").trim_start_matches(":export_doc").trim();
             let res = ToolRegistry::execute_tool("export_doc", arg, cwd);
@@ -422,14 +460,27 @@ fn run_interactive_shell(cwd: &Path) {
                     command
                 };
 
-                let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(target_command);
+                let mut expanded_prompt = target_command.to_string();
+                for word in target_command.split_whitespace() {
+                    if let Some(file_ref) = word.strip_prefix('@') {
+                        let full_p = if PathBuf::from(file_ref).is_absolute() { PathBuf::from(file_ref) } else { cwd.join(file_ref) };
+                        if full_p.is_file()
+                            && let Ok(content) = std::fs::read_to_string(&full_p)
+                        {
+                            println!("📎 Auto-attached file: '{}' ({} bytes)", file_ref, content.len());
+                            expanded_prompt.push_str(&format!("\n\n[ATTACHED FILE: {}]\n{}", file_ref, content));
+                        }
+                    }
+                }
+
+                let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(&expanded_prompt);
                 println!("{}Substrate Mode: {} ({}){}", COLOR_CYAN, badge, badge_desc, COLOR_RESET);
 
                 if debug_mode {
-                    let report = gma.solve(target_command, cwd, GHA_VERSION);
+                    let report = gma.solve(&expanded_prompt, cwd, GHA_VERSION);
                     println!("{}", report);
                 } else {
-                    let clean_answer = gma.solve_clean(target_command, cwd, GHA_VERSION);
+                    let clean_answer = gma.solve_clean(&expanded_prompt, cwd, GHA_VERSION);
                     println!("{}", clean_answer);
                 }
             }
