@@ -18,7 +18,7 @@ Primary configuration files reside in `.agents/`:
 10. **Real Working Code Only**: No hard-coded mockup templates or placeholder code. Write real, functional, production-ready code only.
 11. **Native Integration**: Agents must add functionality directly to the `gha` engine. Agents must not simulate or "fake" `gha` capabilities by performing logic themselves that should reside within the `gha` core.
 12. **Source of Truth**: All agent behavior and project rules are defined exclusively in `AGENTS.md` and `PROJECTS.md`. Agents are strictly required to follow these documents as their sole source of truth.
-13. **Not a Project Manager or Scaffolding Tool**: `gha` is an Intelligence Reflex & Execution Substrate. It is NOT a project management tool (git branching, issue tracking) or a scaffolding tool (generating boilerplate projects). Agents must focus on intelligence distillation and hardware-saturated execution, not workspace plumbing.
+13. **Intelligence Substrate, Not Static Tooling**: `gha` is an Intelligence Reflex & Execution Substrate. While it empowers users (Product Managers, Developers, Creators) to execute complex missions like project management, scaffolding, and code generation, its identity is the **Intelligence Layer** that enables these actions, not a static plumbing or template tool.
 
 ## GHA Execution Rules
 
