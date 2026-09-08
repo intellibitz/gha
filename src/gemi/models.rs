@@ -388,8 +388,14 @@ impl ModelManager {
             Self::save_download_progress(target, expected_bytes, expected_bytes, "COMPLETED");
             format!("Pulled model '{}' into local Ollama engine.", target)
         } else {
-            let hf_url = if target.contains('/') {
-                format!("https://huggingface.co/{}/resolve/main/model.gguf", target)
+            let ladder = HardwareProfiler::get_progressive_model_ladder();
+            let exact_file = ladder.iter().find(|s| s.hf_repo == target).map(|s| s.hf_file);
+
+            let hf_url = if let Some(filename) = exact_file {
+                format!("https://huggingface.co/{}/resolve/main/{}", target, filename)
+            } else if target.contains('/') {
+                let file_part = target.split('/').next_back().unwrap_or("model").to_lowercase().replace("-gguf", "-q4_k_m.gguf");
+                format!("https://huggingface.co/{}/resolve/main/{}", target, file_part)
             } else {
                 format!("https://huggingface.co/TheBloke/{}-GGUF/resolve/main/{}.Q4_K_M.gguf", target, target)
             };
@@ -403,9 +409,15 @@ impl ModelManager {
 
             match status {
                 Ok(s) if s.success() => {
-                    let len = dest_path.metadata().map(|m| m.len()).unwrap_or(expected_bytes);
-                    Self::save_download_progress(target, len, expected_bytes, "COMPLETED");
-                    format!("Resumed/Downloaded GGUF weights for '{}' to {}", target, dest_path.display())
+                    let len = dest_path.metadata().map(|m| m.len()).unwrap_or(0);
+                    if len < 10_000_000 {
+                        let _ = fs::remove_file(&dest_path);
+                        Self::save_download_progress(target, 0, expected_bytes, "FAILED");
+                        format!("Model file download incomplete or invalid URL ({} bytes). Removed empty file.", len)
+                    } else {
+                        Self::save_download_progress(target, len, expected_bytes, "COMPLETED");
+                        format!("Resumed/Downloaded GGUF weights for '{}' ({:.1} GB) to {}", target, len as f32 / (1024.0 * 1024.0 * 1024.0), dest_path.display())
+                    }
                 }
                 _ => {
                     Self::save_download_progress(target, 0, expected_bytes, "FAILED");

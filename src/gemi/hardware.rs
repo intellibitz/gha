@@ -66,6 +66,7 @@ impl HardwareProfiler {
                 step: 1,
                 label: "1.5B Parameters (Fast Local Edge)",
                 hf_repo: "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+                hf_file: "qwen2.5-1.5b-instruct-q4_k_m.gguf",
             },
         ];
 
@@ -74,6 +75,7 @@ impl HardwareProfiler {
                 step: 2,
                 label: "7B Parameters (Mid-Range Desktop)",
                 hf_repo: "Qwen/Qwen2.5-7B-Instruct-GGUF",
+                hf_file: "qwen2.5-7b-instruct-q4_k_m.gguf",
             });
         }
         if ram_gb >= 16 {
@@ -81,6 +83,7 @@ impl HardwareProfiler {
                 step: 3,
                 label: "14B Parameters (High-Accuracy Workstation)",
                 hf_repo: "Qwen/Qwen2.5-14B-Instruct-GGUF",
+                hf_file: "qwen2.5-14b-instruct-q4_k_m.gguf",
             });
         }
         if ram_gb >= 32 {
@@ -88,6 +91,7 @@ impl HardwareProfiler {
                 step: 4,
                 label: "32B Parameters (High-End Workstation)",
                 hf_repo: "Qwen/Qwen2.5-32B-Instruct-GGUF",
+                hf_file: "qwen2.5-32b-instruct-q4_k_m.gguf",
             });
         }
         if ram_gb >= 64 {
@@ -95,6 +99,7 @@ impl HardwareProfiler {
                 step: 5,
                 label: "72B Parameters (Ultra-Capacity Workstation)",
                 hf_repo: "Qwen/Qwen2.5-72B-Instruct-GGUF",
+                hf_file: "qwen2.5-72b-instruct-q4_k_m.gguf",
             });
         }
 
@@ -150,6 +155,7 @@ pub struct ModelLadderStep {
     pub step: usize,
     pub label: &'static str,
     pub hf_repo: &'static str,
+    pub hf_file: &'static str,
 }
 
 #[allow(dead_code)]
