@@ -3,8 +3,8 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.204`
-* **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate
+* **Current Engine Version**: `v0.1.205`
+* **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User
 
 ## Unified System Identity
 
@@ -98,6 +98,7 @@ All agents within the GHA ecosystem, including the IDE-integrated assistant (Tie
 11. **Native Integration**: Add functionality directly to the core engine; do not "fake" capabilities.
 12. **Source of Truth**: `AGENTS.md` and `PROJECTS.md` are the sole and absolute source of truth.
 13. **Intelligence Substrate**: GHA is the intelligence layer that empowers users to execute any mission (Project Management, Scaffolding, Coding) through reflex and hardware execution.
+14. **Universal Mission**: GHA is for any world user for anything—scaling from high-end enterprise to home use.
 
 ## 100% GPU Acceleration & Hardware Saturation
 
