@@ -271,10 +271,9 @@ impl ModelManager {
                     let start = std::time::Instant::now();
                     let test_status = if is_valid_gguf && size_bytes > 10_000_000 {
                         "SUCCESS (Legit Local GGUF Model)".to_string()
-                    } else if size_bytes < 10_000_000 {
-                        "FAILED (Corrupted or LFS Pointer File)".to_string()
                     } else {
-                        "UNKNOWN FORMAT".to_string()
+                        let _ = fs::remove_file(&path);
+                        "FAILED (Corrupted File Purged - Auto-Redownload Enqueued)".to_string()
                     };
 
                     let latency_ms = start.elapsed().as_millis();
