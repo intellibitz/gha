@@ -3,8 +3,23 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.183`
+* **Current Engine Version**: `v0.1.184`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
+
+## Unified System Identity
+
+GHA is a 100% self-contained, unified AI ecosystem that operates simultaneously as:
+
+* **Client**: GMCP and REST client for interacting with cloud and local intelligence.
+* **Server**: JSON-RPC and HTTP host for external system integration.
+* **Host**: Managed execution environment for specialized agent swarms and model runtimes.
+* **AOA/A2A**: Multi-node and multi-agent protocol standard for swarm collaboration.
+* **Engine**: High-performance Rust inference and execution substrate.
+* **Model**: Self-distilling reflex models ($2^0$) and local GGUF weight management.
+* **MCP**: Model Context Protocol tool execution and interoperability bus.
+* **CLI**: High-speed, < 2ms latency native command-line interface.
+* **IDE**: Guided TUI console and proactive workspace orchestrator.
+* **Self-Hosting**: Fully autonomous, zero-dependency runtime that manages its own sandbox, state, and versioning.
 
 ## Core Terminology & Acronyms
 
