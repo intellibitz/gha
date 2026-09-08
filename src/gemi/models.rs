@@ -670,7 +670,15 @@ impl ModelManager {
     pub fn spawn_background_hardware_model_provisioner(workspace: &Path) {
         let ws = workspace.to_path_buf();
         std::thread::spawn(move || {
-            let _ = Self::run_fail_proof_model_agent(&ws);
+            loop {
+                let report = Self::run_fail_proof_model_agent(&ws);
+                let all_ready = !report.steps.is_empty() && report.steps.iter().all(|s| s.status == "VERIFIED_READY");
+                if all_ready {
+                    std::thread::sleep(std::time::Duration::from_secs(300));
+                } else {
+                    std::thread::sleep(std::time::Duration::from_secs(10));
+                }
+            }
         });
     }
 
