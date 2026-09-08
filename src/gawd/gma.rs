@@ -1,4 +1,6 @@
 // GAWD Tier 1 Master Agent
+// RULE 11: Agents must add functionality directly to the gha engine via ToolRegistry.
+// Agents must not simulate or "fake" gha capabilities by performing logic themselves.
 
 use std::path::{Path, PathBuf};
 use super::gmas::GmasSupervisor;

@@ -1,4 +1,6 @@
 // GAWD Agent Fleet
+// RULE 11: Agents must add functionality directly to the gha engine.
+// Agents must not simulate or "fake" gha capabilities.
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
