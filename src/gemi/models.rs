@@ -204,18 +204,14 @@ impl ModelManager {
     }
 
     pub fn get_active_engine_and_model() -> (String, String) {
-        let model = Self::get_selected_model().unwrap_or_else(|| "Auto-Scout".to_string());
+        let model = Self::get_selected_model().unwrap_or_else(|| "gha-alpha (Local Candle Engine)".to_string());
         let engine_override = Self::get_selected_engine();
 
         let engine = if let Some(e) = engine_override {
             e
         } else {
             let lower = model.to_lowercase();
-            if lower.contains("ollama") {
-                "Ollama".to_string()
-            } else if lower.contains("candle") || lower.contains("safetensors") || lower.contains("gha-alpha") {
-                "Candle".to_string()
-            } else if lower.contains("gemini") || lower.contains("google") {
+            if lower.contains("gemini") || lower.contains("google") {
                 "Google AI".to_string()
             } else if lower.contains("openai") || lower.contains("gpt") {
                 "OpenAI".to_string()
@@ -225,8 +221,10 @@ impl ModelManager {
                 "Anthropic".to_string()
             } else if lower.contains("deepseek") {
                 "DeepSeek".to_string()
+            } else if lower.contains("ollama") {
+                "Ollama (Local)".to_string()
             } else {
-                "GEMI".to_string()
+                "Candle (Local)".to_string()
             }
         };
 
