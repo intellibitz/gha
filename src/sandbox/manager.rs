@@ -3,6 +3,58 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GhaConfig {
+    pub gmcp_port: u16,
+    pub gemi_port: u16,
+    pub udp_discovery_port: u16,
+    pub default_engine: String,
+    pub default_model: String,
+    pub auto_download_models: bool,
+}
+
+impl Default for GhaConfig {
+    fn default() -> Self {
+        GhaConfig {
+            gmcp_port: 9090,
+            gemi_port: 9091,
+            udp_discovery_port: 9092,
+            default_engine: "gha".to_string(),
+            default_model: "gha-alpha".to_string(),
+            auto_download_models: true,
+        }
+    }
+}
+
+impl GhaConfig {
+    pub fn get_config_path(global_dir: &Path) -> PathBuf {
+        global_dir.join("config.json")
+    }
+
+    pub fn load(global_dir: &Path) -> Self {
+        let path = Self::get_config_path(global_dir);
+        if path.is_file()
+            && let Ok(content) = fs::read_to_string(&path)
+            && let Ok(config) = serde_json::from_str::<GhaConfig>(&content)
+        {
+            return config;
+        }
+
+        let default_config = GhaConfig::default();
+        let _ = fs::write(&path, serde_json::to_string_pretty(&default_config).unwrap_or_default());
+        default_config
+    }
+
+    #[allow(dead_code)]
+    pub fn save(&self, global_dir: &Path) -> Result<String, String> {
+        let path = Self::get_config_path(global_dir);
+        let content = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
+        fs::write(&path, content).map_err(|e| e.to_string())?;
+        Ok(format!("Saved GHA configuration to {}", path.display()))
+    }
+}
 
 pub struct SandboxManager;
 
@@ -14,6 +66,7 @@ impl SandboxManager {
             let _ = fs::create_dir_all(global_dir.join("models"));
             let _ = fs::create_dir_all(global_dir.join("train"));
         }
+        let _ = GhaConfig::load(global_dir);
         Self::load_env_file(global_dir);
         global_dir.to_path_buf()
     }
@@ -409,6 +462,26 @@ mod tests {
 
         let clear_res = GhaMemory::clear_memory(&temp_dir);
         assert!(clear_res.contains("cleared"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_gha_config_lifecycle() {
+        let temp_dir = std::env::temp_dir().join("gha_test_config");
+        let _ = fs::create_dir_all(&temp_dir);
+
+        let cfg = GhaConfig::load(&temp_dir);
+        assert_eq!(cfg.gmcp_port, 9090);
+        assert_eq!(cfg.gemi_port, 9091);
+        assert_eq!(cfg.udp_discovery_port, 9092);
+
+        let mut custom_cfg = cfg;
+        custom_cfg.gemi_port = 9099;
+        assert!(custom_cfg.save(&temp_dir).is_ok());
+
+        let loaded = GhaConfig::load(&temp_dir);
+        assert_eq!(loaded.gemi_port, 9099);
 
         let _ = fs::remove_dir_all(&temp_dir);
     }

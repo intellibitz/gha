@@ -17,7 +17,9 @@ pub struct GmaDaemon;
 
 impl GmaDaemon {
     pub const GMCP_PORT: u16 = 9090;
+    #[allow(dead_code)]
     pub const GEMI_PORT: u16 = 9091;
+    #[allow(dead_code)]
     pub const UDP_DISCOVERY_PORT: u16 = 9092;
 
     pub fn get_lock_file(global_dir: &Path) -> PathBuf {
@@ -89,24 +91,29 @@ impl GmaDaemon {
         let lock_file = Self::get_lock_file(&global_dir);
         let _ = fs::write(&lock_file, pid.to_string());
 
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+
         // 🚀 High-Priority Hardware-Bounded Model Auto-Provisioning (Background Thread)
         crate::gemi::models::ModelManager::spawn_background_hardware_model_provisioner(&workspace);
 
         let workspace_gemi = workspace.clone();
-        // 1. Spawn GEMI HTTP REST Server Thread (Port 9091)
+        let gemi_port = cfg.gemi_port;
+        // 1. Spawn GEMI HTTP REST Server Thread (Port 9091 / Dynamic)
         thread::spawn(move || {
-            GemiServer::start_http_server(workspace_gemi, Self::GEMI_PORT);
+            GemiServer::start_http_server(workspace_gemi, gemi_port);
         });
 
         let workspace_gmcp = workspace.clone();
-        // 2. Spawn GMCP TCP Server Thread (Port 9090)
+        let gmcp_port = cfg.gmcp_port;
+        // 2. Spawn GMCP TCP Server Thread (Port 9090 / Dynamic)
         thread::spawn(move || {
-            Self::start_gmcp_tcp_server(workspace_gmcp, Self::GMCP_PORT);
+            Self::start_gmcp_tcp_server(workspace_gmcp, gmcp_port);
         });
 
-        // 3. Spawn A2A Cluster UDP Discovery Listener Thread (Port 9092)
-        thread::spawn(|| {
-            Self::start_udp_discovery_server(Self::UDP_DISCOVERY_PORT);
+        let udp_port = cfg.udp_discovery_port;
+        // 3. Spawn A2A Cluster UDP Discovery Listener Thread (Port 9092 / Dynamic)
+        thread::spawn(move || {
+            Self::start_udp_discovery_server(udp_port);
         });
 
         // 4. Keep main daemon thread alive

@@ -31,3 +31,4 @@
 10. **Testspace Auto-Install on Push**: After a successful git push, execute a one-line install (`../../install.sh`) in the testspace (`./test/world`).
 11. **Conventional Commit Format**: Git commit messages must use plain text conventional commit prefixes (e.g., `feat:`, `fix:`, `refactor:`, `chore:`, `release:`) without emojis.
 12. **100% Dual Interface Alignment Guarantee**: The Terminal Console REPL (`gha`) and the Web/Mobile App (`http://localhost:9091` / PWA) must remain 100% aligned at all times across capabilities, tools, slash commands, session memory, model overrides, and domain substrate reasoning.
+13. **Dynamic Configuration Enforcement**: Zero hardcoded static configurations in code. All engine, server, port, model, and network parameters must be dynamic and loaded from GHA configuration files (`~/.gha/config.json`, `~/.gha/env`, `~/.gha/mcp_config.json`, `~/.gha/global_mcp_registry.json`) with automated dynamic defaults.
