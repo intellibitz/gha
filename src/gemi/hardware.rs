@@ -59,6 +59,49 @@ impl HardwareProfiler {
         16 // Conservative fallback
     }
 
+    pub fn get_progressive_model_ladder() -> Vec<ModelLadderStep> {
+        let ram_gb = Self::determine_total_ram_gb();
+        let mut ladder = vec![
+            ModelLadderStep {
+                step: 1,
+                label: "1.5B Parameters (Fast Local Edge)",
+                hf_repo: "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+            },
+        ];
+
+        if ram_gb >= 8 {
+            ladder.push(ModelLadderStep {
+                step: 2,
+                label: "7B Parameters (Mid-Range Desktop)",
+                hf_repo: "Qwen/Qwen2.5-7B-Instruct-GGUF",
+            });
+        }
+        if ram_gb >= 16 {
+            ladder.push(ModelLadderStep {
+                step: 3,
+                label: "14B Parameters (High-Accuracy Workstation)",
+                hf_repo: "Qwen/Qwen2.5-14B-Instruct-GGUF",
+            });
+        }
+        if ram_gb >= 32 {
+            ladder.push(ModelLadderStep {
+                step: 4,
+                label: "32B Parameters (High-End Workstation)",
+                hf_repo: "Qwen/Qwen2.5-32B-Instruct-GGUF",
+            });
+        }
+        if ram_gb >= 64 {
+            ladder.push(ModelLadderStep {
+                step: 5,
+                label: "72B Parameters (Ultra-Capacity Workstation)",
+                hf_repo: "Qwen/Qwen2.5-72B-Instruct-GGUF",
+            });
+        }
+
+        ladder
+    }
+
+    #[allow(dead_code)]
     pub fn determine_max_model_capacity() -> HardwareCapacity {
         let ram_gb = Self::determine_total_ram_gb();
 
@@ -99,6 +142,14 @@ impl HardwareProfiler {
             }
         }
     }
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct ModelLadderStep {
+    pub step: usize,
+    pub label: &'static str,
+    pub hf_repo: &'static str,
 }
 
 #[allow(dead_code)]

@@ -300,17 +300,28 @@ impl ModelManager {
         });
     }
 
-    pub fn ensure_max_local_hardware_models(workspace: &Path) -> String {
-        let capacity = HardwareProfiler::determine_max_model_capacity();
-        let existing = Self::list_models(workspace);
+    pub fn ensure_max_local_hardware_models(_workspace: &Path) -> String {
+        let ladder = HardwareProfiler::get_progressive_model_ladder();
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let models_dir = home.join(".gha/models");
 
-        if existing.iter().any(|m| m.is_local && m.registry.contains("GGUF")) {
-            return format!("Optimal local model capacity present for {}.", capacity.model_size_label);
+        let mut completed_steps = Vec::new();
+
+        for model_step in &ladder {
+            let file_name = format!("{}.gguf", model_step.hf_repo.replace('/', "_"));
+            let file_path = models_dir.join(&file_name);
+
+            if !file_path.exists() {
+                let res = Self::install_model(model_step.hf_repo);
+                let _ = Self::set_selected_model(model_step.hf_repo);
+                completed_steps.push(format!("Step {}/{} ({}): Downloaded ({})", model_step.step, ladder.len(), model_step.label, res));
+            } else {
+                let _ = Self::set_selected_model(model_step.hf_repo);
+                completed_steps.push(format!("Step {}/{} ({}): Active", model_step.step, ladder.len(), model_step.label));
+            }
         }
 
-        let res = Self::install_model(capacity.recommended_hf_repo);
-        let _ = Self::set_selected_model(capacity.recommended_hf_repo);
-        format!("🤖 [Hardware-Bounded Model Provisioning]: Sized for {}GB RAM ({}): {}", capacity.ram_gb, capacity.model_size_label, res)
+        format!("🤖 [Progressive 5-Step Model Provisioning]: Configured {}/{} local hardware tiers.\n   {}", completed_steps.len(), ladder.len(), completed_steps.join("\n   "))
     }
 
     pub fn scout_tier2_assets() -> Vec<crate::gawd::agents::DiscoverableAsset> {
