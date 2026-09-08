@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.190`
+* **Current Engine Version**: `v0.1.191`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Unified System Identity
@@ -45,6 +45,14 @@ GHA's GMCP substrate is a 100% industry-standard implementation of the Model Con
 * **Zero Setup**: All GHA components (GMA, GAWD, GEMI, GMCP, GmaDaemon, GemiServer) run out-of-the-box with **0 manual configuration**.
 * **Auto-Discovery**: Hardware acceleration (CPUs, CUDA/Metal GPU), local models (Candle, Ollama), and network interfaces are discovered and benchmarked automatically on startup.
 * **Auto-Fallback**: If internet or cloud API keys are absent, GHA operates 100% offline using native Candle tensor weights (`~/.gha/models/gha-alpha.safetensors`) or local GGUF vaults without erroring.
+
+## Indestructible GmaDaemon Architecture
+
+The background swarm host (`GmaDaemon`) is engineered for permanent availability and self-healing:
+
+* **Liveness Verification**: Every `gha` binary invocation (CLI or Console) executes a sub-millisecond check against the daemon lock file and host process state (`/proc/<pid>`).
+* **Instant Background Recovery**: If the daemon is detected as inactive or crashed, GHA automatically re-spawns a new `GmaDaemon` using detached `nohup` execution, ensuring GMCP and GEMI servers are always available for external systems.
+* **Indestructible Lifecycle**: The daemon is logically persistent and self-re-entrant, ensuring zero-latency tool execution and cluster discovery across system reboots or process interruptions.
 
 ## 100% GPU Acceleration & Hardware Saturation
 
