@@ -98,7 +98,10 @@ impl GmaMasterAgent {
         let is_orchestration = goal.contains("orchestrate") || goal.contains("mission");
         let is_placeholder = reasoning_content.contains("scouting for specialized brains");
 
-        let auto_prov = crate::gemi::models::ModelManager::auto_provision_model_for_intent(goal, workspace);
+        let lower_goal = goal.trim();
+        let (cmd, arg) = lower_goal.split_once(' ').unwrap_or((lower_goal, ""));
+        let registered_tools = ToolRegistry::list_tools();
+        let is_direct_tool = registered_tools.iter().any(|t| t.name == cmd || (cmd == "models" && t.name == "list_models"));
 
         let mut report = String::new();
         report.push_str("# gha Execution Report\n\n");
@@ -106,10 +109,16 @@ impl GmaMasterAgent {
         report.push_str("## Domain Substrate\n");
         report.push_str(&format!("- **Mode**: {}\n", badge));
         report.push_str(&format!("- **Scope**: {}\n", badge_desc));
-        if let Some(ref prov_msg) = auto_prov {
-            report.push_str(&format!("- **Provisioning**: {}\n", prov_msg));
-        }
         report.push('\n');
+
+        if is_direct_tool {
+            let actual_cmd = if cmd == "models" { "list_models" } else { cmd };
+            let tool_res = ToolRegistry::execute_tool(actual_cmd, arg, workspace);
+            report.push_str("## Output\n");
+            report.push_str(&format!("   └── [Tool: {}]: {}\n\n", actual_cmd, tool_res));
+            report.push_str("## Validation\n └── Verified.\n");
+            return report;
+        }
 
         if is_orchestration || !is_reflex {
             report.push_str("## Environment\n");

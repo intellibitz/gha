@@ -645,6 +645,7 @@ impl ModelManager {
         }
     }
 
+    #[allow(dead_code)]
     pub fn auto_provision_model_for_intent(goal: &str, workspace: &Path) -> Option<String> {
         let existing = Self::list_models(workspace);
         if existing.iter().any(|m| m.is_local && (m.registry.contains("GGUF") || m.registry.contains("Ollama"))) {
