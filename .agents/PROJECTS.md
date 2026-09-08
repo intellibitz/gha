@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.188`
+* **Current Engine Version**: `v0.1.189`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Unified System Identity
@@ -30,6 +30,15 @@ GHA is architecturally open and fractal. It is not limited to its own internal i
 * **Tier 1 Pluggability**: GHA can delegate swarm supervision to any external GAWD/GMA Tier 1 supervisor.
 * **Tier 2 Pluggability**: GHA can route deep reasoning tasks to any external GEMI Tier 2 inference engine.
 * **Universal Composition**: A GHA node can simultaneously act as a Tier 0, 1, or 2 provider for other GHA nodes in a global decentralized swarm.
+
+## Industry-Standard Model Context Protocol (GMCP)
+
+GHA's GMCP substrate is a 100% industry-standard implementation of the Model Context Protocol:
+
+* **Standard Substrate**: `GMCP` is the foundation for all GHA tool and agent interactions, adhering strictly to JSON-RPC 2.0 protocol standards.
+* **Standard ToolRegistry**: Native GHA tools are exposed via a standard MCP-compliant registry, ensuring 100% compatibility with external AI ecosystems.
+* **Standard Client**: `GmcpClient` can connect to and proxy any industry-standard MCP server (stdio or TCP).
+* **Standard Server**: `GmcpServer` hosts GHA capabilities over Port 9090, allowing any external system or IDE to interoperate with GHA agents as a standard MCP host.
 
 ## Core Terminology & Acronyms
 
