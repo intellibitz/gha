@@ -25,6 +25,15 @@ pub struct ModelInfo {
     pub latency_ms: Option<u128>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelDownloadProgress {
+    pub model_name: String,
+    pub bytes_downloaded: u64,
+    pub expected_bytes: u64,
+    pub percentage: f32,
+    pub status: String,
+}
+
 pub struct ModelManager;
 
 impl ModelManager {
@@ -230,12 +239,78 @@ impl ModelManager {
         models
     }
 
+    pub fn save_download_progress(model_name: &str, bytes_downloaded: u64, expected_bytes: u64, status: &str) {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let gha_dir = home.join(".gha");
+        let _ = fs::create_dir_all(&gha_dir);
+        let progress_file = gha_dir.join("download_progress.json");
+
+        let percentage = if expected_bytes > 0 {
+            (bytes_downloaded as f32 / expected_bytes as f32) * 100.0
+        } else {
+            0.0
+        };
+
+        let record = ModelDownloadProgress {
+            model_name: model_name.to_string(),
+            bytes_downloaded,
+            expected_bytes,
+            percentage,
+            status: status.to_string(),
+        };
+
+        if let Ok(json) = serde_json::to_string(&record) {
+            let _ = fs::write(&progress_file, json);
+        }
+    }
+
+    pub fn get_download_progress() -> Option<ModelDownloadProgress> {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let progress_file = home.join(".gha/download_progress.json");
+        if progress_file.is_file()
+            && let Ok(content) = fs::read_to_string(&progress_file)
+            && let Ok(mut record) = serde_json::from_str::<ModelDownloadProgress>(&content)
+        {
+            let models_dir = home.join(".gha/models");
+            let file_name = format!("{}.gguf", record.model_name.replace('/', "_"));
+            let file_path = models_dir.join(file_name);
+            if file_path.is_file()
+                && let Ok(m) = file_path.metadata()
+            {
+                record.bytes_downloaded = m.len();
+                if record.expected_bytes > 0 {
+                    record.percentage = (record.bytes_downloaded as f32 / record.expected_bytes as f32) * 100.0;
+                }
+            }
+            return Some(record);
+        }
+        None
+    }
+
+    fn estimate_expected_bytes(target: &str) -> u64 {
+        let lower = target.to_lowercase();
+        if lower.contains("72b") {
+            42_500_000_000
+        } else if lower.contains("32b") {
+            18_500_000_000
+        } else if lower.contains("14b") {
+            9_200_000_000
+        } else if lower.contains("7b") {
+            4_500_000_000
+        } else {
+            1_150_000_000
+        }
+    }
+
     pub fn install_model(query_or_url: &str) -> String {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let models_dir = home.join(".gha/models");
         let _ = fs::create_dir_all(&models_dir);
 
         let target = query_or_url.trim();
+        let expected_bytes = Self::estimate_expected_bytes(target);
+
+        Self::save_download_progress(target, 0, expected_bytes, "IN_PROGRESS");
 
         if target.starts_with("http://") || target.starts_with("https://") {
             let file_name = target.split('/').next_back().unwrap_or("model.gguf");
@@ -245,10 +320,18 @@ impl ModelManager {
                 .status();
 
             match status {
-                Ok(s) if s.success() => format!("Resumed/Downloaded native model weight to {}", dest_path.display()),
-                _ => format!("Failed to download model from {}", target),
+                Ok(s) if s.success() => {
+                    let len = dest_path.metadata().map(|m| m.len()).unwrap_or(expected_bytes);
+                    Self::save_download_progress(target, len, expected_bytes, "COMPLETED");
+                    format!("Resumed/Downloaded native model weight to {}", dest_path.display())
+                }
+                _ => {
+                    Self::save_download_progress(target, 0, expected_bytes, "FAILED");
+                    format!("Failed to download model from {}", target)
+                }
             }
         } else if Command::new("ollama").arg("pull").arg(target).status().is_ok_and(|s| s.success()) {
+            Self::save_download_progress(target, expected_bytes, expected_bytes, "COMPLETED");
             format!("Pulled model '{}' into local Ollama engine.", target)
         } else {
             let hf_url = if target.contains('/') {
@@ -265,8 +348,15 @@ impl ModelManager {
                 .status();
 
             match status {
-                Ok(s) if s.success() => format!("Resumed/Downloaded GGUF weights for '{}' to {}", target, dest_path.display()),
-                _ => "Model download failed. Usage: 'gha install_model <model_name_or_url>'".to_string(),
+                Ok(s) if s.success() => {
+                    let len = dest_path.metadata().map(|m| m.len()).unwrap_or(expected_bytes);
+                    Self::save_download_progress(target, len, expected_bytes, "COMPLETED");
+                    format!("Resumed/Downloaded GGUF weights for '{}' to {}", target, dest_path.display())
+                }
+                _ => {
+                    Self::save_download_progress(target, 0, expected_bytes, "FAILED");
+                    "Model download failed. Usage: 'gha install_model <model_name_or_url>'".to_string()
+                }
             }
         }
     }
@@ -339,5 +429,20 @@ impl ModelManager {
                 url: "https://vllm.ai".to_string(),
             },
         ]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_download_progress_tracker() {
+        ModelManager::save_download_progress("test-model-7b", 1000, 4500000000, "IN_PROGRESS");
+        let prog = ModelManager::get_download_progress();
+        assert!(prog.is_some());
+        let p = prog.unwrap();
+        assert_eq!(p.model_name, "test-model-7b");
+        assert_eq!(p.status, "IN_PROGRESS");
     }
 }

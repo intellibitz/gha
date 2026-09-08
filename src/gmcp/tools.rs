@@ -486,6 +486,15 @@ impl ToolRegistry {
                 let selected = ModelManager::get_selected_model();
                 let mut output = format!("Active Models ({})\n", models.len());
 
+                if let Some(prog) = ModelManager::get_download_progress() {
+                    let mb_downloaded = prog.bytes_downloaded as f32 / (1024.0 * 1024.0);
+                    let mb_total = prog.expected_bytes as f32 / (1024.0 * 1024.0);
+                    output.push_str(&format!(
+                        "\n⏳ LOCAL MODEL DOWNLOAD STATUS:\n   - Model: {}\n   - Progress: {:.1} MB / {:.1} MB ({:.1}%)\n   - Status: {}\n",
+                        prog.model_name, mb_downloaded, mb_total, prog.percentage, prog.status
+                    ));
+                }
+
                 let mut local_models = Vec::new();
                 let mut cloud_models = Vec::new();
 
