@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.194`
+* **Current Engine Version**: `v0.1.195`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Unified System Identity
@@ -20,6 +20,15 @@ GHA is a 100% self-contained, unified AI ecosystem that operates simultaneously 
 * **CLI**: High-speed, < 2ms latency native command-line interface.
 * **IDE**: Guided TUI console and proactive workspace orchestrator.
 * **Self-Hosting**: Fully autonomous, zero-dependency runtime that manages its own sandbox, state, and versioning.
+
+## Universal Deployment Environments
+
+GHA is designed to operate securely and efficiently in any networking or organizational context:
+
+* **Corporate & Enterprise**: Enforces strict governance, safety audits, and sandboxed isolation required for corporate security compliance.
+* **Internet-Scale Swarm**: Leverages cloud APIs and global P2P clustering for world-scale mission execution.
+* **Intranet & Air-Gapped**: Operates 100% offline using local Candle tensor weights and local GGUF vaults, ensuring data privacy within internal networks.
+* **Home & Personal Use**: Zero-configuration setup and proactive TUI console make GHA accessible and helpful for any regular home user on standard consumer hardware.
 
 ## Universal Scalability: Embedded to Mega Cloud
 
