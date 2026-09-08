@@ -619,7 +619,7 @@ impl ModelManager {
 
             for mirror_url in candidate_urls {
                 let status = Command::new("curl")
-                    .args(["-L", "-C", "-", "--retry", "2", "--connect-timeout", "5", "--retry-connrefused", "-o", dest_path.to_str().unwrap_or("model.gguf"), &mirror_url])
+                    .args(["-L", "-C", "-", "--retry", "5", "--connect-timeout", "30", "--retry-connrefused", "-o", dest_path.to_str().unwrap_or("model.gguf"), &mirror_url])
                     .status();
 
                 if status.is_ok_and(|s| s.success()) {
