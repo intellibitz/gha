@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.185`
+* **Current Engine Version**: `v0.1.186`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Unified System Identity
@@ -101,7 +101,7 @@ GHA is designed as a plug-and-play backend for any external system or developmen
 ## Intelligence Tiers
 
 * **Tier 0: GHA-Alpha (Native Reflex Engine)**: Microsecond (<1ms) protocol routing and deterministic reflexes ($2^0$ Primitive).
-* **Tier 1: GAWD / GMA (Universal Swarm Supervisor)**: A2A swarm dispatch, governance auditing, and mission supervision ($2^{63}$ Swarm Pipeline).
+* **Tier 1: GAWD / GMA (Universal Swarm Supervisor)**: A2A swarm dispatch, governance auditing, and mission supervision ($2^{63}$ Swarm Pipeline). GHA supports internal GMA or any external Tier 1 GAWD supervisor/orchestrator.
 * **Tier 2: GEMI (Deep Reasoning & Multi-Model Inference)**: Multi-cloud provider scouting and pluggable local/external inference engines (Ollama, vLLM, etc.).
 
 ## GMCP Action Substrate & Interop Bus
