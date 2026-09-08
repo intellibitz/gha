@@ -288,13 +288,43 @@ impl ToolRegistry {
 
         match name {
             "status" => {
+                let mut report = String::new();
+                report.push_str(&format!("# gha System Status (v{})\n\n", crate::GHA_VERSION));
+
+                // 1. Workspace & Hardware
                 let (cpus, gpu) = HardwareProfiler::profile();
-                format!(
-                    "Impact Scope: {} | Global Sandbox: ACTIVE | Hardware: {} CPUs, {}",
-                    workspace.display(),
-                    cpus,
-                    gpu
-                )
+                report.push_str("## Workspace & Hardware\n");
+                report.push_str(&format!("- Impact Scope: {}\n", workspace.display()));
+                report.push_str("- Global Sandbox: ACTIVE\n");
+                report.push_str(&format!("- Hardware: {} CPUs | {}\n\n", cpus, gpu));
+
+                // 2. Active Tier Status
+                let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
+                report.push_str("## Active Intelligence Tiers\n");
+                report.push_str(&format!("- Engine: {}\n", engine));
+                report.push_str(&format!("- Model: {}\n\n", model));
+
+                // 3. Infrastructure Summary
+                let fleet = crate::gawd::agents::GawdAgentFleet::synthesize_fleet("status");
+                report.push_str("## Infrastructure Summary\n");
+                report.push_str(&format!("- Agents: {} active agents in GAWD fleet\n", fleet.len()));
+
+                let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+                let global_dir = home.join(".gha");
+                let daemon_active = crate::daemon::server::GmaDaemon::check_status(&global_dir).is_some();
+                report.push_str(&format!("- Daemon: {}\n", if daemon_active { "RUNNING" } else { "INACTIVE" }));
+
+                let external_tools = GmcpClient::list_external_tools();
+                report.push_str(&format!("- MCP Clients: {} external proxies configured\n\n", external_tools.len()));
+
+                // 4. Memory & History
+                let history = crate::sandbox::manager::GhaMemory::load_recent_history(workspace, 1);
+                if !history.is_empty() {
+                    report.push_str("## Recent Memory\n");
+                    report.push_str(&format!("- Last Intent: \"{}\"\n", history[0].0));
+                }
+
+                report
             }
             "profile_hardware" => {
                 let (cpus, gpu) = HardwareProfiler::profile();
