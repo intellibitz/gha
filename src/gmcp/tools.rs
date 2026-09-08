@@ -198,6 +198,18 @@ impl ToolRegistry {
                 description: "Apply Kubernetes manifest file (arg: 'file_path')".to_string(),
             },
             McpTool {
+                name: "export_doc".to_string(),
+                description: "Export workspace report/document to HTML, Markdown, or TXT file (arg: 'filename.html content')".to_string(),
+            },
+            McpTool {
+                name: "schedule_task".to_string(),
+                description: "Schedule persistent background task in daemon (arg: 'interval_secs mission')".to_string(),
+            },
+            McpTool {
+                name: "list_schedules".to_string(),
+                description: "List scheduled persistent daemon background tasks".to_string(),
+            },
+            McpTool {
                 name: "swarm_sync".to_string(),
                 description: "Synchronize mission context across all active world-scale cluster nodes".to_string(),
             },
@@ -781,6 +793,49 @@ impl ToolRegistry {
                 }
                 output
             }
+            "export_doc" => {
+                let parts: Vec<&str> = arg.splitn(2, ' ').collect();
+                let filename = parts.first().copied().unwrap_or("gha_report.html").trim();
+                let content = parts.get(1).copied().unwrap_or(arg).trim();
+
+                let path = workspace.join(filename);
+                if filename.ends_with(".html") {
+                    let html_wrapper = format!(
+                        "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>GHA Executive Report</title>\n<style>\nbody {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 20px; color: #222; background: #fdfdfd; }}\nh1, h2, h3 {{ color: #0056b3; border-bottom: 1px solid #eaeaea; padding-bottom: 8px; }}\ncode, pre {{ background: #f4f4f4; padding: 4px 8px; border-radius: 4px; font-family: monospace; }}\n.card {{ background: #f8f9fa; border-left: 4px solid #0056b3; padding: 16px; margin: 20px 0; border-radius: 4px; }}\n</style>\n</head>\n<body>\n<div class=\"card\">\n<h1>📄 GHA Document Export</h1>\n<p><strong>Workspace:</strong> {}</p>\n</div>\n<div>\n{}\n</div>\n</body>\n</html>",
+                        workspace.display(),
+                        content.replace('\n', "<br>\n")
+                    );
+                    let _ = std::fs::write(&path, html_wrapper);
+                } else {
+                    let _ = std::fs::write(&path, content);
+                }
+                format!("📄 Document exported successfully to '{}' in workspace.", path.display())
+            }
+            "schedule_task" => {
+                let parts: Vec<&str> = arg.splitn(2, ' ').collect();
+                let interval = parts.first().copied().unwrap_or("3600").trim();
+                let mission = parts.get(1).copied().unwrap_or("").trim();
+
+                if mission.is_empty() {
+                    "Usage: schedule_task <interval_seconds> <mission_description>".to_string()
+                } else {
+                    crate::sandbox::manager::SandboxManager::save_scheduled_task(workspace, interval, mission)
+                }
+            }
+            "list_schedules" => {
+                let tasks = crate::sandbox::manager::SandboxManager::load_scheduled_tasks(workspace);
+                if tasks.is_empty() {
+                    "No background scheduled tasks configured for this workspace.".to_string()
+                } else {
+                    let mut out = format!("⏱️ Scheduled Daemon Tasks ({} Active):\n\n", tasks.len());
+                    for (i, task) in tasks.iter().enumerate() {
+                        let secs = task.get("interval_secs").and_then(|s| s.as_u64()).unwrap_or(0);
+                        let mission = task.get("mission").and_then(|m| m.as_str()).unwrap_or("");
+                        out.push_str(&format!("{}. Every {}s: \"{}\"\n", i + 1, secs, mission));
+                    }
+                    out
+                }
+            }
             "gmcp_scout" => {
                 let assets = crate::gmcp::client::GmcpClient::scout_tier3_assets();
                 let mut output = "# 🔌 GHA Tier 3: GMCP (Capabilities) Discovery\n\n".to_string();
@@ -1132,5 +1187,23 @@ mod tests {
         let text = ToolRegistry::extract_plain_text_from_html(html);
         assert!(text.contains("Hello World"));
         assert!(!text.contains("<html>"));
+    }
+
+    #[test]
+    fn test_export_doc_and_schedule() {
+        let temp_dir = std::env::temp_dir().join("gha_test_tools");
+        let _ = fs::create_dir_all(&temp_dir);
+
+        let exp_res = ToolRegistry::execute_tool("export_doc", "test_report.html <h1>Report</h1>", &temp_dir);
+        assert!(exp_res.contains("exported successfully"));
+        assert!(temp_dir.join("test_report.html").exists());
+
+        let sched_res = ToolRegistry::execute_tool("schedule_task", "3600 Daily backup", &temp_dir);
+        assert!(sched_res.contains("Scheduled task registered"));
+
+        let list_res = ToolRegistry::execute_tool("list_schedules", "", &temp_dir);
+        assert!(list_res.contains("Daily backup"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

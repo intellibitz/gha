@@ -7,6 +7,7 @@ mod gmcp;
 mod sandbox;
 
 use std::env;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
 use crate::gmcp::tools::ToolRegistry;
@@ -16,7 +17,13 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.212";
+use rustyline::completion::{Completer, Pair};
+use rustyline::highlight::Highlighter;
+use rustyline::hint::Hinter;
+use rustyline::validate::Validator;
+use rustyline::{Context, Helper};
+
+const GHA_VERSION: &str = "0.1.213";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -25,6 +32,44 @@ const COLOR_DIM: &str = "\x1b[90m";
 const COLOR_BOLD: &str = "\x1b[1m";
 const COLOR_RESET: &str = "\x1b[0m";
 const CLEAR_SCREEN: &str = "\x1b[2J\x1b[1;1H";
+
+pub struct GhaHelper;
+
+impl Helper for GhaHelper {}
+
+impl Completer for GhaHelper {
+    type Candidate = Pair;
+
+    fn complete(&self, line: &str, _pos: usize, _ctx: &Context<'_>) -> rustyline::Result<(usize, Vec<Pair>)> {
+        let commands = [
+            "/help", "/domain", "/friendly", "/simple", "/backup", "/restore",
+            "/audit", "/memory", "/forget", "/setkey", "/renew", "/agents",
+            "/engines", "/clients", "/servers", "/debug", "/models", "/services",
+            "/status", "/schedule", "/export_doc", "/clear", "/exit",
+        ];
+
+        let mut matches = Vec::new();
+        if line.starts_with('/') {
+            for cmd in commands {
+                if cmd.starts_with(line) {
+                    matches.push(Pair {
+                        display: cmd.to_string(),
+                        replacement: cmd.to_string(),
+                    });
+                }
+            }
+        }
+        Ok((0, matches))
+    }
+}
+
+impl Hinter for GhaHelper {
+    type Hint = String;
+}
+
+impl Highlighter for GhaHelper {}
+
+impl Validator for GhaHelper {}
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -39,6 +84,7 @@ fn print_help() {
     println!("Slash Commands:");
     println!("  /help, :help             Display this help menu");
     println!("  /domain, :domain         Inspect available domain intelligence substrates (Agronomy, Medical, Legal, etc.)");
+    println!("  /friendly, :friendly     Toggle friendly guidance mode (no technical jargon)");
     println!("  /backup, :backup         Backup workspace files and state to archive");
     println!("  /restore, :restore       Restore workspace files and state from backup archive");
     println!("  /audit, :audit           Inspect workspace audit trail and self-audit records");
@@ -54,6 +100,8 @@ fn print_help() {
     println!("  /models, :models         List available cloud and local models");
     println!("  /services, :services     List running background services");
     println!("  /status, :status         Inspect workspace health & hardware status");
+    println!("  /schedule <sec> <task>   Schedule persistent daemon background task");
+    println!("  /export_doc <file> <txt> Export document/report to HTML or Markdown");
     println!("  /clear, :clear           Clear display screen");
     println!("  /exit, :exit, exit       Exit interactive console");
     println!("\nSystem Commands:");
@@ -63,7 +111,23 @@ fn print_help() {
     println!("  gemi                     Start GEMI REST server");
 }
 
-fn print_header(cwd: &Path, debug_mode: bool) {
+fn print_header(cwd: &Path, debug_mode: bool, friendly_mode: bool) {
+    if friendly_mode {
+        println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
+        println!("{}🌸 GHA Friendly Guidance Mode (v{}){}", COLOR_BOLD, GHA_VERSION, COLOR_RESET);
+        println!("{}Workspace: {}{}", COLOR_DIM, cwd.display(), COLOR_RESET);
+
+        let proactive_prompts = crate::gawd::agents::GhaUserAgent::generate_proactive_prompts(cwd);
+        if !proactive_prompts.is_empty() {
+            println!("\n{}💡 Helpful Suggestions for Home & Family:{}", COLOR_GREEN, COLOR_RESET);
+            for (num, prompt) in &proactive_prompts {
+                println!("  [{}] {}", num, prompt);
+            }
+        }
+        println!("{}─────────────────────────────────────────────────────────────{}\n", COLOR_DIM, COLOR_RESET);
+        return;
+    }
+
     let mode_label = if debug_mode { "DEBUG TRACE" } else { "CONVERSATIONAL" };
     let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
     println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
@@ -89,15 +153,14 @@ fn run_install(global_dir: &Path) {
 }
 
 fn run_interactive_shell(cwd: &Path) {
-    use std::io::{self, Write};
-
     let bin_path = get_home_dir().join(".gha/bin/gha");
     let target_bin = if bin_path.exists() { bin_path } else { env::current_exe().unwrap_or_else(|_| PathBuf::from("gha")) };
     let initial_mtime = std::fs::metadata(&target_bin).and_then(|m| m.modified()).ok();
 
     let mut debug_mode = false;
+    let mut friendly_mode = false;
     print!("{}", CLEAR_SCREEN);
-    print_header(cwd, debug_mode);
+    print_header(cwd, debug_mode, friendly_mode);
 
     let gma = GmaMasterAgent::new();
 
@@ -107,6 +170,16 @@ fn run_interactive_shell(cwd: &Path) {
         println!("{}\n", clean_answer);
     }
 
+    let history_file = get_home_dir().join(".gha/history.txt");
+    let mut rl = match rustyline::Editor::new() {
+        Ok(mut editor) => {
+            editor.set_helper(Some(GhaHelper));
+            let _ = editor.load_history(&history_file);
+            Some(editor)
+        }
+        Err(_) => None,
+    };
+
     loop {
         if let Some(initial_time) = initial_mtime
             && let Ok(m) = std::fs::metadata(&target_bin)
@@ -114,43 +187,53 @@ fn run_interactive_shell(cwd: &Path) {
             && current_mtime > initial_time
         {
             println!("{}⚡ Runtime binary update detected on disk. Auto-renewing session...{}", COLOR_CYAN, COLOR_RESET);
+            if let Some(ref mut editor) = rl {
+                let _ = editor.save_history(&history_file);
+            }
             let _ = std::process::Command::new(&target_bin).status();
             break;
         }
 
-        let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
-        println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
-        print!("{}{}Ask GHA (v{}){} {}{}[{}]{} {}{}[{}]{}{}>{} ", COLOR_CYAN, COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_DIM, COLOR_CYAN, engine, COLOR_RESET, COLOR_DIM, COLOR_CYAN, model, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
-        if io::stdout().flush().is_err() {
-            break;
-        }
+        let prompt = if friendly_mode {
+            format!("{}Ask GHA>{} ", COLOR_GREEN, COLOR_RESET)
+        } else {
+            let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
+            format!("{}{}Ask GHA (v{}){} {}{}[{}]{} {}{}[{}]{}{}>{} ", COLOR_CYAN, COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_DIM, COLOR_CYAN, engine, COLOR_RESET, COLOR_DIM, COLOR_CYAN, model, COLOR_RESET, COLOR_GREEN, COLOR_RESET)
+        };
 
-        let mut input_buffer = String::new();
-
-        loop {
-            let mut line = String::new();
-            match io::stdin().read_line(&mut line) {
-                Ok(0) => return,
-                Ok(_) => {
-                    let trimmed = line.trim_end();
-                    if let Some(stripped) = trimmed.strip_suffix('\\') {
-                        input_buffer.push_str(stripped);
-                        input_buffer.push('\n');
-                        print!("{}...{} ", COLOR_DIM, COLOR_RESET);
-                        let _ = io::stdout().flush();
-                        continue;
-                    } else {
-                        input_buffer.push_str(trimmed);
-                        break;
-                    }
-                }
-                Err(_) => return,
+        let line_res = if let Some(ref mut editor) = rl {
+            editor.readline(&prompt)
+        } else {
+            print!("{}", prompt);
+            let _ = io::stdout().flush();
+            let mut l = String::new();
+            match io::stdin().read_line(&mut l) {
+                Ok(0) => Err(rustyline::error::ReadlineError::Eof),
+                Ok(_) => Ok(l),
+                Err(e) => Err(rustyline::error::ReadlineError::Io(e)),
             }
-        }
+        };
 
-        let command = input_buffer.trim();
+        let line = match line_res {
+            Ok(l) => l,
+            Err(rustyline::error::ReadlineError::Interrupted) | Err(rustyline::error::ReadlineError::Eof) => {
+                println!("{}Exiting session.{}", COLOR_DIM, COLOR_RESET);
+                break;
+            }
+            Err(e) => {
+                println!("Error reading input: {}", e);
+                break;
+            }
+        };
+
+        let command = line.trim();
         if command.is_empty() {
             continue;
+        }
+
+        if let Some(ref mut editor) = rl {
+            let _ = editor.add_history_entry(command);
+            let _ = editor.save_history(&history_file);
         }
 
         let command_lower = command.to_lowercase();
@@ -202,6 +285,22 @@ fn run_interactive_shell(cwd: &Path) {
             continue;
         }
 
+        if command_lower.starts_with("/schedule") || command_lower.starts_with(":schedule") {
+            let arg = command.trim_start_matches("/schedule").trim_start_matches(":schedule").trim();
+            let res = ToolRegistry::execute_tool("schedule_task", arg, cwd);
+            println!("\n{}", res);
+            println!();
+            continue;
+        }
+
+        if command_lower.starts_with("/export_doc") || command_lower.starts_with(":export_doc") {
+            let arg = command.trim_start_matches("/export_doc").trim_start_matches(":export_doc").trim();
+            let res = ToolRegistry::execute_tool("export_doc", arg, cwd);
+            println!("\n{}", res);
+            println!();
+            continue;
+        }
+
         if command_lower.starts_with("/setkey") || command_lower.starts_with(":setkey") {
             let parts: Vec<&str> = command.split_whitespace().collect();
             if parts.len() >= 3 {
@@ -235,6 +334,10 @@ fn run_interactive_shell(cwd: &Path) {
             "/debug" | ":debug" | "debug" => {
                 debug_mode = !debug_mode;
                 println!("{}Developer Debug Mode set to: {}{}", COLOR_DIM, if debug_mode { "ON (Full Execution Trace)" } else { "OFF (Clean Conversational Answer)" }, COLOR_RESET);
+            }
+            "/friendly" | ":friendly" | "friendly" | "/simple" | ":simple" | "simple" => {
+                friendly_mode = !friendly_mode;
+                println!("🌸 GHA Friendly Guidance Mode set to: {}", if friendly_mode { "ON (Headerless Simple Output)" } else { "OFF (Standard Interface)" });
             }
             "/backup" | ":backup" | "backup" => {
                 let res = ToolRegistry::execute_tool("backup_work", "", cwd);
@@ -301,7 +404,7 @@ fn run_interactive_shell(cwd: &Path) {
             "/clear" | ":clear" | "clear" => {
                 print!("{}", CLEAR_SCREEN);
                 let _ = io::stdout().flush();
-                print_header(cwd, debug_mode);
+                print_header(cwd, debug_mode, friendly_mode);
                 continue;
             }
             "/version" | ":version" | "version" => {

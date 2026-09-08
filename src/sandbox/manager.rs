@@ -99,6 +99,46 @@ impl SandboxManager {
             let _ = fs::remove_file(checkpoint_file);
         }
     }
+
+    pub fn save_scheduled_task(workspace: &Path, interval_str: &str, mission: &str) -> String {
+        let gha_dir = workspace.join(".gha");
+        let _ = fs::create_dir_all(&gha_dir);
+        let schedule_file = gha_dir.join("scheduled_tasks.jsonl");
+
+        let interval_secs = interval_str.parse::<u64>().unwrap_or(3600);
+        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+
+        let task = serde_json::json!({
+            "interval_secs": interval_secs,
+            "mission": mission,
+            "created_at": timestamp
+        });
+
+        if let Ok(line) = serde_json::to_string(&task) {
+            let mut content = fs::read_to_string(&schedule_file).unwrap_or_default();
+            content.push_str(&line);
+            content.push('\n');
+            let _ = fs::write(&schedule_file, content);
+            format!("⏱️ Scheduled task registered: \"{}\" every {}s.", mission, interval_secs)
+        } else {
+            "Failed to serialize scheduled task.".to_string()
+        }
+    }
+
+    pub fn load_scheduled_tasks(workspace: &Path) -> Vec<serde_json::Value> {
+        let schedule_file = workspace.join(".gha/scheduled_tasks.jsonl");
+        let mut tasks = Vec::new();
+        if schedule_file.is_file()
+            && let Ok(content) = fs::read_to_string(&schedule_file)
+        {
+            for line in content.lines() {
+                if let Ok(task) = serde_json::from_str::<serde_json::Value>(line) {
+                    tasks.push(task);
+                }
+            }
+        }
+        tasks
+    }
 }
 
 pub struct GhaMemory;

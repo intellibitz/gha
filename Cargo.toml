@@ -1,6 +1,6 @@
 [package]
 name = "gha"
-version = "0.1.212"
+version = "0.1.213"
 edition = "2024"
 authors = ["IntelliBitz", "Muthu Ramadoss", "Gemini (Google AI)"]
 description = "gha: EAI: Exponential Intelligence for Any AI. - GAWD, GEMI & GMCP Multi-Agent Engine"
@@ -15,6 +15,7 @@ candle-transformers = "0.8.2"
 tokenizers = "0.21.0"
 hf-hub = "0.4.1"
 anyhow = "1.0"
+rustyline = "15.0"
 
 [profile.release]
 opt-level = 3 # High performance
