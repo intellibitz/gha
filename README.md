@@ -1,6 +1,6 @@
-# gha (Global Hyper-intelligence Agents)
+# gha
 
-Native Rust Multi-Agent Engine.
+Intelligence Reflex & Execution Substrate for Any World User for Any Mission. Native Rust Multi-Agent Engine.
 
 ## Installation
 
