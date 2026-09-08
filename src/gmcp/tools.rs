@@ -490,6 +490,19 @@ impl ToolRegistry {
                 let selected = ModelManager::get_selected_model();
                 let mut output = format!("Active Models ({})\n", models.len());
 
+                if let Some(agent_report) = ModelManager::get_model_agent_report() {
+                    output.push_str(&format!(
+                        "\n🤖 [GhaModelAgent Status]: Active Step {}/{} ({} local models discovered on system)\n",
+                        agent_report.active_step, agent_report.total_steps, agent_report.total_discovered_on_system
+                    ));
+                    for s in agent_report.steps {
+                        output.push_str(&format!(
+                            "   - Step {}: {} ({}) — Status: {}\n",
+                            s.step, s.model_label, s.hf_repo, s.status
+                        ));
+                    }
+                }
+
                 if let Some(prog) = ModelManager::get_download_progress() {
                     let mb_downloaded = prog.bytes_downloaded as f32 / (1024.0 * 1024.0);
                     let mb_total = prog.expected_bytes as f32 / (1024.0 * 1024.0);

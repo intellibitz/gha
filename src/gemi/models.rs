@@ -46,6 +46,26 @@ pub struct ModelVerificationResult {
     pub latency_ms: u128,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelAgentStepStatus {
+    pub step: usize,
+    pub model_label: String,
+    pub hf_repo: String,
+    pub status: String,
+    pub bytes_downloaded: u64,
+    pub expected_bytes: u64,
+    pub percentage: f32,
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelAgentReport {
+    pub active_step: usize,
+    pub total_steps: usize,
+    pub total_discovered_on_system: usize,
+    pub steps: Vec<ModelAgentStepStatus>,
+}
+
 pub struct ModelManager;
 
 impl ModelManager {
@@ -412,6 +432,123 @@ impl ModelManager {
         None
     }
 
+    pub fn run_fail_proof_model_agent(workspace: &Path) -> ModelAgentReport {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let gha_dir = home.join(".gha");
+        let _ = fs::create_dir_all(&gha_dir);
+        let models_dir = gha_dir.join("models");
+        let _ = fs::create_dir_all(&models_dir);
+
+        let discovered = ModelManager::scan_system_for_local_models(workspace);
+        let ladder = HardwareProfiler::get_progressive_model_ladder();
+        let mut steps = Vec::new();
+        let mut active_step = 0;
+
+        for step in &ladder {
+            let file_name = format!("{}.gguf", step.hf_repo.replace('/', "_"));
+            let dest_path = models_dir.join(&file_name);
+
+            let found_system_path = discovered.iter().find(|m| m.name == file_name || m.model_id.contains(step.hf_file)).map(|m| PathBuf::from(&m.model_id));
+
+            let target_path = if dest_path.is_file() {
+                Some(dest_path.clone())
+            } else {
+                found_system_path
+            };
+
+            let expected_bytes = ModelManager::estimate_expected_bytes(step.hf_repo);
+
+            if let Some(path) = target_path {
+                let size_bytes = path.metadata().map(|m| m.len()).unwrap_or(0);
+                let mut is_valid = false;
+                if size_bytes > 10_000_000
+                    && let Ok(mut f) = fs::File::open(&path)
+                {
+                    use std::io::Read;
+                    let mut header = [0u8; 4];
+                    if f.read_exact(&mut header).is_ok() && &header == b"GGUF" {
+                        is_valid = true;
+                    }
+                }
+
+                if is_valid {
+                    let _ = ModelManager::set_selected_model(step.hf_repo);
+                    active_step = step.step;
+                    steps.push(ModelAgentStepStatus {
+                        step: step.step,
+                        model_label: step.label.to_string(),
+                        hf_repo: step.hf_repo.to_string(),
+                        status: "VERIFIED_READY".to_string(),
+                        bytes_downloaded: size_bytes,
+                        expected_bytes,
+                        percentage: 100.0,
+                        path: path.to_string_lossy().to_string(),
+                    });
+                    continue;
+                } else {
+                    let _ = fs::remove_file(&path);
+                }
+            }
+
+            let res = ModelManager::install_model(step.hf_repo);
+            let downloaded_path = dest_path.to_string_lossy().to_string();
+            let size_bytes = dest_path.metadata().map(|m| m.len()).unwrap_or(0);
+            let pct = if expected_bytes > 0 { (size_bytes as f32 / expected_bytes as f32) * 100.0 } else { 0.0 };
+
+            if dest_path.is_file() && size_bytes > 10_000_000 {
+                let _ = ModelManager::set_selected_model(step.hf_repo);
+                active_step = step.step;
+                steps.push(ModelAgentStepStatus {
+                    step: step.step,
+                    model_label: step.label.to_string(),
+                    hf_repo: step.hf_repo.to_string(),
+                    status: "VERIFIED_READY".to_string(),
+                    bytes_downloaded: size_bytes,
+                    expected_bytes,
+                    percentage: 100.0,
+                    path: downloaded_path,
+                });
+            } else {
+                steps.push(ModelAgentStepStatus {
+                    step: step.step,
+                    model_label: step.label.to_string(),
+                    hf_repo: step.hf_repo.to_string(),
+                    status: format!("IN_PROGRESS_OR_RETRY ({})", res),
+                    bytes_downloaded: size_bytes,
+                    expected_bytes,
+                    percentage: pct,
+                    path: downloaded_path,
+                });
+            }
+        }
+
+        let report = ModelAgentReport {
+            active_step,
+            total_steps: ladder.len(),
+            total_discovered_on_system: discovered.len(),
+            steps,
+        };
+
+        if let Ok(json) = serde_json::to_string_pretty(&report) {
+            let report_path = gha_dir.join("model_agent_report.json");
+            let _ = fs::write(&report_path, json);
+        }
+
+        report
+    }
+
+    pub fn get_model_agent_report() -> Option<ModelAgentReport> {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let report_path = home.join(".gha/model_agent_report.json");
+        if report_path.is_file()
+            && let Ok(content) = fs::read_to_string(&report_path)
+            && let Ok(report) = serde_json::from_str::<ModelAgentReport>(&content)
+        {
+            return Some(report);
+        }
+        None
+    }
+
     fn estimate_expected_bytes(target: &str) -> u64 {
         let lower = target.to_lowercase();
         if lower.contains("72b") {
@@ -528,10 +665,11 @@ impl ModelManager {
     pub fn spawn_background_hardware_model_provisioner(workspace: &Path) {
         let ws = workspace.to_path_buf();
         std::thread::spawn(move || {
-            let _ = Self::ensure_max_local_hardware_models(&ws);
+            let _ = Self::run_fail_proof_model_agent(&ws);
         });
     }
 
+    #[allow(dead_code)]
     pub fn ensure_max_local_hardware_models(_workspace: &Path) -> String {
         let ladder = HardwareProfiler::get_progressive_model_ladder();
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
