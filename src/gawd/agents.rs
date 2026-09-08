@@ -28,25 +28,21 @@ impl GhaUserAgent {
     pub fn generate_proactive_prompts(workspace: &Path) -> Vec<(String, String)> {
         let mut prompts = Vec::new();
 
-        if workspace.join("Cargo.toml").is_file() {
+        let is_dev_workspace = workspace.join("Cargo.toml").is_file()
+            || workspace.join("package.json").is_file()
+            || workspace.join("pyproject.toml").is_file()
+            || workspace.join("go.mod").is_file()
+            || workspace.join("build.gradle").is_file()
+            || workspace.join(".git").exists();
+
+        if is_dev_workspace {
             prompts.push(("1".to_string(), "Build workspace project cleanly".to_string()));
             prompts.push(("2".to_string(), "Run workspace unit test harness".to_string()));
             prompts.push(("3".to_string(), "Inspect workspace health & system status".to_string()));
         } else {
-            let mut file_count = 0;
-            if let Ok(entries) = std::fs::read_dir(workspace) {
-                file_count = entries.flatten().filter(|e| e.path().is_file()).count();
-            }
-
-            if file_count > 0 {
-                prompts.push(("1".to_string(), format!("Inspect and organize {} workspace files", file_count)));
-                prompts.push(("2".to_string(), "Check system health & hardware status".to_string()));
-                prompts.push(("3".to_string(), "List active models and local inference engines".to_string()));
-            } else {
-                prompts.push(("1".to_string(), "Check system health & hardware status".to_string()));
-                prompts.push(("2".to_string(), "List active models and local inference engines".to_string()));
-                prompts.push(("3".to_string(), "Create a new project workspace".to_string()));
-            }
+            prompts.push(("1".to_string(), "🥗 Plan a quick healthy dinner recipe".to_string()));
+            prompts.push(("2".to_string(), "📚 Explain a school or homework concept".to_string()));
+            prompts.push(("3".to_string(), "📅 Organize family budget, schedule, or documents".to_string()));
         }
 
         prompts
@@ -228,5 +224,22 @@ mod tests {
         assert_eq!(GhaUserAgent::detect_domain_badge("solar panel energy").0, "⚡ Energy");
         assert_eq!(GhaUserAgent::detect_domain_badge("cargo build rust code").0, "💻 Engineering");
         assert_eq!(GhaUserAgent::detect_domain_badge("general mission").0, "🌍 Universal");
+    }
+
+    #[test]
+    fn test_generate_proactive_prompts() {
+        let temp_dir = std::env::temp_dir().join("gha_test_prompts");
+        let _ = std::fs::create_dir_all(&temp_dir);
+
+        let prompts_home = GhaUserAgent::generate_proactive_prompts(&temp_dir);
+        assert_eq!(prompts_home.len(), 3);
+        assert!(prompts_home[0].1.contains("recipe") || prompts_home[0].1.contains("dinner"));
+
+        let _ = std::fs::write(temp_dir.join("Cargo.toml"), "[package]");
+        let prompts_dev = GhaUserAgent::generate_proactive_prompts(&temp_dir);
+        assert_eq!(prompts_dev.len(), 3);
+        assert!(prompts_dev[0].1.contains("Build"));
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
     }
 }

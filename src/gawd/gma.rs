@@ -53,7 +53,10 @@ impl GmaMasterAgent {
                 } else {
                     payload
                 };
-                let ans = clean_text.trim().to_string();
+                let mut ans = clean_text.trim().to_string();
+                if ans.contains("CLOUD_BRAIN_UNAVAILABLE") {
+                    ans = "💡 GHA is operating locally on your home computer. Connect a cloud provider or local model for extended reasoning.".to_string();
+                }
                 crate::sandbox::manager::GhaMemory::append_interaction(workspace, goal, &ans);
                 return ans;
             }
