@@ -16,7 +16,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-const GHA_VERSION: &str = "0.1.210";
+const GHA_VERSION: &str = "0.1.211";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -38,6 +38,7 @@ fn print_help() {
     println!("Usage: Type any prompt or natural language instruction.\n");
     println!("Slash Commands:");
     println!("  /help, :help             Display this help menu");
+    println!("  /domain, :domain         Inspect available domain intelligence substrates (Agronomy, Medical, Legal, etc.)");
     println!("  /backup, :backup         Backup workspace files and state to archive");
     println!("  /restore, :restore       Restore workspace files and state from backup archive");
     println!("  /audit, :audit           Inspect workspace audit trail and self-audit records");
@@ -66,7 +67,8 @@ fn print_header(cwd: &Path, debug_mode: bool) {
     let mode_label = if debug_mode { "DEBUG TRACE" } else { "CONVERSATIONAL" };
     let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
     println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
-    println!("{}Ask GHA (v{}){} | Engine: {}{}{} | Model: {}{}{} | Mode: {}{}{}", COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_CYAN, engine, COLOR_RESET, COLOR_CYAN, model, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
+    println!("{}Ask GHA (v{}){} | Substrate: {}Universal Intelligence Layer{}", COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
+    println!("{}Engine: {}{}{} | Model: {}{}{} | Mode: {}{}{}", COLOR_DIM, COLOR_CYAN, engine, COLOR_RESET, COLOR_CYAN, model, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
     println!("{}Workspace: {}{}", COLOR_DIM, cwd.display(), COLOR_RESET);
 
     let proactive_prompts = crate::gawd::agents::GhaUserAgent::generate_proactive_prompts(cwd);
@@ -274,6 +276,16 @@ fn run_interactive_shell(cwd: &Path) {
                 let report = gma.solve("list_models", cwd, GHA_VERSION);
                 println!("\n{}", report);
             }
+            "/domain" | ":domain" | "domain" | "/domains" | ":domains" => {
+                println!("\n{}🌍 GHA Intelligence Substrates for World Missions:{}", COLOR_GREEN, COLOR_RESET);
+                println!("  🌾 Agronomy & Crop Intelligence     (e.g. soil pH, N-P-K ratios, crop yield)");
+                println!("  ⚕️ Clinical & Health Diagnostics    (e.g. medical guidance, patient health)");
+                println!("  ⚖️ Legal & Contract Analysis       (e.g. contract review, clause risk)");
+                println!("  🎓 Pedagogical & Science Learning  (e.g. STEM synthesis, interactive tutoring)");
+                println!("  ⚡ Renewable Energy & Climate      (e.g. solar potential, grid optimization)");
+                println!("  💻 Software & Kernel Engineering   (e.g. Rust/C architecture, debugging)");
+                println!("  🌍 Universal Substrate              (e.g. general multi-agent execution)");
+            }
             "/status" | ":status" | "status" => {
                 let res = ToolRegistry::execute_tool("status", "", cwd);
                 println!("\n{}", res);
@@ -304,6 +316,9 @@ fn run_interactive_shell(cwd: &Path) {
                 } else {
                     command
                 };
+
+                let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(target_command);
+                println!("{}Substrate Mode: {} ({}){}", COLOR_CYAN, badge, badge_desc, COLOR_RESET);
 
                 if debug_mode {
                     let report = gma.solve(target_command, cwd, GHA_VERSION);
@@ -417,6 +432,16 @@ fn main() {
         "status" | ":status" | "/status" => {
             let res = ToolRegistry::execute_tool("status", "", &cwd);
             println!("{}", res);
+        }
+        "domain" | "domains" | ":domain" | "/domain" => {
+            println!("\n🌍 GHA Intelligence Substrates for World Missions:");
+            println!("  🌾 Agronomy & Crop Intelligence     (e.g. soil pH, N-P-K ratios, crop yield)");
+            println!("  ⚕️ Clinical & Health Diagnostics    (e.g. medical guidance, patient health)");
+            println!("  ⚖️ Legal & Contract Analysis       (e.g. contract review, clause risk)");
+            println!("  🎓 Pedagogical & Science Learning  (e.g. STEM synthesis, interactive tutoring)");
+            println!("  ⚡ Renewable Energy & Climate      (e.g. solar potential, grid optimization)");
+            println!("  💻 Software & Kernel Engineering   (e.g. Rust/C architecture, debugging)");
+            println!("  🌍 Universal Substrate              (e.g. general multi-agent execution)\n");
         }
         "verify-cloud" | ":verify-cloud" | "/verify-cloud" => {
             let res = ToolRegistry::execute_tool("verify_cloud_providers", "", &cwd);

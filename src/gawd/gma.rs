@@ -91,11 +91,16 @@ impl GmaMasterAgent {
             }
         }
 
+        let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(goal);
         let is_orchestration = goal.contains("orchestrate") || goal.contains("mission");
         let is_placeholder = reasoning_content.contains("scouting for specialized brains");
 
         let mut report = String::new();
         report.push_str("# gha Execution Report\n\n");
+
+        report.push_str("## Domain Substrate\n");
+        report.push_str(&format!("- **Mode**: {}\n", badge));
+        report.push_str(&format!("- **Scope**: {}\n\n", badge_desc));
 
         if is_orchestration || !is_reflex {
             report.push_str("## Environment\n");

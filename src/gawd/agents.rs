@@ -51,6 +51,25 @@ impl GhaUserAgent {
 
         prompts
     }
+
+    pub fn detect_domain_badge(goal: &str) -> (&'static str, &'static str) {
+        let lower = goal.to_lowercase();
+        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") || lower.contains("harvest") {
+            ("🌾 Agronomy", "Agricultural & Crop Intelligence")
+        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") || lower.contains("clinic") {
+            ("⚕️ Medical", "Clinical & Health Intelligence")
+        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") || lower.contains("court") {
+            ("⚖️ Legal", "Legal & Contract Analysis")
+        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") || lower.contains("learn") {
+            ("🎓 Education", "Pedagogical & Science Learning")
+        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") {
+            ("⚡ Energy", "Renewable Energy & Climate Science")
+        } else if lower.contains("code") || lower.contains("build") || lower.contains("cargo") || lower.contains("fn ") || lower.contains("rust") || lower.contains("bug") || lower.contains("fix") {
+            ("💻 Engineering", "Software & Systems Architecture")
+        } else {
+            ("🌍 Universal", "Intelligence Reflex & Execution Substrate")
+        }
+    }
 }
 
 pub struct GawdAgentFleet;
@@ -193,5 +212,21 @@ impl GawdAgentFleet {
                 url: "https://gha.ai/engines/aoa-wasm".to_string(),
             },
         ]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_domain_badge() {
+        assert_eq!(GhaUserAgent::detect_domain_badge("crop soil pH").0, "🌾 Agronomy");
+        assert_eq!(GhaUserAgent::detect_domain_badge("medical doctor health").0, "⚕️ Medical");
+        assert_eq!(GhaUserAgent::detect_domain_badge("legal contract law").0, "⚖️ Legal");
+        assert_eq!(GhaUserAgent::detect_domain_badge("math education school").0, "🎓 Education");
+        assert_eq!(GhaUserAgent::detect_domain_badge("solar panel energy").0, "⚡ Energy");
+        assert_eq!(GhaUserAgent::detect_domain_badge("cargo build rust code").0, "💻 Engineering");
+        assert_eq!(GhaUserAgent::detect_domain_badge("general mission").0, "🌍 Universal");
     }
 }
