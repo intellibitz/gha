@@ -1,62 +1,86 @@
 [
   {
-    "name": "alpha_vantage",
-    "description": "Finance and Stock Market Data",
-    "package": "@modelcontextprotocol/server-alpha-vantage",
-    "category": "finance"
-  },
-  {
     "name": "postgres",
-    "description": "PostgreSQL Database Management",
+    "description": "Official Anthropic PostgreSQL Database Server",
     "package": "@modelcontextprotocol/server-postgres",
     "category": "database"
   },
   {
     "name": "brave_search",
-    "description": "Web Search via Brave API",
+    "description": "Official Anthropic Brave Web Search Server",
     "package": "@modelcontextprotocol/server-brave-search",
     "category": "search"
   },
   {
     "name": "google_maps",
-    "description": "Maps, Places & Directions",
+    "description": "Official Anthropic Google Maps & Directions Server",
     "package": "@modelcontextprotocol/server-google-maps",
     "category": "location"
   },
   {
     "name": "slack",
-    "description": "Messaging & Channel Collaboration",
+    "description": "Official Anthropic Slack Collaboration Server",
     "package": "@modelcontextprotocol/server-slack",
     "category": "productivity"
   },
   {
     "name": "filesystem",
-    "description": "Local Filesystem Search & Operations",
+    "description": "Official Anthropic Filesystem Operations Server",
     "package": "@modelcontextprotocol/server-filesystem",
     "category": "system"
   },
   {
     "name": "github",
-    "description": "GitHub Repositories, PRs & Issues",
+    "description": "Official Anthropic GitHub Repos, PRs & Issues Server",
     "package": "@modelcontextprotocol/server-github",
     "category": "vcs"
   },
   {
     "name": "memory",
-    "description": "Knowledge Graph & Memory Persistence",
+    "description": "Official Anthropic Knowledge Graph Memory Server",
     "package": "@modelcontextprotocol/server-memory",
     "category": "memory"
   },
   {
     "name": "puppeteer",
-    "description": "Headless Web Scraping & Browser Automation",
+    "description": "Official Anthropic Headless Browser Automation Server",
     "package": "@modelcontextprotocol/server-puppeteer",
     "category": "web"
   },
   {
+    "name": "fetch",
+    "description": "Official Anthropic Web Fetch & Content Scraper Server",
+    "package": "@modelcontextprotocol/server-fetch",
+    "category": "web"
+  },
+  {
+    "name": "sequential_thinking",
+    "description": "Official Anthropic Step-by-Step Reasoning Server",
+    "package": "@modelcontextprotocol/server-sequential-thinking",
+    "category": "reasoning"
+  },
+  {
     "name": "sentry",
-    "description": "Error Tracking & Diagnostics",
+    "description": "Official Anthropic Sentry Error Diagnostics Server",
     "package": "@modelcontextprotocol/server-sentry",
     "category": "diagnostics"
+  },
+  {
+    "name": "alpha_vantage",
+    "description": "Community Financial Stock & Market Data Server",
+    "package": "@modelcontextprotocol/server-alpha-vantage",
+    "category": "finance"
+  },
+  {
+    "name": "git",
+    "description": "Community PyPI Git Version Control Server",
+    "package": "mcp-server-git",
+    "category": "vcs"
+  },
+  {
+    "name": "sqlite",
+    "description": "Community PyPI SQLite Database Server",
+    "package": "mcp-server-sqlite",
+    "category": "database"
   }
 ]

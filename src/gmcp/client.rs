@@ -91,17 +91,22 @@ impl GmcpClient {
             }
         }
 
-        // 3. Fallback to Default Bootstrap Registry if empty
+        // 3. Fallback to Default Bootstrap Registry if empty (Anthropic & Community Standards)
         if entries.is_empty() {
             entries = vec![
-                GlobalMcpEntry { name: "alpha_vantage".to_string(), description: "Finance and Stock Market".to_string(), package: "@modelcontextprotocol/server-alpha-vantage".to_string(), category: "finance".to_string() },
-                GlobalMcpEntry { name: "postgres".to_string(), description: "PostgreSQL Database".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
-                GlobalMcpEntry { name: "brave_search".to_string(), description: "Web Search via Brave".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
-                GlobalMcpEntry { name: "google_maps".to_string(), description: "Maps and Directions".to_string(), package: "@modelcontextprotocol/server-google-maps".to_string(), category: "location".to_string() },
-                GlobalMcpEntry { name: "slack".to_string(), description: "Messaging and Collaboration".to_string(), package: "@modelcontextprotocol/server-slack".to_string(), category: "productivity".to_string() },
-                GlobalMcpEntry { name: "filesystem".to_string(), description: "Local Filesystem Search & Operations".to_string(), package: "@modelcontextprotocol/server-filesystem".to_string(), category: "system".to_string() },
-                GlobalMcpEntry { name: "github".to_string(), description: "GitHub Repositories, PRs & Issues".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
-                GlobalMcpEntry { name: "memory".to_string(), description: "Knowledge Graph & Memory Persistence".to_string(), package: "@modelcontextprotocol/server-memory".to_string(), category: "memory".to_string() },
+                GlobalMcpEntry { name: "postgres".to_string(), description: "Official Anthropic PostgreSQL Database Server".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
+                GlobalMcpEntry { name: "brave_search".to_string(), description: "Official Anthropic Brave Web Search Server".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
+                GlobalMcpEntry { name: "google_maps".to_string(), description: "Official Anthropic Google Maps & Directions Server".to_string(), package: "@modelcontextprotocol/server-google-maps".to_string(), category: "location".to_string() },
+                GlobalMcpEntry { name: "slack".to_string(), description: "Official Anthropic Slack Collaboration Server".to_string(), package: "@modelcontextprotocol/server-slack".to_string(), category: "productivity".to_string() },
+                GlobalMcpEntry { name: "filesystem".to_string(), description: "Official Anthropic Filesystem Operations Server".to_string(), package: "@modelcontextprotocol/server-filesystem".to_string(), category: "system".to_string() },
+                GlobalMcpEntry { name: "github".to_string(), description: "Official Anthropic GitHub Repos, PRs & Issues Server".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
+                GlobalMcpEntry { name: "memory".to_string(), description: "Official Anthropic Knowledge Graph Memory Server".to_string(), package: "@modelcontextprotocol/server-memory".to_string(), category: "memory".to_string() },
+                GlobalMcpEntry { name: "puppeteer".to_string(), description: "Official Anthropic Headless Browser Automation Server".to_string(), package: "@modelcontextprotocol/server-puppeteer".to_string(), category: "web".to_string() },
+                GlobalMcpEntry { name: "fetch".to_string(), description: "Official Anthropic Web Fetch & Content Scraper Server".to_string(), package: "@modelcontextprotocol/server-fetch".to_string(), category: "web".to_string() },
+                GlobalMcpEntry { name: "sequential_thinking".to_string(), description: "Official Anthropic Step-by-Step Reasoning Server".to_string(), package: "@modelcontextprotocol/server-sequential-thinking".to_string(), category: "reasoning".to_string() },
+                GlobalMcpEntry { name: "alpha_vantage".to_string(), description: "Community Financial Stock & Market Data Server".to_string(), package: "@modelcontextprotocol/server-alpha-vantage".to_string(), category: "finance".to_string() },
+                GlobalMcpEntry { name: "git".to_string(), description: "Community PyPI Git Version Control Server".to_string(), package: "mcp-server-git".to_string(), category: "vcs".to_string() },
+                GlobalMcpEntry { name: "sqlite".to_string(), description: "Community PyPI SQLite Database Server".to_string(), package: "mcp-server-sqlite".to_string(), category: "database".to_string() },
             ];
         }
 
@@ -133,16 +138,21 @@ impl GmcpClient {
             McpConfig { mcp_servers: HashMap::new() }
         };
 
-        let cmd = if Command::new("npx").arg("--version").output().is_ok() {
-            "npx".to_string()
-        } else {
-            "gha".to_string()
-        };
+        let has_uvx = Command::new("uvx").arg("--version").output().is_ok();
+        let has_npx = Command::new("npx").arg("--version").output().is_ok();
 
-        let args = if cmd == "npx" {
-            vec!["-y".to_string(), package.to_string()]
+        let (cmd, args) = if package.starts_with("pypi:") || package.starts_with("mcp-server-") || package.contains("python") {
+            if has_uvx {
+                ("uvx".to_string(), vec![package.trim_start_matches("pypi:").to_string()])
+            } else if has_npx {
+                ("npx".to_string(), vec!["-y".to_string(), package.trim_start_matches("pypi:").to_string()])
+            } else {
+                ("gha".to_string(), vec!["mcp".to_string(), name.to_string()])
+            }
+        } else if has_npx {
+            ("npx".to_string(), vec!["-y".to_string(), package.to_string()])
         } else {
-            vec!["mcp".to_string(), name.to_string()]
+            ("gha".to_string(), vec!["mcp".to_string(), name.to_string()])
         };
 
         let new_srv = McpServerConfig {
