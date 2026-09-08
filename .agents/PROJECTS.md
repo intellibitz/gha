@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.189`
+* **Current Engine Version**: `v0.1.190`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Standalone Native Rust Multi-Agent Engine
 
 ## Unified System Identity
@@ -40,31 +40,19 @@ GHA's GMCP substrate is a 100% industry-standard implementation of the Model Con
 * **Standard Client**: `GmcpClient` can connect to and proxy any industry-standard MCP server (stdio or TCP).
 * **Standard Server**: `GmcpServer` hosts GHA capabilities over Port 9090, allowing any external system or IDE to interoperate with GHA agents as a standard MCP host.
 
-## Core Terminology & Acronyms
-
-* **GHA**: Global Hyper-intelligence Agents — 100% standalone native Rust AI engine & platform.
-* **EAI**: Exponential Intelligence for Any AI — Architectural framework for exponential agent scaling.
-* **GMA**: GHA Master Agent — Tier 1 universal intent interactor, A2A root supervisor, and mission router.
-* **GAWD**: Global Agentic Workspace Domain — Multi-agent swarm ecosystem and agent governance domain.
-* **GMAS**: GAWD Multi-agent Supervisor — Cluster supervisor managing inter-agent communications (A2A & AOA protocols).
-* **GEMI**: Global Engine for Multi-model Inference — Inference bridge routing across cloud APIs and local runtimes.
-* **GMCP**: GHA Model Context Protocol — Native tool execution engine, interop bus, and Model Context Protocol server/client.
-* **PKB**: Protocol Knowledge Base — Reflex data synthesizer for Tier 0 training distillation.
-
 ## Zero Configuration Guarantee Across All Components
 
 * **Zero Setup**: All GHA components (GMA, GAWD, GEMI, GMCP, GmaDaemon, GemiServer) run out-of-the-box with **0 manual configuration**.
 * **Auto-Discovery**: Hardware acceleration (CPUs, CUDA/Metal GPU), local models (Candle, Ollama), and network interfaces are discovered and benchmarked automatically on startup.
 * **Auto-Fallback**: If internet or cloud API keys are absent, GHA operates 100% offline using native Candle tensor weights (`~/.gha/models/gha-alpha.safetensors`) or local GGUF vaults without erroring.
 
-## IDE & External System Interoperability
+## 100% GPU Acceleration & Hardware Saturation
 
-GHA is designed as a plug-and-play backend for any external system or development environment:
+GHA is engineered for maximum performance through full hardware utilization:
 
-* **GMCP JSON-RPC 2.0 (Port 9090 & Stdio)**: Standardized Model Context Protocol host allowing IDEs (Cursor, VSCode, Android Studio) to natively invoke GHA tools, agents, and swarms.
-* **OpenAI-Compatible REST API (Port 9091)**: `GemiServer` exposes GHA as a local OpenAI endpoint, allowing any application using standard LLM SDKs (LangChain, CrewAI, Python) to swap cloud backends for GHA.
-* **CLI Native Backend**: The < 2ms binary startup and minimal memory footprint allow GHA to be wrapped inside shell scripts, CI/CD pipelines, and custom terminal dashboards.
-* **Platform Independence**: Zero dependency on JVM, Python, or Git ensures GHA can be embedded in any host OS without runtime conflicts.
+* **100% GPU Execution**: GHA's `HardwareProfiler` and inference engines are configured for 100% GPU offload. For GGUF and Safetensors models, all layers are offloaded to VRAM (e.g., `-ngl 99` flag) whenever a CUDA, Metal, or Vulkan-compatible GPU is detected.
+* **Native Tensor Acceleration**: Using the **Candle** Rust ML framework, GHA performs 100% of its native reflex reasoning on the fastest available hardware (GPU-first, CPU fallback).
+* **CPU Thread Saturation**: For non-tensor tasks, GHA saturates all available physical CPU cores using parallel OS threads and async runtime.
 
 ## Anywhere Execution & Hardware-Bounded Concurrency
 
