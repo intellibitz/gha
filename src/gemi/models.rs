@@ -319,32 +319,27 @@ impl ModelManager {
         let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_default();
         let home_path = PathBuf::from(home);
 
-        let search_directories = vec![
-            workspace.join(".gha/models"),
-            home_path.join(".gha/models"),
-            home_path.join(".cache/huggingface/hub"),
-            home_path.join(".cache/lm-studio/models"),
-            home_path.join(".cache/lmstudio/models"),
-            home_path.join(".lmstudio/models"),
-            home_path.join(".local/share/nomic.ai/GPT4All"),
-            home_path.join(".cache/gpt4all"),
-            home_path.join("Library/Application Support/LM Studio/models"),
-            home_path.join("AppData/Local/lm-studio-desktop/models"),
-            home_path.join("AppData/Local/nomic.ai/GPT4All"),
-            home_path.join("text-generation-webui/models"),
-        ];
-
-        for dir in search_directories {
-            if dir.is_dir() {
-                Self::recursive_scan_model_dir(&dir, &mut discovered, 0);
-            }
+        if workspace.is_dir() {
+            Self::recursive_scan_model_dir(workspace, &mut discovered, 0);
         }
 
+        if home_path.is_dir() {
+            Self::recursive_scan_model_dir(&home_path, &mut discovered, 0);
+        }
+
+        discovered.sort_by(|a, b| a.model_id.cmp(&b.model_id));
+        discovered.dedup_by(|a, b| a.model_id == b.model_id);
         discovered
     }
 
     fn recursive_scan_model_dir(dir: &Path, discovered: &mut Vec<ModelInfo>, depth: usize) {
-        if depth > 4 { return; }
+        if depth > 6 { return; }
+
+        let folder_name = dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        if folder_name == ".git" || folder_name == "node_modules" || folder_name == "target" || folder_name == "vendor" || folder_name == ".cargo" || folder_name == ".rustup" || folder_name == "proc" || folder_name == "sys" {
+            return;
+        }
+
         if let Ok(entries) = fs::read_dir(dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
@@ -354,30 +349,35 @@ impl ModelManager {
                     && let Some(ext) = path.extension().and_then(|e| e.to_str())
                 {
                     let lower_ext = ext.to_lowercase();
-                    if (lower_ext == "gguf" || lower_ext == "safetensors")
+                    if (lower_ext == "gguf" || lower_ext == "safetensors" || lower_ext == "onnx" || lower_ext == "bin")
                         && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
                     {
-                        let len_mb = path.metadata().map(|m| m.len() / (1024 * 1024)).unwrap_or(0);
-                        let path_str = path.to_string_lossy();
-                        let registry_tag = if path_str.contains("lm-studio") || path_str.contains("lmstudio") {
-                            "Local LM Studio Vault"
-                        } else if path_str.contains("huggingface") {
-                            "Local HuggingFace Cache"
-                        } else if path_str.contains("GPT4All") || path_str.contains("gpt4all") {
-                            "Local GPT4All Vault"
-                        } else {
-                            "Local GGUF Vault"
-                        };
+                        let len_bytes = path.metadata().map(|m| m.len()).unwrap_or(0);
+                        if len_bytes > 1_000_000 {
+                            let len_mb = len_bytes / (1024 * 1024);
+                            let path_str = path.to_string_lossy();
+                            let registry_tag = if path_str.contains("lm-studio") || path_str.contains("lmstudio") {
+                                "Local LM Studio Vault"
+                            } else if path_str.contains("huggingface") {
+                                "Local HuggingFace Cache"
+                            } else if path_str.contains("GPT4All") || path_str.contains("gpt4all") {
+                                "Local GPT4All Vault"
+                            } else if path_str.contains("ollama") {
+                                "Local Ollama Vault"
+                            } else {
+                                "Local Model Vault"
+                            };
 
-                        discovered.push(ModelInfo {
-                            name: file_name.to_string(),
-                            registry: registry_tag.to_string(),
-                            model_id: path_str.to_string(),
-                            description: format!("Discovered local model ({} MB)", len_mb),
-                            is_local: true,
-                            tier: ModelTier::Standard,
-                            latency_ms: None,
-                        });
+                            discovered.push(ModelInfo {
+                                name: file_name.to_string(),
+                                registry: registry_tag.to_string(),
+                                model_id: path_str.to_string(),
+                                description: format!("Discovered local AI model file ({} MB)", len_mb),
+                                is_local: true,
+                                tier: ModelTier::Standard,
+                                latency_ms: None,
+                            });
+                        }
                     }
                 }
             }
