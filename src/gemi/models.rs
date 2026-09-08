@@ -5,6 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use serde::{Deserialize, Serialize};
+use super::hardware::HardwareProfiler;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ModelTier {
@@ -290,6 +291,26 @@ impl ModelManager {
         }
 
         None
+    }
+
+    pub fn spawn_background_hardware_model_provisioner(workspace: &Path) {
+        let ws = workspace.to_path_buf();
+        std::thread::spawn(move || {
+            let _ = Self::ensure_max_local_hardware_models(&ws);
+        });
+    }
+
+    pub fn ensure_max_local_hardware_models(workspace: &Path) -> String {
+        let capacity = HardwareProfiler::determine_max_model_capacity();
+        let existing = Self::list_models(workspace);
+
+        if existing.iter().any(|m| m.is_local && m.registry.contains("GGUF")) {
+            return format!("Optimal local model capacity present for {}.", capacity.model_size_label);
+        }
+
+        let res = Self::install_model(capacity.recommended_hf_repo);
+        let _ = Self::set_selected_model(capacity.recommended_hf_repo);
+        format!("🤖 [Hardware-Bounded Model Provisioning]: Sized for {}GB RAM ({}): {}", capacity.ram_gb, capacity.model_size_label, res)
     }
 
     pub fn scout_tier2_assets() -> Vec<crate::gawd::agents::DiscoverableAsset> {

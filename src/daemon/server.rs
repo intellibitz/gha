@@ -89,6 +89,9 @@ impl GmaDaemon {
         let lock_file = Self::get_lock_file(&global_dir);
         let _ = fs::write(&lock_file, pid.to_string());
 
+        // 🚀 High-Priority Hardware-Bounded Model Auto-Provisioning (Background Thread)
+        crate::gemi::models::ModelManager::spawn_background_hardware_model_provisioner(&workspace);
+
         let workspace_gemi = workspace.clone();
         // 1. Spawn GEMI HTTP REST Server Thread (Port 9091)
         thread::spawn(move || {

@@ -34,6 +34,80 @@ impl HardwareProfiler {
 
         (cpus, gpu_info)
     }
+
+    pub fn determine_total_ram_gb() -> usize {
+        if cfg!(target_os = "linux") {
+            if let Ok(content) = std::fs::read_to_string("/proc/meminfo") {
+                for line in content.lines() {
+                    if line.starts_with("MemTotal:") {
+                        let parts: Vec<&str> = line.split_whitespace().collect();
+                        if let Some(kb_str) = parts.get(1)
+                            && let Ok(kb) = kb_str.parse::<usize>()
+                        {
+                            return kb / (1024 * 1024);
+                        }
+                    }
+                }
+            }
+        } else if cfg!(target_os = "macos")
+            && let Ok(out) = Command::new("sysctl").arg("-n").arg("hw.memsize").output()
+            && let Ok(bytes_str) = String::from_utf8(out.stdout)
+            && let Ok(bytes) = bytes_str.trim().parse::<usize>()
+        {
+            return bytes / (1024 * 1024 * 1024);
+        }
+        16 // Conservative fallback
+    }
+
+    pub fn determine_max_model_capacity() -> HardwareCapacity {
+        let ram_gb = Self::determine_total_ram_gb();
+
+        if ram_gb >= 64 {
+            HardwareCapacity {
+                ram_gb,
+                recommended_hf_repo: "Qwen/Qwen2.5-72B-Instruct-GGUF",
+                recommended_file: "qwen2.5-72b-instruct-q4_k_m.gguf",
+                model_size_label: "72B Parameters (Ultra-Workstation Capacity)",
+            }
+        } else if ram_gb >= 32 {
+            HardwareCapacity {
+                ram_gb,
+                recommended_hf_repo: "Qwen/Qwen2.5-32B-Instruct-GGUF",
+                recommended_file: "qwen2.5-32b-instruct-q4_k_m.gguf",
+                model_size_label: "32B Parameters (High-End Workstation Capacity)",
+            }
+        } else if ram_gb >= 16 {
+            HardwareCapacity {
+                ram_gb,
+                recommended_hf_repo: "Qwen/Qwen2.5-14B-Instruct-GGUF",
+                recommended_file: "qwen2.5-14b-instruct-q4_k_m.gguf",
+                model_size_label: "14B Parameters (Desktop/Laptop Capacity)",
+            }
+        } else if ram_gb >= 8 {
+            HardwareCapacity {
+                ram_gb,
+                recommended_hf_repo: "Qwen/Qwen2.5-7B-Instruct-GGUF",
+                recommended_file: "qwen2.5-7b-instruct-q4_k_m.gguf",
+                model_size_label: "7B Parameters (Mid-Range Hardware Capacity)",
+            }
+        } else {
+            HardwareCapacity {
+                ram_gb,
+                recommended_hf_repo: "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+                recommended_file: "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+                model_size_label: "1.5B Parameters (Embedded/Edge Hardware Capacity)",
+            }
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct HardwareCapacity {
+    pub ram_gb: usize,
+    pub recommended_hf_repo: &'static str,
+    pub recommended_file: &'static str,
+    pub model_size_label: &'static str,
 }
 
 #[cfg(test)]

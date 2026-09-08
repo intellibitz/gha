@@ -648,7 +648,10 @@ impl ToolRegistry {
                 }
 
                 match crate::gawd::pkb::PkbSynthesizer::save_training_data(entries, &global_dir) {
-                    Ok(msg) => format!("Synthesis complete. {}", msg),
+                    Ok(msg) => {
+                        let distill_res = crate::gawd::pkb::PkbSynthesizer::distill_step_0_to_63(&global_dir).unwrap_or_default();
+                        format!("Synthesis complete. {}\n🧠 {}", msg, distill_res)
+                    }
                     Err(e) => format!("Error: {}", e),
                 }
             }
