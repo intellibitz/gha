@@ -1,6 +1,6 @@
 # gha
 
-Intelligence Reflex & Execution Substrate for Any World User for Any Mission. Native Rust Multi-Agent Engine.
+GHA empowers any world user to master any mission through a native Rust intelligence reflex engine.
 
 ## Installation
 
