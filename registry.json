@@ -1,0 +1,62 @@
+[
+  {
+    "name": "alpha_vantage",
+    "description": "Finance and Stock Market Data",
+    "package": "@modelcontextprotocol/server-alpha-vantage",
+    "category": "finance"
+  },
+  {
+    "name": "postgres",
+    "description": "PostgreSQL Database Management",
+    "package": "@modelcontextprotocol/server-postgres",
+    "category": "database"
+  },
+  {
+    "name": "brave_search",
+    "description": "Web Search via Brave API",
+    "package": "@modelcontextprotocol/server-brave-search",
+    "category": "search"
+  },
+  {
+    "name": "google_maps",
+    "description": "Maps, Places & Directions",
+    "package": "@modelcontextprotocol/server-google-maps",
+    "category": "location"
+  },
+  {
+    "name": "slack",
+    "description": "Messaging & Channel Collaboration",
+    "package": "@modelcontextprotocol/server-slack",
+    "category": "productivity"
+  },
+  {
+    "name": "filesystem",
+    "description": "Local Filesystem Search & Operations",
+    "package": "@modelcontextprotocol/server-filesystem",
+    "category": "system"
+  },
+  {
+    "name": "github",
+    "description": "GitHub Repositories, PRs & Issues",
+    "package": "@modelcontextprotocol/server-github",
+    "category": "vcs"
+  },
+  {
+    "name": "memory",
+    "description": "Knowledge Graph & Memory Persistence",
+    "package": "@modelcontextprotocol/server-memory",
+    "category": "memory"
+  },
+  {
+    "name": "puppeteer",
+    "description": "Headless Web Scraping & Browser Automation",
+    "package": "@modelcontextprotocol/server-puppeteer",
+    "category": "web"
+  },
+  {
+    "name": "sentry",
+    "description": "Error Tracking & Diagnostics",
+    "package": "@modelcontextprotocol/server-sentry",
+    "category": "diagnostics"
+  }
+]

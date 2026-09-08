@@ -65,26 +65,49 @@ impl GmcpClient {
         let home = std::env::var("HOME").unwrap_or_default();
         let registry_path = PathBuf::from(home).join(".gha/global_mcp_registry.json");
 
-        if registry_path.is_file()
-            && let Ok(content) = fs::read_to_string(&registry_path)
-            && let Ok(custom_entries) = serde_json::from_str::<Vec<GlobalMcpEntry>>(&content)
+        let mut entries: Vec<GlobalMcpEntry> = Vec::new();
+
+        // 1. Try Online Registry Scout from GHA Hub / GitHub
+        let online_url = "https://raw.githubusercontent.com/intellibitz/gha/main/registry.json";
+        if let Ok(out) = Command::new("curl")
+            .args(["-sL", "--connect-timeout", "2", "--max-time", "4", online_url])
+            .output()
+            && out.status.success()
+            && let Ok(remote_entries) = serde_json::from_slice::<Vec<GlobalMcpEntry>>(&out.stdout)
+            && !remote_entries.is_empty()
         {
-            return custom_entries;
+            entries = remote_entries;
         }
 
-        let default_entries = vec![
-            GlobalMcpEntry { name: "alpha_vantage".to_string(), description: "Finance and Stock Market".to_string(), package: "@modelcontextprotocol/server-alpha-vantage".to_string(), category: "finance".to_string() },
-            GlobalMcpEntry { name: "postgres".to_string(), description: "PostgreSQL Database".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
-            GlobalMcpEntry { name: "brave_search".to_string(), description: "Web Search via Brave".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
-            GlobalMcpEntry { name: "google_maps".to_string(), description: "Maps and Directions".to_string(), package: "@modelcontextprotocol/server-google-maps".to_string(), category: "location".to_string() },
-            GlobalMcpEntry { name: "slack".to_string(), description: "Messaging and Collaboration".to_string(), package: "@modelcontextprotocol/server-slack".to_string(), category: "productivity".to_string() },
-            GlobalMcpEntry { name: "filesystem".to_string(), description: "Local Filesystem Search & Operations".to_string(), package: "@modelcontextprotocol/server-filesystem".to_string(), category: "system".to_string() },
-            GlobalMcpEntry { name: "github".to_string(), description: "GitHub Repositories, PRs & Issues".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
-            GlobalMcpEntry { name: "memory".to_string(), description: "Knowledge Graph & Memory Persistence".to_string(), package: "@modelcontextprotocol/server-memory".to_string(), category: "memory".to_string() },
-        ];
+        // 2. Read / Merge Local Dynamic Registry Overrides (~/.gha/global_mcp_registry.json)
+        if registry_path.is_file()
+            && let Ok(content) = fs::read_to_string(&registry_path)
+            && let Ok(local_entries) = serde_json::from_str::<Vec<GlobalMcpEntry>>(&content)
+        {
+            for local_entry in local_entries {
+                if !entries.iter().any(|e| e.name == local_entry.name) {
+                    entries.push(local_entry);
+                }
+            }
+        }
 
-        let _ = fs::write(&registry_path, serde_json::to_string_pretty(&default_entries).unwrap_or_default());
-        default_entries
+        // 3. Fallback to Default Bootstrap Registry if empty
+        if entries.is_empty() {
+            entries = vec![
+                GlobalMcpEntry { name: "alpha_vantage".to_string(), description: "Finance and Stock Market".to_string(), package: "@modelcontextprotocol/server-alpha-vantage".to_string(), category: "finance".to_string() },
+                GlobalMcpEntry { name: "postgres".to_string(), description: "PostgreSQL Database".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
+                GlobalMcpEntry { name: "brave_search".to_string(), description: "Web Search via Brave".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
+                GlobalMcpEntry { name: "google_maps".to_string(), description: "Maps and Directions".to_string(), package: "@modelcontextprotocol/server-google-maps".to_string(), category: "location".to_string() },
+                GlobalMcpEntry { name: "slack".to_string(), description: "Messaging and Collaboration".to_string(), package: "@modelcontextprotocol/server-slack".to_string(), category: "productivity".to_string() },
+                GlobalMcpEntry { name: "filesystem".to_string(), description: "Local Filesystem Search & Operations".to_string(), package: "@modelcontextprotocol/server-filesystem".to_string(), category: "system".to_string() },
+                GlobalMcpEntry { name: "github".to_string(), description: "GitHub Repositories, PRs & Issues".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
+                GlobalMcpEntry { name: "memory".to_string(), description: "Knowledge Graph & Memory Persistence".to_string(), package: "@modelcontextprotocol/server-memory".to_string(), category: "memory".to_string() },
+            ];
+        }
+
+        // Cache / persist merged registry locally
+        let _ = fs::write(&registry_path, serde_json::to_string_pretty(&entries).unwrap_or_default());
+        entries
     }
 
     pub fn benchmark_server(name: &str) -> (u128, bool) {
