@@ -188,16 +188,26 @@ impl ModelManager {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let gha_dir = home.join(".gha");
         let _ = fs::create_dir_all(&gha_dir);
-        let model_file = gha_dir.join("selected_model.txt");
+        let model_file = gha_dir.join("selected_model_override.txt");
         fs::write(&model_file, model_name.trim()).map_err(|e| e.to_string())?;
-        Ok(format!("Selected active model set to: '{}'", model_name.trim()))
+        Ok(format!("Selected active model override set to: '{}'", model_name.trim()))
     }
 
     pub fn get_selected_model() -> Option<String> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let model_file = home.join(".gha/selected_model.txt");
-        if model_file.is_file()
-            && let Ok(content) = fs::read_to_string(&model_file)
+        let override_file = home.join(".gha/selected_model_override.txt");
+        if override_file.is_file()
+            && let Ok(content) = fs::read_to_string(&override_file)
+        {
+            let trimmed = content.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+
+        let auto_file = home.join(".gha/selected_model_auto.txt");
+        if auto_file.is_file()
+            && let Ok(content) = fs::read_to_string(&auto_file)
         {
             let trimmed = content.trim();
             if !trimmed.is_empty() {
@@ -244,16 +254,60 @@ impl ModelManager {
     }
 
     pub fn scout_and_benchmark(workspace: &Path) -> Vec<ModelInfo> {
-        let mut models = Self::list_models(workspace);
-        for m in &mut models {
-            if m.is_local && m.registry.contains("Ollama") {
+        let models = Self::list_models(workspace);
+        let mut handles = Vec::new();
+
+        for m in models {
+            let m_clone = m.clone();
+            let handle = std::thread::spawn(move || {
                 let start = std::time::Instant::now();
-                let _ = Command::new("ollama").args(["run", &m.model_id, "hi"]).output();
-                m.latency_ms = Some(start.elapsed().as_millis());
+                let mut latency = 9999;
+                let mut updated = m_clone.clone();
+
+                if updated.is_local && updated.registry.contains("Ollama") {
+                    if Command::new("ollama").args(["run", &updated.model_id, "hi"]).output().is_ok() {
+                        latency = start.elapsed().as_millis();
+                    }
+                } else if updated.is_local && updated.registry.contains("GGUF") {
+                    let path = PathBuf::from(&updated.model_id);
+                    if path.is_file() {
+                        let size_bytes = path.metadata().map(|meta| meta.len()).unwrap_or(0);
+                        if size_bytes > 10_000_000 {
+                            latency = start.elapsed().as_millis() + 10;
+                        }
+                    }
+                } else if !updated.is_local {
+                    latency = start.elapsed().as_millis() + 250;
+                } else if updated.model_id.contains("native") {
+                    latency = start.elapsed().as_millis() + 1;
+                }
+
+                updated.latency_ms = Some(latency);
+                updated
+            });
+            handles.push(handle);
+        }
+
+        let mut benched_models = Vec::new();
+        for handle in handles {
+            if let Ok(m) = handle.join() {
+                benched_models.push(m);
             }
         }
-        models.sort_by_key(|m| m.latency_ms.unwrap_or(9999));
-        models
+
+        benched_models.sort_by(|a, b| {
+            a.tier.cmp(&b.tier)
+                .then(a.latency_ms.unwrap_or(9999).cmp(&b.latency_ms.unwrap_or(9999)))
+        });
+
+        if let Some(best) = benched_models.first() {
+            let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+            let gha_dir = home.join(".gha");
+            let auto_file = gha_dir.join("selected_model_auto.txt");
+            let _ = fs::write(&auto_file, best.model_id.trim());
+        }
+
+        benched_models
     }
 
     pub fn verify_local_models(workspace: &Path) -> Vec<ModelVerificationResult> {
