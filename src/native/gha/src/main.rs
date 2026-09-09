@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-const GHA_VERSION: &str = "0.1.357";
+const GHA_VERSION: &str = "0.1.358";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -259,7 +259,6 @@ fn main() {
     match cmd {
         "version" | "--version" | "-v" => print_version(&version),
         "help" | "--help" | "-h" => print_help(),
-        "status" => print_status(&project_root, &global_gha_dir, &version),
         "install" => run_install(&project_root),
         "uninstall" => run_uninstall(&project_root),
         "build" => run_native_build(&project_root),
@@ -267,7 +266,22 @@ fn main() {
         "clean" => run_native_clean(&project_root),
         "mcp" => run_native_mcp_server(&project_root),
         _ => {
-            println!("Executing mission: {}", args.join(" "));
+            // High-Performance Delegation to Core Engine (Rule 11 & 17 Compliance)
+            let bin_name = if cfg!(target_os = "windows") { "bin/gha-engine.exe" } else { "bin/gha-engine" };
+            let global_bin = global_gha_dir.join(bin_name);
+            let bin_to_run = if global_bin.exists() {
+                global_bin
+            } else {
+                let local_engine = if cfg!(target_os = "windows") { "gha-engine.exe" } else { "gha-engine" };
+                PathBuf::from(local_engine)
+            };
+
+            let mut child = std::process::Command::new(bin_to_run)
+                .args(&args)
+                .spawn()
+                .expect("Failed to delegate mission to gha-engine");
+
+            let _ = child.wait();
         }
     }
 }

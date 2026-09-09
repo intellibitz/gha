@@ -14,6 +14,7 @@ use crate::gawd::gmas::GmasSupervisor;
 use crate::gemi::hardware::HardwareProfiler;
 use crate::gemi::models::{ModelManager, ModelRegistry, ModelRegistryEntry};
 use crate::gemi::engine::GemiEngine;
+use crate::gemi::pulse::GhaPulse;
 use crate::daemon::admin::GhaAdmin;
 use crate::daemon::evolution::EvolutionManager;
 use crate::gawd::reflex_synth::ReflexSynthesizer;
@@ -198,7 +199,22 @@ impl ToolRegistry {
         }
 
         tools.extend(GmcpClient::list_external_tools());
+
         tools
+    }
+
+    pub fn exists(name: &str) -> bool {
+        let registry = Self::global();
+        let tools = registry.tools.read().unwrap();
+        if tools.contains_key(name) {
+            return true;
+        }
+        // Check external tool names too
+        let lower_name = name.to_lowercase();
+        if lower_name.starts_with("ext_") || lower_name.starts_with("reflex_") {
+             return Self::list_tools().iter().any(|t| t.name == name);
+        }
+        false
     }
 
     pub fn execute_tool(name: &str, arg: &str, workspace: &Path) -> String {
@@ -322,7 +338,19 @@ impl GhaTool for ReasonTool {
     fn name(&self) -> String { "reason".to_string() }
     fn description(&self) -> String { "Execute GEMI reasoning on prompt".to_string() }
     fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
-        Ok(GemiEngine::generate_reasoning(arg, workspace))
+        match GhaPulse::reason(arg, workspace) {
+             Ok(action) => {
+                 if action.contains("ACTION:") {
+                     let parts: Vec<&str> = action.split("ACTION: ").nth(1).unwrap_or("").splitn(2, ' ').collect();
+                     let tool = parts[0];
+                     let tool_arg = parts.get(1).unwrap_or(&"");
+                     Ok(ToolRegistry::execute_tool(tool, tool_arg, workspace))
+                 } else {
+                     Ok(GemiEngine::generate_reasoning(arg, workspace))
+                 }
+             },
+             Err(_) => Ok(GemiEngine::generate_reasoning(arg, workspace))
+        }
     }
 }
 
@@ -735,8 +763,9 @@ struct ComplianceTool;
 impl GhaTool for ComplianceTool {
     fn name(&self) -> String { "compliance".to_string() }
     fn description(&self) -> String { "Run full GHA compliance audit (Rule 15)".to_string() }
-    fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
-        GhaAdmin::audit_compliance(workspace)
+    fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
+        let target = if arg.trim().is_empty() { None } else { Some(arg.trim()) };
+        GhaAdmin::audit_compliance(workspace, target)
     }
 }
 

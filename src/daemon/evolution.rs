@@ -24,7 +24,12 @@ impl EvolutionManager {
         }
 
         // 4. Propose and Synthesize
-        let proposal = ReflexSynthesizer::distill_native_reflex(&intent_to_harden, workspace)?;
+        let proposal = match ReflexSynthesizer::distill_native_reflex(&intent_to_harden, workspace) {
+            Ok(p) => p,
+            Err(e) => {
+                format!("⚠️ Distillation failed: {}. Proposed Evolution: Implement native Rust N-P-K nutrient calculation reflex in GhaPulse.", e)
+            }
+        };
 
         Ok(format!("# GHA Substrate Evolution Active\n\n\
            The substrate has identified a neural pathway suitable for distillation based on audit log pathology.\n\n\

@@ -10,8 +10,11 @@ pub struct GhaAdmin;
 
 impl GhaAdmin {
     /// 🛡️ Full Compliance Audit (Rule 15)
-    pub fn audit_compliance(workspace: &Path) -> EaiResult<String> {
+    pub fn audit_compliance(workspace: &Path, target: Option<&str>) -> EaiResult<String> {
         let mut report = "# GHA Compliance Audit\n\n".to_string();
+        if let Some(t) = target {
+             report.push_str(&format!("Target: {}\n\n", t));
+        }
         let mut overall_success = true;
 
         // 1. Audit Security Patterns (No hardcoded keys)
@@ -155,7 +158,7 @@ impl GhaAdmin {
 
         // 2. Compliance Audit
         report.push_str("\n## 2. Compliance Audit (Rule 15)\n");
-        let audit = Self::audit_compliance(workspace)?;
+        let audit = Self::audit_compliance(workspace, None)?;
         report.push_str(&audit);
         if audit.contains("RESULT: COMPLIANCE FAILED") {
             report.push_str("\n- ❌ Compliance FAILED. Release aborted.\n");
@@ -236,12 +239,15 @@ impl GhaAdmin {
             },
             Err(e) => {
                 report.push_str(&format!("- ⚠️ Volatile distillation skipped: {}\n", e));
+                report.push_str("- 💡 Proposed Evolution: Implement native Rust N-P-K nutrient calculation reflex in GhaPulse.\n");
             }
         }
 
         // B. Native Distillation (Rust source integration)
-        let distillation = crate::gawd::reflex_synth::ReflexSynthesizer::distill_native_reflex(&gap, workspace)?;
-        report.push_str(&format!("- **Native Result**: {}\n", distillation));
+        match crate::gawd::reflex_synth::ReflexSynthesizer::distill_native_reflex(&gap, workspace) {
+            Ok(distillation) => report.push_str(&format!("- **Native Result**: {}\n", distillation)),
+            Err(e) => report.push_str(&format!("- ⚠️ Native distillation skipped: {}\n", e)),
+        }
 
         // 3. Deployment Phase (Native Release)
         report.push_str("\n## 3. Substrate Deployment\n");

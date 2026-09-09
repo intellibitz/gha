@@ -102,9 +102,14 @@ impl GmaMasterAgent {
         let is_placeholder = reasoning_content.contains("scouting for specialized brains");
 
         let lower_goal = goal.trim();
-        let (cmd, arg) = lower_goal.split_once(' ').unwrap_or((lower_goal, ""));
-        let registered_tools = ToolRegistry::list_tools();
-        let is_direct_tool = registered_tools.iter().any(|t| t.name == cmd || (cmd == "models" && t.name == "list_models"));
+        let (mut cmd, arg) = lower_goal.split_once(' ').unwrap_or((lower_goal, ""));
+
+        // 🚀 Support for Colon-Prefixed Direct Tool Calls (Launcher Consistency)
+        if cmd.starts_with(':') {
+             cmd = &cmd[1..];
+        }
+
+        let is_direct_tool = ToolRegistry::exists(cmd) || cmd == "models";
 
         let mut report = String::new();
         report.push_str("# gha Execution Report\n\n");

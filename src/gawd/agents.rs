@@ -194,6 +194,13 @@ impl GawdAgent for GhaReasoningAgent {
     fn role(&self) -> String { "Core Inference".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
     fn execute(&self, goal: &str, workspace: &Path, _blackboard: &SwarmBlackboard) -> String {
+        // High-Priority Reflex Check: Direct mapping for common assistant missions
+        if let Ok(action) = crate::gemi::pulse::GhaPulse::reason(goal, workspace) {
+            if action.contains("ACTION:") {
+                return action;
+            }
+        }
+
         let domain_guideline = GawdAgentFleet::get_domain_context_guideline(goal);
         let enriched_goal = if domain_guideline.is_empty() {
             goal.to_string()
@@ -201,34 +208,7 @@ impl GawdAgent for GhaReasoningAgent {
             format!("{}\n\nINTENT: {}", domain_guideline, goal)
         };
 
-        // High-Priority Reflex Check: Direct mapping for common assistant missions
-        match crate::gemi::pulse::GhaPulse::reason(&enriched_goal, workspace) {
-            Ok(action) => {
-                if action.contains("ACTION:") {
-                    return action;
-                }
-                format!("ACTION: {}", action)
-            },
-            Err(_) => {
-                // 🚀 Piped Mission Substrate: Autonomous transformation loop
-                if goal.contains("[INPUT DATA]:") {
-                     if let Some(data) = goal.split("[INPUT DATA]:\n").nth(1) {
-                         let lower_goal = goal.to_lowercase();
-                         if lower_goal.contains("uppercase") {
-                              return format!("ACTION: exec_command echo \"{}\" | tr '[:lower:]' '[:upper:]'", data.replace("\"", "\\\""));
-                         } else if lower_goal.contains("lowercase") {
-                              return format!("ACTION: exec_command echo \"{}\" | tr '[:upper:]' '[:lower:]'", data.replace("\"", "\\\""));
-                         } else if lower_goal.contains("save") || lower_goal.contains("write") {
-                              if let Some(to_pos) = lower_goal.find(" to ") {
-                                  let path = goal[to_pos + 4..].trim().trim_end_matches('.');
-                                  return format!("ACTION: write_file {} {}", path, data);
-                              }
-                         }
-                     }
-                }
-                crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, workspace)
-            }
-        }
+        crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, workspace)
     }
 }
 
