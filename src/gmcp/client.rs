@@ -11,19 +11,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use super::tools::McpTool;
-use crate::sandbox::manager::GlobalMcpEntry;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct McpServerConfig {
-    pub command: String,
-    pub args: Vec<String>,
-    pub env: Option<HashMap<String, String>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct McpConfig {
-    pub mcp_servers: HashMap<String, McpServerConfig>,
-}
+use super::{GlobalMcpEntry, McpServerConfig, McpConfig};
 
 pub struct GmcpClient;
 

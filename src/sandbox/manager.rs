@@ -4,6 +4,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
+use crate::gmcp::GlobalMcpEntry;
 use crate::error::{EaiError, EaiResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, Eq, Ord)]
@@ -34,14 +35,6 @@ pub struct ModelInfo {
     pub provider: ProviderType,
     pub api_base: Option<String>,
     pub env_key: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GlobalMcpEntry {
-    pub name: String,
-    pub description: String,
-    pub package: String,
-    pub category: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
