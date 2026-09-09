@@ -12,6 +12,8 @@ pub struct HardwareProfile {
     pub ram_gb: usize,
     pub acceleration_active: bool,
     pub native_acceleration: String,
+    pub os_info: String,
+    pub disk_gb: usize,
 }
 
 pub struct HardwareProfiler;
@@ -39,7 +41,41 @@ impl HardwareProfiler {
             ram_gb,
             acceleration_active,
             native_acceleration: native_accel,
+            os_info: Self::get_os_info(),
+            disk_gb: Self::determine_disk_gb(),
         }
+    }
+
+    fn get_os_info() -> String {
+        if cfg!(target_os = "linux") {
+            if let Ok(out) = Command::new("uname").arg("-sr").output() {
+                return String::from_utf8_lossy(&out.stdout).trim().to_string();
+            }
+        } else if cfg!(target_os = "macos") {
+            if let Ok(out) = Command::new("sw_vers").arg("-productVersion").output() {
+                return format!("macOS {}", String::from_utf8_lossy(&out.stdout).trim());
+            }
+        } else if cfg!(target_os = "windows") {
+             return "Windows".to_string();
+        }
+        "Unknown OS".to_string()
+    }
+
+    fn determine_disk_gb() -> usize {
+        if cfg!(target_os = "linux") || cfg!(target_os = "macos") {
+            if let Ok(out) = Command::new("df").arg("-k").arg("/").output() {
+                let s = String::from_utf8_lossy(&out.stdout);
+                if let Some(line) = s.lines().nth(1) {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if let Some(kb_str) = parts.get(1) {
+                        if let Ok(kb) = kb_str.parse::<usize>() {
+                            return kb / (1024 * 1024);
+                        }
+                    }
+                }
+            }
+        }
+        256 // Fallback
     }
 
     fn interrogate_native_acceleration() -> (String, String) {

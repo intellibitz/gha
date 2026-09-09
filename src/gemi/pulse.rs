@@ -76,6 +76,8 @@ impl GhaPulse {
         // 2. Precise Keyword Mapping (High-Speed Reflex)
         let mut mappings = HashMap::new();
         mappings.insert("status", "ACTION: status");
+        mappings.insert("hardware", "ACTION: status");
+        mappings.insert("capabilities", "ACTION: status");
         mappings.insert("version", "ACTION: version");
         mappings.insert("memory", "ACTION: memory");
         mappings.insert("history", "ACTION: memory");

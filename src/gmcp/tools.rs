@@ -203,7 +203,8 @@ impl GhaTool for StatusTool {
         report.push_str("## Workspace & Hardware\n");
         report.push_str(&format!("- Impact Scope: {}\n", workspace.display()));
         report.push_str("- Global Sandbox: ACTIVE\n");
-        report.push_str(&format!("- Hardware: {} CPUs | {} | {}GB RAM\n\n", hardware.cpus, hardware.gpu_info, hardware.ram_gb));
+        report.push_str(&format!("- OS: {}\n", hardware.os_info));
+        report.push_str(&format!("- Hardware: {} CPUs | {} | {}GB RAM | {}GB Disk\n\n", hardware.cpus, hardware.gpu_info, hardware.ram_gb, hardware.disk_gb));
         let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
         report.push_str("## Active Intelligence Tiers\n");
         report.push_str(&format!("- Engine: {}\n", engine));
