@@ -11,7 +11,7 @@ pub struct GhaPulse;
 impl GhaPulse {
     #[allow(dead_code)]
     pub fn try_load_candle_weights() -> Result<usize> {
-        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let weights_path = home.join(".gha/models/gha-alpha.safetensors");
         if weights_path.is_file() {
             let device = Device::Cpu;
@@ -47,10 +47,12 @@ impl GhaPulse {
         }
 
         // 2. Pattern Matchers (Structured Reflex)
+        // Preparation for WASI: Move from shell-dependent splitting to robust trie/parsing
         if lower.contains("create") || lower.contains("write") {
-             let parts: Vec<&str> = lower.split("containing").collect();
-             if parts.len() >= 2 {
-                 let file_name = parts[0]
+             if let Some(containing_idx) = lower.find("containing") {
+                 let file_part = &lower[..containing_idx];
+                 let content = &prompt[containing_idx + 10..].trim(); // Preserve case for content
+                 let file_name = file_part
                     .replace("create", "")
                     .replace("write", "")
                     .replace("file", "")
@@ -58,7 +60,6 @@ impl GhaPulse {
                     .replace(" a ", " ")
                     .trim()
                     .to_string();
-                 let content = parts[1].trim();
                  return Ok(format!("ACTION: write_file {} {}", file_name, content));
              }
         }

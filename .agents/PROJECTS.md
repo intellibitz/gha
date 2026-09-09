@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.272`
+* **Current Engine Version**: `v0.1.273`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
 
 ## Unified System Identity
@@ -64,7 +64,9 @@ GHA's GMCP substrate is a 100% industry-standard implementation of the Model Con
 * **Lightning Fast Installer**: The one-line installer (`install.sh`) prioritizes pre-compiled binary downloads based on OS/Arch, falling back to source build only when necessary. It handles process renewal automatically and respects dynamic `GHA_REPO` targets.
 * **Dynamic GitHub Home**: The engine and installers respect the `gha_repo` configuration and `GHA_REPO` environment variable, enabling custom forks and enterprise release channels.
 * **Truly Unbiased Architecture**: 100% of external dependencies, cloud model lists, and MCP tool registries are configuration-driven. GHA does not hardcode specific providers, ensuring neutrality and extreme flexibility for any user mission.
-* **Dynamic Intelligence Substrate**: GAWD agents are implemented via a dynamic `GawdAgent` trait and global `AgentRegistry`. This allows for runtime agent synthesis, modular decoupling, and future plugin extensibility (WASI), moving beyond hardcoded simulations.
+* **Explosive Async Intelligence**: GEMI implements concurrent provider racing, dispatching missions to multiple cloud brains simultaneously and returning the first valid resolution for ultra-low latency deep reasoning.
+* **Native Reflex Distillation**: GHA-Alpha (Tier 0) uses real learned weight matrices synthesized from mission flux data. This moves beyond simulation into actual incremental intelligence stored in `safetensors`.
+* **Dynamic Intelligence Substrate**: GAWD agents are implemented via a dynamic `GawdAgent` trait and global `AgentRegistry`. This allows for runtime agent synthesis, modular decoupling, and future plugin extensibility (WASI).
 * **Unified Error Protocol**: Project-wide `EaiError` enum and `EaiResult` type for structured, categorized, and self-healing error handling across all tiers.
 * **Auto-Discovery**: Hardware acceleration (CPUs, CUDA/Metal GPU), local models (Candle, Ollama), and network interfaces are discovered and benchmarked automatically on startup.
 * **Auto-Fallback**: If internet or cloud API keys are absent, GHA operates 100% offline using native Candle tensor weights (`~/.gha/models/gha-alpha.safetensors`) or local GGUF vaults without erroring.

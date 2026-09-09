@@ -84,27 +84,45 @@ impl GemiEngine {
     }
 
     fn scout_tier2_providers(prompt: &str) -> (Option<String>, Vec<String>) {
+        use std::sync::mpsc::channel;
+        use std::thread;
+        use std::time::Duration;
+
+        let (tx, rx) = channel();
+        let providers = vec!["google", "groq", "openai"];
+        let mut handle_count = 0;
+
+        for provider in providers {
+            let t_tx = tx.clone();
+            let t_prompt = prompt.to_string();
+            let provider_name = provider.to_string();
+
+            thread::spawn(move || {
+                let res = match provider_name.as_str() {
+                    "google" => Self::execute_gemini(&t_prompt).map(|r| format!("☁️ [Tier 2 GEMI: Google Cloud]:\n{}", r)),
+                    "groq" => Self::execute_groq(&t_prompt).map(|r| format!("☁️ [Tier 2 GEMI: Groq Cloud]:\n{}", r)),
+                    "openai" => Self::execute_openai(&t_prompt).map(|r| format!("☁️ [Tier 2 GEMI: OpenAI Cloud]:\n{}", r)),
+                    _ => Err(anyhow!("Unknown provider")),
+                };
+                let _ = t_tx.send(res);
+            });
+            handle_count += 1;
+        }
+
         let mut errors = Vec::new();
+        let timeout = Duration::from_secs(8);
+        let start = std::time::Instant::now();
 
-        // 1. Google GEMI (High Reliability)
-        match Self::execute_gemini(prompt) {
-            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [Tier 2 GEMI: Google Cloud]:\n{}", res)), errors),
-            Ok(_) => errors.push("Gemini: Empty response".to_string()),
-            Err(e) => errors.push(format!("Gemini: {}", e)),
-        }
-
-        // 2. Groq GEMI (High Speed)
-        match Self::execute_groq(prompt) {
-            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [Tier 2 GEMI: Groq Cloud]:\n{}", res)), errors),
-            Ok(_) => errors.push("Groq: Empty response".to_string()),
-            Err(e) => errors.push(format!("Groq: {}", e)),
-        }
-
-        // 3. OpenAI GEMI (Standard)
-        match Self::execute_openai(prompt) {
-            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [Tier 2 GEMI: OpenAI Cloud]:\n{}", res)), errors),
-            Ok(_) => errors.push("OpenAI: Empty response".to_string()),
-            Err(e) => errors.push(format!("OpenAI: {}", e)),
+        while handle_count > 0 && start.elapsed() < timeout {
+            if let Ok(res) = rx.recv_timeout(Duration::from_millis(100)) {
+                handle_count -= 1;
+                match res {
+                    Ok(text) if !text.trim().is_empty() => return (Some(text), errors),
+                    Ok(_) => errors.push("Empty response received".to_string()),
+                    Err(e) => errors.push(e.to_string()),
+                }
+            }
+            if start.elapsed() >= timeout { break; }
         }
 
         (None, errors)
