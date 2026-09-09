@@ -66,10 +66,19 @@ if [ "$INSTALLED" = "0" ]; then
         SCRIPT_DIR="$SCRIPT_DIR_DETECT"
         echo "Using local source directory..."
     else
-        echo "Cloning gha repository..."
+        echo "Downloading gha source archive..."
         TEMP_DIR=$(mktemp -d)
-        git clone --depth 1 https://github.com/intellibitz/gha.git "$TEMP_DIR" >/dev/null 2>&1 || { echo "Git clone failed."; exit 1; }
-        SCRIPT_DIR="$TEMP_DIR"
+        SOURCE_URL="https://github.com/intellibitz/gha/archive/refs/heads/main.tar.gz"
+        if command -v curl >/dev/null 2>&1 && command -v tar >/dev/null 2>&1; then
+            curl -sSfL "$SOURCE_URL" | tar -xzC "$TEMP_DIR" --strip-components=1 || { echo "Source download failed."; exit 1; }
+            SCRIPT_DIR="$TEMP_DIR"
+        elif command -v wget >/dev/null 2>&1 && command -v tar >/dev/null 2>&1; then
+            wget -qO- "$SOURCE_URL" | tar -xzC "$TEMP_DIR" --strip-components=1 || { echo "Source download failed."; exit 1; }
+            SCRIPT_DIR="$TEMP_DIR"
+        else
+            echo "Error: 'tar' and either 'curl' or 'wget' are required for source fallback."
+            exit 1
+        fi
     fi
 
     if command -v cargo >/dev/null 2>&1 && [ -f "$SCRIPT_DIR/Cargo.toml" ]; then

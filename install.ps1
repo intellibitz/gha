@@ -11,7 +11,7 @@ New-Item -ItemType Directory -Force -Path $GlobalBinDir | Out-Null
 New-Item -ItemType Directory -Force -Path $GlobalModelsDir | Out-Null
 
 $GhaRepo = if ($env:GHA_REPO) { $env:GHA_REPO } else { "intellibitz/gha" }
-$RawUrl = "https://raw.githubusercontent.com/$GHA_REPO/main"
+$ReleaseUrl = "https://github.com/$GhaRepo/releases/latest/download"
 
 Write-Host "⚡ [gha] Initializing 100% Sandboxed Native AI Runtime..." -ForegroundColor Cyan
 
@@ -23,6 +23,8 @@ if (Test-Path "target\release\gha.exe") {
     Write-Host "   └── Installed local release binary to $ExePath" -ForegroundColor Green
 } elseif (Get-Command "cargo" -ErrorAction SilentlyContinue) {
     Write-Host "⚡ [gha Native] Compiling standalone Rust AI engine..." -ForegroundColor Yellow
+    # Handle potentially busy binary if running
+    Stop-Process -Name "gha" -ErrorAction SilentlyContinue
     cargo build --release | Out-Null
     if (Test-Path "target\release\gha.exe") {
         Copy-Item "target\release\gha.exe" $ExePath -Force
@@ -30,7 +32,10 @@ if (Test-Path "target\release\gha.exe") {
     }
 } else {
     Write-Host "📥 Fetching latest gha executable to $ExePath..." -ForegroundColor Yellow
-    Invoke-WebRequest -Uri "$RawUrl/gha.exe" -OutFile $ExePath -UseBasicParsing
+    $BinaryName = "gha-windows-x86_64.exe"
+    $DownloadUrl = "$ReleaseUrl/$BinaryName"
+    Stop-Process -Name "gha" -ErrorAction SilentlyContinue
+    Invoke-WebRequest -Uri "$DownloadUrl" -OutFile $ExePath -UseBasicParsing
 }
 
 # 2. PATH Automation (0-Effort Onboarding)
