@@ -4,6 +4,7 @@
 use anyhow::{Result, anyhow};
 use candle_core::Device;
 use std::path::{Path, PathBuf};
+use std::collections::HashMap;
 
 pub struct GhaPulse;
 
@@ -22,14 +23,30 @@ impl GhaPulse {
     }
 
     pub fn reason(prompt: &str, _workspace: &Path) -> Result<String> {
-        let _device = Device::Cpu;
-
-        // 🚀 Native Model Logic (Bootstrap Phase)
-        // In GHA v0.1, we use deterministic mapping to bootstrap the model loop.
-        // In GHA v0.2, this will load Safetensors/GGUF natively using candle.
-
         let lower = prompt.to_lowercase();
+        let words: Vec<&str> = lower.split_whitespace().collect();
 
+        // 1. Precise Keyword Mapping (High-Speed Reflex)
+        let mut mappings = HashMap::new();
+        mappings.insert("status", "ACTION: status");
+        mappings.insert("version", "ACTION: version");
+        mappings.insert("memory", "ACTION: memory");
+        mappings.insert("history", "ACTION: memory");
+        mappings.insert("forget", "ACTION: clear_memory");
+        mappings.insert("scout", "ACTION: scout");
+        mappings.insert("build", "ACTION: self_heal_build");
+        mappings.insert("test", "ACTION: run_test_harness");
+        mappings.insert("models", "ACTION: list_models");
+        mappings.insert("ls", "ACTION: list_directory");
+        mappings.insert("dir", "ACTION: list_directory");
+
+        for word in &words {
+            if let Some(action) = mappings.get(word) {
+                return Ok(action.to_string());
+            }
+        }
+
+        // 2. Pattern Matchers (Structured Reflex)
         if lower.contains("create") || lower.contains("write") {
              let parts: Vec<&str> = lower.split("containing").collect();
              if parts.len() >= 2 {
@@ -46,18 +63,7 @@ impl GhaPulse {
              }
         }
 
-        if lower.starts_with("use_model") || lower.starts_with("use model") || lower.starts_with("select model") || lower.starts_with("set_model") || lower.starts_with("set model") {
-            let model_arg = lower
-                .trim_start_matches("use_model")
-                .trim_start_matches("use model")
-                .trim_start_matches("select model")
-                .trim_start_matches("set_model")
-                .trim_start_matches("set model")
-                .trim();
-            return Ok(format!("ACTION: use_model {}", model_arg));
-        }
-
-        if lower.contains("chat gpt") || lower.contains("chatgpt") || lower.contains("openai") {
+        if lower.contains("chat gpt") || lower.contains("openai") {
             return Ok("ACTION: connect_provider openai".to_string());
         }
 
@@ -69,176 +75,31 @@ impl GhaPulse {
             return Ok("ACTION: connect_provider anthropic".to_string());
         }
 
-        if (lower.contains("download") || lower.contains("fetch") || lower.contains("lyrics"))
-            && !lower.contains("model")
-        {
-            let query = lower
-                .replace("download", "")
-                .replace("fetch", "")
-                .replace("lyrics", "")
-                .replace("song", "")
-                .trim()
-                .to_string();
-            let clean_query = if query.is_empty() { lower.clone() } else { format!("{} song lyrics", query) };
-            return Ok(format!("ACTION: web_search_download {}", clean_query));
-        }
-
-        if lower.contains("download model") || lower.contains("install model") || lower.contains("pull model") {
-            let parts: Vec<&str> = lower.split_whitespace().collect();
-            let model_arg = parts.last().copied().unwrap_or("gha-alpha");
-            return Ok(format!("ACTION: install_model {}", model_arg));
-        }
-
-        if lower.contains("backup") || lower.contains("restore") || lower.contains("sync work") || lower.contains("sync engine") {
+        if lower.contains("backup") || lower.contains("restore") {
             if lower.contains("engine") || lower.contains("gha") {
-                if lower.contains("restore") {
-                    return Ok("ACTION: restore_engine".to_string());
-                }
-                return Ok("ACTION: backup_engine".to_string());
-            } else {
-                if lower.contains("restore") {
-                    return Ok("ACTION: restore_work".to_string());
-                }
-                if lower.contains("sync") {
-                    return Ok("ACTION: sync_work".to_string());
-                }
-                return Ok("ACTION: backup_work".to_string());
+                return Ok(if lower.contains("restore") { "ACTION: restore_engine" } else { "ACTION: backup_engine" }.to_string());
             }
-        }
-
-        if lower.contains("memory") || lower.contains("history") || lower.contains("what did we do") || lower.contains("earlier") {
-            if lower.contains("clear") || lower.contains("forget") {
-                return Ok("ACTION: clear_memory".to_string());
-            }
-            return Ok("ACTION: memory".to_string());
-        }
-
-        if lower.contains("status") || lower.contains("aware") {
-            return Ok("ACTION: status".to_string());
-        }
-
-        if lower.contains("verify cloud") || lower.contains("test api keys") || lower.contains("verify_cloud") || lower.contains("verify keys") || lower.contains("test keys") || lower.contains("check api keys") {
-            return Ok("ACTION: verify_cloud_providers".to_string());
-        }
-
-        if lower.contains("verify mcp") || lower.contains("test hands") {
-            return Ok("ACTION: verify_mcp_servers".to_string());
+            return Ok(if lower.contains("restore") { "ACTION: restore_work" } else { "ACTION: backup_work" }.to_string());
         }
 
         if lower.contains("install mcp") || lower.contains("need capability") {
-             let name = lower.split_whitespace().last().unwrap_or("search");
+             let name = words.last().unwrap_or(&"search");
              return Ok(format!("ACTION: provision_mcp {}", name));
         }
 
-        if lower.contains("use brave search") || lower.contains("search for") {
-             return Ok("ACTION: brave_search:search_web {\"query\": \"gha news\"}".to_string());
-        }
-
-        if lower.contains("list dir") || lower.contains("list directory") || lower.contains("list files") || lower.contains("show files") || lower == "ls" || lower == "dir" || lower.contains("list workspace") {
+        if lower.contains("list files") || lower.contains("show files") || lower.contains("workspace") {
             return Ok("ACTION: list_directory".to_string());
         }
 
-        if lower.contains("models") || lower.contains("inventory") || lower.contains("list_models") {
-            return Ok("ACTION: list_models".to_string());
-        }
-
-        if lower.contains("self_train") || lower.contains("training") {
-            let count = lower.split_whitespace().last().unwrap_or("5");
-            return Ok(format!("ACTION: self_train {}", count));
-        }
-
-        if lower.contains("kube") || lower.contains("pods") {
-            return Ok("ACTION: kube_pods".to_string());
-        }
-
-        if lower.contains("docker") || lower.contains("container") {
-            return Ok("ACTION: docker_ps".to_string());
-        }
-
-        if lower == "build" || lower.contains("compile") || lower == "run build" {
-            return Ok("ACTION: self_heal_build".to_string());
-        }
-
-        if lower.contains("self_heal_build") || lower.contains("fix build") {
-             return Ok("ACTION: self_heal_build".to_string());
-        }
-
-        if lower == "test" || lower.contains("unit test") || lower == "run tests" {
-            return Ok("ACTION: run_test_harness".to_string());
-        }
-
-        if lower.contains("scout") || lower.contains("discovery") {
-            return Ok("ACTION: scout".to_string());
-        }
-
-        if lower.contains("self_evolve") || lower.contains("self_optimization") {
-            return Ok("ACTION: self_evolve".to_string());
-        }
-
-        if lower.contains("docker_build") || lower.contains("build container") {
-            let tag = lower.split_whitespace().last().unwrap_or("latest");
-            return Ok(format!("ACTION: docker_build {}", tag));
-        }
-
-        if lower.contains("kube_deploy") || lower.contains("deploy pods") {
-            let file = lower.split_whitespace().last().unwrap_or("k8s/deployment.yaml");
-            return Ok(format!("ACTION: kube_deploy {}", file));
-        }
-
-        if lower.contains("swarm_sync") {
-            return Ok("ACTION: swarm_sync".to_string());
-        }
-
-        if lower.contains("global_registry_scan") {
-            return Ok("ACTION: global_registry_scan".to_string());
-        }
-
-        if lower.contains("cluster_ping") || lower.contains("find peers") {
-            return Ok("ACTION: cluster_ping".to_string());
-        }
-
-        if lower.contains("cluster_dispatch") {
-            let parts: Vec<&str> = lower.split_whitespace().collect();
-            let addr = parts.get(1).unwrap_or(&"127.0.0.1:9090");
-            let task = parts.get(2).unwrap_or(&"status");
-            return Ok(format!("ACTION: cluster_dispatch {} {}", addr, task));
-        }
-
-        if lower.contains("version") {
-            return Ok("ACTION: version".to_string());
-        }
-
-        if lower.contains("failed due to rate limits") || lower.contains("smaller context") {
-             return Ok("ACTION: reason Translate only the first 5 lines of romeo_juliet.txt to Tamil".to_string());
-        }
-
-        if lower.contains("exponential intelligence step") {
-             return Ok(format!("ACTION: reason Perform autonomous self-evolution for {}", prompt));
-        }
-
-        if lower.contains("verify cloud") || lower.contains("cloud health") {
-             return Ok("ACTION: verify_cloud_providers".to_string());
-        }
-        if lower.contains("verify mcp") || lower.contains("mcp health") {
-             return Ok("ACTION: verify_mcp_servers".to_string());
-        }
         if lower.contains("translate") {
-             if lower.contains("romeo") && !Path::new("romeo_juliet.txt").exists() {
-                 return Ok("ACTION: exec_command curl -L https://www.gutenberg.org/cache/epub/1513/pg1513.txt -o romeo_juliet.txt".to_string());
-             }
              return Ok(format!("ACTION: reason {}", prompt));
         }
 
-        if lower.contains("reason") || lower.contains("explain") || lower.contains("summarize") {
+        if lower.contains("reason") || lower.contains("explain") || lower.contains("summarize") || lower.contains("orchestrate") {
              return Ok(format!("ACTION: reason {}", prompt));
         }
 
-        if lower.contains("orchestrate") || lower.contains("mission") {
-             return Ok(format!("ACTION: reason Execute multi-agent orchestration for: {}", prompt));
-        }
-
-        // 🚀 Self-Bootstrapping: If Pulse cannot map intent, it returns a special signal
-        // that tells GHA to use the tiered discovery and deep brains.
+        // 3. Fallback to Deep Reasoning
         Err(anyhow!("Pulse Brain: Transitioning to Tier 2 Deep Reasoning..."))
     }
 }

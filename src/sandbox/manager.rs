@@ -4,6 +4,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
+use crate::error::{EaiError, EaiResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, Eq, Ord)]
 pub enum ModelTier {
@@ -114,10 +115,10 @@ impl GhaConfig {
     }
 
     #[allow(dead_code)]
-    pub fn save(&self, global_dir: &Path) -> Result<String, String> {
+    pub fn save(&self, global_dir: &Path) -> EaiResult<String> {
         let path = Self::get_config_path(global_dir);
-        let content = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
-        fs::write(&path, content).map_err(|e| e.to_string())?;
+        let content = serde_json::to_string_pretty(self).map_err(|e| EaiError::Sandbox(e.to_string()))?;
+        fs::write(&path, content).map_err(|e| EaiError::Sandbox(e.to_string()))?;
         Ok(format!("Saved GHA configuration to {}", path.display()))
     }
 }
@@ -152,7 +153,7 @@ impl SandboxManager {
                     let val = v.trim().trim_matches('"').trim_matches('\'');
                     if !key.is_empty() && !val.is_empty() && std::env::var(key).is_err() {
                         unsafe {
-                            std::env::set_var(key, val);
+                            let _ = std::env::set_var(key, val);
                         }
                     }
                 }
@@ -160,7 +161,7 @@ impl SandboxManager {
         }
     }
 
-    pub fn save_env_key(global_dir: &Path, key: &str, val: &str) -> Result<String, String> {
+    pub fn save_env_key(global_dir: &Path, key: &str, val: &str) -> EaiResult<String> {
         let env_file = global_dir.join("env");
         let mut lines = Vec::new();
         if env_file.is_file()
@@ -173,9 +174,9 @@ impl SandboxManager {
             }
         }
         lines.push(format!("{}={}", key, val));
-        fs::write(&env_file, lines.join("\n")).map_err(|e| e.to_string())?;
+        fs::write(&env_file, lines.join("\n")).map_err(|e| EaiError::Sandbox(e.to_string()))?;
         unsafe {
-            std::env::set_var(key, val);
+            let _ = std::env::set_var(key, val);
         }
         Ok(format!("Saved {} to {}", key, env_file.display()))
     }
@@ -367,9 +368,9 @@ impl GhaAuditLogger {
 pub struct GhaBackupManager;
 
 impl GhaBackupManager {
-    pub fn backup_work(workspace: &Path) -> Result<String, String> {
+    pub fn backup_work(workspace: &Path) -> EaiResult<String> {
         let backups_dir = workspace.join(".gha/backups");
-        fs::create_dir_all(&backups_dir).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&backups_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
 
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -385,11 +386,11 @@ impl GhaBackupManager {
 
         match status {
             Ok(s) if s.success() => Ok(format!("Workspace work backed up successfully to {}", backup_file.display())),
-            _ => Err("Failed to create workspace backup archive using tar.".to_string()),
+            _ => Err(EaiError::Sandbox("Failed to create workspace backup archive using tar.".to_string())),
         }
     }
 
-    pub fn restore_work(workspace: &Path, backup_path: &str) -> Result<String, String> {
+    pub fn restore_work(workspace: &Path, backup_path: &str) -> EaiResult<String> {
         let archive = if backup_path.trim().is_empty() {
             let backups_dir = workspace.join(".gha/backups");
             let mut latest = PathBuf::new();
@@ -408,7 +409,7 @@ impl GhaBackupManager {
                 }
             }
             if !latest.exists() {
-                return Err("No backup archive found in .gha/backups/".to_string());
+                return Err(EaiError::Sandbox("No backup archive found in .gha/backups/".to_string()));
             }
             latest
         } else {
@@ -416,7 +417,7 @@ impl GhaBackupManager {
         };
 
         if !archive.is_file() {
-            return Err(format!("Backup archive file not found: {}", archive.display()));
+            return Err(EaiError::Sandbox(format!("Backup archive file not found: {}", archive.display())));
         }
 
         let status = std::process::Command::new("tar")
@@ -426,13 +427,13 @@ impl GhaBackupManager {
 
         match status {
             Ok(s) if s.success() => Ok(format!("Workspace work restored successfully from {}", archive.display())),
-            _ => Err(format!("Failed to restore workspace work from {}", archive.display())),
+            _ => Err(EaiError::Sandbox(format!("Failed to restore workspace work from {}", archive.display()))),
         }
     }
 
-    pub fn backup_engine(global_dir: &Path) -> Result<String, String> {
+    pub fn backup_engine(global_dir: &Path) -> EaiResult<String> {
         let backups_dir = global_dir.join("backups");
-        fs::create_dir_all(&backups_dir).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&backups_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
 
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -448,11 +449,11 @@ impl GhaBackupManager {
 
         match status {
             Ok(s) if s.success() => Ok(format!("GHA engine backed up successfully to {}", backup_file.display())),
-            _ => Err("Failed to create engine backup archive.".to_string()),
+            _ => Err(EaiError::Sandbox("Failed to create engine backup archive.".to_string())),
         }
     }
 
-    pub fn restore_engine(global_dir: &Path, backup_path: &str) -> Result<String, String> {
+    pub fn restore_engine(global_dir: &Path, backup_path: &str) -> EaiResult<String> {
         let archive = if backup_path.trim().is_empty() {
             let backups_dir = global_dir.join("backups");
             let mut latest = PathBuf::new();
@@ -471,7 +472,7 @@ impl GhaBackupManager {
                 }
             }
             if !latest.exists() {
-                return Err("No engine backup archive found in ~/.gha/backups/".to_string());
+                return Err(EaiError::Sandbox("No engine backup archive found in ~/.gha/backups/".to_string()));
             }
             latest
         } else {
@@ -479,7 +480,7 @@ impl GhaBackupManager {
         };
 
         if !archive.is_file() {
-            return Err(format!("Engine backup archive file not found: {}", archive.display()));
+            return Err(EaiError::Sandbox(format!("Backup archive file not found: {}", archive.display())));
         }
 
         let status = std::process::Command::new("tar")
@@ -489,7 +490,7 @@ impl GhaBackupManager {
 
         match status {
             Ok(s) if s.success() => Ok(format!("GHA engine restored successfully from {}", archive.display())),
-            _ => Err(format!("Failed to restore engine from {}", archive.display())),
+            _ => Err(EaiError::Sandbox(format!("Failed to restore engine from {}", archive.display()))),
         }
     }
 }

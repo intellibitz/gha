@@ -5,6 +5,7 @@ use std::fs;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
 use super::gmas::A2AMessage;
+use crate::error::{EaiError, EaiResult};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PkbTrainingEntry {
@@ -65,9 +66,9 @@ impl PkbSynthesizer {
         }
     }
 
-    pub fn save_training_data(entries: Vec<PkbTrainingEntry>, global_dir: &Path) -> Result<String, String> {
+    pub fn save_training_data(entries: Vec<PkbTrainingEntry>, global_dir: &Path) -> EaiResult<String> {
         let train_dir = global_dir.join("train");
-        fs::create_dir_all(&train_dir).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&train_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
 
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -84,14 +85,14 @@ impl PkbSynthesizer {
             }
         }
 
-        fs::write(&file_path, content).map_err(|e| e.to_string())?;
+        fs::write(&file_path, content).map_err(|e| EaiError::Sandbox(e.to_string()))?;
         let _ = Self::ensure_default_candle_weights(global_dir);
         Ok(format!("Saved {} entries to {}", len, file_path.display()))
     }
 
-    pub fn ensure_default_candle_weights(global_dir: &Path) -> Result<String, String> {
+    pub fn ensure_default_candle_weights(global_dir: &Path) -> EaiResult<String> {
         let models_dir = global_dir.join("models");
-        fs::create_dir_all(&models_dir).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&models_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
         let weights_file = models_dir.join("gha-alpha.safetensors");
 
         if !weights_file.exists() {
@@ -100,19 +101,19 @@ impl PkbSynthesizer {
 
             let device = Device::Cpu;
             let mut tensors = HashMap::new();
-            let weight = Tensor::ones((64, 64), DType::F32, &device).map_err(|e| e.to_string())?;
-            let bias = Tensor::zeros(64, DType::F32, &device).map_err(|e| e.to_string())?;
+            let weight = Tensor::ones((64, 64), DType::F32, &device).map_err(|e| EaiError::Inference(e.to_string()))?;
+            let bias = Tensor::zeros(64, DType::F32, &device).map_err(|e| EaiError::Inference(e.to_string()))?;
 
             tensors.insert("reflex.weight".to_string(), weight);
             tensors.insert("reflex.bias".to_string(), bias);
 
-            candle_core::safetensors::save(&tensors, &weights_file).map_err(|e| e.to_string())?;
+            candle_core::safetensors::save(&tensors, &weights_file).map_err(|e| EaiError::Sandbox(e.to_string()))?;
             return Ok(format!("Initialized native Candle weights at {}", weights_file.display()));
         }
         Ok(format!("Native Candle weights present at {}", weights_file.display()))
     }
 
-    pub fn distill_step_0_to_63(global_dir: &Path) -> Result<String, String> {
+    pub fn distill_step_0_to_63(global_dir: &Path) -> EaiResult<String> {
         let train_dir = global_dir.join("train");
         if !train_dir.is_dir() {
             return Ok("No training datasets found to distill.".to_string());
@@ -130,7 +131,7 @@ impl PkbSynthesizer {
         }
 
         let models_dir = global_dir.join("models");
-        fs::create_dir_all(&models_dir).map_err(|e| e.to_string())?;
+        fs::create_dir_all(&models_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
         let weights_file = models_dir.join("gha-alpha.safetensors");
 
         use candle_core::{Tensor, Device, DType};
@@ -139,13 +140,13 @@ impl PkbSynthesizer {
         let device = Device::Cpu;
         let mut tensors = HashMap::new();
         let dim = 128.min(64 + total_samples);
-        let weight = Tensor::ones((dim, dim), DType::F32, &device).map_err(|e| e.to_string())?;
-        let bias = Tensor::zeros(dim, DType::F32, &device).map_err(|e| e.to_string())?;
+        let weight = Tensor::ones((dim, dim), DType::F32, &device).map_err(|e| EaiError::Inference(e.to_string()))?;
+        let bias = Tensor::zeros(dim, DType::F32, &device).map_err(|e| EaiError::Inference(e.to_string()))?;
 
         tensors.insert("reflex.weight".to_string(), weight);
         tensors.insert("reflex.bias".to_string(), bias);
 
-        candle_core::safetensors::save(&tensors, &weights_file).map_err(|e| e.to_string())?;
+        candle_core::safetensors::save(&tensors, &weights_file).map_err(|e| EaiError::Sandbox(e.to_string()))?;
         Ok(format!("Distilled {} PKB pipeline samples across 63 steps into native weights ({})", total_samples, weights_file.display()))
     }
 }

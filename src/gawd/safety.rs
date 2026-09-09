@@ -3,10 +3,12 @@
 // RULE 4: Reality Check Always On
 // RULE 11: Native Integration Enforcement
 
+use crate::error::{EaiError, EaiResult};
+
 pub struct SafetyDetector;
 
 impl SafetyDetector {
-    pub fn audit_action(tool_name: &str, arg: &str) -> Result<(), String> {
+    pub fn audit_action(tool_name: &str, arg: &str) -> EaiResult<()> {
         let destructive_patterns = vec![
             "rm -rf /",
             "rm -rf $HOME",
@@ -34,7 +36,7 @@ impl SafetyDetector {
         // 1. Command Pattern Check
         for pattern in destructive_patterns {
             if lower_arg.contains(pattern) {
-                return Err(format!("🚨 DESTRUCTION DETECTED: Action contains restricted pattern '{}'", pattern));
+                return Err(EaiError::Governance(format!("Action contains restricted pattern '{}'", pattern)));
             }
         }
 
@@ -42,7 +44,7 @@ impl SafetyDetector {
         if tool_name == "write_file" || tool_name == "exec_command" {
             for path in critical_paths {
                 if lower_arg.contains(path) {
-                    return Err(format!("🚨 DESTRUCTION DETECTED: Action targets critical system path '{}'", path));
+                    return Err(EaiError::Governance(format!("Action targets critical system path '{}'", path)));
                 }
             }
         }

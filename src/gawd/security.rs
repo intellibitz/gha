@@ -2,10 +2,12 @@
 // 100% Rust implementation for detecting credential leaks and exfiltration
 // RULE 7: No Secret Leaks - Zero tolerance for tokens, credentials, or keys.
 
+use crate::error::{EaiError, EaiResult};
+
 pub struct SecurityDetector;
 
 impl SecurityDetector {
-    pub fn audit_action(_tool_name: &str, arg: &str) -> Result<(), String> {
+    pub fn audit_action(_tool_name: &str, arg: &str) -> EaiResult<()> {
         let secret_patterns = vec![
             "sk-", // OpenAI
             "ghp_", // Personal Access Token
@@ -32,18 +34,40 @@ impl SecurityDetector {
         // 1. Secret Leak Check
         for pattern in secret_patterns {
             if arg.contains(pattern) {
-                return Err(format!("🚨 SECURITY VIOLATION: Suspicious secret or API key pattern detected ('{}')", pattern));
+                return Err(EaiError::Governance(format!("Suspicious secret or API key pattern detected ('{}')", pattern)));
             }
         }
 
-        // 2. Exfiltration Check
+        // 2. Entropy Check (Shannon Entropy for Credential Detection)
+        if arg.len() > 16 {
+             let entropy = Self::calculate_entropy(arg);
+             if entropy > 4.5 {
+                  return Err(EaiError::Governance("High-entropy string detected. Possible credential leak or obfuscated payload.".to_string()));
+             }
+        }
+
+        // 3. Exfiltration Check
         for pattern in exfiltration_patterns {
             if lower_arg.contains(pattern) {
-                return Err(format!("🚨 SECURITY VIOLATION: Suspicious network exfiltration pattern detected ('{}')", pattern));
+                return Err(EaiError::Governance(format!("Suspicious network exfiltration pattern detected ('{}')", pattern)));
             }
         }
 
         Ok(())
+    }
+
+    fn calculate_entropy(data: &str) -> f64 {
+        let mut counts = std::collections::HashMap::new();
+        for c in data.chars() {
+            *counts.entry(c).or_insert(0) += 1;
+        }
+        let total = data.chars().count() as f64;
+        let mut entropy = 0.0;
+        for &count in counts.values() {
+            let p = count as f64 / total;
+            entropy -= p * p.log2();
+        }
+        entropy
     }
 }
 

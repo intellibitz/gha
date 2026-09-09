@@ -8,6 +8,7 @@ use super::safety::SafetyDetector;
 use super::security::SecurityDetector;
 use crate::gemi::hardware::HardwareProfiler;
 use crate::gmcp::tools::ToolRegistry;
+use crate::error::{EaiError, EaiResult};
 
 pub struct GmaMasterAgent;
 
@@ -20,8 +21,8 @@ impl GmaMasterAgent {
         let (a2a_logs, _) = GmasSupervisor::supervise_mission(goal, workspace);
 
         let governance_check = self.audit_governance(&a2a_logs);
-        if let Err(violation_msg) = governance_check {
-            return format!("Governance Alert: Mission aborted. {}", violation_msg);
+        if let Err(e) = governance_check {
+            return format!("{}", e);
         }
 
         let mission_result = self.execute_autonomous_flux(goal, &a2a_logs, workspace);
@@ -145,9 +146,9 @@ impl GmaMasterAgent {
 
         // Governance Protocol: Safety & Security Audit
         let governance_check = self.audit_governance(&a2a_logs);
-        if let Err(violation_msg) = governance_check {
+        if let Err(e) = governance_check {
             report.push_str("\n## Governance Status\n");
-            report.push_str(&format!("   └── Aborted: {}\n", violation_msg));
+            report.push_str(&format!("   └── Aborted: {}\n", e));
             return report;
         }
 
@@ -178,7 +179,7 @@ impl GmaMasterAgent {
         report
     }
 
-    fn audit_governance(&self, logs: &[super::gmas::A2AMessage]) -> Result<(), String> {
+    fn audit_governance(&self, logs: &[super::gmas::A2AMessage]) -> EaiResult<()> {
         for msg in logs {
             if msg.payload.contains("ACTION:")
                 && let Some(action_part) = msg.payload.split("ACTION: ").nth(1)

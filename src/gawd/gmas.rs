@@ -8,6 +8,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use super::agents::{GawdAgentFleet, GawdAgentInfo};
+use crate::error::{EaiError, EaiResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct A2AMessage {

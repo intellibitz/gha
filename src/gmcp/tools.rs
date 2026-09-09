@@ -13,6 +13,7 @@ use crate::gemi::hardware::HardwareProfiler;
 use crate::gemi::models::ModelManager;
 use crate::gemi::engine::GemiEngine;
 use crate::gmcp::client::GmcpClient;
+use crate::error::{EaiError, EaiResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpTool {
