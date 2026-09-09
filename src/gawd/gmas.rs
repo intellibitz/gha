@@ -169,15 +169,27 @@ impl GmasSupervisor {
     #[allow(dead_code)]
     pub fn sync_cluster_state(workspace: &Path, payload: &str) -> String {
         let nodes = Self::list_cluster_nodes();
-        let mut synced = 0;
+        let mut handles = Vec::new();
 
-        // Robust AOA Synchronization Logic
-        // Encode the payload with node-specific signatures
-        for node in &nodes {
+        // 🚀 Parallel AOA Synchronization Logic (Rule 2: Saturation)
+        for node in nodes.clone() {
             if node.node_id == "gha-local-master" { continue; }
-            let signed_payload = format!("SIG:{}:{}", node.node_id, payload);
-            if Self::dispatch_peer_task(&node.address, "swarm_sync", &signed_payload).contains("Sync complete") {
-                synced += 1;
+            let addr = node.address.clone();
+            let p = payload.to_string();
+            let nid = node.node_id.clone();
+
+            handles.push(std::thread::spawn(move || {
+                let signed_payload = format!("SIG:{}:{}", nid, p);
+                Self::dispatch_peer_task(&addr, "swarm_sync", &signed_payload)
+            }));
+        }
+
+        let mut synced = 0;
+        for handle in handles {
+            if let Ok(res) = handle.join() {
+                if res.contains("Sync complete") {
+                    synced += 1;
+                }
             }
         }
 
@@ -191,7 +203,7 @@ impl GmasSupervisor {
         });
 
         let _ = std::fs::write(&sync_file, sync_data.to_string());
-        format!("Synchronized state across {} nodes (checksum verified).", synced)
+        format!("Synchronized state across {} nodes in parallel (checksum verified).", synced)
     }
 
     pub fn borrow_remote_reflex(prompt: &str) -> Option<String> {
