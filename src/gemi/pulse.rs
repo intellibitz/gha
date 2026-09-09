@@ -73,6 +73,18 @@ impl GhaPulse {
              }
         }
 
+        // Model Downloading: "pull model [NAME]" or "install model [NAME]"
+        if lower.contains("model") && (lower.contains("pull") || lower.contains("install") || lower.contains("download")) {
+            let model_name = if let Some(pos) = lower.find("model ") {
+                clean_prompt[pos + 6..].trim().trim_end_matches('.').to_string()
+            } else {
+                words.last().unwrap_or(&"").to_string()
+            };
+            if !model_name.is_empty() && !model_name.contains("list") {
+                return Ok(format!("ACTION: pull_model {}", model_name));
+            }
+        }
+
         // 2. Precise Keyword Mapping (High-Speed Reflex)
         let mut mappings = HashMap::new();
         mappings.insert("status", "ACTION: status");
