@@ -1,6 +1,7 @@
 // 🌌 GMAS: Universal EAI Swarm Supervisor
 // Tier 1 AOA Protocol governing Exponential Explosive Intelligence Swarms
 
+use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpStream, UdpSocket};
 use std::path::Path;
@@ -233,5 +234,23 @@ impl GmasSupervisor {
             }
         }
         checkpoints
+    }
+
+    pub fn broadcast_reflex_learned(name: &str, wasm_path: &Path) {
+        if let Ok(wasm_data) = fs::read(wasm_path) {
+            let nodes = Self::list_cluster_nodes();
+            use base64::{Engine as _, engine::general_purpose};
+            let encoded = general_purpose::STANDARD.encode(&wasm_data);
+            let payload = serde_json::json!({
+                "name": name,
+                "wasm_b64": encoded
+            }).to_string();
+
+            for node in nodes {
+                if node.node_type == "WORKSTATION_NODE" && node.node_id != "gha-local-master" {
+                    let _ = Self::dispatch_peer_task(&node.address, "replicate_reflex", &payload);
+                }
+            }
+        }
     }
 }

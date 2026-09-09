@@ -2,7 +2,7 @@
 // 100% Rust implementation for Full Compliance Enforcement, Version Synchronization & Release Orchestration
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use crate::error::{EaiError, EaiResult};
 
@@ -225,8 +225,23 @@ impl GhaAdmin {
 
         // 2. Consultation Phase (Distillation)
         report.push_str("\n## 2. Tier 2 -> Tier 0 Distillation\n");
+
+        // A. Volatile Distillation (Wasm for immediate use)
+        match crate::gawd::reflex_synth::ReflexSynthesizer::synthesize_wasm_reflex(&gap, workspace) {
+            Ok(wasm_path) => {
+                let p = PathBuf::from(&wasm_path);
+                let name = p.file_stem().and_then(|s| s.to_str()).unwrap_or("new_reflex");
+                crate::gawd::gmas::GmasSupervisor::broadcast_reflex_learned(name, &p);
+                report.push_str(&format!("- ✅ Volatile reflex distilled and broadcast to cluster: {}\n", wasm_path));
+            },
+            Err(e) => {
+                report.push_str(&format!("- ⚠️ Volatile distillation skipped: {}\n", e));
+            }
+        }
+
+        // B. Native Distillation (Rust source integration)
         let distillation = crate::gawd::reflex_synth::ReflexSynthesizer::distill_native_reflex(&gap, workspace)?;
-        report.push_str(&format!("- **Result**: {}\n", distillation));
+        report.push_str(&format!("- **Native Result**: {}\n", distillation));
 
         // 3. Deployment Phase (Native Release)
         report.push_str("\n## 3. Substrate Deployment\n");

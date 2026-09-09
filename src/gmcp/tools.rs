@@ -109,6 +109,7 @@ impl ToolRegistry {
             Arc::new(DistillTool),
             Arc::new(SwarmStatusTool),
             Arc::new(ReplicateStateTool),
+            Arc::new(ReplicateReflexTool),
             Arc::new(GetCheckpointsTool),
             Arc::new(ScoutModelTool),
             Arc::new(SelfHealBuildTool),
@@ -843,6 +844,29 @@ impl GhaTool for ReplicateStateTool {
              return Ok(format!("Sync complete: Replicated mission '{}' to cluster.", checkpoint.intent));
         }
         Err(EaiError::Protocol("Invalid checkpoint payload".into()))
+    }
+}
+
+struct ReplicateReflexTool;
+impl GhaTool for ReplicateReflexTool {
+    fn name(&self) -> String { "replicate_reflex".to_string() }
+    fn description(&self) -> String { "Replicate distilled Wasm reflex to cluster node (Rule 16)".to_string() }
+    fn execute(&self, arg: &str, _workspace: &Path) -> EaiResult<String> {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(arg) {
+             let name = v.get("name").and_then(|n| n.as_str()).unwrap_or("unknown");
+             let b64 = v.get("wasm_b64").and_then(|b| b.as_str()).unwrap_or("");
+
+             use base64::{Engine as _, engine::general_purpose};
+             if let Ok(data) = general_purpose::STANDARD.decode(b64) {
+                  let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+                  let reflex_dir = home.join(".gha/reflexes");
+                  fs::create_dir_all(&reflex_dir)?;
+                  let file_path = reflex_dir.join(format!("{}.wasm", name));
+                  fs::write(&file_path, data)?;
+                  return Ok(format!("Sync complete: Replicated reflex '{}' to cluster.", name));
+             }
+        }
+        Err(EaiError::Protocol("Invalid reflex payload".into()))
     }
 }
 

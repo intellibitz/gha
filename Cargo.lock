@@ -1493,9 +1493,10 @@ dependencies = [
 
 [[package]]
 name = "gha"
-version = "0.1.354"
+version = "0.1.355"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "candle-core",
  "candle-nn",
  "candle-transformers",

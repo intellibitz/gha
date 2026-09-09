@@ -87,7 +87,7 @@ impl ReflexSynthesizer {
 
             match out {
                 Ok(o) if o.status.success() => {
-                    Ok(format!("Distilled Wasm reflex compiled and ready at {}", wasm_path.display()))
+                    Ok(wasm_path.to_string_lossy().to_string())
                 }
                 Ok(o) => {
                     Err(EaiError::Hardware(format!("Wasm Compilation Failed: {}", String::from_utf8_lossy(&o.stderr))))

@@ -1,6 +1,6 @@
 [package]
 name = "gha"
-version = "0.1.355"
+version = "0.1.356"
 edition = "2024"
 authors = ["IntelliBitz", "Muthu Ramadoss", "Gemini (Google AI)"]
 description = "gha: EAI: Exponential Intelligence for Any AI. - GAWD, GEMI & GMCP Multi-Agent Engine"
@@ -18,6 +18,7 @@ anyhow = "1.0"
 rustyline = "15.0"
 wasmer = { version = "3.1", features = ["cranelift", "sys"] }
 wasmer-wasi = "3.1"
+base64 = "0.22"
 
 [features]
 default = []
