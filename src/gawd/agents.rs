@@ -324,7 +324,7 @@ impl GawdAgent for GhaTruthAgent {
     fn name(&self) -> String { "GhaTruthAgent".to_string() }
     fn role(&self) -> String { "Hallucination Detection (Rules 1, 2, 3, 10)".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, goal: &str, workspace: &Path, blackboard: &SwarmBlackboard) -> String {
+    fn execute(&self, goal: &str, _workspace: &Path, blackboard: &SwarmBlackboard) -> String {
         let mut _score = 100;
         let mut _flags: Vec<String> = Vec::new();
 

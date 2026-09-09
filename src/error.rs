@@ -6,10 +6,13 @@ use std::fmt;
 #[derive(Debug)]
 pub enum EaiError {
     Governance(String),
+    #[allow(dead_code)]
     Hardware(String),
+    #[allow(dead_code)]
     Protocol(String),
     Inference(String),
     Sandbox(String),
+    #[allow(dead_code)]
     Internal(String),
 }
 
