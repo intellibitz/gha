@@ -3,6 +3,7 @@
 
 use std::process::Command;
 use serde::{Deserialize, Serialize};
+use candle_core::Device;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareProfile {
@@ -10,22 +11,56 @@ pub struct HardwareProfile {
     pub gpu_info: String,
     pub ram_gb: usize,
     pub acceleration_active: bool,
+    pub native_acceleration: String,
 }
 
 pub struct HardwareProfiler;
 
 impl HardwareProfiler {
     pub fn get_profile() -> HardwareProfile {
-        let (cpus, gpu_info) = Self::profile();
+        let (cpus, _) = Self::profile();
         let ram_gb = Self::determine_total_ram_gb();
-        let acceleration_active = gpu_info.contains("Active") || gpu_info.contains("Offload");
+
+        // 1. Direct Interrogation via Candle Substrate
+        let (native_accel, gpu_name) = Self::interrogate_native_acceleration();
+
+        let acceleration_active = !native_accel.contains("None") && !native_accel.contains("Cpu");
+        let gpu_display = if acceleration_active {
+            format!("{} ({})", native_accel, gpu_name)
+        } else {
+            // 2. Fallback to Shell-Parsing for diagnostics if native probe is inactive
+            let (_, shell_gpu) = Self::profile();
+            shell_gpu
+        };
 
         HardwareProfile {
             cpus,
-            gpu_info,
+            gpu_info: gpu_display,
             ram_gb,
             acceleration_active,
+            native_acceleration: native_accel,
         }
+    }
+
+    fn interrogate_native_acceleration() -> (String, String) {
+        if let Ok(dev) = Device::new_cuda(0) {
+            return ("CUDA".to_string(), format!("{:?}", dev));
+        }
+
+        #[cfg(feature = "metal")]
+        if let Ok(dev) = Device::new_metal(0) {
+            return ("Metal".to_string(), format!("{:?}", dev));
+        }
+
+        if candle_core::utils::cuda_is_available() {
+             return ("CUDA (Detected)".to_string(), "NVIDIA Driver found".to_string());
+        }
+
+        if candle_core::utils::metal_is_available() {
+             return ("Metal (Detected)".to_string(), "Apple Silicon / macOS".to_string());
+        }
+
+        ("None".to_string(), "Cpu".to_string())
     }
 
     pub fn profile() -> (usize, String) {

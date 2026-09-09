@@ -85,7 +85,16 @@ if [ "$INSTALLED" = "0" ]; then
 
     if command -v cargo >/dev/null 2>&1 && [ -f "$SCRIPT_DIR/Cargo.toml" ]; then
         echo "Building release binary (this may take a moment)..."
-        (cd "$SCRIPT_DIR" && cargo build --release >/dev/null 2>&1)
+
+        # 100% GPU Hardware Interrogation Build Strategy
+        BUILD_FEATURES=""
+        if [[ "$PLATFORM" == "macos" ]]; then
+            BUILD_FEATURES="--features metal"
+        elif command -v nvcc >/dev/null 2>&1 || [ -d "/usr/local/cuda" ]; then
+            BUILD_FEATURES="--features cuda"
+        fi
+
+        (cd "$SCRIPT_DIR" && cargo build --release $BUILD_FEATURES >/dev/null 2>&1)
         if [ -f "$SCRIPT_DIR/target/release/gha" ]; then
             pkill -f gha || true
             rm -f "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha" 2>/dev/null || true
