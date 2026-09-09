@@ -762,7 +762,7 @@ impl GhaTool for DistillTool {
     fn name(&self) -> String { "distill".to_string() }
     fn description(&self) -> String { "Distill deep reasoning intent into native Rust or Wasm reflex (Rule 17)".to_string() }
     fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
-        ReflexSynthesizer::distill_native_reflex(arg, workspace)
+        ReflexSynthesizer::synthesize_wasm_reflex(arg, workspace)
     }
 }
 
