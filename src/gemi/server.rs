@@ -1,4 +1,4 @@
-// 🧠 GEMI REST Server: OpenAI-Compatible Streaming & Non-Streaming REST Server
+// GEMI REST Server: OpenAI-Compatible Streaming & Non-Streaming REST Server
 // 100% Rust implementation supporting text/event-stream SSE for Android Studio / IDEs
 
 use std::io::{BufRead, BufReader, Read, Write};
@@ -27,7 +27,7 @@ impl GemiServer {
             }
         };
 
-        eprintln!("🧠 [GEMI Server] Unique OpenAI-Compatible REST Server active at http://{}/v1", addr);
+        eprintln!("[GEMI Server] Unique OpenAI-Compatible REST Server active at http://{}/v1", addr);
 
         for stream in listener.incoming().flatten() {
             let workspace = workspace.clone();
@@ -125,7 +125,7 @@ impl GemiServer {
                                 gma.solve("list_models", &workspace, crate::GHA_VERSION)
                             }
                             "/domain" | ":domain" | "/domains" | ":domains" => {
-                                "🌍 GHA Intelligence Substrates for World Missions:\n  🌾 Agronomy\n  ⚕️ Clinical Medical\n  ⚖️ Legal & Compliance\n  🎓 Education & Science\n  ⚡ Renewable Energy\n  🔧 Skilled Trades & Building Codes\n  🎨 Creative & Media\n  🏠 Home & Family\n  🏛️ Public Safety\n  💼 Enterprise & Operations\n  💻 Software & Systems Engineering\n  🌍 Universal Substrate".to_string()
+                                "Intelligence Substrates for World Missions:\n  Agronomy\n  Clinical Medical\n  Legal & Compliance\n  Education & Science\n  Renewable Energy\n  Skilled Trades & Building Codes\n  Creative & Media\n  Home & Family\n  Public Safety\n  Enterprise & Operations\n  Software & Systems Engineering\n  Universal Substrate".to_string()
                             }
                             _ => {
                                 if cmd_lower.starts_with("/schedule") || cmd_lower.starts_with(":schedule") {
@@ -144,7 +144,7 @@ impl GemiServer {
                         let gma = GmaMasterAgent::new();
                         let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(trimmed_prompt);
                         let clean_ans = gma.solve_clean(trimmed_prompt, &workspace, crate::GHA_VERSION);
-                        let final_resp = format!("🌍 Substrate Mode: {} ({})\n\n{}", badge, badge_desc, clean_ans);
+                        let final_resp = format!("Substrate Mode: {} ({})\n\n{}", badge, badge_desc, clean_ans);
                         crate::sandbox::manager::GhaMemory::append_interaction(&workspace, trimmed_prompt, &final_resp);
                         final_resp
                     };
@@ -283,31 +283,31 @@ fn get_web_app_html() -> &'static str {
 <body>
 
 <header>
-  <div class="logo">🌸 GHA Intelligence Web App</div>
+  <div class="logo">GHA Intelligence Interface</div>
   <div class="status"><div class="status-dot"></div> Substrate Active (Port 9091)</div>
 </header>
 
 <div class="chips-container">
-  <div class="chip" onclick="sendQuick('🥗 Plan a healthy 20-minute dinner recipe with chicken and broccoli')">🏠 Healthy Recipe</div>
-  <div class="chip" onclick="sendQuick('📚 Explain long division step-by-step for a 4th grader')">📚 Homework Helper</div>
-  <div class="chip" onclick="sendQuick('📅 Create a weekly family chore schedule for 2 kids')">📅 Family Schedule</div>
-  <div class="chip" onclick="sendQuick('⚕️ What should I monitor for a 101F fever in a 6-year-old?')">⚕️ Medical Guidance</div>
-  <div class="chip" onclick="sendQuick('⚖️ Summarize this contract and highlight key liabilities')">⚖️ Legal Review</div>
-  <div class="chip" onclick="sendQuick('🔧 What wire gauge is required for a 30A circuit under NEC?')">🔧 Building Codes</div>
+  <div class="chip" onclick="sendQuick('Plan a healthy 20-minute dinner recipe with chicken and broccoli')">Healthy Recipe</div>
+  <div class="chip" onclick="sendQuick('Explain long division step-by-step for a 4th grader')">Homework Helper</div>
+  <div class="chip" onclick="sendQuick('Create a weekly family chore schedule for 2 kids')">Family Schedule</div>
+  <div class="chip" onclick="sendQuick('What should I monitor for a 101F fever in a 6-year-old?')">Medical Guidance</div>
+  <div class="chip" onclick="sendQuick('Summarize this contract and highlight key liabilities')">Legal Review</div>
+  <div class="chip" onclick="sendQuick('What wire gauge is required for a 30A circuit under NEC?')">Building Codes</div>
 </div>
 
 <div id="chat-container">
-  <div class="msg assistant">👋 Welcome to GHA! Speak or type any question naturally. You can also drag and drop files or photos directly into chat.</div>
+  <div class="msg assistant">Welcome to GHA. Provide any technical instruction or query. Files and images can be analyzed directly.</div>
 </div>
 
 <div id="input-container">
-  <div id="file-preview">📎 <span id="file-name"></span></div>
+  <div id="file-preview">Attached: <span id="file-name"></span></div>
   <div class="input-row">
-    <button class="icon-btn" onclick="triggerFileSelect()" title="Attach File">📎</button>
+    <button class="icon-btn" onclick="triggerFileSelect()" title="Attach File">Attach</button>
     <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(event)">
-    <button class="icon-btn" id="mic-btn" onclick="toggleVoice()" title="Voice Input">🎙️</button>
-    <input type="text" id="prompt" placeholder="Ask GHA anything (recipes, homework, health, coding...)" onkeydown="if(event.key==='Enter') sendMsg()">
-    <button onclick="sendMsg()">Send 🚀</button>
+    <button class="icon-btn" id="mic-btn" onclick="toggleVoice()" title="Voice Input">Voice</button>
+    <input type="text" id="prompt" placeholder="Ask GHA anything..." onkeydown="if(event.key==='Enter') sendMsg()">
+    <button onclick="sendMsg()">Send</button>
   </div>
 </div>
 

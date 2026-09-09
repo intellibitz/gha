@@ -46,7 +46,7 @@ impl GmasSupervisor {
             let shared = Arc::new(Mutex::new(initial));
             let t_shared = Arc::clone(&shared);
 
-            // 🚀 Zero-Config Background Discovery Loop
+            // Zero-Config Background Discovery Loop
             std::thread::spawn(move || {
                 let socket = UdpSocket::bind(format!("0.0.0.0:{}", Self::UDP_DISCOVERY_PORT)).unwrap();
                 socket.set_broadcast(true).unwrap();
@@ -86,7 +86,7 @@ impl GmasSupervisor {
     pub fn supervise_mission(goal: &str, workspace: &Path) -> (Vec<A2AMessage>, Vec<GawdAgentInfo>) {
         let fleet_info = GawdAgentFleet::synthesize_fleet(goal);
 
-        // 🚀 Exponential Swarm Execution
+        // Exponential Swarm Execution
         let swarm_logs = GawdAgentFleet::dispatch_explosive_swarm(goal.to_string(), workspace.to_path_buf());
 
         let mut a2a_logs = Vec::new();
@@ -153,7 +153,7 @@ impl GmasSupervisor {
         let nodes = Self::list_cluster_nodes();
         let mut synced = 0;
 
-        // 🚀 Robust AOA Synchronization Logic
+        // Robust AOA Synchronization Logic
         // Encode the payload with node-specific signatures
         for node in &nodes {
             if node.node_id == "gha-local-master" { continue; }

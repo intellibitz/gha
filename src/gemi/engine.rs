@@ -1,4 +1,4 @@
-// 🧠 GEMI: Universal AI Inference & Reasoning Bridge
+// GEMI: Universal AI Inference & Reasoning Bridge
 // 100% Rust implementation for Exponential Explosive Intelligence (Model Picking & Benchmarking)
 
 use std::path::{Path, PathBuf};
@@ -22,7 +22,7 @@ impl GemiEngine {
         if allow_reflex {
             let (reflex_decision, micros) = super::reflex::ReflexEngine::try_solve(prompt, workspace);
             if let super::reflex::ReflexDecision::Solved(action) = reflex_decision {
-                return format!("⚡ [Tier 0: GHA-Alpha Reflex ({}μs)]: {}", micros, action);
+                return format!("[Tier 0: GHA-Alpha Reflex ({}μs)]: {}", micros, action);
             }
         }
 
@@ -38,10 +38,10 @@ impl GemiEngine {
             return Self::execute_local_ollama(prompt, &selected_model);
         } else if selected_engine == "candle" {
             if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
-                return format!("⚡ [Candle Engine]: {}", action);
+                return format!("[Candle Engine]: {}", action);
             }
             if let Ok(count) = super::pulse::GhaPulse::try_load_candle_weights() {
-                return format!("⚡ [Candle Engine ({} Tensors)]: Executed offline response for '{}'.", count, prompt);
+                return format!("[Candle Engine ({} Tensors)]: Executed offline response for '{}'.", count, prompt);
             }
         }
 
@@ -49,19 +49,19 @@ impl GemiEngine {
             let lower_selected = selected_model.to_lowercase();
             if lower_selected.contains("gemini") {
                 if let Ok(res) = Self::execute_gemini(prompt) {
-                    return format!("☁️ [Tier 2 GEMI: Google Cloud]:\n{}", res);
+                    return format!("[Tier 2 GEMI: Google Cloud]:\n{}", res);
                 }
             } else if lower_selected.contains("openai") || lower_selected.contains("gpt") {
                 if let Ok(res) = Self::execute_openai(prompt) {
-                    return format!("☁️ [Tier 2 GEMI: OpenAI Cloud]:\n{}", res);
+                    return format!("[Tier 2 GEMI: OpenAI Cloud]:\n{}", res);
                 }
             } else if lower_selected.contains("groq") {
                 if let Ok(res) = Self::execute_groq(prompt) {
-                    return format!("☁️ [Tier 2 GEMI: Groq Cloud]:\n{}", res);
+                    return format!("[Tier 2 GEMI: Groq Cloud]:\n{}", res);
                 }
             } else if lower_selected.contains("ollama") {
                 let res = Self::execute_local_ollama(prompt, &selected_model);
-                if !res.contains("❌") {
+                if !res.contains("ERROR") {
                     return res;
                 }
             }
@@ -76,7 +76,7 @@ impl GemiEngine {
         for best_model in models {
              if best_model.is_local && best_model.registry.contains("GGUF") {
                  // Fallback to local GGUF reasoning if cloud is down
-                 return format!("⚡ [Local GGUF Fallback: {}]: Discovered local model for mission.", best_model.name);
+                 return format!("[Local GGUF Fallback: {}]: Discovered local model for mission.", best_model.name);
              }
         }
 
@@ -103,9 +103,9 @@ impl GemiEngine {
 
             thread::spawn(move || {
                 let res = match provider_name.as_str() {
-                    "google" => Self::execute_gemini(&t_prompt).map(|r| format!("☁️ [Tier 2 GEMI: Google Cloud]:\n{}", r)),
-                    "groq" => Self::execute_groq(&t_prompt).map(|r| format!("☁️ [Tier 2 GEMI: Groq Cloud]:\n{}", r)),
-                    "openai" => Self::execute_openai(&t_prompt).map(|r| format!("☁️ [Tier 2 GEMI: OpenAI Cloud]:\n{}", r)),
+                    "google" => Self::execute_gemini(&t_prompt).map(|r| format!("[Tier 2 GEMI: Google Cloud]:\n{}", r)),
+                    "groq" => Self::execute_groq(&t_prompt).map(|r| format!("[Tier 2 GEMI: Groq Cloud]:\n{}", r)),
+                    "openai" => Self::execute_openai(&t_prompt).map(|r| format!("[Tier 2 GEMI: OpenAI Cloud]:\n{}", r)),
                     _ => Err(anyhow!("Unknown provider")),
                 };
                 let _ = t_tx.send(res);
@@ -175,9 +175,9 @@ impl GemiEngine {
         match out {
             Ok(o) if o.status.success() => {
                 let text = String::from_utf8_lossy(&o.stdout).trim().to_string();
-                format!("🧠 [Ollama Pick: {}]:\n{}", model_id, Self::cleanse_artifact(&text))
+                format!("[Ollama Pick: {}]:\n{}", model_id, Self::cleanse_artifact(&text))
             },
-            _ => format!("❌ Ollama Failure: Falling back from model '{}'", model_id)
+            _ => format!("ERROR: Ollama failure from model '{}'", model_id)
         }
     }
 

@@ -1,4 +1,4 @@
-// 🏠 GHA Sandbox Manager
+// GHA Sandbox Manager
 // 100% Rust implementation for Global Engine State Management
 
 use std::fs;

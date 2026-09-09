@@ -1,4 +1,4 @@
-// 💻 Hardware Profiler: Dynamic CPU Cores & Metal / CUDA Acceleration Detector
+// Hardware Profiler: Dynamic CPU Cores & Metal / CUDA Acceleration Detector
 // 100% Rust implementation for autonomous hardware profiling
 
 use std::process::Command;

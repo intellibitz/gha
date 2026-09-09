@@ -5,7 +5,7 @@ use std::fs;
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 
-const GHA_VERSION: &str = "0.1.310";
+const GHA_VERSION: &str = "0.1.314";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -202,7 +202,7 @@ fn main() {
     let global_gha_dir = home.join(".gha");
     let project_root = find_project_root(&cwd);
 
-    // 🚀 Instant Background Recovery (Compliance Rule)
+    // Instant Background Recovery (Compliance Rule)
     ensure_daemon_running(&global_gha_dir, &project_root);
 
     let args: Vec<String> = env::args().skip(1).collect();

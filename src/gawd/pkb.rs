@@ -61,7 +61,7 @@ impl PkbSynthesizer {
                     sender: "GhaReasoningAgent".to_string(),
                     recipient: "GMA".to_string(),
                     action: "MISSION_FLUX".to_string(),
-                    payload: "🧠 [Native Synthesis]: ACTION: version".to_string(),
+                    payload: "[Native Synthesis]: ACTION: version".to_string(),
                 });
                 tool_calls.push("version".to_string());
             }
@@ -76,7 +76,7 @@ impl PkbSynthesizer {
                     sender: "GhaReasoningAgent".to_string(),
                     recipient: "GMA".to_string(),
                     action: "MISSION_FLUX".to_string(),
-                    payload: "🧠 [Native Synthesis]: ACTION: status".to_string(),
+                    payload: "[Native Synthesis]: ACTION: status".to_string(),
                 });
                 tool_calls.push("status".to_string());
             }
@@ -126,7 +126,7 @@ impl PkbSynthesizer {
             let device = Device::Cpu;
             let mut tensors = HashMap::new();
 
-            // 🚀 Learning Substrate (Bootstrap): Real weight mapping logic
+            // Learning Substrate (Bootstrap): Real weight mapping logic
             // We use a 128x128 matrix to represent the reflex memory.
             // Initializing with low-variance random-like values instead of constant ones.
             let mut data = Vec::with_capacity(128 * 128);
@@ -176,7 +176,7 @@ impl PkbSynthesizer {
         let device = Device::Cpu;
         let mut tensors = HashMap::new();
 
-        // 🚀 Real Neural Distillation (Incremental Logic)
+        // Real Neural Distillation (Incremental Logic)
         // Convert instruction keywords into embedding vectors and map to actions.
         let dim = 128;
         let mut matrix_data = vec![0.0f32; dim * dim];

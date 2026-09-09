@@ -1,4 +1,4 @@
-// 📦 Model Manager: GGUF, Cloud & Autonomous Model Discovery
+// Model Manager: GGUF, Cloud & Autonomous Model Discovery
 // 100% Rust implementation for world-scale model orchestration
 
 use std::fs;
@@ -83,7 +83,7 @@ impl ModelManager {
             }
         }
 
-        // 3. 🚀 Autonomous Scouting
+        // 3. Autonomous Scouting
         if let Ok(o) = Command::new("ollama").arg("list").output()
             && o.status.success()
         {
@@ -694,7 +694,7 @@ impl ModelManager {
             }
         }
 
-        format!("🤖 [Progressive 5-Step Model Provisioning]: Configured {}/{} local hardware tiers.\n   {}", completed_steps.len(), ladder.len(), completed_steps.join("\n   "))
+        format!("[Progressive 5-Step Model Provisioning]: Configured {}/{} local hardware tiers.\n   {}", completed_steps.len(), ladder.len(), completed_steps.join("\n   "))
     }
 
     #[allow(dead_code)]

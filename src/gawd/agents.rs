@@ -152,27 +152,27 @@ impl GhaUserAgent {
             prompts.push(("2".to_string(), "Run workspace unit test harness".to_string()));
             prompts.push(("3".to_string(), "Inspect workspace health & system status".to_string()));
         } else {
-            prompts.push(("1".to_string(), "🥗 Plan a quick healthy dinner recipe".to_string()));
-            prompts.push(("2".to_string(), "📚 Explain a school or homework concept".to_string()));
-            prompts.push(("3".to_string(), "📅 Organize family budget, schedule, or documents".to_string()));
+            prompts.push(("1".to_string(), "Plan a healthy dinner recipe".to_string()));
+            prompts.push(("2".to_string(), "Explain a school or homework concept".to_string()));
+            prompts.push(("3".to_string(), "Organize family budget or documents".to_string()));
         }
         prompts
     }
 
     pub fn detect_domain_badge(goal: &str) -> (&'static str, &'static str) {
         let lower = goal.to_lowercase();
-        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") { ("🌾 Agronomy", "Agricultural & Crop Intelligence") }
-        else if lower.contains("health") || lower.contains("medical") { ("⚕️ Medical", "Clinical & Health Intelligence") }
-        else if lower.contains("legal") || lower.contains("law") { ("⚖️ Legal", "Legal & Regulatory Compliance") }
-        else if lower.contains("education") || lower.contains("math") || lower.contains("school") { ("🎓 Education", "Pedagogical & Science Learning") }
-        else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") { ("⚡ Energy", "Renewable Energy & Climate Science") }
-        else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") { ("🔧 Skilled Trades", "Field Engineering & Building Codes") }
-        else if lower.contains("story") || lower.contains("script") || lower.contains("video") { ("🎨 Creative & Media", "Content & Visual Storytelling") }
-        else if lower.contains("recipe") || lower.contains("cook") || lower.contains("home") { ("🏠 Home & Family", "Household, Budget & Family Life") }
-        else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") { ("🏛️ Public Safety", "Emergency Response & Infrastructure") }
-        else if lower.contains("ceo") || lower.contains("product") || lower.contains("business") { ("💼 Enterprise", "Business & Corporate Operations") }
-        else if lower.contains("code") || lower.contains("build") || lower.contains("rust") || lower.contains("api") { ("💻 Engineering", "Software & Systems Architecture") }
-        else { ("🌍 Universal", "Intelligence Reflex & Execution Substrate") }
+        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") { ("Agronomy", "Agricultural & Crop Intelligence") }
+        else if lower.contains("health") || lower.contains("medical") { ("Medical", "Clinical & Health Intelligence") }
+        else if lower.contains("legal") || lower.contains("law") { ("Legal", "Legal & Regulatory Compliance") }
+        else if lower.contains("education") || lower.contains("math") || lower.contains("school") { ("Education", "Pedagogical & Science Learning") }
+        else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") { ("Energy", "Renewable Energy & Climate Science") }
+        else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") { ("Skilled Trades", "Field Engineering & Building Codes") }
+        else if lower.contains("story") || lower.contains("script") || lower.contains("video") { ("Creative & Media", "Content & Visual Storytelling") }
+        else if lower.contains("recipe") || lower.contains("cook") || lower.contains("home") { ("Home & Family", "Household, Budget & Family Life") }
+        else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") { ("Public Safety", "Emergency Response & Infrastructure") }
+        else if lower.contains("ceo") || lower.contains("product") || lower.contains("business") { ("Enterprise", "Business & Corporate Operations") }
+        else if lower.contains("code") || lower.contains("build") || lower.contains("rust") || lower.contains("api") { ("Engineering", "Software & Systems Architecture") }
+        else { ("Universal", "Intelligence Reflex & Execution Substrate") }
     }
 }
 
@@ -201,7 +201,7 @@ impl GawdAgent for GhaReasoningAgent {
             format!("{}\n\nINTENT: {}", domain_guideline, goal)
         };
 
-        // 🚀 High-Priority Reflex Check: Direct mapping for common assistant missions
+        // High-Priority Reflex Check: Direct mapping for common assistant missions
         match crate::gemi::pulse::GhaPulse::reason(&enriched_goal, workspace) {
             Ok(action) => {
                 if action.contains("ACTION:") {
@@ -484,7 +484,7 @@ mod tests {
 
     #[test]
     fn test_detect_domain_badge() {
-        assert_eq!(GhaUserAgent::detect_domain_badge("crop soil pH").0, "🌾 Agronomy");
-        assert_eq!(GhaUserAgent::detect_domain_badge("medical doctor health").0, "⚕️ Medical");
+        assert_eq!(GhaUserAgent::detect_domain_badge("crop soil pH").0, "Agronomy");
+        assert_eq!(GhaUserAgent::detect_domain_badge("medical doctor health").0, "Medical");
     }
 }

@@ -24,7 +24,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.310";
+pub const GHA_VERSION: &str = "0.1.314";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -43,7 +43,7 @@ impl Completer for GhaHelper {
 
     fn complete(&self, line: &str, _pos: usize, _ctx: &Context<'_>) -> rustyline::Result<(usize, Vec<Pair>)> {
         let commands = [
-            "/help", "/domain", "/friendly", "/simple", "/backup", "/restore",
+            "/help", "/domain", "/simple", "/backup", "/restore",
             "/audit", "/memory", "/forget", "/setkey", "/renew", "/agents",
             "/engines", "/clients", "/servers", "/debug", "/models", "/services",
             "/status", "/schedule", "/export_doc", "/clear", "/exit",
@@ -84,26 +84,26 @@ fn print_help() {
     println!("Usage: Type any prompt or natural language instruction.\n");
     println!("Slash Commands:");
     println!("  /help, :help             Display this help menu");
-    println!("  /domain, :domain         Inspect available domain intelligence substrates (Agronomy, Medical, Legal, etc.)");
-    println!("  /friendly, :friendly     Toggle friendly guidance mode (no technical jargon)");
-    println!("  /backup, :backup         Backup workspace files and state to archive");
-    println!("  /restore, :restore       Restore workspace files and state from backup archive");
-    println!("  /audit, :audit           Inspect workspace audit trail and self-audit records");
-    println!("  /memory, :memory         Inspect workspace session memory and history");
-    println!("  /forget, :forget         Clear workspace session memory");
-    println!("  /setkey <KEY> <VAL>      Save API key to ~/.gha/env (e.g. /setkey OPENAI_API_KEY key-...)");
-    println!("  /renew, :renew           Reload session with latest installed gha binary");
-    println!("  /agents, :agents         List active agents in GAWD fleet");
-    println!("  /engines, :engines       List active execution & inference engines");
-    println!("  /clients, :clients       List configured MCP clients & proxies");
-    println!("  /servers, :servers       List running MCP servers & background hosts");
-    println!("  /debug, :debug           Toggle developer debug mode (execution trace)");
-    println!("  /models, :models         List available cloud and local models");
-    println!("  /services, :services     List running background services");
-    println!("  /status, :status         Inspect workspace health & hardware status");
-    println!("  /schedule <sec> <task>   Schedule persistent daemon background task");
-    println!("  /export_doc <file> <txt> Export document/report to HTML or Markdown");
-    println!("  /clear, :clear           Clear display screen");
+    println!("  /domain, :domain         Inspect available domain intelligence substrates");
+    println!("  /simple, :simple         Toggle simplified output mode");
+    println!("  /backup, :backup         Backup workspace files and state");
+    println!("  /restore, :restore       Restore workspace files and state from backup");
+    println!("  /audit, :audit           Inspect workspace audit trail");
+    println!("  /memory, :memory         Inspect session memory");
+    println!("  /forget, :forget         Clear session memory");
+    println!("  /setkey <KEY> <VAL>      Save API key to environment");
+    println!("  /renew, :renew           Reload session with latest binary");
+    println!("  /agents, :agents         List active agents");
+    println!("  /engines, :engines       List active engines");
+    println!("  /clients, :clients       List MCP clients");
+    println!("  /servers, :servers       List running local servers");
+    println!("  /debug, :debug           Toggle developer debug mode");
+    println!("  /models, :models         List available models");
+    println!("  /services, :services     List running services");
+    println!("  /status, :status         Inspect health & hardware status");
+    println!("  /schedule <sec> <task>   Schedule background task");
+    println!("  /export_doc <file> <txt> Export document to HTML or Markdown");
+    println!("  /clear, :clear           Clear screen");
     println!("  /exit, :exit, exit       Exit interactive console");
     println!("\nSystem Commands:");
     println!("  install                  Initialize global gha runtime");
@@ -112,21 +112,21 @@ fn print_help() {
     println!("  gemi                     Start GEMI REST server");
 }
 
-fn print_header(cwd: &Path, debug_mode: bool, friendly_mode: bool) {
+fn print_header(cwd: &Path, debug_mode: bool, simple_mode: bool) {
     let home = get_home_dir();
     let global_dir = home.join(".gha");
     let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
     let repo_home = format!("https://github.com/{}", cfg.gha_repo);
 
-    if friendly_mode {
+    if simple_mode {
         println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
-        println!("{}🌸 GHA Friendly Guidance Mode (v{}){}", COLOR_BOLD, GHA_VERSION, COLOR_RESET);
+        println!("{}GHA Simplified Output Mode (v{}){}", COLOR_BOLD, GHA_VERSION, COLOR_RESET);
         println!("{}Workspace: {}{}", COLOR_DIM, cwd.display(), COLOR_RESET);
         println!("{}Home: {}{}", COLOR_DIM, repo_home, COLOR_RESET);
 
         let proactive_prompts = crate::gawd::agents::GhaUserAgent::generate_proactive_prompts(cwd);
         if !proactive_prompts.is_empty() {
-            println!("\n{}💡 Helpful Suggestions for Home & Family:{}", COLOR_GREEN, COLOR_RESET);
+            println!("\n{}Proactive Suggestions:{}", COLOR_GREEN, COLOR_RESET);
             for (num, prompt) in &proactive_prompts {
                 println!("  [{}] {}", num, prompt);
             }
@@ -135,17 +135,17 @@ fn print_header(cwd: &Path, debug_mode: bool, friendly_mode: bool) {
         return;
     }
 
-    let mode_label = if debug_mode { "DEBUG TRACE" } else { "CONVERSATIONAL" };
+    let mode_label = if debug_mode { "DEBUG" } else { "CONVERSATIONAL" };
     let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
     println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
-    println!("{}Ask GHA (v{}){} | Substrate: {}Universal Intelligence Layer{}", COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
+    println!("{}GHA (v{}){} | Substrate: {}Universal Intelligence Layer{}", COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
     println!("{}Engine: {}{}{} | Model: {}{}{} | Mode: {}{}{}", COLOR_DIM, COLOR_CYAN, engine, COLOR_RESET, COLOR_CYAN, model, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
     println!("{}Workspace: {}{}", COLOR_DIM, cwd.display(), COLOR_RESET);
     println!("{}Home: {}{}", COLOR_DIM, repo_home, COLOR_RESET);
 
     let proactive_prompts = crate::gawd::agents::GhaUserAgent::generate_proactive_prompts(cwd);
     if !proactive_prompts.is_empty() {
-        println!("\n{}💡 Proactive Suggestions for this Workspace:{}", COLOR_GREEN, COLOR_RESET);
+        println!("\n{}Proactive Missions:{}", COLOR_GREEN, COLOR_RESET);
         for (num, prompt) in &proactive_prompts {
             println!("  [{}] {}", num, prompt);
         }
@@ -168,9 +168,9 @@ fn run_interactive_shell(cwd: &Path) {
     let initial_mtime = std::fs::metadata(&target_bin).and_then(|m| m.modified()).ok();
 
     let mut debug_mode = false;
-    let mut friendly_mode = false;
+    let mut simple_mode = false;
     print!("{}", CLEAR_SCREEN);
-    print_header(cwd, debug_mode, friendly_mode);
+    print_header(cwd, debug_mode, simple_mode);
 
     let gma = GmaMasterAgent::new();
 
@@ -196,7 +196,7 @@ fn run_interactive_shell(cwd: &Path) {
             && let Ok(current_mtime) = m.modified()
             && current_mtime > initial_time
         {
-            println!("{}⚡ Runtime binary update detected on disk. Auto-renewing session...{}", COLOR_CYAN, COLOR_RESET);
+            println!("Runtime binary update detected on disk. Auto-renewing session...");
             if let Some(ref mut editor) = rl {
                 let _ = editor.save_history(&history_file);
             }
@@ -204,11 +204,11 @@ fn run_interactive_shell(cwd: &Path) {
             break;
         }
 
-        let prompt = if friendly_mode {
-            format!("{}Ask GHA>{} ", COLOR_GREEN, COLOR_RESET)
+        let prompt = if simple_mode {
+            format!("{}GHA>{} ", COLOR_GREEN, COLOR_RESET)
         } else {
             let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
-            format!("{}{}Ask GHA (v{}){} {}{}[{}]{} {}{}[{}]{}{}>{} ", COLOR_CYAN, COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_DIM, COLOR_CYAN, engine, COLOR_RESET, COLOR_DIM, COLOR_CYAN, model, COLOR_RESET, COLOR_GREEN, COLOR_RESET)
+            format!("{}{}GHA (v{}){} {}{}[{}]{} {}{}[{}]{}{}>{} ", COLOR_CYAN, COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_DIM, COLOR_CYAN, engine, COLOR_RESET, COLOR_DIM, COLOR_CYAN, model, COLOR_RESET, COLOR_GREEN, COLOR_RESET)
         };
 
         let line_res = if let Some(ref mut editor) = rl {
@@ -361,7 +361,7 @@ fn run_interactive_shell(cwd: &Path) {
                     Err(e) => println!("Error saving key: {}", e),
                 }
             } else {
-                println!("Usage: /setkey <KEY_NAME> <KEY_VALUE> (e.g. /setkey OPENAI_API_KEY key-...)");
+                println!("Usage: /setkey <KEY_NAME> <KEY_VALUE> (e.g. /setkey OPENAI_API_KEY [KEY_VALUE])");
             }
             println!();
             continue;
@@ -384,8 +384,8 @@ fn run_interactive_shell(cwd: &Path) {
                 println!("{}Developer Debug Mode set to: {}{}", COLOR_DIM, if debug_mode { "ON (Full Execution Trace)" } else { "OFF (Clean Conversational Answer)" }, COLOR_RESET);
             }
             "/friendly" | ":friendly" | "friendly" | "/simple" | ":simple" | "simple" => {
-                friendly_mode = !friendly_mode;
-                println!("🌸 GHA Friendly Guidance Mode set to: {}", if friendly_mode { "ON (Headerless Simple Output)" } else { "OFF (Standard Interface)" });
+                simple_mode = !simple_mode;
+                println!("Simplified Output Mode set to: {}", if simple_mode { "ON" } else { "OFF" });
             }
             "/backup" | ":backup" | "backup" => {
                 let res = ToolRegistry::execute_tool("backup_work", "", cwd);
@@ -432,16 +432,16 @@ fn run_interactive_shell(cwd: &Path) {
                 println!("\n{}", res);
             }
             "/domain" | ":domain" | "domain" | "/domains" | ":domains" => {
-                println!("\n{}🌍 GHA Intelligence Substrates for World Missions:{}", COLOR_GREEN, COLOR_RESET);
-                println!("  🌾 Agronomy & Crop Intelligence     (e.g. soil pH, N-P-K ratios, crop yield)");
-                println!("  ⚕️ Clinical & Health Diagnostics    (e.g. medical guidance, patient health)");
-                println!("  ⚖️ Legal & Contract Analysis       (e.g. contract review, clause risk)");
-                println!("  🎓 Pedagogical & Science Learning  (e.g. STEM synthesis, interactive tutoring)");
-                println!("  ⚡ Renewable Energy & Climate      (e.g. solar potential, grid optimization)");
-                println!("  💻 Software & Kernel Engineering   (e.g. Rust/C architecture, debugging)");
-                println!("  🏠 Dynamic GHA Home Support        (Use /setkey GHA_REPO <owner/repo>)");
-                println!("  ⚖️ Truly Unbiased Architecture     (100% Config-Driven models & tools)");
-                println!("  🌍 Universal Substrate              (e.g. general multi-agent execution)");
+                println!("\nIntelligence Substrates for World Missions:");
+                println!("  Agronomy & Crop Intelligence     (e.g. soil pH, N-P-K ratios, crop yield)");
+                println!("  Clinical & Health Diagnostics    (e.g. medical guidance, patient health)");
+                println!("  Legal & Contract Analysis       (e.g. contract review, clause risk)");
+                println!("  Pedagogical & Science Learning  (e.g. STEM synthesis, interactive tutoring)");
+                println!("  Renewable Energy & Climate      (e.g. solar potential, grid optimization)");
+                println!("  Software & Kernel Engineering   (e.g. Rust/C architecture, debugging)");
+                println!("  Dynamic GHA Home Support        (Use /setkey GHA_REPO <owner/repo>)");
+                println!("  Truly Unbiased Architecture     (100% Config-Driven models & tools)");
+                println!("  Universal Substrate              (e.g. general multi-agent execution)");
             }
             "/status" | ":status" | "status" => {
                 let res = ToolRegistry::execute_tool("status", "", cwd);
@@ -458,7 +458,7 @@ fn run_interactive_shell(cwd: &Path) {
             "/clear" | ":clear" | "clear" => {
                 print!("{}", CLEAR_SCREEN);
                 let _ = io::stdout().flush();
-                print_header(cwd, debug_mode, friendly_mode);
+                print_header(cwd, debug_mode, simple_mode);
                 continue;
             }
             "/version" | ":version" | "version" => {
@@ -508,7 +508,7 @@ fn main() {
     let home = get_home_dir();
     let global_dir = home.join(".gha");
 
-    // 🚀 Liveness Verification & Instant Background Recovery (Compliance Rule)
+    // Liveness Verification & Instant Background Recovery (Compliance Rule)
     // Ensures GMCP/GEMI servers are always available for external systems/IDEs.
     if env::args().nth(1).as_deref() != Some("daemon-start") {
         GmaDaemon::ensure_daemon_running(&cwd, &global_dir);
@@ -623,15 +623,16 @@ fn main() {
             println!("{}", res);
         }
         "domain" | "domains" | ":domain" | "/domain" => {
-            println!("\n🌍 GHA Intelligence Substrates for World Missions:");
-            println!("  🌾 Agronomy & Crop Intelligence     (e.g. soil pH, N-P-K ratios, crop yield)");
-            println!("  ⚕️ Clinical & Health Diagnostics    (e.g. medical guidance, patient health)");
-            println!("  ⚖️ Legal & Contract Analysis       (e.g. contract review, clause risk)");
-            println!("  🎓 Pedagogical & Science Learning  (e.g. STEM synthesis, interactive tutoring)");
-            println!("  ⚡ Renewable Energy & Climate      (e.g. solar potential, grid optimization)");
-            println!("  💻 Software & Kernel Engineering   (e.g. Rust/C architecture, debugging)");
-            println!("  🏠 Dynamic GHA Home Support        (Use /setkey GHA_REPO <owner/repo>)");
-            println!("  🌍 Universal Substrate              (e.g. general multi-agent execution)\n");
+            println!("\nIntelligence Substrates for World Missions:");
+            println!("  Agronomy & Crop Intelligence     (e.g. soil pH, N-P-K ratios, crop yield)");
+            println!("  Clinical & Health Diagnostics    (e.g. medical guidance, patient health)");
+            println!("  Legal & Contract Analysis       (e.g. contract review, clause risk)");
+            println!("  Pedagogical & Science Learning  (e.g. STEM synthesis, interactive tutoring)");
+            println!("  Renewable Energy & Climate      (e.g. solar potential, grid optimization)");
+            println!("  Software & Kernel Engineering   (e.g. Rust/C architecture, debugging)");
+            println!("  Dynamic GHA Home Support        (Use /setkey GHA_REPO <owner/repo>)");
+            println!("  Truly Unbiased Architecture     (100% Config-Driven models & tools)");
+            println!("  Universal Substrate              (e.g. general multi-agent execution)\n");
         }
         "verify-cloud" | ":verify-cloud" | "/verify-cloud" => {
             let res = ToolRegistry::execute_tool("verify_cloud_providers", "", &cwd);

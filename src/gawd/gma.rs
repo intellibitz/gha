@@ -56,7 +56,7 @@ impl GmaMasterAgent {
                 };
                 let mut ans = clean_text.trim().to_string();
                 if ans.contains("CLOUD_BRAIN_UNAVAILABLE") {
-                    ans = "💡 GHA is operating locally on your home computer. Connect a cloud provider or local model for extended reasoning.".to_string();
+                    ans = "STATUS: Local execution mode active. Connect a cloud provider or local model for extended reasoning.".to_string();
                 }
                 crate::sandbox::manager::GhaMemory::append_interaction(workspace, goal, &ans);
                 return ans;
@@ -219,10 +219,10 @@ impl GmaMasterAgent {
                             fix_prompt = format!("Mission '{}' failed due to intelligence limits. Suggest the same command but with a 'smaller context' or 'snippet' of any referenced files.", goal);
                         }
 
-                        // 🚀 Reflex Fix First
+                        // Reflex Fix First
                         let mut fixed_action = crate::gemi::pulse::GhaPulse::reason(&fix_prompt, workspace).unwrap_or_default();
 
-                        // 🚀 Escalate to Tier 2 Deep Fix if reflex fails
+                        // Escalate to Tier 2 Deep Fix if reflex fails
                         if !fixed_action.contains("ACTION:") {
                              fixed_action = crate::gemi::engine::GemiEngine::generate_reasoning_deep(&fix_prompt, workspace);
                         }
@@ -233,7 +233,7 @@ impl GmaMasterAgent {
                             let fix_arg = fix_parts.get(1).unwrap_or(&"");
                             let fix_res = ToolRegistry::execute_tool(fix_tool, fix_arg, workspace);
 
-                            // 🚀 Tier 2 -> Tier 0 Feedback Loop: Learn from Deep Fixes
+                            // Tier 2 -> Tier 0 Feedback Loop: Learn from Deep Fixes
                             if !fix_res.to_lowercase().contains("error") {
                                 let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).unwrap_or_else(|| ".".into());
                                 let global_dir = PathBuf::from(home).join(".gha");

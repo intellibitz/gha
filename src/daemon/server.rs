@@ -1,4 +1,4 @@
-// 🚀 Always-On GMA Master Daemon Process Manager
+// Always-On GMA Master Daemon Process Manager
 // 100% Rust implementation managing GMCP (Port 9090), GEMI (Port 9091) & A2A Cluster UDP (Port 9092)
 
 use std::fs;
@@ -97,7 +97,7 @@ impl GmaDaemon {
 
         let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
 
-        // 🚀 High-Priority Hardware-Bounded Model Auto-Provisioning (Background Thread)
+        // High-Priority Hardware-Bounded Model Auto-Provisioning (Background Thread)
         crate::gemi::models::ModelManager::spawn_background_hardware_model_provisioner(&workspace);
 
         let workspace_gemi = workspace.clone();

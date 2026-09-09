@@ -494,7 +494,7 @@ impl GhaTool for SelfTrainTool {
         }
         let msg = crate::gawd::pkb::PkbSynthesizer::save_training_data(entries, &global_dir)?;
         let distill = crate::gawd::pkb::PkbSynthesizer::distill_step_0_to_63(&global_dir)?;
-        Ok(format!("{}\n🧠 {}", msg, distill))
+        Ok(format!("{}\nNeural distillation complete: {}", msg, distill))
     }
 }
 
@@ -579,7 +579,7 @@ impl GhaTool for ProvisionMcpTool {
             let res = GmcpClient::auto_configure_server(&entry.name, &entry.package);
             return Ok(if res == "SUCCESS_CONFIGURED" { format!("✅ Provisioned '{}'.", entry.name) } else { "❌ Failed.".into() });
         }
-        Ok("🔍 No capability found.".into())
+        Ok("Capability not found in global registry.".into())
     }
 }
 
@@ -625,10 +625,10 @@ impl GhaTool for SelfHealBuildTool {
     fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
         if workspace.join("Cargo.toml").exists() {
             let out = Command::new("cargo").arg("check").current_dir(workspace).output().map_err(|e| EaiError::Hardware(e.to_string()))?;
-            if out.status.success() { return Ok("🔧 Build clean.".into()); }
+            if out.status.success() { return Ok("Build clean.".into()); }
             let stderr = String::from_utf8_lossy(&out.stderr);
             let fix = GemiEngine::generate_reasoning_deep(&format!("Fix build: {}", stderr), workspace);
-            return Ok(format!("🔧 Error found. Suggested fix:\n{}", fix));
+            return Ok(format!("Error found. Suggested fix:\n{}", fix));
         }
         Ok("No Cargo.toml found.".into())
     }
