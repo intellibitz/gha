@@ -5,6 +5,7 @@ mod daemon;
 mod gawd;
 mod gemi;
 mod gmcp;
+mod native;
 mod sandbox;
 
 use std::env;
@@ -24,7 +25,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.343";
+pub const GHA_VERSION: &str = "0.1.344";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -46,7 +47,7 @@ impl Completer for GhaHelper {
             "/help", "/domain", "/simple", "/backup", "/restore",
             "/audit", "/memory", "/forget", "/setkey", "/renew", "/agents",
             "/engines", "/clients", "/servers", "/debug", "/models", "/benchmark",
-            "/compliance", "/sync", "/release", "/evolve", "/services",
+            "/compliance", "/sync", "/release", "/evolve", "/distill", "/services",
             "/status", "/schedule", "/export_doc", "/clear", "/exit",
         ];
 
@@ -105,6 +106,7 @@ fn print_help() {
     println!("  /sync, :sync             Synchronize project version & terminology");
     println!("  /release, :release       Execute full GHA release & push cycle");
     println!("  /evolve, :evolve         Analyze patterns and propose substrate evolution");
+    println!("  /distill <intent>        Distill high-latency reasoning into native reflex");
     println!("  /services, :services     List running services");
     println!("  /status, :status         Inspect health & hardware status");
     println!("  /schedule <sec> <task>   Schedule background task");
@@ -461,6 +463,11 @@ fn run_interactive_shell(cwd: &Path) {
                 let res = ToolRegistry::execute_tool("self_evolve", "", cwd);
                 println!("\n{}", res);
             }
+            "/distill" | ":distill" | "distill" => {
+                let arg = command.trim_start_matches("/distill").trim_start_matches(":distill").trim();
+                let res = ToolRegistry::execute_tool("distill", arg, cwd);
+                println!("\n{}", res);
+            }
             "/verify_models" | ":verify_models" | "verify_models" => {
                 let res = ToolRegistry::execute_tool("verify_models", "", cwd);
                 println!("\n{}", res);
@@ -622,6 +629,11 @@ fn main() {
         }
         "evolve" | ":evolve" | "/evolve" => {
             let res = ToolRegistry::execute_tool("self_evolve", "", &cwd);
+            println!("{}", res);
+        }
+        "distill" | ":distill" | "/distill" => {
+            let intent = args.get(1).map(|s| s.as_str()).unwrap_or("");
+            let res = ToolRegistry::execute_tool("distill", intent, &cwd);
             println!("{}", res);
         }
         "run_100_tests" | "run-100-tests" | ":run_100_tests" | "/run_100_tests" => {

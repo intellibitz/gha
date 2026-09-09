@@ -16,6 +16,7 @@ use crate::gemi::models::ModelManager;
 use crate::gemi::engine::GemiEngine;
 use crate::daemon::admin::GhaAdmin;
 use crate::daemon::evolution::EvolutionManager;
+use crate::gawd::reflex_synth::ReflexSynthesizer;
 use crate::gmcp::client::GmcpClient;
 use crate::error::{EaiError, EaiResult};
 
@@ -102,6 +103,7 @@ impl ToolRegistry {
             Arc::new(VersionSyncTool),
             Arc::new(ReleaseTool),
             Arc::new(EvolveTool),
+            Arc::new(DistillTool),
             Arc::new(SelfHealBuildTool),
             Arc::new(InfraCommandTool { name: "docker_ps".into(), bin: "docker".into(), args: vec!["ps", "--format", "table {{.Names}}\t{{.Status}}"] }),
             Arc::new(InfraCommandTool { name: "docker_build".into(), bin: "docker".into(), args: vec!["build", "-t", "gha-app:latest", "."] }),
@@ -149,7 +151,7 @@ impl ToolRegistry {
         tools.sort_by(|a, b| a.name.cmp(&b.name));
         tools.dedup_by(|a, b| a.name == b.name);
 
-        // Dynamic External Discovery
+        // Dynamic External Discovery (Scripts)
         if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
             let tools_dir = home.join(".gha/tools");
             if let Ok(entries) = fs::read_dir(&tools_dir) {
@@ -159,6 +161,22 @@ impl ToolRegistry {
                             name: format!("ext_{}", name),
                             description: format!("External executable tool plugin ({})", name),
                         });
+                    }
+                }
+            }
+
+            // 🚀 Dynamic Reflex Discovery (Distilled Wasm)
+            let reflex_dir = home.join(".gha/reflexes");
+            if let Ok(entries) = fs::read_dir(&reflex_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.extension().is_some_and(|ext| ext == "wasm") {
+                        if let Ok(name) = entry.file_name().into_string() {
+                             tools.push(McpTool {
+                                 name: format!("reflex_{}", name.replace(".wasm", "")),
+                                 description: "High-performance distilled Wasm reflex".to_string(),
+                             });
+                        }
                     }
                 }
             }
@@ -186,6 +204,19 @@ impl ToolRegistry {
                     };
                 }
             }
+        }
+
+        if name.starts_with("reflex_") {
+             let wasm_name = format!("{}.wasm", name.trim_start_matches("reflex_"));
+             if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
+                 let wasm_path = home.join(".gha/reflexes").join(wasm_name);
+                 if wasm_path.exists() {
+                      match crate::native::wasm::WasmHost::execute_reflex(&wasm_path, arg) {
+                          Ok(res) => return res,
+                          Err(e) => return format!("Reflex Error: {}", e),
+                      }
+                 }
+             }
         }
 
         let registry = Self::global();
@@ -718,6 +749,15 @@ impl GhaTool for EvolveTool {
     fn description(&self) -> String { "Analyze audit log and propose native substrate evolution (Rule 17)".to_string() }
     fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
         EvolutionManager::evolve_substrate(workspace)
+    }
+}
+
+struct DistillTool;
+impl GhaTool for DistillTool {
+    fn name(&self) -> String { "distill".to_string() }
+    fn description(&self) -> String { "Distill deep reasoning intent into native Rust or Wasm reflex (Rule 17)".to_string() }
+    fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
+        ReflexSynthesizer::distill_native_reflex(arg, workspace)
     }
 }
 
