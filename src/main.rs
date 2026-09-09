@@ -23,7 +23,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-const GHA_VERSION: &str = "0.1.244";
+const GHA_VERSION: &str = "0.1.245";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -551,6 +551,10 @@ fn main() {
         }
         "verify_models" | "verify-models" | ":verify_models" | "/verify_models" => {
             let res = ToolRegistry::execute_tool("verify_models", "", &cwd);
+            println!("{}", res);
+        }
+        "run_100_tests" | "run-100-tests" | ":run_100_tests" | "/run_100_tests" => {
+            let res = ToolRegistry::execute_tool("run_100_tests", "", &cwd);
             println!("{}", res);
         }
         "install" | ":install" | "/install" => {
