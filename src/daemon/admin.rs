@@ -53,14 +53,14 @@ impl GhaAdmin {
         }
 
         // 3. Ensure no hardcoded simulations (Rule 11/15)
-        let agents_file = workspace.join("src/gawd/agents.rs");
-        if agents_file.exists() {
-            let content = fs::read_to_string(&agents_file)?;
-            if content.contains("Truth check logic") {
-                report.push_str("- ❌ Purity: Hardcoded simulations remain in GhaTruthAgent (Rule 11 Violation).\n");
+        let truth_file = workspace.join("src/gawd/truth.rs");
+        if truth_file.exists() {
+            let content = fs::read_to_string(&truth_file)?;
+            if content.contains("Reality weights") || content.contains("Placeholder") {
+                report.push_str("- ❌ Purity: Hardcoded simulations or placeholders remain in GhaTruthAgent (Rule 11 Violation).\n");
                 overall_success = false;
             } else {
-                report.push_str("- ✅ Purity: GhaTruthAgent truth logic is native.\n");
+                report.push_str("- ✅ Purity: GhaTruthAgent truth logic is fully native and dynamic.\n");
             }
         }
 

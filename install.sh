@@ -190,16 +190,16 @@ fi
 MODEL_DIR="$GLOBAL_GHA_DIR/models"
 ALPHA_MODEL="$MODEL_DIR/gha-alpha.safetensors"
 if [ ! -f "$ALPHA_MODEL" ]; then
-    echo "Intelligence substrate (gha-alpha.safetensors) missing."
-    if [ -z "$NONINTERACTIVE" ]; then
-        read -p "Do you want to download the native Tier 0 reflex weights (~150MB)? [Y/n] " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
-            echo "Downloading gha-alpha intelligence substrate..."
-            # Placeholder URL - update with actual weights when published
-            # curl -sSfL "https://huggingface.co/intellibitz/gha-alpha/resolve/main/gha-alpha.safetensors" -o "$ALPHA_MODEL"
-            echo "Note: Native reflex weights can be downloaded later using '/scout_model gha-alpha'."
+    if [ -n "$GHA_WEIGHTS_URL" ]; then
+        echo "Downloading gha-alpha intelligence substrate from custom URL..."
+        if command -v curl >/dev/null 2>&1; then
+            curl -sSfL "$GHA_WEIGHTS_URL" -o "$ALPHA_MODEL"
+        elif command -v wget >/dev/null 2>&1; then
+            wget -q "$GHA_WEIGHTS_URL" -O "$ALPHA_MODEL"
         fi
+    else
+        echo "Intelligence substrate (gha-alpha.safetensors) missing."
+        echo "Note: Native reflex weights can be downloaded later using '/scout_model gha-alpha'."
     fi
 fi
 

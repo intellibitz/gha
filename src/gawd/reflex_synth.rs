@@ -40,22 +40,11 @@ impl ReflexSynthesizer {
 
         let code = GemiEngine::generate_reasoning_deep(&prompt, workspace);
 
-        let clean_code = if code.contains("ERROR:") {
-            // 🛡️ Rule 17: Fallback Autonomous Synthesis for constrained environments
-            format!(
-                "struct {} {{}}\n\
-                impl GhaTool for {} {{\n\
-                    fn name(&self) -> String {{ \"{}\".to_string() }}\n\
-                    fn description(&self) -> String {{ \"Autonomously distilled reflex for {}\".to_string() }}\n\
-                    fn execute(&self, arg: &str, _workspace: &std::path::Path) -> crate::error::EaiResult<String> {{\n\
-                        Ok(format!(\"Reflex '{}' executed with arg: {{}}\", arg))\n\
-                    }}\n\
-                }}",
-                struct_name, struct_name, clean_intent, intent, clean_intent
-            )
-        } else {
-            code.trim().trim_start_matches("```rust").trim_start_matches("```").trim_end_matches("```").trim().to_string()
-        };
+        if code.contains("ERROR:") || code.trim().is_empty() {
+            return Err(EaiError::Protocol(format!("Autonomous distillation failed for '{}'. No valid reasoning provided.", intent)));
+        }
+
+        let clean_code = code.trim().trim_start_matches("```rust").trim_start_matches("```").trim_end_matches("```").trim().to_string();
 
         // 🛡️ Phase 3: Audit Synthesized Code (Rule 18)
         Self::audit_synthesized_code(&clean_code)?;
