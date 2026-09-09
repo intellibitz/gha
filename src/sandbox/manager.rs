@@ -5,6 +5,32 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, Eq, Ord)]
+pub enum ModelTier {
+    Premier = 0,
+    Specialist = 1,
+    Standard = 2,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelInfo {
+    pub name: String,
+    pub registry: String,
+    pub model_id: String,
+    pub description: String,
+    pub is_local: bool,
+    pub tier: ModelTier,
+    pub latency_ms: Option<u128>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GlobalMcpEntry {
+    pub name: String,
+    pub description: String,
+    pub package: String,
+    pub category: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GhaConfig {
     pub gmcp_port: u16,
@@ -14,6 +40,9 @@ pub struct GhaConfig {
     pub default_model: String,
     pub auto_download_models: bool,
     pub gha_repo: String,
+    pub mcp_registry_url: String,
+    pub cloud_models: Vec<ModelInfo>,
+    pub bootstrap_mcp_servers: Vec<GlobalMcpEntry>,
 }
 
 impl Default for GhaConfig {
@@ -26,6 +55,41 @@ impl Default for GhaConfig {
             default_model: "gha-alpha".to_string(),
             auto_download_models: true,
             gha_repo: "intellibitz/gha".to_string(),
+            mcp_registry_url: "https://raw.githubusercontent.com/intellibitz/gha/main/registry.json".to_string(),
+            cloud_models: vec![
+                ModelInfo {
+                    name: "Google Gemini 1.5 Flash".to_string(),
+                    registry: "GHA Tier 2 Registry".to_string(),
+                    model_id: "google/gemini-1.5-flash".to_string(),
+                    description: "1M+ token context cloud reasoning".to_string(),
+                    is_local: false,
+                    tier: ModelTier::Premier,
+                    latency_ms: None,
+                },
+                ModelInfo {
+                    name: "OpenAI GPT-4o".to_string(),
+                    registry: "GHA Tier 2 Registry".to_string(),
+                    model_id: "openai/gpt-4o".to_string(),
+                    description: "Industry-standard reasoning & tool-use".to_string(),
+                    is_local: false,
+                    tier: ModelTier::Premier,
+                    latency_ms: None,
+                },
+                ModelInfo {
+                    name: "Anthropic Claude 3.5 Sonnet".to_string(),
+                    registry: "GHA Tier 2 Registry".to_string(),
+                    model_id: "anthropic/claude-3.5-sonnet".to_string(),
+                    description: "High-precision reasoning specialist".to_string(),
+                    is_local: false,
+                    tier: ModelTier::Premier,
+                    latency_ms: None,
+                },
+            ],
+            bootstrap_mcp_servers: vec![
+                GlobalMcpEntry { name: "postgres".to_string(), description: "Standard Protocol SQL Database Server".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
+                GlobalMcpEntry { name: "brave_search".to_string(), description: "Standard Protocol Web Search Server".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
+                GlobalMcpEntry { name: "github".to_string(), description: "Standard Protocol GitHub Repos & PRs Server".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
+            ],
         }
     }
 }

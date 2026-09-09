@@ -23,7 +23,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-const GHA_VERSION: &str = "0.1.266";
+const GHA_VERSION: &str = "0.1.267";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -439,6 +439,7 @@ fn run_interactive_shell(cwd: &Path) {
                 println!("  ⚡ Renewable Energy & Climate      (e.g. solar potential, grid optimization)");
                 println!("  💻 Software & Kernel Engineering   (e.g. Rust/C architecture, debugging)");
                 println!("  🏠 Dynamic GHA Home Support        (Use /setkey GHA_REPO <owner/repo>)");
+                println!("  ⚖️ Truly Unbiased Architecture     (100% Config-Driven models & tools)");
                 println!("  🌍 Universal Substrate              (e.g. general multi-agent execution)");
             }
             "/status" | ":status" | "status" => {

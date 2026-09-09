@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use super::tools::McpTool;
+use crate::sandbox::manager::GlobalMcpEntry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpServerConfig {
@@ -22,14 +23,6 @@ pub struct McpServerConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct McpConfig {
     pub mcp_servers: HashMap<String, McpServerConfig>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GlobalMcpEntry {
-    pub name: String,
-    pub description: String,
-    pub package: String,
-    pub category: String,
 }
 
 pub struct GmcpClient;
@@ -47,7 +40,6 @@ impl GmcpClient {
     pub fn list_external_tools() -> Vec<McpTool> {
         let mut tools = Vec::new();
         let config_path = Self::get_config_path();
-
         if let Ok(content) = fs::read_to_string(&config_path)
             && let Ok(config) = serde_json::from_str::<McpConfig>(&content)
         {
@@ -63,14 +55,15 @@ impl GmcpClient {
 
     pub fn fetch_global_registry() -> Vec<GlobalMcpEntry> {
         let home = std::env::var("HOME").unwrap_or_default();
-        let registry_path = PathBuf::from(home).join(".gha/global_mcp_registry.json");
+        let global_dir = PathBuf::from(home).join(".gha");
+        let registry_path = global_dir.join("global_mcp_registry.json");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
 
         let mut entries: Vec<GlobalMcpEntry> = Vec::new();
 
-        // 1. Try Online Registry Scout from GHA Hub / GitHub
-        let online_url = "https://raw.githubusercontent.com/intellibitz/gha/main/registry.json";
+        // 1. Try Online Registry Scout from Dynamic Config URL
         if let Ok(out) = Command::new("curl")
-            .args(["-sL", "--connect-timeout", "2", "--max-time", "4", online_url])
+            .args(["-sL", "--connect-timeout", "2", "--max-time", "4", &cfg.mcp_registry_url])
             .output()
             && out.status.success()
             && let Ok(remote_entries) = serde_json::from_slice::<Vec<GlobalMcpEntry>>(&out.stdout)
@@ -91,23 +84,9 @@ impl GmcpClient {
             }
         }
 
-        // 3. Fallback to Default Bootstrap Registry if empty (Standard Protocol Services)
+        // 3. Fallback to Bootstrap Registry from Dynamic Config if empty
         if entries.is_empty() {
-            entries = vec![
-                GlobalMcpEntry { name: "postgres".to_string(), description: "Standard Protocol SQL Database Server".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
-                GlobalMcpEntry { name: "brave_search".to_string(), description: "Standard Protocol Web Search Server".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
-                GlobalMcpEntry { name: "google_maps".to_string(), description: "Standard Protocol Maps & Directions Server".to_string(), package: "@modelcontextprotocol/server-google-maps".to_string(), category: "location".to_string() },
-                GlobalMcpEntry { name: "slack".to_string(), description: "Standard Protocol Collaboration Server".to_string(), package: "@modelcontextprotocol/server-slack".to_string(), category: "productivity".to_string() },
-                GlobalMcpEntry { name: "filesystem".to_string(), description: "Standard Protocol Filesystem Operations Server".to_string(), package: "@modelcontextprotocol/server-filesystem".to_string(), category: "system".to_string() },
-                GlobalMcpEntry { name: "github".to_string(), description: "Standard Protocol GitHub Repos, PRs & Issues Server".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
-                GlobalMcpEntry { name: "memory".to_string(), description: "Standard Protocol Knowledge Graph Memory Server".to_string(), package: "@modelcontextprotocol/server-memory".to_string(), category: "memory".to_string() },
-                GlobalMcpEntry { name: "puppeteer".to_string(), description: "Standard Protocol Browser Automation Server".to_string(), package: "@modelcontextprotocol/server-puppeteer".to_string(), category: "web".to_string() },
-                GlobalMcpEntry { name: "fetch".to_string(), description: "Standard Protocol Web Fetch & Content Scraper Server".to_string(), package: "@modelcontextprotocol/server-fetch".to_string(), category: "web".to_string() },
-                GlobalMcpEntry { name: "sequential_thinking".to_string(), description: "Standard Protocol Reasoning Step Server".to_string(), package: "@modelcontextprotocol/server-sequential-thinking".to_string(), category: "reasoning".to_string() },
-                GlobalMcpEntry { name: "alpha_vantage".to_string(), description: "Financial Stock & Market Data Server".to_string(), package: "@modelcontextprotocol/server-alpha-vantage".to_string(), category: "finance".to_string() },
-                GlobalMcpEntry { name: "git".to_string(), description: "Standard Protocol Git Version Control Server".to_string(), package: "mcp-server-git".to_string(), category: "vcs".to_string() },
-                GlobalMcpEntry { name: "sqlite".to_string(), description: "Standard Protocol SQL Database Server".to_string(), package: "mcp-server-sqlite".to_string(), category: "database".to_string() },
-            ];
+            entries = cfg.bootstrap_mcp_servers;
         }
 
         // Cache / persist merged registry locally

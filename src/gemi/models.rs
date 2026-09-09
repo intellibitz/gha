@@ -6,24 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 use super::hardware::HardwareProfiler;
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, Eq, Ord)]
-pub enum ModelTier {
-    Premier = 0,
-    Specialist = 1,
-    Standard = 2,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ModelInfo {
-    pub name: String,
-    pub registry: String,
-    pub model_id: String,
-    pub description: String,
-    pub is_local: bool,
-    pub tier: ModelTier,
-    pub latency_ms: Option<u128>,
-}
+use crate::sandbox::manager::{ModelTier, ModelInfo};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelDownloadProgress {
@@ -71,73 +54,25 @@ pub struct ModelManager;
 impl ModelManager {
     pub fn list_models(workspace: &Path) -> Vec<ModelInfo> {
         let mut list = Vec::new();
+        let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| ".".to_string());
+        let global_dir = PathBuf::from(home).join(".gha");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
 
-        // 1. Scan authenticated Cloud Providers
-        if std::env::var("GEMINI_API_KEY").is_ok() {
-            list.push(ModelInfo {
-                name: "Google Gemini 1.5 Flash".to_string(),
-                registry: "GHA Tier 2 Registry".to_string(),
-                model_id: "google/gemini-1.5-flash".to_string(),
-                description: "1M+ token context cloud reasoning".to_string(),
-                is_local: false,
-                tier: ModelTier::Premier,
-                latency_ms: None,
-            });
-        }
-        if std::env::var("OPENAI_API_KEY").is_ok() {
-            list.push(ModelInfo {
-                name: "OpenAI GPT-4o".to_string(),
-                registry: "GHA Tier 2 Registry".to_string(),
-                model_id: "openai/gpt-4o".to_string(),
-                description: "Industry-standard reasoning & tool-use".to_string(),
-                is_local: false,
-                tier: ModelTier::Premier,
-                latency_ms: None,
-            });
-        }
-        if std::env::var("ANTHROPIC_API_KEY").is_ok() {
-            list.push(ModelInfo {
-                name: "Anthropic Claude 3.5 Sonnet".to_string(),
-                registry: "GHA Tier 2 Registry".to_string(),
-                model_id: "anthropic/claude-3.5-sonnet".to_string(),
-                description: "High-precision reasoning specialist".to_string(),
-                is_local: false,
-                tier: ModelTier::Premier,
-                latency_ms: None,
-            });
-        }
-        if std::env::var("DEEPSEEK_API_KEY").is_ok() {
-            list.push(ModelInfo {
-                name: "DeepSeek Chat".to_string(),
-                registry: "GHA Tier 2 Registry".to_string(),
-                model_id: "deepseek/deepseek-chat".to_string(),
-                description: "High-throughput code & logic reasoning".to_string(),
-                is_local: false,
-                tier: ModelTier::Specialist,
-                latency_ms: None,
-            });
-        }
-        if std::env::var("MISTRAL_API_KEY").is_ok() {
-            list.push(ModelInfo {
-                name: "Mistral Small".to_string(),
-                registry: "GHA Tier 2 Registry".to_string(),
-                model_id: "mistral/mistral-small-latest".to_string(),
-                description: "Efficient European reasoning specialist".to_string(),
-                is_local: false,
-                tier: ModelTier::Premier,
-                latency_ms: None,
-            });
-        }
-        if std::env::var("GROQ_API_KEY").is_ok() {
-            list.push(ModelInfo {
-                name: "Groq Llama 3.3 70B".to_string(),
-                registry: "GHA Tier 2 Registry".to_string(),
-                model_id: "groq/llama-3.3-70b-versatile".to_string(),
-                description: "Ultra-low latency inference".to_string(),
-                is_local: false,
-                tier: ModelTier::Premier,
-                latency_ms: None,
-            });
+        // 1. Load Cloud Models from Dynamic Configuration
+        for model in cfg.cloud_models {
+            let env_key = match model.model_id.as_str() {
+                m if m.contains("gemini") => "GEMINI_API_KEY",
+                m if m.contains("gpt") => "OPENAI_API_KEY",
+                m if m.contains("claude") => "ANTHROPIC_API_KEY",
+                m if m.contains("deepseek") => "DEEPSEEK_API_KEY",
+                m if m.contains("mistral") => "MISTRAL_API_KEY",
+                m if m.contains("groq") => "GROQ_API_KEY",
+                _ => "",
+            };
+
+            if env_key.is_empty() || std::env::var(env_key).is_ok() {
+                list.push(model);
+            }
         }
 
         // 2. System-Wide AI Model Scanner (LM Studio, HuggingFace Cache, GPT4All, GHA Vaults)
