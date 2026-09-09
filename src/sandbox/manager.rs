@@ -313,7 +313,7 @@ impl GhaBackupManager {
         let backup_file = backups_dir.join(format!("work_backup_{}.tar.gz", timestamp));
 
         let status = std::process::Command::new("tar")
-            .args(["-czf", backup_file.to_str().unwrap_or("backup.tar.gz"), "--exclude=.gha/backups", "."])
+            .args(["-czf", backup_file.to_str().unwrap_or("backup.tar.gz"), "--exclude=.gha/backups", "--exclude=target", "--exclude=.git", "--exclude=models", "."])
             .current_dir(workspace)
             .status();
 
