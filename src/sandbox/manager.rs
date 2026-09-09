@@ -44,6 +44,8 @@ pub struct GhaConfig {
     pub mcp_registry_url: String,
     pub cloud_models: Vec<ModelInfo>,
     pub bootstrap_mcp_servers: Vec<GlobalMcpEntry>,
+    pub cloud_scout_timeout_secs: u64,
+    pub beacon_interval_secs: u64,
 }
 
 impl Default for GhaConfig {
@@ -91,6 +93,8 @@ impl Default for GhaConfig {
                 GlobalMcpEntry { name: "brave_search".to_string(), description: "Standard Protocol Web Search Server".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
                 GlobalMcpEntry { name: "github".to_string(), description: "Standard Protocol GitHub Repos & PRs Server".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
             ],
+            cloud_scout_timeout_secs: 8,
+            beacon_interval_secs: 30,
         }
     }
 }

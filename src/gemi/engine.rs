@@ -1,7 +1,7 @@
 // 🧠 GEMI: Universal AI Inference & Reasoning Bridge
 // 100% Rust implementation for Exponential Explosive Intelligence (Model Picking & Benchmarking)
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::io::Write;
 use serde_json::json;
@@ -30,7 +30,7 @@ impl GemiEngine {
         let selected_model = super::models::ModelManager::get_selected_model().unwrap_or_default();
 
         if selected_engine == "gemi" || selected_engine == "cloud" || selected_engine.is_empty() {
-            let (res, _) = Self::scout_tier2_providers(prompt);
+            let (res, _) = Self::scout_tier2_providers(prompt, workspace);
             if let Some(text) = res {
                 return text;
             }
@@ -67,7 +67,7 @@ impl GemiEngine {
             }
         }
 
-        let (res, errors) = Self::scout_tier2_providers(prompt);
+        let (res, errors) = Self::scout_tier2_providers(prompt, workspace);
         if let Some(text) = res {
             return text;
         }
@@ -83,10 +83,14 @@ impl GemiEngine {
         format!("❌ CLOUD_BRAIN_UNAVAILABLE: No responders. Diagnostics:\n  {}", errors.join("\n  "))
     }
 
-    fn scout_tier2_providers(prompt: &str) -> (Option<String>, Vec<String>) {
+    fn scout_tier2_providers(prompt: &str, workspace: &Path) -> (Option<String>, Vec<String>) {
         use std::sync::mpsc::channel;
         use std::thread;
         use std::time::Duration;
+
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let global_dir = home.join(".gha");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
 
         let (tx, rx) = channel();
         let providers = vec!["google", "groq", "openai"];
@@ -110,7 +114,7 @@ impl GemiEngine {
         }
 
         let mut errors = Vec::new();
-        let timeout = Duration::from_secs(8);
+        let timeout = Duration::from_secs(cfg.cloud_scout_timeout_secs);
         let start = std::time::Instant::now();
 
         while handle_count > 0 && start.elapsed() < timeout {
