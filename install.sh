@@ -106,14 +106,23 @@ fi
 if [ "$INSTALLED" = "0" ]; then
     echo "Binary download unavailable or failed. Falling back to build from source..."
 
-    SCRIPT_DIR_DETECT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    if [[ -f "$SCRIPT_DIR_DETECT/Cargo.toml" ]]; then
+    # Detect if we are running from a local file or piped
+    SCRIPT_DIR_DETECT=""
+    if [[ -n "${BASH_SOURCE[0]}" && -f "${BASH_SOURCE[0]}" ]]; then
+        SCRIPT_DIR_DETECT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || echo "")"
+    fi
+
+    if [[ -n "$SCRIPT_DIR_DETECT" && -f "$SCRIPT_DIR_DETECT/Cargo.toml" ]]; then
         SCRIPT_DIR="$SCRIPT_DIR_DETECT"
-        echo "Using local source directory..."
+        echo "Using local source directory: $SCRIPT_DIR"
     else
         echo "Downloading gha source archive ($GHA_REPO)..."
         TEMP_DIR=$(mktemp -d)
         SOURCE_URL="https://github.com/$GHA_REPO/archive/refs/heads/main.tar.gz"
+
+        # Move to temp dir to avoid CWD errors if the user is in a deleted directory
+        cd "$TEMP_DIR" || { echo "Failed to enter temporary directory."; exit 1; }
+
         if command -v curl >/dev/null 2>&1 && command -v tar >/dev/null 2>&1; then
             curl -sSfL "$SOURCE_URL" | tar -xzC "$TEMP_DIR" --strip-components=1 || { echo "Source download failed."; exit 1; }
             SCRIPT_DIR="$TEMP_DIR"
