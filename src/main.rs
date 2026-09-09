@@ -25,7 +25,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.352";
+pub const GHA_VERSION: &str = "0.1.353";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -47,7 +47,7 @@ impl Completer for GhaHelper {
             "/help", "/domain", "/simple", "/backup", "/restore",
             "/audit", "/memory", "/forget", "/setkey", "/renew", "/agents",
             "/engines", "/clients", "/servers", "/debug", "/models", "/benchmark",
-            "/compliance", "/sync", "/release", "/evolve", "/advance", "/distill", "/swarm", "/resume", "/services",
+            "/compliance", "/sync", "/release", "/evolve", "/advance", "/distill", "/swarm", "/scout_model", "/resume", "/services",
             "/status", "/schedule", "/export_doc", "/clear", "/exit",
         ];
 
@@ -108,6 +108,7 @@ fn print_help() {
     println!("  /advance, :advance       Execute autonomous self-evolution cycle");
     println!("  /evolve, :evolve         Analyze patterns and propose substrate evolution");
     println!("  /swarm, :swarm           Inspect cluster mesh & hardware capabilities");
+    println!("  /scout_model <name>      Search for model GGUF URL using intelligence");
     println!("  /resume, :resume         Resume interrupted mission from local or cluster");
     println!("  /distill <intent>        Distill high-latency reasoning into native reflex");
     println!("  /services, :services     List running services");
@@ -474,6 +475,11 @@ fn run_interactive_shell(cwd: &Path) {
                 let res = ToolRegistry::execute_tool("swarm_status", "", cwd);
                 println!("\n{}", res);
             }
+            "/scout_model" | ":scout_model" | "scout_model" => {
+                let arg = command.trim_start_matches("/scout_model").trim_start_matches(":scout_model").trim();
+                let res = ToolRegistry::execute_tool("scout_model", arg, cwd);
+                println!("\n{}", res);
+            }
             "/resume" | ":resume" | "resume" => {
                 let local = SandboxManager::check_interrupted_checkpoint(cwd);
                 if let Some(cp) = local {
@@ -667,6 +673,11 @@ fn main() {
         }
         "swarm" | ":swarm" | "/swarm" => {
             let res = ToolRegistry::execute_tool("swarm_status", "", &cwd);
+            println!("{}", res);
+        }
+        "scout_model" | "scout-model" | ":scout_model" | "/scout_model" => {
+            let name = args.get(1).map(|s| s.as_str()).unwrap_or("");
+            let res = ToolRegistry::execute_tool("scout_model", name, &cwd);
             println!("{}", res);
         }
         "resume" | ":resume" | "/resume" => {

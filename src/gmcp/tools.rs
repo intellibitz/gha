@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::gawd::gmas::GmasSupervisor;
 use crate::gemi::hardware::HardwareProfiler;
-use crate::gemi::models::ModelManager;
+use crate::gemi::models::{ModelManager, ModelRegistry, ModelRegistryEntry};
 use crate::gemi::engine::GemiEngine;
 use crate::daemon::admin::GhaAdmin;
 use crate::daemon::evolution::EvolutionManager;
@@ -109,6 +109,7 @@ impl ToolRegistry {
             Arc::new(SwarmStatusTool),
             Arc::new(ReplicateStateTool),
             Arc::new(GetCheckpointsTool),
+            Arc::new(ScoutModelTool),
             Arc::new(SelfHealBuildTool),
             Arc::new(InfraCommandTool { name: "docker_ps".into(), bin: "docker".into(), args: vec!["ps", "--format", "table {{.Names}}\t{{.Status}}"] }),
             Arc::new(InfraCommandTool { name: "docker_build".into(), bin: "docker".into(), args: vec!["build", "-t", "gha-app:latest", "."] }),
@@ -137,6 +138,7 @@ impl ToolRegistry {
         tools.insert("list_mcp_servers".to_string(), Arc::new(ServersTool));
         tools.insert("set_model".to_string(), Arc::new(UseModelTool));
         tools.insert("swarm".to_string(), Arc::new(SwarmStatusTool));
+        tools.insert("scout_model".to_string(), Arc::new(ScoutModelTool));
         tools.insert("perf_test".to_string(), Arc::new(BenchmarkTool));
         tools.insert("sync".to_string(), Arc::new(VersionSyncTool));
         tools.insert("auto_evolve".to_string(), Arc::new(AdvanceTool));
@@ -834,6 +836,37 @@ impl GhaTool for GetCheckpointsTool {
         }
 
         Ok(serde_json::to_string(&list).unwrap_or_else(|_| "[]".into()))
+    }
+}
+
+struct ScoutModelTool;
+impl GhaTool for ScoutModelTool {
+    fn name(&self) -> String { "scout_model".to_string() }
+    fn description(&self) -> String { "Search for a specific model GGUF URL using intelligence (Rule 17)".to_string() }
+    fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
+        let prompt = format!(
+            "MISSION: FIND VERIFIED GGUF URL FOR MODEL: '{}'\n\n\
+            REQUIREMENTS:\n\
+            1. Find the direct download URL for the best Q4_K_M (or equivalent) GGUF file on HuggingFace or ModelScope.\n\
+            2. Return ONLY a JSON object with the following keys: 'name', 'url', 'quantization', 'size_gb'.\n\
+            3. Do not include any other text.",
+            arg
+        );
+
+        let reasoning = GemiEngine::generate_reasoning_deep(&prompt, workspace);
+        if reasoning.contains("ERROR:") {
+             return Err(EaiError::Inference("Tier 2 reasoning unavailable for model scouting.".into()));
+        }
+
+        let clean_json = reasoning.trim().trim_start_matches("```json").trim_end_matches("```").trim();
+        if let Ok(entry) = serde_json::from_str::<ModelRegistryEntry>(clean_json) {
+            let mut entry_with_time = entry.clone();
+            entry_with_time.discovered_at = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+            ModelRegistry::update_mapping(arg, entry_with_time)?;
+            return Ok(format!("Reflex Learned: Model '{}' verified at {}", arg, entry.url));
+        }
+
+        Ok(format!("Scouting complete for '{}', but response was not a valid registry entry: {}", arg, reasoning))
     }
 }
 

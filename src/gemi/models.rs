@@ -4,9 +4,11 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use super::hardware::HardwareProfiler;
 use crate::sandbox::manager::{ModelTier, ModelInfo, ProviderType};
+use crate::error::{EaiError, EaiResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelDownloadProgress {
@@ -663,6 +665,14 @@ impl ModelManager {
         let _ = fs::create_dir_all(&models_dir);
 
         let target = query_or_url.trim();
+
+        // 🚀 Intelligence Discovery Reflex: Check learned registry first
+        if let Some(entry) = ModelRegistry::resolve_intent(target) {
+            if !target.starts_with("http") {
+                return Self::install_model(&entry.url);
+            }
+        }
+
         let expected_bytes = Self::estimate_expected_bytes(target);
 
         Self::save_download_progress(target, 0, expected_bytes, "IN_PROGRESS");
@@ -808,6 +818,57 @@ impl ModelManager {
                 url: "https://gha.ai/engines/gemi-core".to_string(),
             },
         ]
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelRegistryEntry {
+    pub name: String,
+    pub url: String,
+    pub quantization: String,
+    pub size_gb: f32,
+    pub discovered_at: u64,
+}
+
+pub struct ModelRegistry;
+
+impl ModelRegistry {
+    pub fn get_path() -> PathBuf {
+        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        home.join(".gha/model_registry.json")
+    }
+
+    pub fn load() -> HashMap<String, ModelRegistryEntry> {
+        let path = Self::get_path();
+        if path.is_file() {
+            if let Ok(content) = fs::read_to_string(&path) {
+                if let Ok(registry) = serde_json::from_str::<HashMap<String, ModelRegistryEntry>>(&content) {
+                    return registry;
+                }
+            }
+        }
+        HashMap::new()
+    }
+
+    pub fn update_mapping(name: &str, entry: ModelRegistryEntry) -> EaiResult<()> {
+        let mut registry = Self::load();
+        registry.insert(name.to_lowercase(), entry);
+        let path = Self::get_path();
+        let json = serde_json::to_string_pretty(&registry).map_err(|e| EaiError::Config(e.to_string()))?;
+        fs::write(&path, json).map_err(|e| EaiError::Sandbox(e.to_string()))?;
+        Ok(())
+    }
+
+    pub fn resolve_intent(intent: &str) -> Option<ModelRegistryEntry> {
+        let registry = Self::load();
+        let lower_intent = intent.to_lowercase();
+
+        for (name, entry) in &registry {
+            if lower_intent.contains(name) {
+                return Some(entry.clone());
+            }
+        }
+        None
     }
 }
 
