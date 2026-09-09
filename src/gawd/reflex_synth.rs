@@ -10,12 +10,15 @@ use crate::gemi::engine::GemiEngine;
 pub struct ReflexSynthesizer;
 
 impl ReflexSynthesizer {
-    /// Distills a mission into a native Rust tool definition
+    /// Distills a mission into a native Rust tool definition and integrates it into the core
     pub fn distill_native_reflex(intent: &str, workspace: &Path) -> EaiResult<String> {
+        let clean_intent = intent.replace(|c: char| !c.is_alphanumeric(), "");
+        let struct_name = format!("{}Reflex", clean_intent);
+
         let prompt = format!(
             "MISSION: SYNTHESIZE NATIVE RUST TOOL FOR INTENT: '{}'\n\n\
             REQUIREMENTS:\n\
-            1. Create a Rust struct implementing the `GhaTool` trait.\n\
+            1. Create a Rust struct named `{}` implementing the `GhaTool` trait.\n\
             2. The tool must be high-performance, deterministic, and use standard libraries only.\n\
             3. Provide ONLY the code block for the struct and its implementation.\n\n\
             TRAIT DEFINITION:\n\
@@ -24,7 +27,7 @@ impl ReflexSynthesizer {
                 fn description(&self) -> String;\n\
                 fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String>;\n\
             }}",
-            intent
+            intent, struct_name
         );
 
         let code = GemiEngine::generate_reasoning_deep(&prompt, workspace);
@@ -33,17 +36,37 @@ impl ReflexSynthesizer {
             return Err(EaiError::Inference("Tier 2 reasoning unavailable for distillation.".into()));
         }
 
-        // 1. Save to ~/.gha/reflexes/synthesized_<hash>.rs
+        let clean_code = code.trim().trim_start_matches("```rust").trim_start_matches("```").trim_end_matches("```").trim().to_string();
+
+        // 1. Save backup to ~/.gha/reflexes/
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let reflex_dir = home.join(".gha/reflexes");
         fs::create_dir_all(&reflex_dir)?;
 
         let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
-        let file_path = reflex_dir.join(format!("reflex_{}.rs", timestamp));
+        let backup_path = reflex_dir.join(format!("reflex_{}.rs", timestamp));
+        fs::write(&backup_path, &clean_code)?;
 
-        fs::write(&file_path, code.clone())?;
+        // 2. 🌀 Autonomous Source Integration (Rule 11 & 17)
+        let reflex_rs_path = workspace.join("src/gmcp/reflexes.rs");
+        if reflex_rs_path.exists() {
+            let mut content = fs::read_to_string(&reflex_rs_path)?;
 
-        Ok(format!("Distilled intelligence for '{}' into native reflex at {}", intent, file_path.display()))
+            // Inject Struct/Impl
+            if let Some(pos) = content.find("// [AUTONOMOUS TOOLS END]") {
+                 content.insert_str(pos, &format!("{}\n\n", clean_code));
+            }
+
+            // Inject Registration
+            let registration_line = format!("    tools.insert(\"{}\".to_string(), Arc::new({}));\n", clean_intent.to_lowercase(), struct_name);
+            if let Some(reg_pos) = content.find("// [AUTONOMOUS REGISTRATION END]") {
+                 content.insert_str(reg_pos, &registration_line);
+            }
+
+            fs::write(&reflex_rs_path, content)?;
+        }
+
+        Ok(format!("Distilled intelligence for '{}' into native reflex '{}' and integrated into substrate.", intent, struct_name))
     }
 
     /// (Alpha) Synthesizes a Wasm reflex by compiling generated Rust code

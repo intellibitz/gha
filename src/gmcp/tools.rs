@@ -123,6 +123,9 @@ impl ToolRegistry {
             tools.insert(tool.name(), tool);
         }
 
+        // 🚀 Register Synthesized Reflexes (Rule 11 & 17)
+        super::reflexes::register_synthesized_reflexes(&mut tools);
+
         // Add aliases
         tools.insert("history".to_string(), Arc::new(MemoryTool));
         tools.insert("forget".to_string(), Arc::new(ClearMemoryTool));
