@@ -1493,7 +1493,7 @@ dependencies = [
 
 [[package]]
 name = "gha"
-version = "0.1.349"
+version = "0.1.350"
 dependencies = [
  "anyhow",
  "candle-core",

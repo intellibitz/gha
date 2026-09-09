@@ -213,4 +213,27 @@ impl GhaAdmin {
         report.push_str("\n🟢 RELEASE PROCESS COMPLETE.");
         Ok(report)
     }
+
+    /// 🌀 Autonomous Evolution Cycle (The Threshold Loop)
+    pub fn execute_autonomous_evolution_cycle(workspace: &Path) -> EaiResult<String> {
+        let mut report = "# GHA Autonomous Evolution Cycle\n\n".to_string();
+
+        // 1. Detection Phase
+        report.push_str("## 1. Intelligence Gap Detection\n");
+        let gap = super::evolution::EvolutionManager::detect_high_frequency_gap(workspace);
+        report.push_str(&format!("- **Detected Pathological Gap**: '{}'\n", gap));
+
+        // 2. Consultation Phase (Distillation)
+        report.push_str("\n## 2. Tier 2 -> Tier 0 Distillation\n");
+        let distillation = crate::gawd::reflex_synth::ReflexSynthesizer::distill_native_reflex(&gap, workspace)?;
+        report.push_str(&format!("- **Result**: {}\n", distillation));
+
+        // 3. Deployment Phase (Native Release)
+        report.push_str("\n## 3. Substrate Deployment\n");
+        let release = Self::execute_release(workspace)?;
+        report.push_str(&release);
+
+        report.push_str("\n🌀 AUTONOMOUS THRESHOLD SYNC COMPLETE.");
+        Ok(report)
+    }
 }

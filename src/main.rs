@@ -25,7 +25,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.350";
+pub const GHA_VERSION: &str = "0.1.351";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -47,7 +47,7 @@ impl Completer for GhaHelper {
             "/help", "/domain", "/simple", "/backup", "/restore",
             "/audit", "/memory", "/forget", "/setkey", "/renew", "/agents",
             "/engines", "/clients", "/servers", "/debug", "/models", "/benchmark",
-            "/compliance", "/sync", "/release", "/evolve", "/distill", "/swarm", "/resume", "/services",
+            "/compliance", "/sync", "/release", "/evolve", "/advance", "/distill", "/swarm", "/resume", "/services",
             "/status", "/schedule", "/export_doc", "/clear", "/exit",
         ];
 
@@ -105,6 +105,7 @@ fn print_help() {
     println!("  /compliance, :compliance Run full GHA compliance audit");
     println!("  /sync, :sync             Synchronize project version & terminology");
     println!("  /release, :release       Execute full GHA release & push cycle");
+    println!("  /advance, :advance       Execute autonomous self-evolution cycle");
     println!("  /evolve, :evolve         Analyze patterns and propose substrate evolution");
     println!("  /swarm, :swarm           Inspect cluster mesh & hardware capabilities");
     println!("  /resume, :resume         Resume interrupted mission from local or cluster");
@@ -461,6 +462,10 @@ fn run_interactive_shell(cwd: &Path) {
                 let res = ToolRegistry::execute_tool("release", "", cwd);
                 println!("\n{}", res);
             }
+            "/advance" | ":advance" | "advance" => {
+                let res = ToolRegistry::execute_tool("advance", "", cwd);
+                println!("\n{}", res);
+            }
             "/evolve" | ":evolve" | "evolve" => {
                 let res = ToolRegistry::execute_tool("self_evolve", "", cwd);
                 println!("\n{}", res);
@@ -650,6 +655,10 @@ fn main() {
         }
         "release" | ":release" | "/release" => {
             let res = ToolRegistry::execute_tool("release", "", &cwd);
+            println!("{}", res);
+        }
+        "advance" | ":advance" | "/advance" => {
+            let res = ToolRegistry::execute_tool("advance", "", &cwd);
             println!("{}", res);
         }
         "evolve" | ":evolve" | "/evolve" => {

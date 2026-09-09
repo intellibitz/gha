@@ -104,6 +104,7 @@ impl ToolRegistry {
             Arc::new(VersionSyncTool),
             Arc::new(ReleaseTool),
             Arc::new(EvolveTool),
+            Arc::new(AdvanceTool),
             Arc::new(DistillTool),
             Arc::new(SwarmStatusTool),
             Arc::new(ReplicateStateTool),
@@ -138,6 +139,7 @@ impl ToolRegistry {
         tools.insert("swarm".to_string(), Arc::new(SwarmStatusTool));
         tools.insert("perf_test".to_string(), Arc::new(BenchmarkTool));
         tools.insert("sync".to_string(), Arc::new(VersionSyncTool));
+        tools.insert("auto_evolve".to_string(), Arc::new(AdvanceTool));
         tools.insert("audit_compliance".to_string(), Arc::new(ComplianceTool));
         tools.insert("self_evolve".to_string(), Arc::new(EvolveTool));
         tools.insert("download".to_string(), Arc::new(WebSearchDownloadTool));
@@ -754,6 +756,15 @@ impl GhaTool for EvolveTool {
     fn description(&self) -> String { "Analyze audit log and propose native substrate evolution (Rule 17)".to_string() }
     fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
         EvolutionManager::evolve_substrate(workspace)
+    }
+}
+
+struct AdvanceTool;
+impl GhaTool for AdvanceTool {
+    fn name(&self) -> String { "advance".to_string() }
+    fn description(&self) -> String { "Execute autonomous evolution cycle (v1.0.0 Self-Distillation Threshold)".to_string() }
+    fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
+        GhaAdmin::execute_autonomous_evolution_cycle(workspace)
     }
 }
 
