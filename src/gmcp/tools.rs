@@ -51,6 +51,7 @@ impl ToolRegistry {
 
         let initial_tools: Vec<Arc<dyn GhaTool>> = vec![
             Arc::new(StatusTool),
+            Arc::new(IdentityTool),
             Arc::new(VersionTool),
             Arc::new(ReasonTool),
             Arc::new(MemoryTool),
@@ -214,6 +215,20 @@ impl GhaTool for StatusTool {
         let daemon_active = crate::daemon::server::GmaDaemon::check_status(&global_dir).is_some();
         report.push_str(&format!("- Daemon: {}\n", if daemon_active { "RUNNING" } else { "INACTIVE" }));
         Ok(report)
+    }
+}
+
+struct IdentityTool;
+impl GhaTool for IdentityTool {
+    fn name(&self) -> String { "identity".to_string() }
+    fn description(&self) -> String { "Get GHA system identity and paradigm info".to_string() }
+    fn execute(&self, _arg: &str, _workspace: &Path) -> EaiResult<String> {
+        let mut identity = String::new();
+        identity.push_str("GHA (Exponential Intelligence for Any AI Substrate)\n");
+        identity.push_str("Paradigm: EAI Intelligence Reflex & Execution Substrate\n");
+        identity.push_str("Identity: A 100% self-contained, unified AI ecosystem operating as a protocol router, multi-agent supervisor, and high-performance execution engine.\n");
+        identity.push_str("Objective: Empower any world user to harness exponential intelligence for any mission through natively evolved neural reflexes and indestructible system integrity.");
+        Ok(identity)
     }
 }
 

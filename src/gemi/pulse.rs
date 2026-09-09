@@ -47,6 +47,8 @@ impl GhaPulse {
         mappings.insert("models", "ACTION: list_models");
         mappings.insert("ls", "ACTION: list_directory");
         mappings.insert("dir", "ACTION: list_directory");
+        mappings.insert("who", "ACTION: identity");
+        mappings.insert("identity", "ACTION: identity");
         mappings.insert("lowercase", "ACTION: exec_command tr '[:upper:]' '[:lower:]'");
         mappings.insert("uppercase", "ACTION: exec_command tr '[:lower:]' '[:upper:]'");
 
