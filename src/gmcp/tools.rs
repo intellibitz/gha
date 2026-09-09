@@ -15,6 +15,7 @@ use crate::gemi::hardware::HardwareProfiler;
 use crate::gemi::models::ModelManager;
 use crate::gemi::engine::GemiEngine;
 use crate::daemon::admin::GhaAdmin;
+use crate::daemon::evolution::EvolutionManager;
 use crate::gmcp::client::GmcpClient;
 use crate::error::{EaiError, EaiResult};
 
@@ -100,6 +101,7 @@ impl ToolRegistry {
             Arc::new(ComplianceTool),
             Arc::new(VersionSyncTool),
             Arc::new(ReleaseTool),
+            Arc::new(EvolveTool),
             Arc::new(SelfHealBuildTool),
             Arc::new(InfraCommandTool { name: "docker_ps".into(), bin: "docker".into(), args: vec!["ps", "--format", "table {{.Names}}\t{{.Status}}"] }),
             Arc::new(InfraCommandTool { name: "docker_build".into(), bin: "docker".into(), args: vec!["build", "-t", "gha-app:latest", "."] }),
@@ -130,6 +132,7 @@ impl ToolRegistry {
         tools.insert("perf_test".to_string(), Arc::new(BenchmarkTool));
         tools.insert("sync".to_string(), Arc::new(VersionSyncTool));
         tools.insert("audit_compliance".to_string(), Arc::new(ComplianceTool));
+        tools.insert("self_evolve".to_string(), Arc::new(EvolveTool));
         tools.insert("download".to_string(), Arc::new(WebSearchDownloadTool));
         tools.insert("web_fetch".to_string(), Arc::new(WebSearchDownloadTool));
         tools.insert("audit_log".to_string(), Arc::new(AuditTool));
@@ -706,6 +709,15 @@ impl GhaTool for ReleaseTool {
     fn description(&self) -> String { "Execute full GHA release cycle (Audit -> Build -> Bump -> Push -> Install)".to_string() }
     fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
         GhaAdmin::execute_release(workspace)
+    }
+}
+
+struct EvolveTool;
+impl GhaTool for EvolveTool {
+    fn name(&self) -> String { "evolve".to_string() }
+    fn description(&self) -> String { "Analyze audit log and propose native substrate evolution (Rule 17)".to_string() }
+    fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
+        EvolutionManager::evolve_substrate(workspace)
     }
 }
 

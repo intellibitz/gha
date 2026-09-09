@@ -24,7 +24,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.342";
+pub const GHA_VERSION: &str = "0.1.343";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -45,7 +45,8 @@ impl Completer for GhaHelper {
         let commands = [
             "/help", "/domain", "/simple", "/backup", "/restore",
             "/audit", "/memory", "/forget", "/setkey", "/renew", "/agents",
-            "/engines", "/clients", "/servers", "/debug", "/models", "/benchmark", "/services",
+            "/engines", "/clients", "/servers", "/debug", "/models", "/benchmark",
+            "/compliance", "/sync", "/release", "/evolve", "/services",
             "/status", "/schedule", "/export_doc", "/clear", "/exit",
         ];
 
@@ -100,6 +101,10 @@ fn print_help() {
     println!("  /debug, :debug           Toggle developer debug mode");
     println!("  /models, :models         List available models");
     println!("  /benchmark <filter>      Run intelligence performance benchmark");
+    println!("  /compliance, :compliance Run full GHA compliance audit");
+    println!("  /sync, :sync             Synchronize project version & terminology");
+    println!("  /release, :release       Execute full GHA release & push cycle");
+    println!("  /evolve, :evolve         Analyze patterns and propose substrate evolution");
     println!("  /services, :services     List running services");
     println!("  /status, :status         Inspect health & hardware status");
     println!("  /schedule <sec> <task>   Schedule background task");
@@ -440,6 +445,22 @@ fn run_interactive_shell(cwd: &Path) {
                 let res = ToolRegistry::execute_tool("benchmark", "", cwd);
                 println!("\n{}", res);
             }
+            "/compliance" | ":compliance" | "compliance" => {
+                let res = ToolRegistry::execute_tool("compliance", "", cwd);
+                println!("\n{}", res);
+            }
+            "/sync" | ":sync" | "sync" => {
+                let res = ToolRegistry::execute_tool("version_sync", "", cwd);
+                println!("\n{}", res);
+            }
+            "/release" | ":release" | "release" => {
+                let res = ToolRegistry::execute_tool("release", "", cwd);
+                println!("\n{}", res);
+            }
+            "/evolve" | ":evolve" | "evolve" => {
+                let res = ToolRegistry::execute_tool("self_evolve", "", cwd);
+                println!("\n{}", res);
+            }
             "/verify_models" | ":verify_models" | "verify_models" => {
                 let res = ToolRegistry::execute_tool("verify_models", "", cwd);
                 println!("\n{}", res);
@@ -597,6 +618,10 @@ fn main() {
         }
         "release" | ":release" | "/release" => {
             let res = ToolRegistry::execute_tool("release", "", &cwd);
+            println!("{}", res);
+        }
+        "evolve" | ":evolve" | "/evolve" => {
+            let res = ToolRegistry::execute_tool("self_evolve", "", &cwd);
             println!("{}", res);
         }
         "run_100_tests" | "run-100-tests" | ":run_100_tests" | "/run_100_tests" => {

@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.342`
+* **Current Engine Version**: `v0.1.343`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
 
 ## Unified System Identity
@@ -142,7 +142,7 @@ GHA is engineered for maximum performance through full hardware utilization:
 * **Self-Instrumentation & Monitoring**: `GhaPulse` and `HardwareProfiler` continuously measure runtime execution latency (in microseconds), memory usage, CPU thread saturation, and tool execution metrics.
 * **Autonomous Self-Optimization**: `ModelManager::scout_and_benchmark` continuously benchmarks local and cloud inference endpoints to self-optimize routing to the fastest available model. `self_evolve` and `self_train` evaluate capability gaps and synthesize PKB training dataset pairs for Tier 0 distillation.
 * **Open Interrogation & External Monitoring**: External monitoring systems, IDEs, and security inspection agents can monitor and instrument GHA state at any time via:
-  1. **GMCP JSON-RPC 2.0 (Port 9090 & Stdio)**: Tools `profile_hardware`, `status`, `services`, `audit_log`, `inspect_trace`.
+  1. **GMCP JSON-RPC 2.0 (Port 9090 & Stdio)**: Tools `profile_hardware`, `status`, `services`, `audit_log`, `inspect_trace`, `evolve`, `compliance`, `release`.
   2. **GemiServer REST Endpoints (Port 9091)**: OpenAI-compatible HTTP endpoints for live telemetry.
   3. **Structured Telemetry Logs**: Real-time logs written to `.gha/audit.log`, `.gha/sync.json`, and `.gha/train/pkb_dataset_*.jsonl`.
 

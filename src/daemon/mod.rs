@@ -1,5 +1,6 @@
 pub mod server;
 pub mod admin;
+pub mod evolution;
 
 pub use server::GmaDaemon;
-// GhaAdmin is used via crate::daemon::admin::GhaAdmin
+// GhaAdmin and EvolutionManager are used via fully qualified names in tools.rs

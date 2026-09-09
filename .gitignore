@@ -51,6 +51,7 @@ Thumbs.db
 # Log files & temp files
 *.log
 *.tmp
+.artifacts/
 
 # Testspace
 /test/world/
