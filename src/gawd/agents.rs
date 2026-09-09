@@ -209,7 +209,25 @@ impl GawdAgent for GhaReasoningAgent {
                 }
                 format!("ACTION: {}", action)
             },
-            Err(_) => crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, workspace)
+            Err(_) => {
+                // 🚀 Piped Mission Substrate: Autonomous transformation loop
+                if goal.contains("[INPUT DATA]:") {
+                     if let Some(data) = goal.split("[INPUT DATA]:\n").nth(1) {
+                         let lower_goal = goal.to_lowercase();
+                         if lower_goal.contains("uppercase") {
+                              return format!("ACTION: exec_command echo \"{}\" | tr '[:lower:]' '[:upper:]'", data.replace("\"", "\\\""));
+                         } else if lower_goal.contains("lowercase") {
+                              return format!("ACTION: exec_command echo \"{}\" | tr '[:upper:]' '[:lower:]'", data.replace("\"", "\\\""));
+                         } else if lower_goal.contains("save") || lower_goal.contains("write") {
+                              if let Some(to_pos) = lower_goal.find(" to ") {
+                                  let path = goal[to_pos + 4..].trim().trim_end_matches('.');
+                                  return format!("ACTION: write_file {} {}", path, data);
+                              }
+                         }
+                     }
+                }
+                crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, workspace)
+            }
         }
     }
 }
