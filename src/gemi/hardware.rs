@@ -10,6 +10,7 @@ pub struct HardwareProfile {
     pub cpus: usize,
     pub gpu_info: String,
     pub ram_gb: usize,
+    pub gpu_vram_gb: usize,
     pub acceleration_active: bool,
     pub native_acceleration: String,
     pub os_info: String,
@@ -22,13 +23,14 @@ impl HardwareProfiler {
     pub fn get_profile() -> HardwareProfile {
         let (cpus, _) = Self::profile();
         let ram_gb = Self::determine_total_ram_gb();
+        let gpu_vram_gb = Self::determine_gpu_vram_gb();
 
         // 1. Direct Interrogation via Candle Substrate
         let (native_accel, gpu_name) = Self::interrogate_native_acceleration();
 
         let acceleration_active = !native_accel.contains("None") && !native_accel.contains("Cpu");
         let gpu_display = if acceleration_active {
-            format!("{} ({})", native_accel, gpu_name)
+            format!("{} ({} | {}GB VRAM)", native_accel, gpu_name, gpu_vram_gb)
         } else {
             // 2. Fallback to Shell-Parsing for diagnostics if native probe is inactive
             let (_, shell_gpu) = Self::profile();
@@ -39,6 +41,7 @@ impl HardwareProfiler {
             cpus,
             gpu_info: gpu_display,
             ram_gb,
+            gpu_vram_gb,
             acceleration_active,
             native_acceleration: native_accel,
             os_info: Self::get_os_info(),
@@ -110,6 +113,20 @@ impl HardwareProfiler {
         }
 
         ("None".to_string(), "Cpu".to_string())
+    }
+
+    fn determine_gpu_vram_gb() -> usize {
+        if cfg!(target_os = "linux") {
+            if let Ok(out) = Command::new("nvidia-smi").args(["--query-gpu=memory.total", "--format=csv,noheader,nounits"]).output() {
+                let s = String::from_utf8_lossy(&out.stdout);
+                if let Ok(m) = s.trim().parse::<usize>() {
+                    return m / 1024;
+                }
+            }
+        } else if cfg!(target_os = "macos") {
+             return (Self::determine_total_ram_gb() * 75) / 100;
+        }
+        0
     }
 
     pub fn profile() -> (usize, String) {
