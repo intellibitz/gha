@@ -52,6 +52,7 @@ impl ToolRegistry {
         let initial_tools: Vec<Arc<dyn GhaTool>> = vec![
             Arc::new(StatusTool),
             Arc::new(IdentityTool),
+            Arc::new(ToolInventoryTool),
             Arc::new(VersionTool),
             Arc::new(ReasonTool),
             Arc::new(MemoryTool),
@@ -229,6 +230,23 @@ impl GhaTool for IdentityTool {
         identity.push_str("Identity: A 100% self-contained, unified AI ecosystem operating as a protocol router, multi-agent supervisor, and high-performance execution engine.\n");
         identity.push_str("Objective: Empower any world user to harness exponential intelligence for any mission through natively evolved neural reflexes and indestructible system integrity.");
         Ok(identity)
+    }
+}
+
+struct ToolInventoryTool;
+impl GhaTool for ToolInventoryTool {
+    fn name(&self) -> String { "tool_inventory".to_string() }
+    fn description(&self) -> String { "Generate a technical inventory of all registered GHA tools".to_string() }
+    fn execute(&self, _arg: &str, _workspace: &Path) -> EaiResult<String> {
+        let tools = ToolRegistry::list_tools();
+        let mut report = String::new();
+        report.push_str("# GHA Tool Inventory\n\n");
+        report.push_str("| Tool Name | Technical Description |\n");
+        report.push_str("| :--- | :--- |\n");
+        for t in tools {
+            report.push_str(&format!("| `{}` | {} |\n", t.name, t.description));
+        }
+        Ok(report)
     }
 }
 

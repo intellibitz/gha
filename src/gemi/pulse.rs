@@ -34,43 +34,20 @@ impl GhaPulse {
         let lower = clean_prompt.to_lowercase();
         let words: Vec<&str> = lower.split_whitespace().collect();
 
-        // 1. Precise Keyword Mapping (High-Speed Reflex)
-        let mut mappings = HashMap::new();
-        mappings.insert("status", "ACTION: status");
-        mappings.insert("version", "ACTION: version");
-        mappings.insert("memory", "ACTION: memory");
-        mappings.insert("history", "ACTION: memory");
-        mappings.insert("forget", "ACTION: clear_memory");
-        mappings.insert("scout", "ACTION: scout");
-        mappings.insert("build", "ACTION: self_heal_build");
-        mappings.insert("test", "ACTION: run_test_harness");
-        mappings.insert("models", "ACTION: list_models");
-        mappings.insert("ls", "ACTION: list_directory");
-        mappings.insert("dir", "ACTION: list_directory");
-        mappings.insert("who", "ACTION: identity");
-        mappings.insert("identity", "ACTION: identity");
-        mappings.insert("lowercase", "ACTION: exec_command tr '[:upper:]' '[:lower:]'");
-        mappings.insert("uppercase", "ACTION: exec_command tr '[:lower:]' '[:upper:]'");
+        // 1. High-Fidelity Assistant Intent Parsers (Priority)
 
-        for word in &words {
-            if let Some(action) = mappings.get(word) {
-                if *word == "ls" || *word == "dir" {
-                     return Ok(format!("ACTION: list_directory {}", workspace.display()));
-                }
-
-                // 🚀 If we have input data from a pipe, use it with the command
-                if (word == &"lowercase" || word == &"uppercase") && clean_prompt.contains("[INPUT DATA]:") {
-                     if let Some(data) = clean_prompt.split("[INPUT DATA]:\n").nth(1) {
-                         let cmd = if word == &"lowercase" { "tr '[:upper:]' '[:lower:]'" } else { "tr '[:lower:]' '[:upper:]'" };
-                         return Ok(format!("ACTION: exec_command echo \"{}\" | {}", data.replace("\"", "\\\""), cmd));
-                     }
-                }
-
-                return Ok(action.to_string());
-            }
+        // Tool Inventory Report: "list all tools and save to [PATH]"
+        if lower.contains("tools") && (lower.contains("report") || lower.contains("save")) {
+             if let Some(pos) = lower.find(" to ") {
+                 let path = clean_prompt[pos + 4..].trim().trim_end_matches('.');
+                 if !path.is_empty() {
+                      let inventory = crate::gmcp::tools::ToolRegistry::execute_tool("tool_inventory", "", workspace);
+                      return Ok(format!("ACTION: write_file {} {}", path, inventory));
+                 }
+             }
         }
 
-        // 2. High-Fidelity Assistant Intent Parsers
+        // Directory creation: "create directory named [PATH]"
         if lower.contains("directory") || lower.contains("folder") {
              if let Some(pos) = lower.find("named ") {
                  let after_named = &clean_prompt[pos + 6..].trim();
@@ -81,6 +58,7 @@ impl GhaPulse {
              }
         }
 
+        // File writing: "put a file named [PATH] containing [CONTENT]"
         if (lower.contains("file") || lower.contains("save") || lower.contains("write")) && (lower.contains("containing") || lower.contains("with content")) {
              let sep = if lower.contains("containing") { "containing" } else { "with content" };
              if let Some(sep_pos) = lower.find(sep) {
@@ -93,6 +71,43 @@ impl GhaPulse {
                      }
                  }
              }
+        }
+
+        // 2. Precise Keyword Mapping (High-Speed Reflex)
+        let mut mappings = HashMap::new();
+        mappings.insert("status", "ACTION: status");
+        mappings.insert("version", "ACTION: version");
+        mappings.insert("memory", "ACTION: memory");
+        mappings.insert("history", "ACTION: memory");
+        mappings.insert("forget", "ACTION: clear_memory");
+        mappings.insert("scout", "ACTION: scout");
+        mappings.insert("build", "ACTION: self_heal_build");
+        mappings.insert("test", "ACTION: run_test_harness");
+        mappings.insert("models", "ACTION: list_models");
+        mappings.insert("ls", "ACTION: list_directory");
+        mappings.insert("dir", "ACTION: list_directory");
+        mappings.insert("identity", "ACTION: identity");
+        mappings.insert("tools", "ACTION: tool_inventory");
+        mappings.insert("inventory", "ACTION: tool_inventory");
+        mappings.insert("lowercase", "ACTION: exec_command tr '[:upper:]' '[:lower:]'");
+        mappings.insert("uppercase", "ACTION: exec_command tr '[:lower:]' '[:upper:]'");
+
+        for word in &words {
+            if let Some(action) = mappings.get(word) {
+                if *word == "ls" || *word == "dir" {
+                     return Ok(format!("ACTION: list_directory {}", workspace.display()));
+                }
+
+                // If we have input data from a pipe, use it with the command
+                if (word == &"lowercase" || word == &"uppercase") && clean_prompt.contains("[INPUT DATA]:") {
+                     if let Some(data) = clean_prompt.split("[INPUT DATA]:\n").nth(1) {
+                         let cmd = if word == &"lowercase" { "tr '[:upper:]' '[:lower:]'" } else { "tr '[:lower:]' '[:upper:]'" };
+                         return Ok(format!("ACTION: exec_command echo \"{}\" | {}", data.replace("\"", "\\\""), cmd));
+                     }
+                }
+
+                return Ok(action.to_string());
+            }
         }
 
         // 3. Neural Reflex (GHA-Alpha Inference) - Fallback
