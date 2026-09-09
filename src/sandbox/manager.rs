@@ -249,6 +249,7 @@ impl SandboxManager {
         None
     }
 
+    #[allow(dead_code)]
     pub fn clear_mission_checkpoint(workspace: &Path) {
         let checkpoint_file = workspace.join(".gha/mission_checkpoint.json");
         if checkpoint_file.exists() {

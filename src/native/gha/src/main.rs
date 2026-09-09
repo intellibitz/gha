@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-const GHA_VERSION: &str = "0.1.2022581";
+const GHA_VERSION: &str = "0.1.2022582";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -261,6 +261,7 @@ fn main() {
         "help" | "--help" | "-h" => print_help(),
         "install" => run_install(&project_root),
         "uninstall" => run_uninstall(&project_root),
+        "status" => print_status(&project_root, &global_gha_dir, &version),
         "build" => run_native_build(&project_root),
         "test" => run_native_test(&project_root),
         "clean" => run_native_clean(&project_root),

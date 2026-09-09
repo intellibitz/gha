@@ -7,7 +7,6 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::time::Instant;
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use super::tools::McpTool;
