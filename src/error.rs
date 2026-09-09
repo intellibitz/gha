@@ -6,12 +6,11 @@ use std::fmt;
 #[derive(Debug)]
 pub enum EaiError {
     Governance(String),
-    #[allow(dead_code)]
     Hardware(String),
-    #[allow(dead_code)]
     Protocol(String),
     Inference(String),
     Sandbox(String),
+    Config(String),
     #[allow(dead_code)]
     Internal(String),
 }
@@ -24,11 +23,18 @@ impl fmt::Display for EaiError {
             EaiError::Protocol(msg) => write!(f, "Protocol Error: {}", msg),
             EaiError::Inference(msg) => write!(f, "Inference Error: {}", msg),
             EaiError::Sandbox(msg) => write!(f, "Sandbox Error: {}", msg),
+            EaiError::Config(msg) => write!(f, "Configuration Error: {}", msg),
             EaiError::Internal(msg) => write!(f, "Internal Engine Error: {}", msg),
         }
     }
 }
 
 impl std::error::Error for EaiError {}
+
+impl From<std::io::Error> for EaiError {
+    fn from(err: std::io::Error) -> Self {
+        EaiError::Hardware(err.to_string())
+    }
+}
 
 pub type EaiResult<T> = Result<T, EaiError>;

@@ -24,7 +24,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.340";
+pub const GHA_VERSION: &str = "0.1.342";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -585,6 +585,18 @@ fn main() {
         }
         "verify_models" | "verify-models" | ":verify_models" | "/verify_models" => {
             let res = ToolRegistry::execute_tool("verify_models", "", &cwd);
+            println!("{}", res);
+        }
+        "compliance" | "audit_compliance" | ":compliance" | "/compliance" => {
+            let res = ToolRegistry::execute_tool("compliance", "", &cwd);
+            println!("{}", res);
+        }
+        "sync" | "version_sync" | ":sync" | "/sync" => {
+            let res = ToolRegistry::execute_tool("version_sync", "", &cwd);
+            println!("{}", res);
+        }
+        "release" | ":release" | "/release" => {
+            let res = ToolRegistry::execute_tool("release", "", &cwd);
             println!("{}", res);
         }
         "run_100_tests" | "run-100-tests" | ":run_100_tests" | "/run_100_tests" => {
