@@ -17,6 +17,11 @@
 15. **Indestructible Identity**: The identity of `gha` as an Intelligence Substrate for any world user is permanent. All future versions, autonomous evolutions, and distilled reflex models must strictly adhere to this core DNA. Drift is not permitted.
 16. **Clean Workspace & Testspace Sovereignty**: Maintain a clean, unpolluted workspace at all times. All testing, experimentation, and temporary scaffolding must be performed exclusively in the designated testspace (`./test/world`).
 17. **Native Evolutionary Assistant Protocol**: The agent operates as a Master Distiller for the `gha` engine. When provided with a `mission: [intent]`, the agent must delegate execution to the native `gha` binary exclusively within the designated testspace (`./test/world`) to maintain workspace purity. GHA must strictly follow all mandates defined for agents. If `gha` fails, the agent must diagnose the root cause, harden the `gha` source code natively, and re-execute in the testspace until the mission is accomplished. This protocol ensures session continuity, workspace cleanliness, and the continuous native evolution of `gha` towards full human-level capability.
+18. **Autonomous Threshold Motion Rule**: When provided with a `motion: [intent]` prefix, the agent must focus exclusively on advancing `gha` towards the **Autonomous Threshold** ($v1.0.0$). This threshold is achieved when the engine can autonomously execute the **Self-Distillation Loop**:
+    1. **Detect** a capability gap (e.g., missing native optimization).
+    2. **Consult** Tier 2 Reasoning (Gemini/GPT-4) to design a native Rust reflex.
+    3. **Synthesize, Compile, and Audit** the new code into the `gha` core.
+    4. **Deploy** via native `/release`—all without human code-writing.
 
 ## GHA Execution Rules
 
