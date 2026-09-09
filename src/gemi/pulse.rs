@@ -69,11 +69,6 @@ impl GhaPulse {
              return Ok(format!("ACTION: legal_analysis {}", clean_prompt));
         }
 
-        // Mission 9: Legal Analysis Reflex
-        if lower.contains("legal") || lower.contains("clause") || lower.contains("contract") || lower.contains("terminate") {
-             return Ok(format!("ACTION: legal_analysis {}", clean_prompt));
-        }
-
         // Mission 10: Medical Reflex
         if lower.contains("medical") || lower.contains("dehydration") || lower.contains("diagnosis") || lower.contains("symptoms") {
              return Ok(format!("ACTION: clinical_diagnostics {}", clean_prompt));
@@ -97,6 +92,36 @@ impl GhaPulse {
         // Mission 14: Vision Reflex
         if lower.contains("image") || lower.contains("vision") || lower.contains("detect") || lower.contains("perimeter") {
              return Ok(format!("ACTION: vision_reflex {}", clean_prompt));
+        }
+
+        // Mission 15: Finance Reflex
+        if lower.contains("finance") || lower.contains("portfolio") || lower.contains("dividend") || lower.contains("stock") {
+             return Ok(format!("ACTION: finance_reflex {}", clean_prompt));
+        }
+
+        // Mission 16: Logistics Reflex
+        if lower.contains("logistics") || lower.contains("route") || lower.contains("fleet") || lower.contains("delivery") {
+             return Ok(format!("ACTION: logistics_reflex {}", clean_prompt));
+        }
+
+        // Mission 17: Aerospace Reflex
+        if lower.contains("aerospace") || lower.contains("orbital") || lower.contains("propulsion") || lower.contains("rocket") {
+             return Ok(format!("ACTION: aerospace_reflex {}", clean_prompt));
+        }
+
+        // Mission 18: Cybersecurity Reflex
+        if lower.contains("cybersecurity") || lower.contains("intrusion") || lower.contains("exploit") || lower.contains("vulnerability") {
+             return Ok(format!("ACTION: cybersecurity_reflex {}", clean_prompt));
+        }
+
+        // Mission 19: STEM Physics/Chemistry Reflex
+        if lower.contains("physics") || lower.contains("chemistry") || lower.contains("atom") || lower.contains("molecule") {
+             return Ok(format!("ACTION: stem_reflex {}", clean_prompt));
+        }
+
+        // Mission 20: Self-Evolution Reflex
+        if lower.contains("evolve") || lower.contains("self-heal") || lower.contains("threshold") {
+             return Ok("ACTION: evolve_engine".to_string());
         }
 
         // Tool Inventory Report: "list all tools and save to [PATH]"

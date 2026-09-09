@@ -28,6 +28,9 @@ pub struct ClusterPeerNode {
     pub node_type: String,
     pub is_active: bool,
     pub capabilities: Vec<String>,
+    pub latency_ms: u64,
+    pub uptime_secs: u64,
+    pub trust_score: f32,
 }
 
 pub struct GmasSupervisor;
@@ -44,6 +47,9 @@ impl GmasSupervisor {
                 node_type: "LOCAL_MASTER".to_string(),
                 is_active: true,
                 capabilities: vec!["CORE".to_string(), "INFERENCE".to_string(), "TOOLING".to_string()],
+                latency_ms: 0,
+                uptime_secs: 0,
+                trust_score: 1.0,
             }];
 
             let shared = Arc::new(Mutex::new(initial));
@@ -84,6 +90,9 @@ impl GmasSupervisor {
                                          node_type: if caps.contains(&"GPU".to_string()) { "WORKSTATION_NODE".into() } else { "PEER".into() },
                                          is_active: true,
                                          capabilities: caps,
+                                         latency_ms: 0,
+                                         uptime_secs: 0,
+                                         trust_score: 0.5,
                                      });
                                  }
                             }

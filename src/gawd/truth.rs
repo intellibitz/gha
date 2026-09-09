@@ -20,12 +20,33 @@ impl TruthTransformer {
                  let full_path = workspace.join(path_str);
                  if !full_path.exists() {
                      violations.push(format!("Tool claimed success but file '{}' does not exist in workspace.", path_str));
+                 } else {
+                     // Cycle 21: Checksum Verification (Placeholder/Simple)
+                     if let Ok(metadata) = full_path.metadata() {
+                         if metadata.len() == 0 && result.len() > 0 {
+                              violations.push(format!("File '{}' is empty despite claimed content write.", path_str));
+                         }
+                     }
                  }
              }
         }
 
+        // Cycle 22: Command Execution Verification
+        if tool_name == "exec_command" {
+             if result.contains("error") || result.contains("failed") {
+                  violations.push("Command reported failure in output.".to_string());
+             }
+        }
+
+        // Cycle 23: Directory Reality
+        if tool_name == "mkdir" || tool_name == "create_directory" {
+             let path_str = goal.split_whitespace().last().unwrap_or("");
+             if !path_str.is_empty() && !workspace.join(path_str).is_dir() {
+                  violations.push(format!("Directory '{}' was not created.", path_str));
+             }
+        }
+
         // 2. Neural Verification (Candle Substrate)
-        // We use a dedicated truth-verification matrix to score the "Reality Match"
         let score = Self::calculate_neural_truth_score(goal, result)?;
 
         if score < 0.8 {

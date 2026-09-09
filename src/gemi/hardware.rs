@@ -8,13 +8,19 @@ use candle_core::Device;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareProfile {
     pub cpus: usize,
+    pub cpu_brand: String,
     pub gpu_info: String,
     pub ram_gb: usize,
     pub gpu_vram_gb: usize,
     pub acceleration_active: bool,
     pub native_acceleration: String,
     pub os_info: String,
+    pub arch: String,
     pub disk_gb: usize,
+    pub disk_usage_pct: u8,
+    pub load_avg: String,
+    pub uptime: String,
+    pub hostname: String,
 }
 
 pub struct HardwareProfiler;
@@ -39,14 +45,80 @@ impl HardwareProfiler {
 
         HardwareProfile {
             cpus,
+            cpu_brand: Self::get_cpu_brand(),
             gpu_info: gpu_display,
             ram_gb,
             gpu_vram_gb,
             acceleration_active,
             native_acceleration: native_accel,
             os_info: Self::get_os_info(),
+            arch: std::env::consts::ARCH.to_string(),
             disk_gb: Self::determine_disk_gb(),
+            disk_usage_pct: Self::determine_disk_usage_pct(),
+            load_avg: Self::get_load_avg(),
+            uptime: Self::get_uptime(),
+            hostname: Self::get_hostname(),
         }
+    }
+
+    fn get_cpu_brand() -> String {
+        if cfg!(target_os = "linux") {
+            if let Ok(content) = std::fs::read_to_string("/proc/cpuinfo") {
+                for line in content.lines() {
+                    if line.starts_with("model name") {
+                        return line.split(':').nth(1).unwrap_or("Unknown CPU").trim().to_string();
+                    }
+                }
+            }
+        } else if cfg!(target_os = "macos") {
+            if let Ok(out) = Command::new("sysctl").arg("-n").arg("machdep.cpu.brand_string").output() {
+                return String::from_utf8_lossy(&out.stdout).trim().to_string();
+            }
+        }
+        "Generic x86/ARM".to_string()
+    }
+
+    fn get_load_avg() -> String {
+        if let Ok(out) = Command::new("uptime").output() {
+            let s = String::from_utf8_lossy(&out.stdout);
+            if let Some(pos) = s.find("load average:") {
+                return s[pos + 13..].trim().to_string();
+            }
+        }
+        "N/A".to_string()
+    }
+
+    fn get_uptime() -> String {
+        if let Ok(out) = Command::new("uptime").arg("-p").output() {
+            return String::from_utf8_lossy(&out.stdout).trim().to_string();
+        }
+        "N/A".to_string()
+    }
+
+    fn get_hostname() -> String {
+        std::env::var("HOSTNAME")
+            .or_else(|_| std::env::var("COMPUTERNAME"))
+            .unwrap_or_else(|_| {
+                Command::new("hostname")
+                    .output()
+                    .ok()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+                    .unwrap_or_else(|| "localhost".to_string())
+            })
+    }
+
+    fn determine_disk_usage_pct() -> u8 {
+        if let Ok(out) = Command::new("df").arg("/").output() {
+             let s = String::from_utf8_lossy(&out.stdout);
+             if let Some(line) = s.lines().nth(1) {
+                 for part in line.split_whitespace() {
+                     if part.ends_with('%') {
+                         return part.trim_end_matches('%').parse().unwrap_or(0);
+                     }
+                 }
+             }
+        }
+        0
     }
 
     pub fn get_caps_string() -> String {
