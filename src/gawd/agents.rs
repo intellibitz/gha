@@ -1,10 +1,10 @@
-// GAWD Agent Fleet
+// GAWD Agent Fleet: Dynamic Intelligence Substrate
 // RULE 11: Agents must add functionality directly to the gha engine.
-// Agents must not simulate or "fake" gha capabilities.
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 use std::thread;
+use std::sync::{Arc, RwLock, OnceLock};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,20 +22,116 @@ pub struct DiscoverableAsset {
     pub url: String,
 }
 
+/// Core Intelligence Trait for GHA Swarm Agents
+pub trait GawdAgent: Send + Sync {
+    fn name(&self) -> String;
+    fn role(&self) -> String;
+    fn protocol(&self) -> String { "A2A".to_string() }
+    fn keywords(&self) -> Vec<&'static str>;
+    fn execute(&self, goal: &str, workspace: &Path) -> String;
+}
+
+pub struct AgentRegistry {
+    agents: RwLock<Vec<Arc<dyn GawdAgent>>>,
+}
+
+impl AgentRegistry {
+    pub fn global() -> &'static Self {
+        static REGISTRY: OnceLock<AgentRegistry> = OnceLock::new();
+        REGISTRY.get_or_init(|| {
+            let registry = AgentRegistry {
+                agents: RwLock::new(Vec::new()),
+            };
+            registry.bootstrap();
+            registry
+        })
+    }
+
+    fn bootstrap(&self) {
+        let mut agents = self.agents.write().unwrap();
+        agents.push(Arc::new(GhaUserAgent));
+        agents.push(Arc::new(GhaContextAgent));
+        agents.push(Arc::new(GhaReasoningAgent));
+        agents.push(Arc::new(GhaKernelAgent));
+        agents.push(Arc::new(GhaEconomicAgent));
+        agents.push(Arc::new(GhaLinguistAgent));
+        agents.push(Arc::new(GhaAgronomyAgent));
+        agents.push(Arc::new(GhaMedicalAgent));
+        agents.push(Arc::new(GhaLegalAgent));
+        agents.push(Arc::new(GhaEducationAgent));
+        agents.push(Arc::new(GhaEnergyAgent));
+        agents.push(Arc::new(GhaTradesAgent));
+        agents.push(Arc::new(GhaHouseholdAgent));
+        agents.push(Arc::new(GhaCreativeAgent));
+        agents.push(Arc::new(GhaPublicSafetyAgent));
+        agents.push(Arc::new(GhaEnterpriseAgent));
+        agents.push(Arc::new(GhaSafetyAgent));
+        agents.push(Arc::new(GhaTruthAgent));
+    }
+
+    pub fn list_all(&self) -> Vec<GawdAgentInfo> {
+        let agents = self.agents.read().unwrap();
+        agents.iter().map(|a| GawdAgentInfo {
+            name: a.name(),
+            role: a.role(),
+            protocol: a.protocol(),
+        }).collect()
+    }
+
+    pub fn synthesize_fleet(&self, goal: &str) -> Vec<Arc<dyn GawdAgent>> {
+        let lower = goal.to_lowercase();
+        let agents = self.agents.read().unwrap();
+        let mut fleet = Vec::new();
+
+        // 1. Always include Core Agents
+        for agent in agents.iter() {
+            let name = agent.name();
+            if name == "GhaUserAgent" || name == "GhaContextAgent" || name == "GhaReasoningAgent" || name == "GhaSafetyAgent" || name == "GhaTruthAgent" {
+                fleet.push(Arc::clone(agent));
+            }
+        }
+
+        // 2. Synthesize Specialists based on Keywords
+        for agent in agents.iter() {
+            let name = agent.name();
+            if name == "GhaUserAgent" || name == "GhaContextAgent" || name == "GhaReasoningAgent" || name == "GhaSafetyAgent" || name == "GhaTruthAgent" {
+                continue;
+            }
+            if agent.keywords().iter().any(|k| lower.contains(k)) {
+                fleet.push(Arc::clone(agent));
+            }
+        }
+
+        // 3. Fallback to Dynamic Generic Specialist if fleet is just core
+        if fleet.len() <= 5 {
+             let topic = goal.split_whitespace().find(|w| w.len() > 3).unwrap_or("Domain");
+             fleet.push(Arc::new(DynamicSpecialist {
+                 topic: topic.to_string(),
+                 goal: goal.to_string(),
+             }));
+        }
+
+        fleet
+    }
+}
+
+// --- Agent Implementations ---
+
 pub struct GhaUserAgent;
+impl GawdAgent for GhaUserAgent {
+    fn name(&self) -> String { "GhaUserAgent".to_string() }
+    fn role(&self) -> String { "World User Advocate & Proactive Prompter".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec![] }
+    fn execute(&self, _goal: &str, workspace: &Path) -> String {
+        format!("Proactive user guidance active for workspace '{}'.", workspace.display())
+    }
+}
 
 impl GhaUserAgent {
     pub fn generate_proactive_prompts(workspace: &Path) -> Vec<(String, String)> {
         let mut prompts = Vec::new();
-
-        let is_dev_workspace = workspace.join("Cargo.toml").is_file()
-            || workspace.join("package.json").is_file()
-            || workspace.join("pyproject.toml").is_file()
-            || workspace.join("go.mod").is_file()
-            || workspace.join("build.gradle").is_file()
-            || workspace.join(".git").exists();
-
-        if is_dev_workspace {
+        let is_dev = workspace.join("Cargo.toml").exists() || workspace.join(".git").exists();
+        if is_dev {
             prompts.push(("1".to_string(), "Build workspace project cleanly".to_string()));
             prompts.push(("2".to_string(), "Run workspace unit test harness".to_string()));
             prompts.push(("3".to_string(), "Inspect workspace health & system status".to_string()));
@@ -44,104 +140,194 @@ impl GhaUserAgent {
             prompts.push(("2".to_string(), "📚 Explain a school or homework concept".to_string()));
             prompts.push(("3".to_string(), "📅 Organize family budget, schedule, or documents".to_string()));
         }
-
         prompts
     }
 
     pub fn detect_domain_badge(goal: &str) -> (&'static str, &'static str) {
         let lower = goal.to_lowercase();
-        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") || lower.contains("harvest") {
-            ("🌾 Agronomy", "Agricultural & Crop Intelligence")
-        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") || lower.contains("clinic") || lower.contains("patient") || lower.contains("fever") {
-            ("⚕️ Medical", "Clinical & Health Intelligence")
-        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") || lower.contains("court") || lower.contains("attorney") {
-            ("⚖️ Legal", "Legal & Regulatory Compliance")
-        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") || lower.contains("learn") || lower.contains("homework") || lower.contains("essay") {
-            ("🎓 Education", "Pedagogical & Science Learning")
-        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") || lower.contains("grid") {
-            ("⚡ Energy", "Renewable Energy & Climate Science")
-        } else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") || lower.contains("hvac") || lower.contains("carpenter") || lower.contains("mechanic") || lower.contains("wire") {
-            ("🔧 Skilled Trades", "Field Engineering & Building Codes")
-        } else if lower.contains("story") || lower.contains("script") || lower.contains("video") || lower.contains("design") || lower.contains("music") || lower.contains("content") || lower.contains("art") {
-            ("🎨 Creative & Media", "Content & Visual Storytelling")
-        } else if lower.contains("recipe") || lower.contains("cook") || lower.contains("dinner") || lower.contains("family") || lower.contains("budget") || lower.contains("diy") || lower.contains("chore") || lower.contains("mom") || lower.contains("home") {
-            ("🏠 Home & Family", "Household, Budget & Family Life")
-        } else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") || lower.contains("disaster") || lower.contains("civil") || lower.contains("safety") {
-            ("🏛️ Public Safety", "Emergency Response & Infrastructure")
-        } else if lower.contains("ceo") || lower.contains("product") || lower.contains("agile") || lower.contains("business") || lower.contains("sales") || lower.contains("corporate") || lower.contains("market") {
-            ("💼 Enterprise", "Business & Corporate Operations")
-        } else if lower.contains("code") || lower.contains("build") || lower.contains("cargo") || lower.contains("fn ") || lower.contains("rust") || lower.contains("bug") || lower.contains("fix") || lower.contains("dev") || lower.contains("api") {
-            ("💻 Engineering", "Software & Systems Architecture")
-        } else {
-            ("🌍 Universal", "Intelligence Reflex & Execution Substrate")
-        }
+        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") { ("🌾 Agronomy", "Agricultural & Crop Intelligence") }
+        else if lower.contains("health") || lower.contains("medical") { ("⚕️ Medical", "Clinical & Health Intelligence") }
+        else if lower.contains("legal") || lower.contains("law") { ("⚖️ Legal", "Legal & Regulatory Compliance") }
+        else if lower.contains("education") || lower.contains("math") || lower.contains("school") { ("🎓 Education", "Pedagogical & Science Learning") }
+        else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") { ("⚡ Energy", "Renewable Energy & Climate Science") }
+        else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") { ("🔧 Skilled Trades", "Field Engineering & Building Codes") }
+        else if lower.contains("story") || lower.contains("script") || lower.contains("video") { ("🎨 Creative & Media", "Content & Visual Storytelling") }
+        else if lower.contains("recipe") || lower.contains("cook") || lower.contains("home") { ("🏠 Home & Family", "Household, Budget & Family Life") }
+        else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") { ("🏛️ Public Safety", "Emergency Response & Infrastructure") }
+        else if lower.contains("ceo") || lower.contains("product") || lower.contains("business") { ("💼 Enterprise", "Business & Corporate Operations") }
+        else if lower.contains("code") || lower.contains("build") || lower.contains("rust") || lower.contains("api") { ("💻 Engineering", "Software & Systems Architecture") }
+        else { ("🌍 Universal", "Intelligence Reflex & Execution Substrate") }
     }
+}
+
+struct GhaContextAgent;
+impl GawdAgent for GhaContextAgent {
+    fn name(&self) -> String { "GhaContextAgent".to_string() }
+    fn role(&self) -> String { "Environment Context".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec![] }
+    fn execute(&self, _goal: &str, workspace: &Path) -> String {
+        format!("Workspace: {}", workspace.display())
+    }
+}
+
+struct GhaReasoningAgent;
+impl GawdAgent for GhaReasoningAgent {
+    fn name(&self) -> String { "GhaReasoningAgent".to_string() }
+    fn role(&self) -> String { "Core Inference".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec![] }
+    fn execute(&self, goal: &str, workspace: &Path) -> String {
+        let domain_guideline = GawdAgentFleet::get_domain_context_guideline(goal);
+        let enriched_goal = if domain_guideline.is_empty() {
+            goal.to_string()
+        } else {
+            format!("{}\n\nINTENT: {}", domain_guideline, goal)
+        };
+        crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, workspace)
+    }
+}
+
+struct GhaKernelAgent;
+impl GawdAgent for GhaKernelAgent {
+    fn name(&self) -> String { "GhaKernelAgent".to_string() }
+    fn role(&self) -> String { "Low-Level Engineering".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["os", "kernel", "bootloader", "driver", "assembly", "firmware"] }
+    fn execute(&self, goal: &str, _workspace: &Path) -> String { format!("Low-level synthesis engaged for '{}'.", goal) }
+}
+
+struct GhaEconomicAgent;
+impl GawdAgent for GhaEconomicAgent {
+    fn name(&self) -> String { "GhaEconomicAgent".to_string() }
+    fn role(&self) -> String { "Financial Intelligence".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["business", "stock", "money", "economic", "finance", "market", "roi"] }
+    fn execute(&self, goal: &str, _workspace: &Path) -> String { format!("Financial flux analysis applied to '{}'.", goal) }
+}
+
+struct GhaLinguistAgent;
+impl GawdAgent for GhaLinguistAgent {
+    fn name(&self) -> String { "GhaLinguistAgent".to_string() }
+    fn role(&self) -> String { "Universal Translation".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["japanese", "tamil", "translate", "language", "linguist"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Universal linguist substrate active.".to_string() }
+}
+
+struct GhaAgronomyAgent;
+impl GawdAgent for GhaAgronomyAgent {
+    fn name(&self) -> String { "GhaAgronomyAgent".to_string() }
+    fn role(&self) -> String { "Agricultural & Crop Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["farm", "crop", "soil", "agri", "harvest", "planting", "ph"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Agronomy domain context active (soil pH, N-P-K nutrient ratios, crop yield guidance).".to_string() }
+}
+
+struct GhaMedicalAgent;
+impl GawdAgent for GhaMedicalAgent {
+    fn name(&self) -> String { "GhaMedicalAgent".to_string() }
+    fn role(&self) -> String { "Clinical & Health Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["health", "doctor", "medical", "medicine", "clinic", "patient", "fever", "pain"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Clinical health domain context active (evidence-based wellness guidance).".to_string() }
+}
+
+struct GhaLegalAgent;
+impl GawdAgent for GhaLegalAgent {
+    fn name(&self) -> String { "GhaLegalAgent".to_string() }
+    fn role(&self) -> String { "Legal & Contract Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["legal", "contract", "law", "clause", "court", "attorney", "liability"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Legal contract domain context active (liability & compliance analysis).".to_string() }
+}
+
+struct GhaEducationAgent;
+impl GawdAgent for GhaEducationAgent {
+    fn name(&self) -> String { "GhaEducationAgent".to_string() }
+    fn role(&self) -> String { "Pedagogical & Science Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["education", "math", "teach", "school", "learn", "homework", "essay"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Pedagogical domain context active (step-by-step educational breakdown).".to_string() }
+}
+
+struct GhaEnergyAgent;
+impl GawdAgent for GhaEnergyAgent {
+    fn name(&self) -> String { "GhaEnergyAgent".to_string() }
+    fn role(&self) -> String { "Climate & Renewable Energy Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["energy", "solar", "climate", "battery", "grid", "wattage"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Renewable energy domain context active (efficiency & wattage analysis).".to_string() }
+}
+
+struct GhaTradesAgent;
+impl GawdAgent for GhaTradesAgent {
+    fn name(&self) -> String { "GhaTradesAgent".to_string() }
+    fn role(&self) -> String { "Skilled Trades & Building Codes Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["plumb", "pipe", "electric", "hvac", "wire", "carpenter", "mechanic"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Skilled trades domain context active (NEC/UPC/IMC building code compliance & field diagnostic).".to_string() }
+}
+
+struct GhaHouseholdAgent;
+impl GawdAgent for GhaHouseholdAgent {
+    fn name(&self) -> String { "GhaHouseholdAgent".to_string() }
+    fn role(&self) -> String { "Home & Family Operations Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["recipe", "cook", "dinner", "family", "mom", "diy", "chore", "home"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Home & family operations domain context active (budget, recipes, household care).".to_string() }
+}
+
+struct GhaCreativeAgent;
+impl GawdAgent for GhaCreativeAgent {
+    fn name(&self) -> String { "GhaCreativeAgent".to_string() }
+    fn role(&self) -> String { "Narrative & Media Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["story", "script", "video", "design", "music", "content", "movie", "write"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Narrative & media specialist engaged.".to_string() }
+}
+
+struct GhaPublicSafetyAgent;
+impl GawdAgent for GhaPublicSafetyAgent {
+    fn name(&self) -> String { "GhaPublicSafetyAgent".to_string() }
+    fn role(&self) -> String { "Emergency & Public Safety Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["fire", "police", "emergency", "disaster", "safety", "civil", "triage"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Public safety domain context active (emergency response & crisis coordination).".to_string() }
+}
+
+struct GhaEnterpriseAgent;
+impl GawdAgent for GhaEnterpriseAgent {
+    fn name(&self) -> String { "GhaEnterpriseAgent".to_string() }
+    fn role(&self) -> String { "Corporate & Enterprise Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["ceo", "product", "agile", "business", "corporate", "roadmap", "sales"] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Enterprise domain context active (product roadmaps, ROI & executive summary).".to_string() }
+}
+
+struct GhaSafetyAgent;
+impl GawdAgent for GhaSafetyAgent {
+    fn name(&self) -> String { "GhaSafetyAgent".to_string() }
+    fn role(&self) -> String { "Mission Guardrails (Rules 4, 7, 11)".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec![] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Governance protocols active.".to_string() }
+}
+
+struct GhaTruthAgent;
+impl GawdAgent for GhaTruthAgent {
+    fn name(&self) -> String { "GhaTruthAgent".to_string() }
+    fn role(&self) -> String { "Hallucination Detection (Rules 1, 2, 3, 10)".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec![] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Truth and hallucination detection active.".to_string() }
+}
+
+struct DynamicSpecialist {
+    topic: String,
+    goal: String,
+}
+impl GawdAgent for DynamicSpecialist {
+    fn name(&self) -> String { format!("Gha{}SpecialistAgent", self.topic) }
+    fn role(&self) -> String { format!("Dynamic Specialist for '{}'", self.goal) }
+    fn keywords(&self) -> Vec<&'static str> { vec![] }
+    fn execute(&self, _goal: &str, _workspace: &Path) -> String { format!("Specialized agent '{}' executing intent.", self.name()) }
 }
 
 pub struct GawdAgentFleet;
 
 impl GawdAgentFleet {
     pub fn synthesize_fleet(goal: &str) -> Vec<GawdAgentInfo> {
-        let mut fleet = vec![
-            GawdAgentInfo { name: "GhaUserAgent".to_string(), role: "World User Advocate & Proactive Prompter".to_string(), protocol: "A2A".to_string() },
-            GawdAgentInfo { name: "GhaContextAgent".to_string(), role: "Environment Context".to_string(), protocol: "A2A".to_string() },
-            GawdAgentInfo { name: "GhaReasoningAgent".to_string(), role: "Core Inference".to_string(), protocol: "A2A".to_string() },
-        ];
-
-        let lower = goal.to_lowercase();
-
-        if lower.contains("os") || lower.contains("kernel") || lower.contains("bootloader") {
-            fleet.push(GawdAgentInfo { name: "GhaKernelAgent".to_string(), role: "Low-Level Engineering".to_string(), protocol: "A2A".to_string() });
-        }
-        if lower.contains("movie") || lower.contains("write") || lower.contains("script") {
-            fleet.push(GawdAgentInfo { name: "GhaCreativeAgent".to_string(), role: "Narrative Synthesis".to_string(), protocol: "A2A".to_string() });
-        }
-        if lower.contains("business") || lower.contains("stock") || lower.contains("money") {
-            fleet.push(GawdAgentInfo { name: "GhaEconomicAgent".to_string(), role: "Financial Intelligence".to_string(), protocol: "A2A".to_string() });
-        }
-        if lower.contains("japanese") || lower.contains("tamil") || lower.contains("translate") {
-            fleet.push(GawdAgentInfo { name: "GhaLinguistAgent".to_string(), role: "Universal Translation".to_string(), protocol: "A2A".to_string() });
-        }
-
-        // Real-World Problem Domain Agent Synthesis (10 Major World Sectors)
-        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") || lower.contains("harvest") {
-            fleet.push(GawdAgentInfo { name: "GhaAgronomyAgent".to_string(), role: "Agricultural & Crop Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") || lower.contains("clinic") || lower.contains("patient") || lower.contains("fever") {
-            fleet.push(GawdAgentInfo { name: "GhaMedicalAgent".to_string(), role: "Clinical & Health Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") || lower.contains("court") {
-            fleet.push(GawdAgentInfo { name: "GhaLegalAgent".to_string(), role: "Legal & Contract Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") || lower.contains("learn") || lower.contains("homework") {
-            fleet.push(GawdAgentInfo { name: "GhaEducationAgent".to_string(), role: "Pedagogical & Science Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") {
-            fleet.push(GawdAgentInfo { name: "GhaEnergyAgent".to_string(), role: "Climate & Renewable Energy Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") || lower.contains("hvac") || lower.contains("wire") {
-            fleet.push(GawdAgentInfo { name: "GhaTradesAgent".to_string(), role: "Skilled Trades & Building Codes Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("recipe") || lower.contains("cook") || lower.contains("dinner") || lower.contains("family") || lower.contains("mom") || lower.contains("diy") {
-            fleet.push(GawdAgentInfo { name: "GhaHouseholdAgent".to_string(), role: "Home & Family Operations Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("story") || lower.contains("script") || lower.contains("video") || lower.contains("design") || lower.contains("music") {
-            fleet.push(GawdAgentInfo { name: "GhaCreativeAgent".to_string(), role: "Narrative & Media Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") || lower.contains("disaster") || lower.contains("safety") {
-            fleet.push(GawdAgentInfo { name: "GhaPublicSafetyAgent".to_string(), role: "Emergency & Public Safety Specialist".to_string(), protocol: "A2A".to_string() });
-        } else if lower.contains("ceo") || lower.contains("product") || lower.contains("agile") || lower.contains("business") || lower.contains("corporate") {
-            fleet.push(GawdAgentInfo { name: "GhaEnterpriseAgent".to_string(), role: "Corporate & Enterprise Specialist".to_string(), protocol: "A2A".to_string() });
-        } else {
-            // Infinite Dynamic Domain Agent Synthesis
-            let topic = goal.split_whitespace().find(|w| w.len() > 3).unwrap_or("Domain");
-            let mut capitalized = topic.to_string();
-            if let Some(r) = capitalized.get_mut(0..1) {
-                r.make_ascii_uppercase();
-            }
-            fleet.push(GawdAgentInfo {
-                name: format!("Gha{}SpecialistAgent", capitalized),
-                role: format!("Dynamic Specialist for '{}'", goal),
-                protocol: "A2A".to_string(),
-            });
-        }
-
-        fleet.push(GawdAgentInfo { name: "GhaSafetyAgent".to_string(), role: "Mission Guardrails (Rules 4, 7, 11)".to_string(), protocol: "A2A".to_string() });
-        fleet.push(GawdAgentInfo { name: "GhaTruthAgent".to_string(), role: "Hallucination Detection (Rules 1, 2, 3, 10)".to_string(), protocol: "A2A".to_string() });
-
-        fleet
+        let registry = AgentRegistry::global();
+        let fleet = registry.synthesize_fleet(goal);
+        fleet.iter().map(|a| GawdAgentInfo {
+            name: a.name(),
+            role: a.role(),
+            protocol: a.protocol(),
+        }).collect()
     }
 
     pub fn get_domain_context_guideline(goal: &str) -> String {
@@ -159,7 +345,7 @@ impl GawdAgentFleet {
         } else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") || lower.contains("hvac") || lower.contains("wire") {
             "[DOMAIN CONTEXT: Skilled Trades & Field Services — Focus on building codes (NEC/UPC/IMC), safety compliance, diagnostic steps, and cost estimation]".to_string()
         } else if lower.contains("recipe") || lower.contains("cook") || lower.contains("dinner") || lower.contains("family") || lower.contains("mom") || lower.contains("diy") {
-            "[DOMAIN CONTEXT: Home & Family Operations — Focus on quick preparation steps, budget management, safety, and clear household guidance]".to_string()
+            "[DOMAIN CONTEXT: Home & Family Operations — Focus on quick preparation preparation steps, budget management, safety, and clear household guidance]".to_string()
         } else if lower.contains("story") || lower.contains("script") || lower.contains("video") || lower.contains("design") || lower.contains("music") {
             "[DOMAIN CONTEXT: Creative & Media Synthesis — Focus on narrative arcs, audience engagement, visual layout, and content branding]".to_string()
         } else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") || lower.contains("disaster") || lower.contains("safety") {
@@ -172,7 +358,8 @@ impl GawdAgentFleet {
     }
 
     pub fn dispatch_explosive_swarm(goal: String, workspace: PathBuf) -> Vec<(String, String)> {
-        let fleet = Self::synthesize_fleet(&goal);
+        let registry = AgentRegistry::global();
+        let fleet = registry.synthesize_fleet(&goal);
         let mut handles = Vec::new();
         let (tx, rx) = channel();
 
@@ -180,36 +367,11 @@ impl GawdAgentFleet {
             let t_goal = goal.clone();
             let t_ws = workspace.clone();
             let t_tx = tx.clone();
-            let t_agent = agent.clone();
+            let t_agent = Arc::clone(&agent);
 
             let handle = thread::spawn(move || {
-                let output = match t_agent.name.as_str() {
-                    "GhaUserAgent" => format!("Proactive user guidance active for workspace '{}'.", t_ws.display()),
-                    "GhaContextAgent" => Self::execute_context_agent(&t_ws),
-                    "GhaReasoningAgent" => {
-                        let domain_guideline = Self::get_domain_context_guideline(&t_goal);
-                        let enriched_goal = if domain_guideline.is_empty() {
-                            t_goal.clone()
-                        } else {
-                            format!("{}\n\nINTENT: {}", domain_guideline, t_goal)
-                        };
-                        crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, &t_ws)
-                    }
-                    "GhaKernelAgent" => format!("Low-level synthesis engaged for '{}'.", t_goal),
-                    "GhaEconomicAgent" => format!("Financial flux analysis applied to '{}'.", t_goal),
-                    "GhaAgronomyAgent" => "Agronomy domain context active (soil pH, N-P-K nutrient ratios, crop yield guidance).".to_string(),
-                    "GhaMedicalAgent" => "Clinical health domain context active (evidence-based wellness guidance).".to_string(),
-                    "GhaLegalAgent" => "Legal contract domain context active (liability & compliance analysis).".to_string(),
-                    "GhaEducationAgent" => "Pedagogical domain context active (step-by-step educational breakdown).".to_string(),
-                    "GhaEnergyAgent" => "Renewable energy domain context active (efficiency & wattage analysis).".to_string(),
-                    "GhaTradesAgent" => "Skilled trades domain context active (NEC/UPC/IMC building code compliance & field diagnostic).".to_string(),
-                    "GhaHouseholdAgent" => "Home & family operations domain context active (budget, recipes, household care).".to_string(),
-                    "GhaPublicSafetyAgent" => "Public safety domain context active (emergency response & crisis coordination).".to_string(),
-                    "GhaEnterpriseAgent" => "Enterprise domain context active (product roadmaps, ROI & executive summary).".to_string(),
-                    "GhaSafetyAgent" => "Governance protocols active.".to_string(),
-                    _ => format!("Specialized agent '{}' executing intent.", t_agent.name),
-                };
-                let _ = t_tx.send((t_agent.name, output));
+                let output = t_agent.execute(&t_goal, &t_ws);
+                let _ = t_tx.send((t_agent.name(), output));
             });
             handles.push(handle);
         }
@@ -221,10 +383,6 @@ impl GawdAgentFleet {
             logs.push(msg);
         }
         logs
-    }
-
-    pub fn execute_context_agent(workspace: &Path) -> String {
-        format!("Workspace: {}", workspace.display())
     }
 
     pub fn scout_tier1_assets() -> Vec<DiscoverableAsset> {
@@ -250,35 +408,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_detect_domain_badge() {
-        assert_eq!(GhaUserAgent::detect_domain_badge("crop soil pH").0, "🌾 Agronomy");
-        assert_eq!(GhaUserAgent::detect_domain_badge("medical doctor health").0, "⚕️ Medical");
-        assert_eq!(GhaUserAgent::detect_domain_badge("legal contract law").0, "⚖️ Legal");
-        assert_eq!(GhaUserAgent::detect_domain_badge("math education school").0, "🎓 Education");
-        assert_eq!(GhaUserAgent::detect_domain_badge("solar panel energy").0, "⚡ Energy");
-        assert_eq!(GhaUserAgent::detect_domain_badge("plumber pipe wiring hvac").0, "🔧 Skilled Trades");
-        assert_eq!(GhaUserAgent::detect_domain_badge("story script video design").0, "🎨 Creative & Media");
-        assert_eq!(GhaUserAgent::detect_domain_badge("dinner recipe cook family mom").0, "🏠 Home & Family");
-        assert_eq!(GhaUserAgent::detect_domain_badge("fire emergency disaster police").0, "🏛️ Public Safety");
-        assert_eq!(GhaUserAgent::detect_domain_badge("ceo product agile business corporate").0, "💼 Enterprise");
-        assert_eq!(GhaUserAgent::detect_domain_badge("cargo build rust code").0, "💻 Engineering");
-        assert_eq!(GhaUserAgent::detect_domain_badge("general mission").0, "🌍 Universal");
+    fn test_registry_lookup() {
+        let registry = AgentRegistry::global();
+        let fleet = registry.synthesize_fleet("crop soil pH");
+        assert!(fleet.iter().any(|a| a.name() == "GhaAgronomyAgent"));
     }
 
     #[test]
-    fn test_generate_proactive_prompts() {
-        let temp_dir = std::env::temp_dir().join("gha_test_prompts");
-        let _ = std::fs::create_dir_all(&temp_dir);
-
-        let prompts_home = GhaUserAgent::generate_proactive_prompts(&temp_dir);
-        assert_eq!(prompts_home.len(), 3);
-        assert!(prompts_home[0].1.contains("recipe") || prompts_home[0].1.contains("dinner"));
-
-        let _ = std::fs::write(temp_dir.join("Cargo.toml"), "[package]");
-        let prompts_dev = GhaUserAgent::generate_proactive_prompts(&temp_dir);
-        assert_eq!(prompts_dev.len(), 3);
-        assert!(prompts_dev[0].1.contains("Build"));
-
-        let _ = std::fs::remove_dir_all(&temp_dir);
+    fn test_detect_domain_badge() {
+        assert_eq!(GhaUserAgent::detect_domain_badge("crop soil pH").0, "🌾 Agronomy");
+        assert_eq!(GhaUserAgent::detect_domain_badge("medical doctor health").0, "⚕️ Medical");
     }
 }

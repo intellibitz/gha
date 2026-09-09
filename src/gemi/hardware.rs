@@ -2,10 +2,32 @@
 // 100% Rust implementation for autonomous hardware profiling
 
 use std::process::Command;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HardwareProfile {
+    pub cpus: usize,
+    pub gpu_info: String,
+    pub ram_gb: usize,
+    pub acceleration_active: bool,
+}
 
 pub struct HardwareProfiler;
 
 impl HardwareProfiler {
+    pub fn get_profile() -> HardwareProfile {
+        let (cpus, gpu_info) = Self::profile();
+        let ram_gb = Self::determine_total_ram_gb();
+        let acceleration_active = gpu_info.contains("Active") || gpu_info.contains("Offload");
+
+        HardwareProfile {
+            cpus,
+            gpu_info,
+            ram_gb,
+            acceleration_active,
+        }
+    }
+
     pub fn profile() -> (usize, String) {
         let cpus = std::thread::available_parallelism()
             .map(|n| n.get())

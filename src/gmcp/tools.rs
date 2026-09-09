@@ -316,11 +316,11 @@ impl ToolRegistry {
                 report.push_str(&format!("# gha System Status (v{})\n\n", crate::GHA_VERSION));
 
                 // 1. Workspace & Hardware
-                let (cpus, gpu) = HardwareProfiler::profile();
+                let hardware = HardwareProfiler::get_profile();
                 report.push_str("## Workspace & Hardware\n");
                 report.push_str(&format!("- Impact Scope: {}\n", workspace.display()));
                 report.push_str("- Global Sandbox: ACTIVE\n");
-                report.push_str(&format!("- Hardware: {} CPUs | {}\n\n", cpus, gpu));
+                report.push_str(&format!("- Hardware: {} CPUs | {} | {}GB RAM\n\n", hardware.cpus, hardware.gpu_info, hardware.ram_gb));
 
                 // 2. Active Tier Status
                 let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();

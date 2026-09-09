@@ -67,7 +67,7 @@ impl GmaMasterAgent {
 
     pub fn solve(&self, goal: &str, workspace: &Path, version: &str) -> String {
         crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "MISSION_START", goal);
-        let (num_cpus, gpu_info) = HardwareProfiler::profile();
+        let hardware = HardwareProfiler::get_profile();
 
         let (a2a_logs, fleet) = GmasSupervisor::supervise_mission(goal, workspace);
         let active_tools = ToolRegistry::list_tools();
@@ -124,7 +124,7 @@ impl GmaMasterAgent {
             report.push_str("## Environment\n");
             report.push_str(&format!("- Engine: v{}\n", version));
             report.push_str(&format!("- Fleet: {} agents active\n", fleet.len()));
-            report.push_str(&format!("- Hardware: {} CPUs | {}\n\n", num_cpus, gpu_info));
+            report.push_str(&format!("- Hardware: {} CPUs | {} | {}GB RAM\n\n", hardware.cpus, hardware.gpu_info, hardware.ram_gb));
         }
 
         report.push_str("## Intent\n");
