@@ -25,7 +25,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.346";
+pub const GHA_VERSION: &str = "0.1.347";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -47,7 +47,7 @@ impl Completer for GhaHelper {
             "/help", "/domain", "/simple", "/backup", "/restore",
             "/audit", "/memory", "/forget", "/setkey", "/renew", "/agents",
             "/engines", "/clients", "/servers", "/debug", "/models", "/benchmark",
-            "/compliance", "/sync", "/release", "/evolve", "/distill", "/swarm", "/services",
+            "/compliance", "/sync", "/release", "/evolve", "/distill", "/swarm", "/resume", "/services",
             "/status", "/schedule", "/export_doc", "/clear", "/exit",
         ];
 
@@ -107,6 +107,7 @@ fn print_help() {
     println!("  /release, :release       Execute full GHA release & push cycle");
     println!("  /evolve, :evolve         Analyze patterns and propose substrate evolution");
     println!("  /swarm, :swarm           Inspect cluster mesh & hardware capabilities");
+    println!("  /resume, :resume         Resume interrupted mission from local or cluster");
     println!("  /distill <intent>        Distill high-latency reasoning into native reflex");
     println!("  /services, :services     List running services");
     println!("  /status, :status         Inspect health & hardware status");
@@ -184,8 +185,8 @@ fn run_interactive_shell(cwd: &Path) {
     let gma = GmaMasterAgent::new();
 
     if let Some(interrupted_intent) = SandboxManager::check_interrupted_checkpoint(cwd) {
-        println!("{}> Interrupted mission detected: \"{}\". Resuming execution...{}\n", COLOR_GREEN, interrupted_intent, COLOR_RESET);
-        let clean_answer = gma.solve_clean(&interrupted_intent, cwd, GHA_VERSION);
+        println!("{}> Interrupted mission detected: \"{}\". Resuming execution...{}\n", COLOR_GREEN, interrupted_intent.intent, COLOR_RESET);
+        let clean_answer = gma.solve_clean(&interrupted_intent.intent, cwd, GHA_VERSION);
         println!("{}\n", clean_answer);
     }
 
@@ -468,6 +469,25 @@ fn run_interactive_shell(cwd: &Path) {
                 let res = ToolRegistry::execute_tool("swarm_status", "", cwd);
                 println!("\n{}", res);
             }
+            "/resume" | ":resume" | "resume" => {
+                let local = SandboxManager::check_interrupted_checkpoint(cwd);
+                if let Some(cp) = local {
+                     println!("\n🔄 Resuming mission: \"{}\"", cp.intent);
+                     println!("   Completed steps: {}", cp.completed_tools.join(", "));
+                     let report = gma.solve(&cp.intent, cwd, GHA_VERSION);
+                     println!("\n{}", report);
+                } else {
+                     println!("\n🔍 Scanning cluster for replicated checkpoints...");
+                     let cluster = crate::gawd::gmas::GmasSupervisor::query_cluster_checkpoints();
+                     if let Some(cp) = cluster.first() {
+                          println!("🌐 Found replicated mission: \"{}\"", cp.intent);
+                          let report = gma.solve(&cp.intent, cwd, GHA_VERSION);
+                          println!("\n{}", report);
+                     } else {
+                          println!("No resumeable missions found.");
+                     }
+                }
+            }
             "/distill" | ":distill" | "distill" => {
                 let arg = command.trim_start_matches("/distill").trim_start_matches(":distill").trim();
                 let res = ToolRegistry::execute_tool("distill", arg, cwd);
@@ -639,6 +659,25 @@ fn main() {
         "swarm" | ":swarm" | "/swarm" => {
             let res = ToolRegistry::execute_tool("swarm_status", "", &cwd);
             println!("{}", res);
+        }
+        "resume" | ":resume" | "/resume" => {
+            let local = SandboxManager::check_interrupted_checkpoint(&cwd);
+            if let Some(cp) = local {
+                 println!("🔄 Resuming mission: \"{}\"", cp.intent);
+                 let gma = GmaMasterAgent::new();
+                 let report = gma.solve(&cp.intent, &cwd, GHA_VERSION);
+                 println!("{}", report);
+            } else {
+                 let cluster = crate::gawd::gmas::GmasSupervisor::query_cluster_checkpoints();
+                 if let Some(cp) = cluster.first() {
+                      println!("🌐 Resuming replicated mission: \"{}\"", cp.intent);
+                      let gma = GmaMasterAgent::new();
+                      let report = gma.solve(&cp.intent, &cwd, GHA_VERSION);
+                      println!("{}", report);
+                 } else {
+                      println!("No resumeable missions found.");
+                 }
+            }
         }
         "distill" | ":distill" | "/distill" => {
             let intent = args.get(1).map(|s| s.as_str()).unwrap_or("");

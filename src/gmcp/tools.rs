@@ -17,6 +17,7 @@ use crate::gemi::engine::GemiEngine;
 use crate::daemon::admin::GhaAdmin;
 use crate::daemon::evolution::EvolutionManager;
 use crate::gawd::reflex_synth::ReflexSynthesizer;
+use crate::sandbox::manager::NeuralCheckpoint;
 use crate::gmcp::client::GmcpClient;
 use crate::error::{EaiError, EaiResult};
 
@@ -105,6 +106,8 @@ impl ToolRegistry {
             Arc::new(EvolveTool),
             Arc::new(DistillTool),
             Arc::new(SwarmStatusTool),
+            Arc::new(ReplicateStateTool),
+            Arc::new(GetCheckpointsTool),
             Arc::new(SelfHealBuildTool),
             Arc::new(InfraCommandTool { name: "docker_ps".into(), bin: "docker".into(), args: vec!["ps", "--format", "table {{.Names}}\t{{.Status}}"] }),
             Arc::new(InfraCommandTool { name: "docker_build".into(), bin: "docker".into(), args: vec!["build", "-t", "gha-app:latest", "."] }),
@@ -779,6 +782,47 @@ impl GhaTool for SwarmStatusTool {
         }
 
         Ok(out)
+    }
+}
+
+struct ReplicateStateTool;
+impl GhaTool for ReplicateStateTool {
+    fn name(&self) -> String { "replicate_state".to_string() }
+    fn description(&self) -> String { "Replicate neural checkpoint state to local workstation (Rule 16)".to_string() }
+    fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
+        if let Ok(checkpoint) = serde_json::from_str::<NeuralCheckpoint>(arg) {
+             let replica_dir = workspace.join(".gha/replicas");
+             fs::create_dir_all(&replica_dir)?;
+             let file_path = replica_dir.join(format!("replica_{}.json", checkpoint.timestamp));
+             fs::write(&file_path, arg)?;
+             return Ok(format!("Sync complete: Replicated mission '{}' to cluster.", checkpoint.intent));
+        }
+        Err(EaiError::Protocol("Invalid checkpoint payload".into()))
+    }
+}
+
+struct GetCheckpointsTool;
+impl GhaTool for GetCheckpointsTool {
+    fn name(&self) -> String { "get_checkpoints".to_string() }
+    fn description(&self) -> String { "Retrieve resumeable neural checkpoints from this node".to_string() }
+    fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
+        let mut list = Vec::new();
+        if let Some(local) = crate::sandbox::manager::SandboxManager::check_interrupted_checkpoint(workspace) {
+            list.push(local);
+        }
+
+        let replica_dir = workspace.join(".gha/replicas");
+        if let Ok(entries) = fs::read_dir(&replica_dir) {
+            for entry in entries.flatten() {
+                if let Ok(content) = fs::read_to_string(entry.path()) {
+                    if let Ok(cp) = serde_json::from_str::<NeuralCheckpoint>(&content) {
+                        list.push(cp);
+                    }
+                }
+            }
+        }
+
+        Ok(serde_json::to_string(&list).unwrap_or_else(|_| "[]".into()))
     }
 }
 

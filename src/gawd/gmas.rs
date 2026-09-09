@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use super::agents::{GawdAgentFleet, GawdAgentInfo};
 use crate::gemi::hardware::HardwareProfiler;
+use crate::sandbox::manager::NeuralCheckpoint;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct A2AMessage {
@@ -206,5 +207,31 @@ impl GmasSupervisor {
              }
         }
         None
+    }
+
+    pub fn replicate_checkpoint(checkpoint: &NeuralCheckpoint) {
+        let nodes = Self::list_cluster_nodes();
+        let payload = serde_json::to_string(checkpoint).unwrap_or_default();
+
+        for node in nodes {
+            if node.node_type == "WORKSTATION_NODE" && node.node_id != "gha-local-master" {
+                let _ = Self::dispatch_peer_task(&node.address, "replicate_state", &payload);
+            }
+        }
+    }
+
+    pub fn query_cluster_checkpoints() -> Vec<NeuralCheckpoint> {
+        let nodes = Self::list_cluster_nodes();
+        let mut checkpoints = Vec::new();
+
+        for node in nodes {
+            if node.node_id != "gha-local-master" {
+                let res = Self::dispatch_peer_task(&node.address, "get_checkpoints", "");
+                if let Ok(list) = serde_json::from_str::<Vec<NeuralCheckpoint>>(&res) {
+                    checkpoints.extend(list);
+                }
+            }
+        }
+        checkpoints
     }
 }

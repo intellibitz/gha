@@ -45,6 +45,15 @@ pub struct GlobalMcpEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NeuralCheckpoint {
+    pub intent: String,
+    pub timestamp: u64,
+    pub completed_tools: Vec<String>,
+    pub blackboard: std::collections::HashMap<String, String>,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GhaConfig {
     pub gmcp_port: u16,
     pub gemi_port: u16,
@@ -225,29 +234,24 @@ impl SandboxManager {
         global_dir.join("bin").is_dir()
     }
 
-    pub fn save_mission_checkpoint(workspace: &Path, intent: &str, completed_tools: &[String], status: &str) {
+    pub fn save_mission_checkpoint(workspace: &Path, checkpoint: &NeuralCheckpoint) {
         let gha_dir = workspace.join(".gha");
         let _ = fs::create_dir_all(&gha_dir);
         let checkpoint_file = gha_dir.join("mission_checkpoint.json");
-        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-        let checkpoint = serde_json::json!({
-            "intent": intent,
-            "timestamp": timestamp,
-            "completed_tools": completed_tools,
-            "status": status
-        });
-        let _ = fs::write(&checkpoint_file, checkpoint.to_string());
+        if let Ok(json) = serde_json::to_string(checkpoint) {
+            let _ = fs::write(&checkpoint_file, json);
+        }
     }
 
-    pub fn check_interrupted_checkpoint(workspace: &Path) -> Option<String> {
+    pub fn check_interrupted_checkpoint(workspace: &Path) -> Option<NeuralCheckpoint> {
         let checkpoint_file = workspace.join(".gha/mission_checkpoint.json");
         if checkpoint_file.is_file()
             && let Ok(content) = fs::read_to_string(&checkpoint_file)
-            && let Ok(val) = serde_json::from_str::<serde_json::Value>(&content)
-            && val.get("status").and_then(|s| s.as_str()) == Some("IN_PROGRESS")
-            && let Some(intent) = val.get("intent").and_then(|i| i.as_str())
+            && let Ok(checkpoint) = serde_json::from_str::<NeuralCheckpoint>(&content)
         {
-            return Some(intent.to_string());
+            if checkpoint.status == "IN_PROGRESS" {
+                return Some(checkpoint);
+            }
         }
         None
     }
