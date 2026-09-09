@@ -1,6 +1,6 @@
 # gha
 
-![GHA Version](https://img.shields.io/badge/version-v0.1.294-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
+![GHA Version](https://img.shields.io/badge/version-v0.1.296-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
 
 **GHA (Exponential Intelligence for Any AI Substrate)** empowers any world user to master any mission through a native Rust intelligence reflex engine. It runs 100% offline, operates with microsecond reflexes (<2ms startup), and scales natively from embedded hardware to multi-GPU workstations.
 

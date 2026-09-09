@@ -5,6 +5,7 @@ use anyhow::{Result, anyhow};
 use candle_core::Device;
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
+use super::alpha::GhaAlphaModel;
 
 pub struct GhaPulse;
 
@@ -46,7 +47,16 @@ impl GhaPulse {
             }
         }
 
-        // 2. Pattern Matchers (Structured Reflex)
+        // 2. Neural Reflex (GHA-Alpha Inference)
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let global_dir = home.join(".gha");
+        if let Ok(model) = GhaAlphaModel::load(&global_dir) {
+             if let Ok(neural_action) = model.predict_intent(prompt) {
+                 return Ok(neural_action);
+             }
+        }
+
+        // 3. Pattern Matchers (Structured Reflex)
         // Preparation for WASI: Move from shell-dependent splitting to robust trie/parsing
         if lower.contains("create") || lower.contains("write") {
              if let Some(containing_idx) = lower.find("containing") {

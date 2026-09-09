@@ -656,10 +656,9 @@ impl GhaTool for OrchestrateTool {
 struct ExecCommandTool;
 impl GhaTool for ExecCommandTool {
     fn name(&self) -> String { "exec_command".to_string() }
-    fn description(&self) -> String { "Execute system shell command".to_string() }
+    fn description(&self) -> String { "Execute system shell command (Hardened)".to_string() }
     fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
-        let out = Command::new("sh").arg("-c").arg(arg).current_dir(workspace).output().map_err(|e| EaiError::Hardware(e.to_string()))?;
-        Ok(format!("STDOUT:\n{}\nSTDERR:\n{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr)))
+        crate::sandbox::wasm::WasiSandbox::execute_hardened_command(arg, workspace)
     }
 }
 

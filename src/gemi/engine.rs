@@ -83,7 +83,7 @@ impl GemiEngine {
         format!("❌ CLOUD_BRAIN_UNAVAILABLE: No responders. Diagnostics:\n  {}", errors.join("\n  "))
     }
 
-    fn scout_tier2_providers(prompt: &str, workspace: &Path) -> (Option<String>, Vec<String>) {
+    fn scout_tier2_providers(prompt: &str, _workspace: &Path) -> (Option<String>, Vec<String>) {
         use std::sync::mpsc::channel;
         use std::thread;
         use std::time::Duration;

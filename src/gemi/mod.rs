@@ -1,3 +1,4 @@
+pub mod alpha;
 pub mod engine;
 pub mod hardware;
 pub mod models;
