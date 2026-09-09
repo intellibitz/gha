@@ -13,6 +13,15 @@ pub enum ModelTier {
     Standard = 2,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ProviderType {
+    OpenAI,
+    Google,
+    Anthropic,
+    Ollama,
+    LocalGGUF,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelInfo {
     pub name: String,
@@ -22,6 +31,9 @@ pub struct ModelInfo {
     pub is_local: bool,
     pub tier: ModelTier,
     pub latency_ms: Option<u128>,
+    pub provider: ProviderType,
+    pub api_base: Option<String>,
+    pub env_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,6 +58,7 @@ pub struct GhaConfig {
     pub bootstrap_mcp_servers: Vec<GlobalMcpEntry>,
     pub cloud_scout_timeout_secs: u64,
     pub beacon_interval_secs: u64,
+    pub local_scan_paths: Vec<String>,
 }
 
 impl Default for GhaConfig {
@@ -68,6 +81,9 @@ impl Default for GhaConfig {
                     is_local: false,
                     tier: ModelTier::Premier,
                     latency_ms: None,
+                    provider: ProviderType::Google,
+                    api_base: Some("https://generativelanguage.googleapis.com/v1beta".to_string()),
+                    env_key: Some("GEMINI_API_KEY".to_string()),
                 },
                 ModelInfo {
                     name: "OpenAI GPT-4o".to_string(),
@@ -77,6 +93,9 @@ impl Default for GhaConfig {
                     is_local: false,
                     tier: ModelTier::Premier,
                     latency_ms: None,
+                    provider: ProviderType::OpenAI,
+                    api_base: Some("https://api.openai.com/v1".to_string()),
+                    env_key: Some("OPENAI_API_KEY".to_string()),
                 },
                 ModelInfo {
                     name: "Anthropic Claude 3.5 Sonnet".to_string(),
@@ -86,6 +105,21 @@ impl Default for GhaConfig {
                     is_local: false,
                     tier: ModelTier::Premier,
                     latency_ms: None,
+                    provider: ProviderType::Anthropic,
+                    api_base: Some("https://api.anthropic.com/v1".to_string()),
+                    env_key: Some("ANTHROPIC_API_KEY".to_string()),
+                },
+                ModelInfo {
+                    name: "Groq Llama 3 70B".to_string(),
+                    registry: "GHA Tier 2 Registry".to_string(),
+                    model_id: "groq/llama3-70b-8192".to_string(),
+                    description: "Ultra-low latency cloud reasoning".to_string(),
+                    is_local: false,
+                    tier: ModelTier::Specialist,
+                    latency_ms: None,
+                    provider: ProviderType::OpenAI,
+                    api_base: Some("https://api.groq.com/openai/v1".to_string()),
+                    env_key: Some("GROQ_API_KEY".to_string()),
                 },
             ],
             bootstrap_mcp_servers: vec![
@@ -95,6 +129,7 @@ impl Default for GhaConfig {
             ],
             cloud_scout_timeout_secs: 8,
             beacon_interval_secs: 30,
+            local_scan_paths: Vec::new(),
         }
     }
 }

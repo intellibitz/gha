@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 use super::hardware::HardwareProfiler;
-use crate::sandbox::manager::{ModelTier, ModelInfo};
+use crate::sandbox::manager::{ModelTier, ModelInfo, ProviderType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelDownloadProgress {
@@ -60,17 +60,11 @@ impl ModelManager {
 
         // 1. Load Cloud Models from Dynamic Configuration
         for model in cfg.cloud_models {
-            let env_key = match model.model_id.as_str() {
-                m if m.contains("gemini") => "GEMINI_API_KEY",
-                m if m.contains("gpt") => "OPENAI_API_KEY",
-                m if m.contains("claude") => "ANTHROPIC_API_KEY",
-                m if m.contains("deepseek") => "DEEPSEEK_API_KEY",
-                m if m.contains("mistral") => "MISTRAL_API_KEY",
-                m if m.contains("groq") => "GROQ_API_KEY",
-                _ => "",
-            };
-
-            if env_key.is_empty() || std::env::var(env_key).is_ok() {
+            if let Some(env_key) = &model.env_key {
+                if std::env::var(env_key).is_ok() {
+                    list.push(model);
+                }
+            } else {
                 list.push(model);
             }
         }
@@ -99,6 +93,9 @@ impl ModelManager {
                         is_local: true,
                         tier: ModelTier::Specialist,
                         latency_ms: None,
+                        provider: ProviderType::Ollama,
+                        api_base: Some("http://localhost:11434".to_string()),
+                        env_key: None,
                     });
                 }
             }
@@ -113,6 +110,9 @@ impl ModelManager {
                 is_local: true,
                 tier: ModelTier::Standard,
                 latency_ms: Some(0),
+                provider: ProviderType::LocalGGUF,
+                api_base: None,
+                env_key: None,
             });
         }
 
@@ -314,12 +314,23 @@ impl ModelManager {
         let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_default();
         let home_path = PathBuf::from(home);
 
+        let global_dir = home_path.join(".gha");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+
         if workspace.is_dir() {
             Self::recursive_scan_model_dir(workspace, &mut discovered, 0);
         }
 
         if home_path.is_dir() {
             Self::recursive_scan_model_dir(&home_path, &mut discovered, 0);
+        }
+
+        // 🚀 Fully Flexible Local Scanning: Use custom paths from config
+        for path_str in cfg.local_scan_paths {
+            let p = PathBuf::from(path_str);
+            if p.is_dir() {
+                Self::recursive_scan_model_dir(&p, &mut discovered, 0);
+            }
         }
 
         discovered.sort_by(|a, b| a.model_id.cmp(&b.model_id));
@@ -372,6 +383,9 @@ impl ModelManager {
                                 is_local: true,
                                 tier: ModelTier::Standard,
                                 latency_ms: None,
+                                provider: ProviderType::LocalGGUF,
+                                api_base: None,
+                                env_key: None,
                             });
                         }
                     }

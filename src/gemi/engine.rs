@@ -30,8 +30,8 @@ impl GemiEngine {
         let global_dir = home.join(".gha");
         let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
 
-        let selected_engine = super::models::ModelManager::get_selected_engine().unwrap_or(cfg.default_engine).to_lowercase();
-        let selected_model = super::models::ModelManager::get_selected_model().unwrap_or(cfg.default_model);
+        let selected_engine = super::models::ModelManager::get_selected_engine().unwrap_or(cfg.default_engine.clone()).to_lowercase();
+        let selected_model = super::models::ModelManager::get_selected_model().unwrap_or(cfg.default_model.clone());
 
         // 🚀 Strict Offline Enforcement: Default to local unless explicitly requested
         if selected_engine == "gemi" || selected_engine == "cloud" {
@@ -51,23 +51,14 @@ impl GemiEngine {
         }
 
         if !selected_model.is_empty() {
-            let lower_selected = selected_model.to_lowercase();
-            if lower_selected.contains("gemini") {
-                if let Ok(res) = Self::execute_gemini(prompt) {
-                    return format!("[Tier 2 GEMI: Google Cloud]:\n{}", res);
-                }
-            } else if lower_selected.contains("openai") || lower_selected.contains("gpt") {
-                if let Ok(res) = Self::execute_openai(prompt) {
-                    return format!("[Tier 2 GEMI: OpenAI Cloud]:\n{}", res);
-                }
-            } else if lower_selected.contains("groq") {
-                if let Ok(res) = Self::execute_groq(prompt) {
-                    return format!("[Tier 2 GEMI: Groq Cloud]:\n{}", res);
-                }
-            } else if lower_selected.contains("ollama") {
-                let res = Self::execute_local_ollama(prompt, &selected_model);
-                if !res.contains("ERROR") {
-                    return res;
+            let models = super::models::ModelManager::list_models(workspace);
+            if let Some(model_info) = models.iter().find(|m| m.model_id == selected_model || m.name == selected_model) {
+                if !model_info.is_local {
+                    if let Ok(res) = Self::execute_generic_cloud(model_info, prompt) {
+                        return format!("[Tier 2 GEMI: {}]:\n{}", model_info.name, res);
+                    }
+                } else if model_info.provider == crate::sandbox::manager::ProviderType::Ollama {
+                    return Self::execute_local_ollama(prompt, &model_info.model_id);
                 }
             }
         }
@@ -93,21 +84,16 @@ impl GemiEngine {
         let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
 
         let (tx, rx) = channel();
-        let providers = vec!["google", "groq", "openai"];
         let mut handle_count = 0;
 
-        for provider in providers {
+        for model in cfg.cloud_models {
             let t_tx = tx.clone();
             let t_prompt = prompt.to_string();
-            let provider_name = provider.to_string();
+            let t_model = model.clone();
 
             thread::spawn(move || {
-                let res = match provider_name.as_str() {
-                    "google" => Self::execute_gemini(&t_prompt).map(|r| format!("[Tier 2 GEMI: Google Cloud]:\n{}", r)),
-                    "groq" => Self::execute_groq(&t_prompt).map(|r| format!("[Tier 2 GEMI: Groq Cloud]:\n{}", r)),
-                    "openai" => Self::execute_openai(&t_prompt).map(|r| format!("[Tier 2 GEMI: OpenAI Cloud]:\n{}", r)),
-                    _ => Err(anyhow!("Unknown provider")),
-                };
+                let res = Self::execute_generic_cloud(&t_model, &t_prompt)
+                    .map(|r| format!("[Tier 2 GEMI: {}]:\n{}", t_model.name, r));
                 let _ = t_tx.send(res);
             });
             handle_count += 1;
@@ -132,42 +118,50 @@ impl GemiEngine {
         (None, errors)
     }
 
-    fn execute_groq(prompt: &str) -> Result<String> {
-        let key = std::env::var("GROQ_API_KEY")?;
-        let model = std::env::var("GROQ_MODEL").unwrap_or_else(|_| "llama3-70b-8192".to_string());
-        let payload = json!({
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 1000
-        });
-        let out = Self::curl_pipe("https://api.groq.com/openai/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
-        let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Groq failure"))?;
-        Ok(Self::cleanse_artifact(text))
-    }
+    pub fn execute_generic_cloud(model: &crate::sandbox::manager::ModelInfo, prompt: &str) -> Result<String> {
+        use crate::sandbox::manager::ProviderType;
 
-    fn execute_gemini(prompt: &str) -> Result<String> {
-        let key = std::env::var("GEMINI_API_KEY")?;
-        let model = std::env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-1.5-flash".to_string());
-        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}", model, key.trim());
-        let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
-        let out = Self::curl_pipe(&url, vec![], payload)?;
-        let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure"))?;
-        Ok(Self::cleanse_artifact(text))
-    }
+        let env_key = model.env_key.as_ref().ok_or_else(|| anyhow!("No environment key configured for model"))?;
+        let api_key = std::env::var(env_key).map_err(|_| anyhow!("API key '{}' not set in environment", env_key))?;
+        let api_base = model.api_base.as_ref().ok_or_else(|| anyhow!("No API base URL configured for model"))?;
 
-    fn execute_openai(prompt: &str) -> Result<String> {
-        let key = std::env::var("OPENAI_API_KEY")?;
-        let model = std::env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-4o".to_string());
-        let payload = json!({
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}]
-        });
-        let out = Self::curl_pipe("https://api.openai.com/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
-        let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI failure"))?;
-        Ok(Self::cleanse_artifact(text))
+        match model.provider {
+            ProviderType::OpenAI => {
+                let url = format!("{}/chat/completions", api_base.trim_end_matches('/'));
+                let payload = json!({
+                    "model": model.model_id,
+                    "messages": [{"role": "user", "content": prompt}]
+                });
+                let out = Self::curl_pipe(&url, vec![("Authorization", &format!("Bearer {}", api_key))], payload)?;
+                let v: serde_json::Value = serde_json::from_slice(&out)?;
+                let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI-compatible failure"))?;
+                Ok(Self::cleanse_artifact(text))
+            },
+            ProviderType::Google => {
+                let url = format!("{}/models/{}:generateContent?key={}", api_base.trim_end_matches('/'), model.model_id.replace("google/", ""), api_key.trim());
+                let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
+                let out = Self::curl_pipe(&url, vec![], payload)?;
+                let v: serde_json::Value = serde_json::from_slice(&out)?;
+                let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure"))?;
+                Ok(Self::cleanse_artifact(text))
+            },
+            ProviderType::Anthropic => {
+                let url = format!("{}/messages", api_base.trim_end_matches('/'));
+                let payload = json!({
+                    "model": model.model_id,
+                    "max_tokens": 1024,
+                    "messages": [{"role": "user", "content": prompt}]
+                });
+                let out = Self::curl_pipe(&url, vec![
+                    ("x-api-key", &api_key),
+                    ("anthropic-version", "2023-06-01")
+                ], payload)?;
+                let v: serde_json::Value = serde_json::from_slice(&out)?;
+                let text = v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Anthropic failure"))?;
+                Ok(Self::cleanse_artifact(text))
+            },
+            _ => Err(anyhow!("Unsupported provider type for cloud execution")),
+        }
     }
 
     fn execute_local_ollama(prompt: &str, model_id: &str) -> String {
@@ -217,13 +211,18 @@ impl GemiEngine {
 
     pub fn verify_provider(name: &str) -> String {
         let prompt = "Verification mission: Respond with 'ACTIVE'.";
-        let res = match name {
-            "Google Gemini" => Self::execute_gemini(prompt),
-            "Groq" => Self::execute_groq(prompt),
-            "OpenAI" => Self::execute_openai(prompt),
-            _ => Err(anyhow!("Unknown Provider")),
-        };
-        match res { Ok(t) => t, Err(e) => format!("❌ Error: {}", e) }
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let global_dir = home.join(".gha");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+
+        if let Some(model) = cfg.cloud_models.iter().find(|m| m.name == name) {
+            match Self::execute_generic_cloud(model, prompt) {
+                Ok(t) => t,
+                Err(e) => format!("ERROR: {}", e)
+            }
+        } else {
+            format!("ERROR: Provider '{}' not found in config", name)
+        }
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
