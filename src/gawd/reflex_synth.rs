@@ -85,7 +85,7 @@ impl ReflexSynthesizer {
             }
 
             // Inject Registration
-            let registration_line = format!("    tools.insert(\"{}\".to_string(), Arc::new({}));\n", clean_intent, struct_name);
+            let registration_line = format!("    tools.insert(\"{}\".to_string(), Arc::new({} {{}}));\n", clean_intent, struct_name);
             if let Some(reg_pos) = content.find("// [AUTONOMOUS REGISTRATION END]") {
                  content.insert_str(reg_pos, &registration_line);
             }

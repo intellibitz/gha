@@ -73,19 +73,27 @@ impl GmaMasterAgent {
         crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "MISSION_START", goal);
         let hardware = HardwareProfiler::get_profile();
 
+        let lower_goal = goal.trim();
+        let (mut cmd, arg) = lower_goal.split_once(' ').unwrap_or((lower_goal, ""));
+
+        // 🚀 Support for Colon-Prefixed Direct Tool Calls (Launcher Consistency)
+        if cmd.starts_with(':') {
+             cmd = &cmd[1..];
+        }
+
+        let is_direct_tool = ToolRegistry::exists(cmd) || cmd == "models";
+        let is_orchestration = goal.contains("orchestrate") || goal.contains("mission");
+
+        // 🌀 Rule 18: Autonomous Capability Gap Detection (Prioritized)
+        // If not a direct tool and not explicit orchestration, attempt to distill a native reflex.
+        if !is_direct_tool && !is_orchestration && goal.len() > 5 && goal.len() < 100 && !goal.contains('/') && !goal.contains('\\') {
+            if let Ok(evolve_res) = self.trigger_autonomous_evolution(goal, workspace) {
+                return format!("# gha Autonomous Evolution\n\n- **Intent**: \"{}\"\n- **Status**: Distilled native reflex substrate.\n- **Action**: Applied architectural integration.\n\n{}\n\nRun 'gha release' to deploy the new reflex.", goal, evolve_res);
+            }
+        }
+
         let (a2a_logs, fleet) = GmasSupervisor::supervise_mission(goal, workspace);
         let active_tools = ToolRegistry::list_tools();
-
-        // Automatic PKB Distillation Logging (Phase 2)
-        let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let global_dir = home.join(".gha");
-        let entry = crate::gawd::pkb::PkbTrainingEntry {
-            instruction: goal.to_string(),
-            swarm_flux: a2a_logs.clone(),
-            tool_calls: vec![goal.to_string()],
-            outcome: "SUCCESS".to_string(),
-        };
-        let _ = crate::gawd::pkb::PkbSynthesizer::save_training_data(vec![entry], &global_dir);
 
         let mut is_reflex = false;
         let mut reasoning_content = String::new();
@@ -99,25 +107,7 @@ impl GmaMasterAgent {
         }
 
         let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(goal);
-        let is_orchestration = goal.contains("orchestrate") || goal.contains("mission");
         let is_placeholder = reasoning_content.contains("scouting for specialized brains");
-
-        let lower_goal = goal.trim();
-        let (mut cmd, arg) = lower_goal.split_once(' ').unwrap_or((lower_goal, ""));
-
-        // 🚀 Support for Colon-Prefixed Direct Tool Calls (Launcher Consistency)
-        if cmd.starts_with(':') {
-             cmd = &cmd[1..];
-        }
-
-        let is_direct_tool = ToolRegistry::exists(cmd) || cmd == "models";
-
-        // 🌀 Rule 18: Autonomous Capability Gap Detection
-        if !is_direct_tool && !is_orchestration && goal.len() > 5 && goal.len() < 100 && !goal.contains('/') && !goal.contains('\\') {
-            if let Ok(evolve_res) = self.trigger_autonomous_evolution(goal, workspace) {
-                return format!("# gha Autonomous Evolution\n\n- **Intent**: \"{}\"\n- **Status**: Distilled native reflex substrate.\n- **Action**: Applied architectural integration.\n\n{}\n\nRun 'gha release' to deploy the new reflex.", goal, evolve_res);
-            }
-        }
 
         let mut report = String::new();
         report.push_str("# gha Execution Report\n\n");

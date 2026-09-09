@@ -21,7 +21,7 @@ pub fn register_synthesized_reflexes(tools: &mut HashMap<String, Arc<dyn GhaTool
     tools.insert("interstellar_ethics".to_string(), Arc::new(InterstellarEthicsReflexTool));
     tools.insert("swarm_intelligence".to_string(), Arc::new(SwarmIntelligenceReflexTool));
     tools.insert("hardware_saturation".to_string(), Arc::new(HardwareSaturationReflexTool));
-    tools.insert("calculate_fibonacci_10".to_string(), Arc::new(CalculateFibonacci10ReflexTool));
+    tools.insert("calculate_fibonacci_10".to_string(), Arc::new(CalculateFibonacci10ReflexTool {}));
 // [AUTONOMOUS REGISTRATION END]
 }
 
