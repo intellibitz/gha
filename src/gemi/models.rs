@@ -475,6 +475,10 @@ impl ModelManager {
             && let Ok(content) = fs::read_to_string(&progress_file)
             && let Ok(mut record) = serde_json::from_str::<ModelDownloadProgress>(&content)
         {
+            if record.status == "COMPLETED" {
+                return None;
+            }
+
             let models_dir = home.join(".gha/models");
             let file_name = format!("{}.gguf", record.model_name.replace('/', "_"));
             let file_path = models_dir.join(file_name);
