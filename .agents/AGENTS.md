@@ -15,6 +15,7 @@
 13. **Intelligence Substrate, Not Static Tooling**: `gha` is an Intelligence Reflex & Execution Substrate. While it empowers users (Product Managers, Developers, Creators, World Citizens) to execute diverse missions—ranging from **Project Management, Scaffolding, and Coding** to **Agronomy, Medical Diagnostics, Legal Analysis, Pedagogical Synthesis, and Energy Optimization**—its identity is the **Intelligence Layer** that enables these actions, not a static plumbing or template tool.
 14. **Universal Access & Mission**: `gha` is designed for **any world user** for **any mission**. It scales from high-end corporate environments to standard home hardware, enabling any user to harness exponential intelligence for their specific goals.
 15. **Indestructible Identity**: The identity of `gha` as an Intelligence Substrate for any world user is permanent. All future versions, autonomous evolutions, and distilled reflex models must strictly adhere to this core DNA. Drift is not permitted.
+16. **Clean Workspace & Testspace Sovereignty**: Maintain a clean, unpolluted workspace at all times. All testing, experimentation, and temporary scaffolding must be performed exclusively in the designated testspace (`./test/world`).
 
 ## GHA Execution Rules
 
@@ -32,3 +33,4 @@
 11. **Conventional Commit Format**: Git commit messages must use plain text conventional commit prefixes (e.g., `feat:`, `fix:`, `refactor:`, `chore:`, `release:`) without emojis.
 12. **100% Dual Interface Alignment Guarantee**: The Terminal Console REPL (`gha`) and the Web/Mobile App (`http://localhost:9091` / PWA) must remain 100% aligned at all times across capabilities, tools, slash commands, session memory, model overrides, and domain substrate reasoning.
 13. **Dynamic Configuration Enforcement**: Zero hardcoded static configurations in code. All engine, server, port, model, and network parameters must be dynamic and loaded from GHA configuration files (`~/.gha/config.json`, `~/.gha/env`, `~/.gha/mcp_config.json`, `~/.gha/global_mcp_registry.json`) with automated dynamic defaults.
+14. **Workspace Purity Enforcement**: The main workspace must remain free of temporary artifacts and test pollutants. All runtime tests and validation missions must execute within the testspace sandbox.
