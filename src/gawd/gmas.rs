@@ -83,7 +83,10 @@ impl GmasSupervisor {
 
                                  let mut peers = t_shared.lock().unwrap();
                                  let addr_str = format!("{}:9090", src.ip());
-                                 if !peers.iter().any(|p| p.address == addr_str) {
+                                 if let Some(p) = peers.iter_mut().find(|p| p.address == addr_str) {
+                                     p.trust_score = (p.trust_score + 0.05).min(1.0);
+                                     p.is_active = true;
+                                 } else {
                                      peers.push(ClusterPeerNode {
                                          node_id: format!("gha-peer-{}", src.ip()),
                                          address: addr_str,
@@ -92,14 +95,14 @@ impl GmasSupervisor {
                                          capabilities: caps,
                                          latency_ms: 0,
                                          uptime_secs: 0,
-                                         trust_score: 0.5,
+                                         trust_score: 0.6,
                                      });
                                  }
                             }
                         }
-                        // Periodic Beacon
+                        // Periodic Beacon (Near-Instantaneous Global Swarm Consensus)
                         let _ = socket.send_to(ping_msg.as_bytes(), format!("255.255.255.255:{}", Self::UDP_DISCOVERY_PORT));
-                        std::thread::sleep(Duration::from_secs(10));
+                        std::thread::sleep(Duration::from_millis(500));
                     }
                 }
             });

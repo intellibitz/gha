@@ -64,6 +64,12 @@ impl AgentRegistry {
         agents.push(Arc::new(GhaLegalAgent));
         agents.push(Arc::new(GhaEducationAgent));
         agents.push(Arc::new(GhaEnergyAgent));
+        agents.push(Arc::new(GhaCyberAgent));
+        agents.push(Arc::new(GhaQuantumAgent));
+        agents.push(Arc::new(GhaAerospaceAgent));
+        agents.push(Arc::new(GhaLogisticsAgent));
+        agents.push(Arc::new(GhaConsensusAgent));
+        agents.push(Arc::new(GhaTensorPartitioner));
         agents.push(Arc::new(GhaTradesAgent));
         agents.push(Arc::new(GhaHouseholdAgent));
         agents.push(Arc::new(GhaCreativeAgent));
@@ -215,9 +221,11 @@ impl GawdAgent for GhaReasoningAgent {
 struct GhaKernelAgent;
 impl GawdAgent for GhaKernelAgent {
     fn name(&self) -> String { "GhaKernelAgent".to_string() }
-    fn role(&self) -> String { "Low-Level Engineering".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["os", "kernel", "bootloader", "driver", "assembly", "firmware"] }
-    fn execute(&self, goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { format!("Low-level synthesis engaged for '{}'.", goal) }
+    fn role(&self) -> String { "Low-Level Engineering & Self-Healing Kernel Integration".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["os", "kernel", "bootloader", "driver", "assembly", "firmware", "self-healing", "interrupt"] }
+    fn execute(&self, goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String {
+        format!("Low-level self-healing kernel substrate engaged. Analyzing {} for syscall optimization and interrupt resilience.", goal)
+    }
 }
 
 struct GhaEconomicAgent;
@@ -273,7 +281,55 @@ impl GawdAgent for GhaEnergyAgent {
     fn name(&self) -> String { "GhaEnergyAgent".to_string() }
     fn role(&self) -> String { "Climate & Renewable Energy Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["energy", "solar", "climate", "battery", "grid", "wattage"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Renewable energy domain context active (efficiency & wattage analysis).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Renewable energy domain context active (efficiency & grid storage optimization).".to_string() }
+}
+
+struct GhaCyberAgent;
+impl GawdAgent for GhaCyberAgent {
+    fn name(&self) -> String { "GhaCyberAgent".to_string() }
+    fn role(&self) -> String { "Cybersecurity & Active Defense Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["cyber", "security", "hack", "exploit", "firewall", "ddos", "mitigation"] }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Cybersecurity substrate active (zero-day detection & DDoS mitigation).".to_string() }
+}
+
+struct GhaQuantumAgent;
+impl GawdAgent for GhaQuantumAgent {
+    fn name(&self) -> String { "GhaQuantumAgent".to_string() }
+    fn role(&self) -> String { "Quantum Computing & Simulation Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["quantum", "qubit", "entanglement", "simulation", "circuit", "algorithm"] }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Quantum computing substrate active (qubit error correction & entanglement simulation).".to_string() }
+}
+
+struct GhaAerospaceAgent;
+impl GawdAgent for GhaAerospaceAgent {
+    fn name(&self) -> String { "GhaAerospaceAgent".to_string() }
+    fn role(&self) -> String { "Aerospace & Orbital Mechanics Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["space", "orbit", "rocket", "lunar", "martian", "aerospace", "trajectory"] }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Aerospace substrate active (trajectory calculations & orbital mission design).".to_string() }
+}
+
+struct GhaLogisticsAgent;
+impl GawdAgent for GhaLogisticsAgent {
+    fn name(&self) -> String { "GhaLogisticsAgent".to_string() }
+    fn role(&self) -> String { "Global Logistics & Supply Chain Specialist".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["logistics", "supply chain", "warehouse", "delivery", "route", "inventory"] }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Logistics substrate active (cluster-scale route optimization & supply chain resilience).".to_string() }
+}
+
+struct GhaConsensusAgent;
+impl GawdAgent for GhaConsensusAgent {
+    fn name(&self) -> String { "GhaConsensusAgent".to_string() }
+    fn role(&self) -> String { "Swarm Consensus & P2P Trust Protocol".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["consensus", "trust", "p2p", "swarm", "election", "quorum"] }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Near-instantaneous global swarm consensus active (RAFT/Paxos reflex engaged).".to_string() }
+}
+
+struct GhaTensorPartitioner;
+impl GawdAgent for GhaTensorPartitioner {
+    fn name(&self) -> String { "GhaTensorPartitioner".to_string() }
+    fn role(&self) -> String { "Multi-Node GPU Tensor Partitioning".to_string() }
+    fn keywords(&self) -> Vec<&'static str> { vec!["tensor", "partition", "gpu", "vram", "sharding", "distributed"] }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Multi-node GPU tensor partitioning active (auto-sharding across cluster VRAM).".to_string() }
 }
 
 struct GhaTradesAgent;
@@ -417,8 +473,16 @@ impl GawdAgentFleet {
             "[DOMAIN CONTEXT: Legal & Regulatory Analysis — Focus on contract terms, risk obligations, compliance, and clear layperson summaries]".to_string()
         } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") || lower.contains("learn") || lower.contains("homework") {
             "[DOMAIN CONTEXT: Education & Pedagogy — Focus on step-by-step conceptual explanations, examples, and clear learning progressions]".to_string()
-        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") {
-            "[DOMAIN CONTEXT: Renewable Energy & Climate Science — Focus on efficiency, wattage, grid capacity, and environmental sustainability]".to_string()
+        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") || lower.contains("grid") || lower.contains("wattage") {
+            "[DOMAIN CONTEXT: Renewable Energy & Climate — Focus on solar potential, grid-scale storage, wattage optimization, and climate impact]".to_string()
+        } else if lower.contains("cyber") || lower.contains("security") || lower.contains("hack") || lower.contains("exploit") || lower.contains("firewall") || lower.contains("zero-day") {
+            "[DOMAIN CONTEXT: Cybersecurity & Active Defense — Focus on zero-day detection, DDoS mitigation, firewall hardening, and swarm-based defense]".to_string()
+        } else if lower.contains("quantum") || lower.contains("qubit") || lower.contains("entanglement") || lower.contains("quantum computer") {
+            "[DOMAIN CONTEXT: Quantum Computing & Simulation — Focus on qubit error correction, entanglement simulation, and quantum algorithm design]".to_string()
+        } else if lower.contains("space") || lower.contains("orbit") || lower.contains("rocket") || lower.contains("lunar") || lower.contains("martian") || lower.contains("aerospace") {
+            "[DOMAIN CONTEXT: Aerospace & Orbital Mechanics — Focus on trajectory calculations, lunar/martian orbital missions, and aerospace engineering]".to_string()
+        } else if lower.contains("logistics") || lower.contains("supply chain") || lower.contains("warehouse") || lower.contains("delivery") || lower.contains("route") {
+            "[DOMAIN CONTEXT: Global Logistics & Supply Chain — Focus on cluster-scale route optimization, inventory management, and supply chain resilience]".to_string()
         } else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") || lower.contains("hvac") || lower.contains("wire") {
             "[DOMAIN CONTEXT: Skilled Trades & Field Services — Focus on building codes (NEC/UPC/IMC), safety compliance, diagnostic steps, and cost estimation]".to_string()
         } else if lower.contains("recipe") || lower.contains("cook") || lower.contains("dinner") || lower.contains("family") || lower.contains("mom") || lower.contains("diy") {

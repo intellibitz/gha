@@ -181,6 +181,12 @@ impl GhaAdmin {
             .to_string();
 
         let git_add = Command::new("git").args(["add", "."]).current_dir(workspace).status()?;
+
+        if std::env::var("GHA_BATCH_EVOLVE").unwrap_or_default() == "true" {
+             report.push_str("- ⏩ Batch Mode: Skipping Git commit/push and Testspace install for this cycle.\n");
+             return Ok(report);
+        }
+
         let git_commit = Command::new("git")
             .args(["commit", "-m", &format!("release: v{} compliance sync", new_version)])
             .current_dir(workspace)
