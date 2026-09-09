@@ -23,8 +23,15 @@ impl GhaPulse {
         }
     }
 
-    pub fn reason(prompt: &str, _workspace: &Path) -> Result<String> {
-        let lower = prompt.to_lowercase();
+    pub fn reason(prompt: &str, workspace: &Path) -> Result<String> {
+        let prompt_str = prompt.to_string();
+        let clean_prompt = if let Some(pos) = prompt_str.find("INTENT: ") {
+            prompt_str[pos + 8..].trim().to_string()
+        } else {
+            prompt_str.trim().to_string()
+        };
+
+        let lower = clean_prompt.to_lowercase();
         let words: Vec<&str> = lower.split_whitespace().collect();
 
         // 1. Precise Keyword Mapping (High-Speed Reflex)
@@ -43,34 +50,44 @@ impl GhaPulse {
 
         for word in &words {
             if let Some(action) = mappings.get(word) {
+                if *word == "ls" || *word == "dir" {
+                     return Ok(format!("ACTION: list_directory {}", workspace.display()));
+                }
                 return Ok(action.to_string());
             }
         }
 
-        // 2. Neural Reflex (GHA-Alpha Inference)
-        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let global_dir = home.join(".gha");
-        if let Ok(model) = GhaAlphaModel::load(&global_dir) {
-             if let Ok(neural_action) = model.predict_intent(prompt) {
-                 return Ok(neural_action);
+        // 2. High-Fidelity Assistant Intent Parsers
+        if lower.contains("directory") || lower.contains("folder") {
+             if let Some(pos) = lower.find("named ") {
+                 let after_named = &clean_prompt[pos + 6..].trim();
+                 let path = after_named.split_whitespace().next().unwrap_or("").trim_end_matches('.');
+                 if !path.is_empty() {
+                     return Ok(format!("ACTION: exec_command mkdir -p {}", path));
+                 }
              }
         }
 
-        // 3. Pattern Matchers (Structured Reflex)
-        // Preparation for WASI: Move from shell-dependent splitting to robust trie/parsing
-        if lower.contains("create") || lower.contains("write") {
-             if let Some(containing_idx) = lower.find("containing") {
-                 let file_part = &lower[..containing_idx];
-                 let content = &prompt[containing_idx + 10..].trim(); // Preserve case for content
-                 let file_name = file_part
-                    .replace("create", "")
-                    .replace("write", "")
-                    .replace("file", "")
-                    .replace("named", "")
-                    .replace(" a ", " ")
-                    .trim()
-                    .to_string();
-                 return Ok(format!("ACTION: write_file {} {}", file_name, content));
+        if (lower.contains("file") || lower.contains("save") || lower.contains("write")) && (lower.contains("containing") || lower.contains("with content")) {
+             let sep = if lower.contains("containing") { "containing" } else { "with content" };
+             if let Some(sep_pos) = lower.find(sep) {
+                 let content = clean_prompt[sep_pos + sep.len()..].trim();
+                 let before_sep = &lower[..sep_pos];
+                 if let Some(named_pos) = before_sep.find("named ") {
+                     let path = clean_prompt[named_pos + 6..sep_pos].trim().trim_end_matches('.');
+                     if !path.is_empty() {
+                         return Ok(format!("ACTION: write_file {} {}", path, content));
+                     }
+                 }
+             }
+        }
+
+        // 3. Neural Reflex (GHA-Alpha Inference) - Fallback
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let global_dir = home.join(".gha");
+        if let Ok(model) = GhaAlphaModel::load(&global_dir) {
+             if let Ok(neural_action) = model.predict_intent(&clean_prompt) {
+                 return Ok(neural_action);
              }
         }
 
@@ -99,18 +116,17 @@ impl GhaPulse {
         }
 
         if lower.contains("list files") || lower.contains("show files") || lower.contains("workspace") {
-            return Ok("ACTION: list_directory".to_string());
+            return Ok(format!("ACTION: list_directory {}", workspace.display()));
         }
 
         if lower.contains("translate") {
-             return Ok(format!("ACTION: reason {}", prompt));
+             return Ok(format!("ACTION: reason {}", clean_prompt));
         }
 
         if lower.contains("reason") || lower.contains("explain") || lower.contains("summarize") || lower.contains("orchestrate") {
-             return Ok(format!("ACTION: reason {}", prompt));
+             return Ok(format!("ACTION: reason {}", clean_prompt));
         }
 
-        // 3. Fallback to Deep Reasoning
         Err(anyhow!("Pulse Brain: Transitioning to Tier 2 Deep Reasoning..."))
     }
 }

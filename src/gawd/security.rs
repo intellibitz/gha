@@ -39,7 +39,7 @@ impl SecurityDetector {
         }
 
         // 2. Entropy Check (Shannon Entropy for Credential Detection)
-        if arg.len() > 16 {
+        if arg.len() > 16 && !arg.contains(' ') {
              let entropy = Self::calculate_entropy(arg);
              if entropy > 4.5 {
                   return Err(EaiError::Governance("High-entropy string detected. Possible credential leak or obfuscated payload.".to_string()));

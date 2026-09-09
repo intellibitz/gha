@@ -200,7 +200,17 @@ impl GawdAgent for GhaReasoningAgent {
         } else {
             format!("{}\n\nINTENT: {}", domain_guideline, goal)
         };
-        crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, workspace)
+
+        // 🚀 High-Priority Reflex Check: Direct mapping for common assistant missions
+        match crate::gemi::pulse::GhaPulse::reason(&enriched_goal, workspace) {
+            Ok(action) => {
+                if action.contains("ACTION:") {
+                    return action;
+                }
+                format!("ACTION: {}", action)
+            },
+            Err(_) => crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, workspace)
+        }
     }
 }
 

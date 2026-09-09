@@ -674,12 +674,20 @@ impl GhaTool for ReadFileTool {
 struct WriteFileTool;
 impl GhaTool for WriteFileTool {
     fn name(&self) -> String { "write_file".to_string() }
-    fn description(&self) -> String { "Write to a workspace file".to_string() }
+    fn description(&self) -> String { "Write to a workspace file (Auto-creates directories)".to_string() }
     fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
         let parts: Vec<&str> = arg.splitn(2, ' ').collect();
         if parts.len() < 2 { return Err(EaiError::Protocol("Usage: write_file <path> <content>".into())); }
-        fs::write(workspace.join(parts[0].trim()), parts[1]).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-        Ok(format!("✅ Wrote to {}", parts[0]))
+        let path_str = parts[0].trim();
+        let content = parts[1];
+        let full_path = workspace.join(path_str);
+
+        if let Some(parent) = full_path.parent() {
+            fs::create_dir_all(parent).map_err(|e| EaiError::Sandbox(format!("Failed to create directories for {}: {}", path_str, e)))?;
+        }
+
+        fs::write(&full_path, content).map_err(|e| EaiError::Sandbox(format!("Failed to write file {}: {}", path_str, e)))?;
+        Ok(format!("✅ Wrote to {}", path_str))
     }
 }
 
