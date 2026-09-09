@@ -12,6 +12,8 @@ pub fn register_synthesized_reflexes(tools: &mut HashMap<String, Arc<dyn GhaTool
     tools.insert("vision_reflex".to_string(), Arc::new(VisionReflexTool));
     tools.insert("agronomy_reflex".to_string(), Arc::new(AgronomyReflexTool));
     tools.insert("energy_reflex".to_string(), Arc::new(EnergyReflexTool));
+    tools.insert("education_reflex".to_string(), Arc::new(EducationReflexTool));
+    tools.insert("trades_reflex".to_string(), Arc::new(TradesReflexTool));
     // [AUTONOMOUS REGISTRATION END]
 }
 
@@ -137,6 +139,54 @@ impl GhaTool for EnergyReflexTool {
              report.push_str("Reflex: Offloading non-critical systems to battery substrate (LFP 48V).");
         } else {
              report.push_str("Reflex: Monitoring grid frequency (60Hz +/- 0.05). Routing to Tier 2 for capacity forecasting.");
+        }
+
+        Ok(report)
+    }
+}
+
+struct EducationReflexTool;
+impl GhaTool for EducationReflexTool {
+    fn name(&self) -> String { "education_reflex".to_string() }
+    fn description(&self) -> String { "Expert-level pedagogical reflex for STEM synthesis and concept breakdown".to_string() }
+    fn execute(&self, arg: &str, _workspace: &std::path::Path) -> crate::error::EaiResult<String> {
+        let input = arg.to_lowercase();
+        let mut report = "# Pedagogical Synthesis Reflex\n\n".to_string();
+
+        if input.contains("quantum") && input.contains("entanglement") {
+             report.push_str("Concept: Quantum Entanglement (Simplified)\n");
+             report.push_str("Explanation: A phenomenon where two particles become linked, such that the state of one instantly influences the other, regardless of distance.\n");
+             report.push_str("Analogy: Imagine a pair of magic coins; whenever one shows heads, the other MUST show tails immediately.\n");
+        } else if input.contains("calculus") && input.contains("derivative") {
+             report.push_str("Concept: The Derivative\n");
+             report.push_str("Explanation: Measures the instantaneous rate of change of a function at a specific point.\n");
+             report.push_str("Reflex Action: Routing to interactive graphing Tier 2 substrate.\n");
+        } else {
+             report.push_str("Reflex: Pedagogical breakdown active. Routing to Tier 2 for detailed lesson planning.\n");
+        }
+
+        Ok(report)
+    }
+}
+
+struct TradesReflexTool;
+impl GhaTool for TradesReflexTool {
+    fn name(&self) -> String { "trades_reflex".to_string() }
+    fn description(&self) -> String { "High-speed field engineering reflex for building codes and skilled trades diagnostics".to_string() }
+    fn execute(&self, arg: &str, _workspace: &std::path::Path) -> crate::error::EaiResult<String> {
+        let input = arg.to_lowercase();
+        let mut report = "# Skilled Trades Diagnostic Reflex\n\n".to_string();
+
+        if input.contains("pipe") && input.contains("leak") {
+             report.push_str("Diagnostic: Potential joint failure or corrosion.\n");
+             report.push_str("Compliance Check: Verify UPC Section 609.3 for underground piping depth.\n");
+             report.push_str("Reflex Action: Recommending immediate pressure test.\n");
+        } else if input.contains("circuit") && input.contains("trip") {
+             report.push_str("Diagnostic: Overload or ground fault.\n");
+             report.push_str("Compliance Check: NEC Article 210.8 for GFCI requirements.\n");
+             report.push_str("Reflex Action: Check for wet-location violations.");
+        } else {
+             report.push_str("Reflex: Field diagnostic engaged. Routing to Tier 2 for full code-book interrogation.");
         }
 
         Ok(report)
