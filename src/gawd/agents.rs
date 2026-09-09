@@ -358,33 +358,29 @@ impl GawdAgent for GhaSafetyAgent {
 struct GhaTruthAgent;
 impl GawdAgent for GhaTruthAgent {
     fn name(&self) -> String { "GhaTruthAgent".to_string() }
-    fn role(&self) -> String { "Hallucination Detection (Rules 1, 2, 3, 10)".to_string() }
+    fn role(&self) -> String { "Hallucination Detection (Rule 15)".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
     fn execute(&self, goal: &str, workspace: &Path, blackboard: &SwarmBlackboard) -> String {
-        let mut score = 100;
-        let mut flags = Vec::new();
+        let mut violations = Vec::new();
 
+        // 1. Audit consistency of intent with active context
         let bb = blackboard.read().unwrap();
-
-        // 1. Audit consistency of reasoning with goal
         if goal.contains("version") && !bb.contains_key("MISSION_CONTEXT") {
-             score -= 10;
-             flags.push("Mission context missing for version check.".to_string());
+             violations.push("Mission context missing for version check.".to_string());
         }
 
-        // 2. Real-time workspace verification
+        // 2. Proactive State Verification (Rule 15)
         if goal.contains("file") || goal.contains("read") || goal.contains("write") {
              let gha_dir = workspace.join(".gha");
              if !gha_dir.exists() {
-                 score -= 20;
-                 flags.push("Active .gha sandbox missing in target workspace.".to_string());
+                 violations.push("Active .gha sandbox missing in target workspace.".to_string());
              }
         }
 
-        if flags.is_empty() {
+        if violations.is_empty() {
             "Truth and hallucination detection active. Verified.".to_string()
         } else {
-            format!("Audit score: {}/100\n   {}", score, flags.join("\n   "))
+            format!("Audit violations: {}", violations.join("; "))
         }
     }
 }

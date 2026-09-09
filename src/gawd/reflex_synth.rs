@@ -3,6 +3,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use crate::error::{EaiError, EaiResult};
 use crate::gemi::engine::GemiEngine;
 
@@ -47,10 +48,33 @@ impl ReflexSynthesizer {
 
     /// (Alpha) Synthesizes a Wasm reflex by compiling generated Rust code
     pub fn synthesize_wasm_reflex(intent: &str, workspace: &Path) -> EaiResult<String> {
-        // This requires 'rustc' and 'wasm32-wasi' target to be available on the host
-        let res = Self::distill_native_reflex(intent, workspace)?;
+        let reflex_code_path = Self::distill_native_reflex(intent, workspace)?;
 
-        // Future release: Trigger 'cargo build --target wasm32-wasi' autonomously
-        Ok(format!("{} (Wasm Compilation Enqueued)", res))
+        // Extract the path from the result message
+        if let Some(path_str) = reflex_code_path.split("at ").last() {
+            let src_path = PathBuf::from(path_str);
+            let wasm_path = src_path.with_extension("wasm");
+
+            // Autonomous Compilation (Rule 11/17)
+            let out = Command::new("rustc")
+                .args(["--target", "wasm32-wasi", "-O", "-o"])
+                .arg(&wasm_path)
+                .arg(&src_path)
+                .output();
+
+            match out {
+                Ok(o) if o.status.success() => {
+                    Ok(format!("Distilled Wasm reflex compiled and ready at {}", wasm_path.display()))
+                }
+                Ok(o) => {
+                    Err(EaiError::Hardware(format!("Wasm Compilation Failed: {}", String::from_utf8_lossy(&o.stderr))))
+                }
+                Err(e) => {
+                    Err(EaiError::Hardware(format!("rustc not found: {}", e)))
+                }
+            }
+        } else {
+            Err(EaiError::Internal("Reflex synthesis failed to return path.".into()))
+        }
     }
 }
