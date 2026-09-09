@@ -91,7 +91,11 @@ if [ "$INSTALLED" = "0" ]; then
         if [[ "$PLATFORM" == "macos" ]]; then
             BUILD_FEATURES="--features metal"
         elif command -v nvcc >/dev/null 2>&1 || [ -d "/usr/local/cuda" ]; then
-            BUILD_FEATURES="--features cuda"
+            # Check for cudarc support (currently fails on CUDA 13.3)
+            CUDA_VERSION=$(nvcc --version | grep "release" | sed 's/.*release //;s/,.*//')
+            if [[ "$CUDA_VERSION" == "11."* ]] || [[ "$CUDA_VERSION" == "12."* ]]; then
+                BUILD_FEATURES="--features cuda"
+            fi
         fi
 
         (cd "$SCRIPT_DIR" && cargo build --release $BUILD_FEATURES >/dev/null 2>&1)
