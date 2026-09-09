@@ -796,5 +796,9 @@ mod tests {
         let p = prog.unwrap();
         assert_eq!(p.model_name, "test-model-7b");
         assert_eq!(p.status, "IN_PROGRESS");
+
+        // Cleanup to prevent polluting the user's real ~/.gha directory
+        let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_else(|| std::path::PathBuf::from("."));
+        let _ = std::fs::remove_file(home.join(".gha/download_progress.json"));
     }
 }
