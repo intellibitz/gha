@@ -338,7 +338,7 @@ impl GawdAgent for GhaSafetyAgent {
 struct GhaTruthAgent;
 impl GawdAgent for GhaTruthAgent {
     fn name(&self) -> String { "GhaTruthAgent".to_string() }
-    fn role(&self) -> String { "Hallucination Detection (Rule 15)".to_string() }
+    fn role(&self) -> String { "Hallucination Detection & State Verification (Rule 15)".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
     fn execute(&self, goal: &str, workspace: &Path, blackboard: &SwarmBlackboard) -> String {
         let mut violations = Vec::new();
@@ -350,17 +350,35 @@ impl GawdAgent for GhaTruthAgent {
         }
 
         // 2. Proactive State Verification (Rule 15)
-        if goal.contains("file") || goal.contains("read") || goal.contains("write") {
-             let gha_dir = workspace.join(".gha");
-             if !gha_dir.exists() {
-                 violations.push("Active .gha sandbox missing in target workspace.".to_string());
+        if goal.contains("write_file") || goal.contains("save") || goal.contains("created") {
+             let mut paths_to_verify = Vec::new();
+             for word in goal.split_whitespace() {
+                 if word.contains('/') || word.contains('.') {
+                     paths_to_verify.push(word.trim_matches(|c: char| !c.is_alphanumeric() && c != '/' && c != '.' && c != '_'));
+                 }
+             }
+
+             for p_str in paths_to_verify {
+                 if p_str.len() < 3 { continue; }
+                 let p = workspace.join(p_str);
+                 if !p.exists() && (goal.contains("created") || goal.contains("wrote")) {
+                      violations.push(format!("Claimed artifact '{}' does not exist on disk.", p_str));
+                 }
              }
         }
 
+        // 3. Sandbox Integrity Check
+        let gha_dir = workspace.join(".gha");
+        if !gha_dir.exists() {
+             violations.push("Active .gha sandbox missing in target workspace.".to_string());
+        }
+
         if violations.is_empty() {
-            "Truth and hallucination detection active. Verified.".to_string()
+            "Truth and hallucination detection active. Verified execution integrity.".to_string()
         } else {
-            format!("Audit violations: {}", violations.join("; "))
+            let msg = format!("Audit violations: {}", violations.join("; "));
+            blackboard.write().unwrap().insert("TRUTH_AUDIT_ERROR".to_string(), msg.clone());
+            msg
         }
     }
 }

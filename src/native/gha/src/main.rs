@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-const GHA_VERSION: &str = "0.1.364";
+const GHA_VERSION: &str = "0.1.365";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
