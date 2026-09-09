@@ -10,6 +10,7 @@ use super::truth::TruthTransformer;
 use crate::gemi::hardware::HardwareProfiler;
 use crate::sandbox::manager::NeuralCheckpoint;
 use crate::gmcp::tools::ToolRegistry;
+use crate::gawd::reflex_synth::ReflexSynthesizer;
 use crate::error::EaiResult;
 
 pub struct GmaMasterAgent;
@@ -110,6 +111,13 @@ impl GmaMasterAgent {
         }
 
         let is_direct_tool = ToolRegistry::exists(cmd) || cmd == "models";
+
+        // 🌀 Rule 18: Autonomous Capability Gap Detection
+        if !is_direct_tool && !is_orchestration && goal.len() > 5 && goal.len() < 100 && !goal.contains('/') && !goal.contains('\\') {
+            if let Ok(evolve_res) = self.trigger_autonomous_evolution(goal, workspace) {
+                return format!("# gha Autonomous Evolution\n\n- **Intent**: \"{}\"\n- **Status**: Distilled native reflex substrate.\n- **Action**: Applied architectural integration.\n\n{}\n\nRun 'gha release' to deploy the new reflex.", goal, evolve_res);
+            }
+        }
 
         let mut report = String::new();
         report.push_str("# gha Execution Report\n\n");
@@ -356,5 +364,11 @@ impl GmaMasterAgent {
         } else {
             format!("Audit score: {}/100\n   {}", score, flags.join("\n   "))
         }
+    }
+
+    /// 🌀 Rule 18: Self-Distillation Loop Trigger
+    pub fn trigger_autonomous_evolution(&self, intent: &str, workspace: &Path) -> EaiResult<String> {
+        crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "AUTONOMOUS_EVOLUTION", intent);
+        ReflexSynthesizer::distill_native_reflex(intent, workspace)
     }
 }

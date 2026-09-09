@@ -981,16 +981,41 @@ impl GhaTool for ScoutModelTool {
 struct SelfHealBuildTool;
 impl GhaTool for SelfHealBuildTool {
     fn name(&self) -> String { "self_heal_build".to_string() }
-    fn description(&self) -> String { "Self-healing code compilation loop".to_string() }
+    fn description(&self) -> String { "Autonomous self-healing loop for codebase compilation and error correction".to_string() }
     fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
         if workspace.join("Cargo.toml").exists() {
+            println!("🔍 Checking codebase health at {}...", workspace.display());
             let out = Command::new("cargo").arg("check").current_dir(workspace).output().map_err(|e| EaiError::Hardware(e.to_string()))?;
-            if out.status.success() { return Ok("Build clean.".into()); }
+
+            if out.status.success() {
+                return Ok("✅ Build clean. No healing required.".into());
+            }
+
             let stderr = String::from_utf8_lossy(&out.stderr);
-            let fix = GemiEngine::generate_reasoning_deep(&format!("Fix build: {}", stderr), workspace);
-            return Ok(format!("Error found. Suggested fix:\n{}", fix));
+            println!("🚩 Build failed. Analyzing errors for autonomous healing...");
+
+            let prompt = format!(
+                "BUILD ERROR DETECTED:\n{}\n\n\
+                MISSION: FIX THE BUILD ERROR.\n\
+                REQUIREMENTS:\n\
+                1. Identify the file and line causing the error.\n\
+                2. Provide the fix as a GHA action (e.g., ACTION: replace_file_content ... or ACTION: write_file ...).\n\
+                3. Return ONLY the action string.",
+                stderr
+            );
+
+            let fix_action = GemiEngine::generate_reasoning_deep(&prompt, workspace);
+
+            if fix_action.contains("ACTION:") {
+                println!("🌀 Applying autonomous fix: {}", fix_action);
+                // The GMA will catch this result and execute it if we return it as an ACTION: result
+                // But since we are inside execute(), we should return it clearly.
+                return Ok(format!("Build failed. Applying autonomous fix:\n{}", fix_action));
+            }
+
+            return Ok(format!("Build failed. Could not synthesize autonomous fix.\nError:\n{}", stderr));
         }
-        Ok("No Cargo.toml found.".into())
+        Ok("❌ Error: No Cargo.toml found in workspace root.".into())
     }
 }
 

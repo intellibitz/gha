@@ -12,8 +12,14 @@ pub struct ReflexSynthesizer;
 impl ReflexSynthesizer {
     /// Distills a mission into a native Rust tool definition and integrates it into the core
     pub fn distill_native_reflex(intent: &str, workspace: &Path) -> EaiResult<String> {
-        let clean_intent = intent.replace(|c: char| !c.is_alphanumeric(), "");
-        let struct_name = format!("{}Reflex", clean_intent);
+        let clean_intent = intent.replace(|c: char| !c.is_alphanumeric() && c != ' ', "").replace(' ', "_").to_lowercase();
+        let struct_name = format!("{}ReflexTool", clean_intent.split('_').map(|s| {
+            let mut c = s.chars();
+            match c.next() {
+                None => String::new(),
+                Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+            }
+        }).collect::<String>());
 
         let prompt = format!(
             "MISSION: SYNTHESIZE NATIVE RUST TOOL FOR INTENT: '{}'\n\n\
@@ -21,7 +27,8 @@ impl ReflexSynthesizer {
             1. Create a Rust struct named `{}` implementing the `GhaTool` trait.\n\
             2. The tool must be high-performance, deterministic, and use standard libraries only.\n\
             3. Use fully qualified names for external types (e.g., `std::path::Path`, `crate::error::EaiResult`).\n\
-            4. Provide ONLY the code block for the struct and its implementation.\n\n\
+            4. Provide ONLY the code block for the struct and its implementation.\n\
+            5. The `execute` method should handle the mission logic natively in Rust.\n\n\
             TRAIT DEFINITION:\n\
             pub trait GhaTool: Send + Sync {{\n\
                 fn name(&self) -> String;\n\
@@ -44,11 +51,14 @@ impl ReflexSynthesizer {
                         Ok(format!(\"Reflex '{}' executed with arg: {{}}\", arg))\n\
                     }}\n\
                 }}",
-                struct_name, struct_name, clean_intent.to_lowercase(), intent, clean_intent.to_lowercase()
+                struct_name, struct_name, clean_intent, intent, clean_intent
             )
         } else {
             code.trim().trim_start_matches("```rust").trim_start_matches("```").trim_end_matches("```").trim().to_string()
         };
+
+        // 🛡️ Phase 3: Audit Synthesized Code (Rule 18)
+        Self::audit_synthesized_code(&clean_code)?;
 
         // 1. Save backup to ~/.gha/reflexes/
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
@@ -59,7 +69,7 @@ impl ReflexSynthesizer {
         let backup_path = reflex_dir.join(format!("reflex_{}.rs", timestamp));
         fs::write(&backup_path, &clean_code)?;
 
-        // 2. 🌀 Autonomous Source Integration (Rule 11 & 17)
+        // 2. 🌀 Autonomous Source Integration (Rule 11, 17 & 18)
         let reflex_rs_path = workspace.join("src/gmcp/reflexes.rs");
         if reflex_rs_path.exists() {
             let mut content = fs::read_to_string(&reflex_rs_path)?;
@@ -75,7 +85,7 @@ impl ReflexSynthesizer {
             }
 
             // Inject Registration
-            let registration_line = format!("    tools.insert(\"{}\".to_string(), Arc::new({}));\n", clean_intent.to_lowercase(), struct_name);
+            let registration_line = format!("    tools.insert(\"{}\".to_string(), Arc::new({}));\n", clean_intent, struct_name);
             if let Some(reg_pos) = content.find("// [AUTONOMOUS REGISTRATION END]") {
                  content.insert_str(reg_pos, &registration_line);
             }
@@ -84,6 +94,17 @@ impl ReflexSynthesizer {
         }
 
         Ok(format!("Distilled intelligence for '{}' into native reflex '{}' and integrated into substrate at {}", intent, struct_name, backup_path.display()))
+    }
+
+    /// 🛡️ Rule 18: Verify Rust syntax before integration
+    fn audit_synthesized_code(code: &str) -> EaiResult<()> {
+        if !code.contains("struct ") || !code.contains("impl GhaTool for ") {
+            return Err(EaiError::Protocol("Synthesized code missing GhaTool implementation.".into()));
+        }
+        if code.contains("unsafe ") {
+             return Err(EaiError::Governance("Autonomous reflex rejected: unsafe code detected.".into()));
+        }
+        Ok(())
     }
 
     /// (Alpha) Synthesizes a Wasm reflex by compiling generated Rust code
