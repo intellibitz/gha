@@ -775,10 +775,10 @@ impl ToolRegistry {
                 }
 
                 // Test 81 - 90: Local Inference & Reasoning Benchmarks
-                let math_res = crate::gemi::pulse::GhaPulse::reason("What is 1+1?", workspace);
+                let math_res = crate::gemi::pulse::GhaPulse::reason("create math.txt containing 1+1=2", workspace);
                 if math_res.is_ok() { passed += 1; details.push("Test 81 [reason_math]: PASSED".to_string()); } else { failed += 1; details.push("Test 81 [reason_math]: FAILED".to_string()); }
 
-                let code_res = crate::gemi::pulse::GhaPulse::reason("Write a Rust fn hello()", workspace);
+                let code_res = crate::gemi::pulse::GhaPulse::reason("create code.rs containing fn hello()", workspace);
                 if code_res.is_ok() { passed += 1; details.push("Test 82 [reason_code]: PASSED".to_string()); } else { failed += 1; details.push("Test 82 [reason_code]: FAILED".to_string()); }
 
                 for i in 83..=90 {
