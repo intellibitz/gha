@@ -1413,7 +1413,7 @@ impl ToolRegistry {
                 .trim()
                 .to_string();
 
-            if final_line.len() > 15 && !final_line.starts_with('{') && !final_line.starts_with("var ") {
+            if !final_line.is_empty() && !final_line.starts_with('{') && !final_line.starts_with("var ") {
                 text_lines.push(final_line);
             }
         }
