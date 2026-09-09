@@ -183,8 +183,11 @@ impl PkbSynthesizer {
 
         for (i, entry) in entries.iter().enumerate().take(dim) {
              let keywords: Vec<&str> = entry.instruction.split_whitespace().collect();
+             let success_multiplier = if entry.outcome.contains("SUCCESS") { 1.2 } else { 0.8 };
+
              for (j, kw) in keywords.iter().enumerate().take(dim) {
-                  let weight_val = (kw.len() as f32) / 10.0;
+                  // Learning Rule: Weights adjusted by success score and term importance
+                  let weight_val = ((kw.len() as f32) / 10.0) * success_multiplier;
                   matrix_data[i * dim + j] = weight_val;
              }
         }
