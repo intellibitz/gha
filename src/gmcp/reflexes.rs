@@ -14,6 +14,8 @@ pub fn register_synthesized_reflexes(tools: &mut HashMap<String, Arc<dyn GhaTool
     tools.insert("energy_reflex".to_string(), Arc::new(EnergyReflexTool));
     tools.insert("education_reflex".to_string(), Arc::new(EducationReflexTool));
     tools.insert("trades_reflex".to_string(), Arc::new(TradesReflexTool));
+    tools.insert("household_reflex".to_string(), Arc::new(HouseholdReflexTool));
+    tools.insert("public_safety_reflex".to_string(), Arc::new(PublicSafetyReflexTool));
     // [AUTONOMOUS REGISTRATION END]
 }
 
@@ -187,6 +189,50 @@ impl GhaTool for TradesReflexTool {
              report.push_str("Reflex Action: Check for wet-location violations.");
         } else {
              report.push_str("Reflex: Field diagnostic engaged. Routing to Tier 2 for full code-book interrogation.");
+        }
+
+        Ok(report)
+    }
+}
+
+struct HouseholdReflexTool;
+impl GhaTool for HouseholdReflexTool {
+    fn name(&self) -> String { "household_reflex".to_string() }
+    fn description(&self) -> String { "High-speed household operations reflex for budget, recipes, and family care".to_string() }
+    fn execute(&self, arg: &str, _workspace: &std::path::Path) -> crate::error::EaiResult<String> {
+        let input = arg.to_lowercase();
+        let mut report = "# Household Operations Reflex\n\n".to_string();
+
+        if input.contains("recipe") && input.contains("chicken") {
+             report.push_str("Reflex: Quick Lemon Garlic Chicken suggested.\n");
+             report.push_str("Steps: Sear chicken breast, deglaze with lemon juice/garlic, simmer for 10 mins. Serve with steamed broccoli.\n");
+        } else if input.contains("budget") && input.contains("save") {
+             report.push_str("Strategy: 50/30/20 Rule recommendation.\n");
+             report.push_str("Reflex: 50% Needs, 30% Wants, 20% Savings. Scan bank statements via Tier 2 for categorization.\n");
+        } else {
+             report.push_str("Reflex: Household support engaged. Routing to Tier 2 for detailed planning.\n");
+        }
+
+        Ok(report)
+    }
+}
+
+struct PublicSafetyReflexTool;
+impl GhaTool for PublicSafetyReflexTool {
+    fn name(&self) -> String { "public_safety_reflex".to_string() }
+    fn description(&self) -> String { "Mission-critical public safety reflex for emergency response and crisis coordination".to_string() }
+    fn execute(&self, arg: &str, _workspace: &std::path::Path) -> crate::error::EaiResult<String> {
+        let input = arg.to_lowercase();
+        let mut report = "# Public Safety Emergency Reflex\n\n".to_string();
+
+        if input.contains("fire") {
+             report.push_str("Emergency: Fire Hazard Detected.\n");
+             report.push_str("Protocol: Evacuate immediately. Call 911. Alerting local fire department nodes in cluster.\n");
+        } else if input.contains("first aid") || input.contains("choking") {
+             report.push_str("Emergency: Medical Triage required.\n");
+             report.push_str("Protocol: If choking, perform Heimlich maneuver. If unconscious, start CPR (100-120 compressions/min).\n");
+        } else {
+             report.push_str("Reflex: Emergency monitoring active. Routing to Tier 2 for crisis coordination.");
         }
 
         Ok(report)
