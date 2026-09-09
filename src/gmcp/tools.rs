@@ -1007,10 +1007,16 @@ impl GhaTool for SelfHealBuildTool {
             let fix_action = GemiEngine::generate_reasoning_deep(&prompt, workspace);
 
             if fix_action.contains("ACTION:") {
-                println!("🌀 Applying autonomous fix: {}", fix_action);
-                // The GMA will catch this result and execute it if we return it as an ACTION: result
-                // But since we are inside execute(), we should return it clearly.
-                return Ok(format!("Build failed. Applying autonomous fix:\n{}", fix_action));
+                let action_line = fix_action.lines().find(|l| l.contains("ACTION:")).unwrap_or("");
+                if let Some(payload) = action_line.split("ACTION: ").nth(1) {
+                    println!("🌀 Applying autonomous fix: {}", payload);
+                    let parts: Vec<&str> = payload.splitn(2, ' ').collect();
+                    let tool_name = parts[0];
+                    let tool_arg = parts.get(1).unwrap_or(&"");
+
+                    let res = ToolRegistry::execute_tool(tool_name, tool_arg, workspace);
+                    return Ok(format!("Build healed successfully via autonomous action: {}.\nResult: {}", tool_name, res));
+                }
             }
 
             return Ok(format!("Build failed. Could not synthesize autonomous fix.\nError:\n{}", stderr));

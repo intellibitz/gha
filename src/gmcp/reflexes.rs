@@ -22,6 +22,7 @@ pub fn register_synthesized_reflexes(tools: &mut HashMap<String, Arc<dyn GhaTool
     tools.insert("swarm_intelligence".to_string(), Arc::new(SwarmIntelligenceReflexTool));
     tools.insert("hardware_saturation".to_string(), Arc::new(HardwareSaturationReflexTool));
     tools.insert("calculate_fibonacci_10".to_string(), Arc::new(CalculateFibonacci10ReflexTool {}));
+    tools.insert("calculate_the_prime_factors_of_987654321".to_string(), Arc::new(CalculateThePrimeFactorsOf987654321ReflexTool {}));
 // [AUTONOMOUS REGISTRATION END]
 }
 
@@ -349,9 +350,39 @@ impl GhaTool for HardwareSaturationReflexTool {
 struct CalculateFibonacci10ReflexTool {}
 impl GhaTool for CalculateFibonacci10ReflexTool {
 fn name(&self) -> String { "calculate_fibonacci_10".to_string() }
-fn description(&self) -> String { "Autonomously distilled reflex for calculate fibonacci 10".to_string() }
-fn execute(&self, arg: &str, _workspace: &std::path::Path) -> crate::error::EaiResult<String> {
-Ok(format!("Reflex 'calculate_fibonacci_10' executed with arg: {}", arg))
+fn description(&self) -> String { "Expert-level Fibonacci reflex for n=10".to_string() }
+fn execute(&self, _arg: &str, _workspace: &std::path::Path) -> crate::error::EaiResult<String> {
+    let mut a = 0;
+    let mut b = 1;
+    for _ in 0..10 {
+        let temp = a;
+        a = b;
+        b = temp + b;
+    }
+    Ok(format!("# Fibonacci Sequence Report\n\n- **n**: 10\n- **Result**: {}", a))
+}
+}
+
+struct CalculateThePrimeFactorsOf987654321ReflexTool {}
+impl GhaTool for CalculateThePrimeFactorsOf987654321ReflexTool {
+fn name(&self) -> String { "calculate_the_prime_factors_of_987654321".to_string() }
+fn description(&self) -> String { "Expert-level prime factorization reflex for 987,654,321".to_string() }
+fn execute(&self, _arg: &str, _workspace: &std::path::Path) -> crate::error::EaiResult<String> {
+    let n: u64 = 987654321;
+    let mut factors = Vec::new();
+    let mut d = 2;
+    let mut temp = n;
+    while d * d <= temp {
+        while temp % d == 0 {
+            factors.push(d);
+            temp /= d;
+        }
+        d += 1;
+    }
+    if temp > 1 {
+        factors.push(temp);
+    }
+    Ok(format!("# Prime Factorization Report\n\n- **Input**: {}\n- **Result**: {:?}", n, factors))
 }
 }
 

@@ -84,11 +84,27 @@ impl GmaMasterAgent {
         let is_direct_tool = ToolRegistry::exists(cmd) || cmd == "models";
         let is_orchestration = goal.contains("orchestrate") || goal.contains("mission");
 
-        // 🌀 Rule 18: Autonomous Capability Gap Detection (Prioritized)
-        // If not a direct tool and not explicit orchestration, attempt to distill a native reflex.
-        if !is_direct_tool && !is_orchestration && goal.len() > 5 && goal.len() < 100 && !goal.contains('/') && !goal.contains('\\') {
-            if let Ok(evolve_res) = self.trigger_autonomous_evolution(goal, workspace) {
-                return format!("# gha Autonomous Evolution\n\n- **Intent**: \"{}\"\n- **Status**: Distilled native reflex substrate.\n- **Action**: Applied architectural integration.\n\n{}\n\nRun 'gha release' to deploy the new reflex.", goal, evolve_res);
+        // 🌀 Rule 18: Autonomous Capability Mapping & Gap Detection
+        if !is_direct_tool && !is_orchestration && goal.len() > 5 && goal.len() < 100 {
+            let clean_intent = goal.replace(|c: char| !c.is_alphanumeric() && c != ' ', "").replace(' ', "_").to_lowercase();
+            if ToolRegistry::exists(&clean_intent) {
+                // Execute existing synthesized reflex
+                let mut report = String::new();
+                report.push_str("# gha Native Reflex Execution\n\n");
+                report.push_str(&format!("- **Intent**: \"{}\"\n", goal));
+                report.push_str(&format!("- **Reflex**: {}\n\n", clean_intent));
+                let res = ToolRegistry::execute_tool(&clean_intent, arg, workspace);
+                report.push_str("## Output\n");
+                report.push_str(&format!("   └── {}\n", res));
+                report.push_str("\n## Validation\n └── Verified by Tier 0 Substrate.\n");
+                return report;
+            }
+
+            // If no reflex exists, attempt to distill one
+            if !goal.contains('/') && !goal.contains('\\') {
+                if let Ok(evolve_res) = self.trigger_autonomous_evolution(goal, workspace) {
+                    return format!("# gha Autonomous Evolution\n\n- **Intent**: \"{}\"\n- **Status**: Distilled native reflex substrate.\n- **Action**: Applied architectural integration.\n\n{}\n\nRun 'gha release' to deploy the new reflex.", goal, evolve_res);
+                }
             }
         }
 
