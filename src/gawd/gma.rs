@@ -219,9 +219,15 @@ impl GmaMasterAgent {
                             fix_prompt = format!("Mission '{}' failed due to intelligence limits. Suggest the same command but with a 'smaller context' or 'snippet' of any referenced files.", goal);
                         }
 
-                        if let Ok(fixed_action) = crate::gemi::pulse::GhaPulse::reason(&fix_prompt, workspace)
-                            && fixed_action.contains("ACTION:")
-                        {
+                        // 🚀 Reflex Fix First
+                        let mut fixed_action = crate::gemi::pulse::GhaPulse::reason(&fix_prompt, workspace).unwrap_or_default();
+
+                        // 🚀 Escalate to Tier 2 Deep Fix if reflex fails
+                        if !fixed_action.contains("ACTION:") {
+                             fixed_action = crate::gemi::engine::GemiEngine::generate_reasoning_deep(&fix_prompt, workspace);
+                        }
+
+                        if fixed_action.contains("ACTION:") {
                             let fix_parts: Vec<&str> = fixed_action.split("ACTION: ").nth(1).unwrap_or("").splitn(2, ' ').collect();
                             let fix_tool = fix_parts[0];
                             let fix_arg = fix_parts.get(1).unwrap_or(&"");

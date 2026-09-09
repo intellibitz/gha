@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
 use std::thread;
 use std::sync::{Arc, RwLock, OnceLock};
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,13 +23,16 @@ pub struct DiscoverableAsset {
     pub url: String,
 }
 
+/// Collaborative mission state shared among all swarm agents
+pub type SwarmBlackboard = Arc<RwLock<HashMap<String, String>>>;
+
 /// Core Intelligence Trait for GHA Swarm Agents
 pub trait GawdAgent: Send + Sync {
     fn name(&self) -> String;
     fn role(&self) -> String;
     fn protocol(&self) -> String { "A2A".to_string() }
     fn keywords(&self) -> Vec<&'static str>;
-    fn execute(&self, goal: &str, workspace: &Path) -> String;
+    fn execute(&self, goal: &str, workspace: &Path, blackboard: &SwarmBlackboard) -> String;
 }
 
 pub struct AgentRegistry {
@@ -123,8 +127,10 @@ impl GawdAgent for GhaUserAgent {
     fn name(&self) -> String { "GhaUserAgent".to_string() }
     fn role(&self) -> String { "World User Advocate & Proactive Prompter".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, _goal: &str, workspace: &Path) -> String {
-        format!("Proactive user guidance active for workspace '{}'.", workspace.display())
+    fn execute(&self, _goal: &str, workspace: &Path, blackboard: &SwarmBlackboard) -> String {
+        let msg = format!("Proactive user guidance active for workspace '{}'.", workspace.display());
+        blackboard.write().unwrap().insert("USER_ADVOCATE_STATUS".to_string(), "ACTIVE".to_string());
+        msg
     }
 }
 
@@ -166,8 +172,10 @@ impl GawdAgent for GhaContextAgent {
     fn name(&self) -> String { "GhaContextAgent".to_string() }
     fn role(&self) -> String { "Environment Context".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, _goal: &str, workspace: &Path) -> String {
-        format!("Workspace: {}", workspace.display())
+    fn execute(&self, _goal: &str, workspace: &Path, blackboard: &SwarmBlackboard) -> String {
+        let ctx = format!("Workspace: {}", workspace.display());
+        blackboard.write().unwrap().insert("MISSION_CONTEXT".to_string(), ctx.clone());
+        ctx
     }
 }
 
@@ -176,7 +184,7 @@ impl GawdAgent for GhaReasoningAgent {
     fn name(&self) -> String { "GhaReasoningAgent".to_string() }
     fn role(&self) -> String { "Core Inference".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, goal: &str, workspace: &Path) -> String {
+    fn execute(&self, goal: &str, workspace: &Path, _blackboard: &SwarmBlackboard) -> String {
         let domain_guideline = GawdAgentFleet::get_domain_context_guideline(goal);
         let enriched_goal = if domain_guideline.is_empty() {
             goal.to_string()
@@ -192,7 +200,7 @@ impl GawdAgent for GhaKernelAgent {
     fn name(&self) -> String { "GhaKernelAgent".to_string() }
     fn role(&self) -> String { "Low-Level Engineering".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["os", "kernel", "bootloader", "driver", "assembly", "firmware"] }
-    fn execute(&self, goal: &str, _workspace: &Path) -> String { format!("Low-level synthesis engaged for '{}'.", goal) }
+    fn execute(&self, goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { format!("Low-level synthesis engaged for '{}'.", goal) }
 }
 
 struct GhaEconomicAgent;
@@ -200,7 +208,7 @@ impl GawdAgent for GhaEconomicAgent {
     fn name(&self) -> String { "GhaEconomicAgent".to_string() }
     fn role(&self) -> String { "Financial Intelligence".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["business", "stock", "money", "economic", "finance", "market", "roi"] }
-    fn execute(&self, goal: &str, _workspace: &Path) -> String { format!("Financial flux analysis applied to '{}'.", goal) }
+    fn execute(&self, goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { format!("Financial flux analysis applied to '{}'.", goal) }
 }
 
 struct GhaLinguistAgent;
@@ -208,7 +216,7 @@ impl GawdAgent for GhaLinguistAgent {
     fn name(&self) -> String { "GhaLinguistAgent".to_string() }
     fn role(&self) -> String { "Universal Translation".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["japanese", "tamil", "translate", "language", "linguist"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Universal linguist substrate active.".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Universal linguist substrate active.".to_string() }
 }
 
 struct GhaAgronomyAgent;
@@ -216,7 +224,7 @@ impl GawdAgent for GhaAgronomyAgent {
     fn name(&self) -> String { "GhaAgronomyAgent".to_string() }
     fn role(&self) -> String { "Agricultural & Crop Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["farm", "crop", "soil", "agri", "harvest", "planting", "ph"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Agronomy domain context active (soil pH, N-P-K nutrient ratios, crop yield guidance).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Agronomy domain context active (soil pH, N-P-K nutrient ratios, crop yield guidance).".to_string() }
 }
 
 struct GhaMedicalAgent;
@@ -224,7 +232,7 @@ impl GawdAgent for GhaMedicalAgent {
     fn name(&self) -> String { "GhaMedicalAgent".to_string() }
     fn role(&self) -> String { "Clinical & Health Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["health", "doctor", "medical", "medicine", "clinic", "patient", "fever", "pain"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Clinical health domain context active (evidence-based wellness guidance).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Clinical health domain context active (evidence-based wellness guidance).".to_string() }
 }
 
 struct GhaLegalAgent;
@@ -232,7 +240,7 @@ impl GawdAgent for GhaLegalAgent {
     fn name(&self) -> String { "GhaLegalAgent".to_string() }
     fn role(&self) -> String { "Legal & Contract Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["legal", "contract", "law", "clause", "court", "attorney", "liability"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Legal contract domain context active (liability & compliance analysis).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Legal contract domain context active (liability & compliance analysis).".to_string() }
 }
 
 struct GhaEducationAgent;
@@ -240,7 +248,7 @@ impl GawdAgent for GhaEducationAgent {
     fn name(&self) -> String { "GhaEducationAgent".to_string() }
     fn role(&self) -> String { "Pedagogical & Science Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["education", "math", "teach", "school", "learn", "homework", "essay"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Pedagogical domain context active (step-by-step educational breakdown).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Pedagogical domain context active (step-by-step educational breakdown).".to_string() }
 }
 
 struct GhaEnergyAgent;
@@ -248,7 +256,7 @@ impl GawdAgent for GhaEnergyAgent {
     fn name(&self) -> String { "GhaEnergyAgent".to_string() }
     fn role(&self) -> String { "Climate & Renewable Energy Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["energy", "solar", "climate", "battery", "grid", "wattage"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Renewable energy domain context active (efficiency & wattage analysis).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Renewable energy domain context active (efficiency & wattage analysis).".to_string() }
 }
 
 struct GhaTradesAgent;
@@ -256,7 +264,7 @@ impl GawdAgent for GhaTradesAgent {
     fn name(&self) -> String { "GhaTradesAgent".to_string() }
     fn role(&self) -> String { "Skilled Trades & Building Codes Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["plumb", "pipe", "electric", "hvac", "wire", "carpenter", "mechanic"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Skilled trades domain context active (NEC/UPC/IMC building code compliance & field diagnostic).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Skilled trades domain context active (NEC/UPC/IMC building code compliance & field diagnostic).".to_string() }
 }
 
 struct GhaHouseholdAgent;
@@ -264,7 +272,7 @@ impl GawdAgent for GhaHouseholdAgent {
     fn name(&self) -> String { "GhaHouseholdAgent".to_string() }
     fn role(&self) -> String { "Home & Family Operations Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["recipe", "cook", "dinner", "family", "mom", "diy", "chore", "home"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Home & family operations domain context active (budget, recipes, household care).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Home & family operations domain context active (budget, recipes, household care).".to_string() }
 }
 
 struct GhaCreativeAgent;
@@ -272,7 +280,7 @@ impl GawdAgent for GhaCreativeAgent {
     fn name(&self) -> String { "GhaCreativeAgent".to_string() }
     fn role(&self) -> String { "Narrative & Media Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["story", "script", "video", "design", "music", "content", "movie", "write"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Narrative & media specialist engaged.".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Narrative & media specialist engaged.".to_string() }
 }
 
 struct GhaPublicSafetyAgent;
@@ -280,7 +288,7 @@ impl GawdAgent for GhaPublicSafetyAgent {
     fn name(&self) -> String { "GhaPublicSafetyAgent".to_string() }
     fn role(&self) -> String { "Emergency & Public Safety Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["fire", "police", "emergency", "disaster", "safety", "civil", "triage"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Public safety domain context active (emergency response & crisis coordination).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Public safety domain context active (emergency response & crisis coordination).".to_string() }
 }
 
 struct GhaEnterpriseAgent;
@@ -288,7 +296,7 @@ impl GawdAgent for GhaEnterpriseAgent {
     fn name(&self) -> String { "GhaEnterpriseAgent".to_string() }
     fn role(&self) -> String { "Corporate & Enterprise Specialist".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec!["ceo", "product", "agile", "business", "corporate", "roadmap", "sales"] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Enterprise domain context active (product roadmaps, ROI & executive summary).".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Enterprise domain context active (product roadmaps, ROI & executive summary).".to_string() }
 }
 
 struct GhaSafetyAgent;
@@ -296,7 +304,10 @@ impl GawdAgent for GhaSafetyAgent {
     fn name(&self) -> String { "GhaSafetyAgent".to_string() }
     fn role(&self) -> String { "Mission Guardrails (Rules 4, 7, 11)".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Governance protocols active.".to_string() }
+    fn execute(&self, _goal: &str, _workspace: &Path, blackboard: &SwarmBlackboard) -> String {
+        blackboard.write().unwrap().insert("GOVERNANCE_ACTIVE".to_string(), "TRUE".to_string());
+        "Governance protocols active.".to_string()
+    }
 }
 
 struct GhaTruthAgent;
@@ -304,7 +315,17 @@ impl GawdAgent for GhaTruthAgent {
     fn name(&self) -> String { "GhaTruthAgent".to_string() }
     fn role(&self) -> String { "Hallucination Detection (Rules 1, 2, 3, 10)".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { "Truth and hallucination detection active.".to_string() }
+    fn execute(&self, goal: &str, workspace: &Path, blackboard: &SwarmBlackboard) -> String {
+        let mut _score = 100;
+        let mut _flags: Vec<String> = Vec::new();
+
+        let bb = blackboard.read().unwrap();
+        if goal.contains("write") && !bb.contains_key("FILE_WRITE_DETECTED") {
+            // Truth check logic
+        }
+
+        "Truth and hallucination detection active.".to_string()
+    }
 }
 
 struct DynamicSpecialist {
@@ -315,7 +336,7 @@ impl GawdAgent for DynamicSpecialist {
     fn name(&self) -> String { format!("Gha{}SpecialistAgent", self.topic) }
     fn role(&self) -> String { format!("Dynamic Specialist for '{}'", self.goal) }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, _goal: &str, _workspace: &Path) -> String { format!("Specialized agent '{}' executing intent.", self.name()) }
+    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { format!("Specialized agent '{}' executing intent.", self.name()) }
 }
 
 pub struct GawdAgentFleet;
@@ -361,6 +382,8 @@ impl GawdAgentFleet {
     pub fn dispatch_explosive_swarm(goal: String, workspace: PathBuf) -> Vec<(String, String)> {
         let registry = AgentRegistry::global();
         let fleet = registry.synthesize_fleet(&goal);
+        let blackboard: SwarmBlackboard = Arc::new(RwLock::new(HashMap::new()));
+
         let mut handles = Vec::new();
         let (tx, rx) = channel();
 
@@ -369,9 +392,10 @@ impl GawdAgentFleet {
             let t_ws = workspace.clone();
             let t_tx = tx.clone();
             let t_agent = Arc::clone(&agent);
+            let t_bb = Arc::clone(&blackboard);
 
             let handle = thread::spawn(move || {
-                let output = t_agent.execute(&t_goal, &t_ws);
+                let output = t_agent.execute(&t_goal, &t_ws, &t_bb);
                 let _ = t_tx.send((t_agent.name(), output));
             });
             handles.push(handle);

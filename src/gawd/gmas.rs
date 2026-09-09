@@ -5,6 +5,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpStream, UdpSocket};
 use std::path::Path;
 use std::time::Duration;
+use std::sync::{Arc, Mutex, OnceLock};
 use serde::{Deserialize, Serialize};
 
 use super::agents::{GawdAgentFleet, GawdAgentInfo};
@@ -32,13 +33,54 @@ impl GmasSupervisor {
     pub const UDP_DISCOVERY_PORT: u16 = 9092;
 
     pub fn list_cluster_nodes() -> Vec<ClusterPeerNode> {
-        vec![ClusterPeerNode {
-            node_id: "gha-local-master".to_string(),
-            address: "127.0.0.1:9090".to_string(),
-            node_type: "LOCAL_MASTER".to_string(),
-            is_active: true,
-            capabilities: vec!["CORE".to_string(), "INFERENCE".to_string(), "TOOLING".to_string()],
-        }]
+        static DISCOVERED_PEERS: OnceLock<Arc<Mutex<Vec<ClusterPeerNode>>>> = OnceLock::new();
+        let peers_mutex = DISCOVERED_PEERS.get_or_init(|| {
+            let initial = vec![ClusterPeerNode {
+                node_id: "gha-local-master".to_string(),
+                address: "127.0.0.1:9090".to_string(),
+                node_type: "LOCAL_MASTER".to_string(),
+                is_active: true,
+                capabilities: vec!["CORE".to_string(), "INFERENCE".to_string(), "TOOLING".to_string()],
+            }];
+
+            let shared = Arc::new(Mutex::new(initial));
+            let t_shared = Arc::clone(&shared);
+
+            // 🚀 Zero-Config Background Discovery Loop
+            std::thread::spawn(move || {
+                let socket = UdpSocket::bind(format!("0.0.0.0:{}", Self::UDP_DISCOVERY_PORT)).unwrap();
+                socket.set_broadcast(true).unwrap();
+
+                let mut buf = [0u8; 1024];
+                loop {
+                    if let Ok((amt, src)) = socket.recv_from(&mut buf) {
+                        let msg = String::from_utf8_lossy(&buf[..amt]);
+                        if msg == "GHA_PING" {
+                            let _ = socket.send_to(b"GHA_PONG", src);
+                        } else if msg == "GHA_PONG" {
+                             let mut peers = t_shared.lock().unwrap();
+                             let addr_str = format!("{}:9090", src.ip());
+                             if !peers.iter().any(|p| p.address == addr_str) {
+                                 peers.push(ClusterPeerNode {
+                                     node_id: format!("gha-peer-{}", src.ip()),
+                                     address: addr_str,
+                                     node_type: "PEER".to_string(),
+                                     is_active: true,
+                                     capabilities: vec!["REMOTE_TOOL".to_string()],
+                                 });
+                             }
+                        }
+                    }
+                    // Periodic Beacon
+                    let _ = socket.send_to(b"GHA_PING", format!("255.255.255.255:{}", Self::UDP_DISCOVERY_PORT));
+                    std::thread::sleep(Duration::from_secs(30));
+                }
+            });
+
+            shared
+        });
+
+        peers_mutex.lock().unwrap().clone()
     }
 
     pub fn supervise_mission(goal: &str, workspace: &Path) -> (Vec<A2AMessage>, Vec<GawdAgentInfo>) {
