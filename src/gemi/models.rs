@@ -247,7 +247,7 @@ impl ModelManager {
         let engine = if let Some(e) = engine_override {
             e
         } else {
-            "GHA Native Engine".to_string()
+            "GEMI Engine (Default Cloud Reasoning)".to_string()
         };
 
         (engine, model)
@@ -655,9 +655,6 @@ impl ModelManager {
                     format!("Failed to download model from {}", target)
                 }
             }
-        } else if Command::new("ollama").arg("pull").arg(target).status().is_ok_and(|s| s.success()) {
-            Self::save_download_progress(target, expected_bytes, expected_bytes, "COMPLETED");
-            format!("Pulled model '{}' into local Ollama engine.", target)
         } else {
             let ladder = HardwareProfiler::get_progressive_model_ladder();
             let exact_file = ladder.iter().find(|s| s.hf_repo == target).map(|s| s.hf_file).unwrap_or("model.gguf");

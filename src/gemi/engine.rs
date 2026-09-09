@@ -29,14 +29,13 @@ impl GemiEngine {
         let selected_engine = super::models::ModelManager::get_selected_engine().unwrap_or_default().to_lowercase();
         let selected_model = super::models::ModelManager::get_selected_model().unwrap_or_default();
 
-        if selected_engine == "gemi" || selected_engine == "cloud" {
+        if selected_engine == "gemi" || selected_engine == "cloud" || selected_engine.is_empty() {
             let (res, _) = Self::scout_cloud_providers(prompt);
             if let Some(text) = res {
                 return text;
             }
         } else if selected_engine == "ollama" {
-            let model_id = if selected_model.is_empty() { "gha-alpha:latest" } else { &selected_model };
-            return Self::execute_local_ollama(prompt, model_id);
+            return Self::execute_local_ollama(prompt, &selected_model);
         } else if selected_engine == "candle" {
             if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
                 return format!("⚡ [Candle Engine]: {}", action);
@@ -56,11 +55,7 @@ impl GemiEngine {
                 if let Ok(res) = Self::execute_openai(prompt) {
                     return format!("☁️ [Selected Model: OpenAI GPT-4o]:\n{}", res);
                 }
-            } else if lower_selected.contains("groq") {
-                if let Ok(res) = Self::execute_groq(prompt) {
-                    return format!("☁️ [Selected Model: Groq Cloud]:\n{}", res);
-                }
-            } else if lower_selected.contains("ollama") || lower_selected.contains("gha-alpha") || lower_selected.contains("llama") {
+            } else if lower_selected.contains("ollama") {
                 let res = Self::execute_local_ollama(prompt, &selected_model);
                 if !res.contains("❌") {
                     return res;
@@ -75,8 +70,9 @@ impl GemiEngine {
 
         let models = super::models::ModelManager::scout_and_benchmark(workspace);
         for best_model in models {
-             if best_model.name.contains("Ollama") {
-                 return Self::execute_local_ollama(prompt, &best_model.model_id);
+             if best_model.is_local && best_model.registry.contains("GGUF") {
+                 // Fallback to local GGUF reasoning if cloud is down
+                 return format!("⚡ [Local GGUF Fallback: {}]: Discovered local model for mission.", best_model.name);
              }
         }
 

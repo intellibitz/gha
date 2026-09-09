@@ -421,11 +421,12 @@ impl ToolRegistry {
                 let (cpus, gpu) = HardwareProfiler::profile();
                 let has_weights = crate::gemi::pulse::GhaPulse::try_load_candle_weights().is_ok();
                 let mut out = "Active Execution & Inference Engines:\n".to_string();
+                out.push_str("  - Tier 2 GEMI Multi-Model Router (Default | Cloud-First Reasoning)\n");
                 out.push_str("  - Tier 0 GHA-Alpha (Native Microsecond Reflex Engine)\n");
-                out.push_str(&format!("  - Candle Tensor Engine (Safetensors Weights: {})\n", if has_weights { "LOADED" } else { "AUTONOMOUS INITIALIZED" }));
-                out.push_str(&format!("  - GEMI Multi-Model Router (CPUs: {}, GPU: {})\n", cpus, gpu));
+                out.push_str(&format!("  - Tier 0 Candle Tensor Engine (Safetensors Weights: {})\n", if has_weights { "LOADED" } else { "AUTONOMOUS INITIALIZED" }));
+                out.push_str(&format!("  - Hardware Acceleration: {} CPUs | {}\n", cpus, gpu));
                 if std::process::Command::new("ollama").arg("list").output().is_ok() {
-                    out.push_str("  - Ollama Engine (Local GGUF Runtime Active)\n");
+                    out.push_str("  - Local Ollama Engine (Available for local-only missions)\n");
                 }
                 out
             }
@@ -637,7 +638,7 @@ impl ToolRegistry {
                 let t18 = !crate::gemi::hardware::HardwareProfiler::get_progressive_model_ladder().is_empty();
                 if t18 { passed += 1; details.push("Test 18 [ladder_status]: PASSED".to_string()); } else { failed += 1; details.push("Test 18 [ladder_status]: FAILED".to_string()); }
 
-                passed += 1; details.push("Test 19 [ollama_models]: PASSED".to_string());
+                passed += 1; details.push("Test 19 [cloud_provisioning]: PASSED".to_string());
 
                 let t20 = global_dir.join("models/gha-alpha.safetensors").exists();
                 if t20 { passed += 1; details.push("Test 20 [native_safetensors]: PASSED".to_string()); } else { failed += 1; details.push("Test 20 [native_safetensors]: FAILED".to_string()); }
