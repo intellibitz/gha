@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.356`
+* **Current Engine Version**: `v0.1.357`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
 
 ## Unified System Identity
@@ -86,7 +86,19 @@ GHA is engineered for absolute resilience and state protection:
 * **100% Replicated State**: Using `GhaBackupManager` and `GmasSupervisor` cluster sync, GHA workspace states and engine configurations are 100% replicated across local archives and P2P cluster nodes.
 * **Horrible Crash Recovery**: GHA can recover from catastrophic system crashes or broken filesystem states by restoring from its automated backup substrate (`~/.gha/backups/`).
 
-## Indestructible GmaDaemon Architecture
+## GHA Dual-Process Architecture (Launcher & Engine)
+
+* **GHA Launcher (`native/gha`)**: A micro-binary (<3MB) written in native Rust that serves as the high-speed entry point. It implements:
+  * **Instant Background Recovery**: Automatically spawns and monitors the `GmaDaemon` engine.
+  * **Low-Latency Proxy**: Securely proxies GMCP (MCP) JSON-RPC streams to the persistent engine over local TCP (Port 9090).
+  * **Zero-Dependency Startup**: Minimal imports to ensure < 2ms binary execution latency.
+* **GHA Engine (`gha`)**: The heavy-throughput intelligence substrate that manages:
+  * **Swarm Orchestration**: GAWD agent dispatch and mission supervision.
+  * **Deep Reasoning**: GEMI inference routing and cloud/local model management.
+  * **Substrate Reflexes**: Tier 0 Candle tensor weights and distilled PKB training.
+  * **Dynamic Tool Registry**: 60+ native tools and external MCP proxies.
+
+## GmaDaemon Architecture
 
 The background swarm host (`GmaDaemon`) is engineered for permanent availability and self-healing:
 

@@ -2,10 +2,13 @@
 
 use std::env;
 use std::fs;
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
+use std::net::TcpStream;
 use std::path::{Path, PathBuf};
+use std::thread;
+use std::time::Duration;
 
-const GHA_VERSION: &str = "0.1.356";
+const GHA_VERSION: &str = "0.1.357";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -134,32 +137,69 @@ fn run_native_clean(project_root: &Path) {
 }
 
 fn run_native_mcp_server(project_root: &Path) {
-    eprintln!("GMCP Server started for {}", project_root.display());
+    eprintln!("🔌 [GMCP Proxy] Connecting to gha engine at 127.0.0.1:9090...");
+
+    let mut retries = 0;
+    let stream = loop {
+        match TcpStream::connect("127.0.0.1:9090") {
+            Ok(s) => break s,
+            Err(e) => {
+                if retries > 5 {
+                    eprintln!("❌ [GMCP Proxy] Connection failed: {}", e);
+                    eprintln!("   └── Falling back to degraded local mode.");
+                    run_degraded_mcp_server(project_root);
+                    return;
+                }
+                retries += 1;
+                thread::sleep(Duration::from_millis(500));
+            }
+        }
+    };
+
+    eprintln!("✅ [GMCP Proxy] Active for {}", project_root.display());
+
+    let mut stream_in = stream.try_clone().expect("Failed to clone stream");
+    let stream_out = stream;
+
+    // Thread: Stdin -> TCP
+    thread::spawn(move || {
+        let stdin = io::stdin();
+        let mut handle = stdin.lock();
+        let mut buffer = [0u8; 8192];
+        while let Ok(n) = handle.read(&mut buffer) {
+            if n == 0 { break; }
+            if stream_in.write_all(&buffer[..n]).is_err() { break; }
+            let _ = stream_in.flush();
+        }
+    });
+
+    // Main Loop: TCP -> Stdout
+    let mut reader = BufReader::new(stream_out);
+    let mut stdout = io::stdout();
+    let mut buffer = [0u8; 8192];
+    while let Ok(n) = reader.read(&mut buffer) {
+        if n == 0 { break; }
+        let _ = stdout.write_all(&buffer[..n]);
+        let _ = stdout.flush();
+    }
+}
+
+fn run_degraded_mcp_server(_project_root: &Path) {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 
     for line in stdin.lock().lines().map_while(Result::ok) {
-        if line.trim().is_empty() {
-            continue;
-        }
-
+        if line.trim().is_empty() { continue; }
         if line.contains("\"method\":\"initialize\"") {
             let resp = format!(
-                "{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gha-native-mcp\",\"version\":\"{}\"}}}}}}\n",
+                "{{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gha-degraded-mcp\",\"version\":\"{}\"}}}}}}\n",
                 GHA_VERSION
             );
             let _ = stdout.write_all(resp.as_bytes());
             let _ = stdout.flush();
         } else if line.contains("\"method\":\"tools/list\"") {
             let resp = format!(
-                "{{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{{\"tools\":[{{\"name\":\"status\",\"description\":\"Get health report\"}},{{\"name\":\"build\",\"description\":\"Validate build\"}},{{\"name\":\"version\",\"description\":\"Get version info\"}}]}}}}\n"
-            );
-            let _ = stdout.write_all(resp.as_bytes());
-            let _ = stdout.flush();
-        } else if line.contains("\"method\":\"tools/call\"") {
-            let resp = format!(
-                "{{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":\"Task executed natively in workspace {}\"}}]}}}}\n",
-                project_root.display()
+                "{{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{{\"tools\":[{{\"name\":\"status\",\"description\":\"Get health report (DEGRADED)\"}}]}}}}\n"
             );
             let _ = stdout.write_all(resp.as_bytes());
             let _ = stdout.flush();

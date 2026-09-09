@@ -99,14 +99,16 @@ if [ "$INSTALLED" = "0" ]; then
         fi
 
         (cd "$SCRIPT_DIR" && cargo build --release $BUILD_FEATURES >/dev/null 2>&1)
-        if [ -f "$SCRIPT_DIR/target/release/gha" ]; then
+        (cd "$SCRIPT_DIR/src/native/gha" && cargo build --release >/dev/null 2>&1)
+
+        if [ -f "$SCRIPT_DIR/target/release/gha" ] && [ -f "$SCRIPT_DIR/src/native/gha/target/release/gha" ]; then
             pkill -f gha || true
             rm -f "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha" 2>/dev/null || true
             cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/gha-engine"
-            cp "$SCRIPT_DIR/target/release/gha" "$GLOBAL_BIN_DIR/gha"
+            cp "$SCRIPT_DIR/src/native/gha/target/release/gha" "$GLOBAL_BIN_DIR/gha"
             chmod +x "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
             INSTALLED=1
-            echo "Deployed compiled binary to $GLOBAL_BIN_DIR/gha"
+            echo "Deployed engine and launcher binaries to $GLOBAL_BIN_DIR"
         fi
     fi
 fi
