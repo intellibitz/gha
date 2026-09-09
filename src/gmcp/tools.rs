@@ -95,6 +95,7 @@ impl ToolRegistry {
             Arc::new(DebugEngineTool),
             Arc::new(VisionAnalyzeTool),
             Arc::new(RunTestHarnessTool),
+            Arc::new(BenchmarkTool),
             Arc::new(SelfHealBuildTool),
             Arc::new(InfraCommandTool { name: "docker_ps".into(), bin: "docker".into(), args: vec!["ps", "--format", "table {{.Names}}\t{{.Status}}"] }),
             Arc::new(InfraCommandTool { name: "docker_build".into(), bin: "docker".into(), args: vec!["build", "-t", "gha-app:latest", "."] }),
@@ -122,6 +123,7 @@ impl ToolRegistry {
         tools.insert("list_mcp_clients".to_string(), Arc::new(ClientsTool));
         tools.insert("list_mcp_servers".to_string(), Arc::new(ServersTool));
         tools.insert("set_model".to_string(), Arc::new(UseModelTool));
+        tools.insert("perf_test".to_string(), Arc::new(BenchmarkTool));
         tools.insert("download".to_string(), Arc::new(WebSearchDownloadTool));
         tools.insert("web_fetch".to_string(), Arc::new(WebSearchDownloadTool));
         tools.insert("audit_log".to_string(), Arc::new(AuditTool));
@@ -649,6 +651,28 @@ impl GhaTool for RunTestHarnessTool {
             return Ok(if out.status.success() { "✅ Test build PASSED." } else { "❌ Test build FAILED." }.into());
         }
         Ok("Generic harness ready.".into())
+    }
+}
+
+struct BenchmarkTool;
+impl GhaTool for BenchmarkTool {
+    fn name(&self) -> String { "benchmark".to_string() }
+    fn description(&self) -> String { "Run performance benchmark on local and cloud models".to_string() }
+    fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
+        let results = ModelManager::run_benchmark(workspace, arg);
+        if results.is_empty() { return Ok("No models matched benchmark filter.".to_string()); }
+
+        let mut out = format!("# GHA Intelligence Benchmark Report\n\n");
+        out.push_str("| Model | Tier | Latency | Speed | Status |\n");
+        out.push_str("| :--- | :--- | :--- | :--- | :--- |\n");
+
+        for r in results {
+            let tier = if r.is_local { "LOCAL" } else { "CLOUD" };
+            let speed = if r.tokens_per_sec > 0.0 { format!("{:.1} t/s", r.tokens_per_sec) } else { "N/A".into() };
+            out.push_str(&format!("| {} | {} | {}ms | {} | {} |\n", r.name, tier, r.latency_ms, speed, r.status));
+        }
+
+        Ok(out)
     }
 }
 

@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.338`
+* **Current Engine Version**: `v0.1.339`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
 
 ## Unified System Identity
@@ -192,5 +192,5 @@ GHA is engineered for maximum performance through full hardware utilization:
 
 * **`GmaDaemon`**: Persistent background daemon managing local sandbox and swarm tasks.
 * **`SandboxManager`**: Isolated runtime execution container in `.gha`.
-* **`ToolRegistry`**: Native GMCP capability executor (file I/O, VCS, system, web, MCP tools).
+* **`ToolRegistry`**: Native GMCP capability executor (file I/O, VCS, system, web, MCP tools, and intelligence benchmarking).
 * **`HardwareProfiler`**: Hardware profiler optimizing CPU thread saturation, RAM, and GPU usage.

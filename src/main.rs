@@ -24,7 +24,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.338";
+pub const GHA_VERSION: &str = "0.1.339";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -45,7 +45,7 @@ impl Completer for GhaHelper {
         let commands = [
             "/help", "/domain", "/simple", "/backup", "/restore",
             "/audit", "/memory", "/forget", "/setkey", "/renew", "/agents",
-            "/engines", "/clients", "/servers", "/debug", "/models", "/services",
+            "/engines", "/clients", "/servers", "/debug", "/models", "/benchmark", "/services",
             "/status", "/schedule", "/export_doc", "/clear", "/exit",
         ];
 
@@ -99,6 +99,7 @@ fn print_help() {
     println!("  /servers, :servers       List running local servers");
     println!("  /debug, :debug           Toggle developer debug mode");
     println!("  /models, :models         List available models");
+    println!("  /benchmark <filter>      Run intelligence performance benchmark");
     println!("  /services, :services     List running services");
     println!("  /status, :status         Inspect health & hardware status");
     println!("  /schedule <sec> <task>   Schedule background task");
@@ -349,6 +350,14 @@ fn run_interactive_shell(cwd: &Path) {
             continue;
         }
 
+        if command_lower.starts_with("/benchmark") || command_lower.starts_with(":benchmark") {
+            let arg = command.trim_start_matches("/benchmark").trim_start_matches(":benchmark").trim();
+            let res = ToolRegistry::execute_tool("benchmark", arg, cwd);
+            println!("\n{}", res);
+            println!();
+            continue;
+        }
+
         if command_lower.starts_with("/setkey") || command_lower.starts_with(":setkey") {
             let parts: Vec<&str> = command.split_whitespace().collect();
             if parts.len() >= 3 {
@@ -426,6 +435,10 @@ fn run_interactive_shell(cwd: &Path) {
             "/models" | ":models" | "models" => {
                 let report = gma.solve("list_models", cwd, GHA_VERSION);
                 println!("\n{}", report);
+            }
+            "/benchmark" | ":benchmark" | "benchmark" => {
+                let res = ToolRegistry::execute_tool("benchmark", "", cwd);
+                println!("\n{}", res);
             }
             "/verify_models" | ":verify_models" | "verify_models" => {
                 let res = ToolRegistry::execute_tool("verify_models", "", cwd);
@@ -564,6 +577,11 @@ fn main() {
             let gma = GmaMasterAgent::new();
             let report = gma.solve("list_models", &cwd, GHA_VERSION);
             println!("{}", report);
+        }
+        "benchmark" | ":benchmark" | "/benchmark" => {
+            let filter = args.get(1).map(|s| s.as_str()).unwrap_or("");
+            let res = ToolRegistry::execute_tool("benchmark", filter, &cwd);
+            println!("{}", res);
         }
         "verify_models" | "verify-models" | ":verify_models" | "/verify_models" => {
             let res = ToolRegistry::execute_tool("verify_models", "", &cwd);
