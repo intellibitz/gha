@@ -9,6 +9,8 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 
+use serde_json::json;
+
 use crate::gemi::GemiServer;
 use crate::gmcp::server::{extract_json_id, extract_tool_arg, extract_tool_name};
 use crate::gmcp::tools::ToolRegistry;
@@ -170,40 +172,66 @@ impl GmaDaemon {
                     }
 
                     if trimmed.contains("\"method\":\"initialize\"") {
-                        let id = extract_json_id(trimmed).unwrap_or(1);
-                        let resp = format!(
-                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gmcp-native-server\",\"version\":\"{}\"}}}}}}\n",
-                            id, crate::GHA_VERSION
-                        );
-                        let _ = writer.write_all(resp.as_bytes());
-                        let _ = writer.flush();
+                        let id = extract_json_id(trimmed).unwrap_or(json!(1));
+                        let resp_val = json!({
+                            "jsonrpc": "2.0",
+                            "id": id,
+                            "result": {
+                                "protocolVersion": "2024-11-05",
+                                "capabilities": {
+                                    "tools": { "listChanged": false }
+                                },
+                                "serverInfo": {
+                                    "name": "gmcp-native-server",
+                                    "version": crate::GHA_VERSION
+                                }
+                            }
+                        });
+                        if let Ok(resp) = serde_json::to_string(&resp_val) {
+                             let _ = writer.write_all(format!("{}\n", resp).as_bytes());
+                             let _ = writer.flush();
+                        }
                     } else if trimmed.contains("\"method\":\"tools/list\"") {
-                        let id = extract_json_id(trimmed).unwrap_or(2);
+                        let id = extract_json_id(trimmed).unwrap_or(json!(2));
                         let tools = ToolRegistry::list_tools();
-                        let tools_json: Vec<String> = tools
+                        let tools_json: Vec<serde_json::Value> = tools
                             .iter()
-                            .map(|t| format!("{{\"name\":\"{}\",\"description\":\"{}\"}}", t.name, t.description))
+                            .map(|t| json!({"name": t.name, "description": t.description}))
                             .collect();
-                        let resp = format!(
-                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"tools\":[{}]}}}}\n",
-                            id, tools_json.join(",")
-                        );
-                        let _ = writer.write_all(resp.as_bytes());
-                        let _ = writer.flush();
+                        let resp_val = json!({
+                            "jsonrpc": "2.0",
+                            "id": id,
+                            "result": {
+                                "tools": tools_json
+                            }
+                        });
+                        if let Ok(resp) = serde_json::to_string(&resp_val) {
+                             let _ = writer.write_all(format!("{}\n", resp).as_bytes());
+                             let _ = writer.flush();
+                        }
                     } else if trimmed.contains("\"method\":\"tools/call\"") {
-                        let id = extract_json_id(trimmed).unwrap_or(3);
+                        let id = extract_json_id(trimmed).unwrap_or(json!(3));
                         let tool_name = extract_tool_name(trimmed).unwrap_or_else(|| "status".to_string());
                         let tool_arg = extract_tool_arg(trimmed).unwrap_or_default();
 
                         let result_text = ToolRegistry::execute_tool(&tool_name, &tool_arg, &workspace);
-                        let escaped_text = serde_json::to_string(&result_text).unwrap_or_default();
 
-                        let resp = format!(
-                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"content\":[{{\"type\":\"text\",\"text\":{}}}]}}}}\n",
-                            id, escaped_text
-                        );
-                        let _ = writer.write_all(resp.as_bytes());
-                        let _ = writer.flush();
+                        let resp_val = json!({
+                            "jsonrpc": "2.0",
+                            "id": id,
+                            "result": {
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": result_text
+                                    }
+                                ]
+                            }
+                        });
+                        if let Ok(resp) = serde_json::to_string(&resp_val) {
+                             let _ = writer.write_all(format!("{}\n", resp).as_bytes());
+                             let _ = writer.flush();
+                        }
                     }
                     line.clear();
                 }

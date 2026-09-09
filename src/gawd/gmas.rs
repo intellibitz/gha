@@ -104,15 +104,22 @@ impl GmasSupervisor {
 
     pub fn dispatch_peer_task(addr: &str, tool_name: &str, arg: &str) -> String {
         if let Ok(mut stream) = TcpStream::connect_timeout(&addr.parse().unwrap_or_else(|_| "127.0.0.1:9090".parse().unwrap()), Duration::from_millis(500)) {
-            let req = format!(
-                "{{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"tools/call\",\"params\":{{\"name\":\"{}\",\"arguments\":\"{}\"}}}}\n",
-                tool_name, arg
-            );
-            if stream.write_all(req.as_bytes()).is_ok() && stream.flush().is_ok() {
-                let mut reader = BufReader::new(stream);
-                let mut resp = String::new();
-                if reader.read_line(&mut resp).is_ok() {
-                    return format!("🌐 [A2A Flux ({})]: {}", addr, resp.trim());
+            let req_val = serde_json::json!({
+                "jsonrpc": "2.0",
+                "id": 99,
+                "method": "tools/call",
+                "params": {
+                    "name": tool_name,
+                    "arguments": arg
+                }
+            });
+            if let Ok(req) = serde_json::to_string(&req_val) {
+                if stream.write_all(format!("{}\n", req).as_bytes()).is_ok() && stream.flush().is_ok() {
+                    let mut reader = BufReader::new(stream);
+                    let mut resp = String::new();
+                    if reader.read_line(&mut resp).is_ok() {
+                        return format!("🌐 [A2A Flux ({})]: {}", addr, resp.trim());
+                    }
                 }
             }
         }

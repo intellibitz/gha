@@ -5,6 +5,7 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
 use std::path::PathBuf;
 use std::thread;
+use serde_json::json;
 
 use crate::gawd::GmaMasterAgent;
 use crate::gmcp::tools::ToolRegistry;
@@ -77,11 +78,12 @@ impl GemiServer {
                     let _ = writer.flush();
                 } else if method == "GET" && (path.starts_with("/v1/models") || path.starts_with("/models")) {
                     let models = ModelManager::list_models(&workspace);
-                    let json_models: Vec<String> = models
+                    let json_models: Vec<serde_json::Value> = models
                         .iter()
-                        .map(|m| format!("{{\"id\":\"{}\",\"object\":\"model\",\"owned_by\":\"gha\"}}", m.model_id))
+                        .map(|m| json!({"id": m.model_id, "object": "model", "owned_by": "gha"}))
                         .collect();
-                    let payload = format!("{{\"object\":\"list\",\"data\":[{}]}}", json_models.join(","));
+                    let payload_val = json!({"object": "list", "data": json_models});
+                    let payload = serde_json::to_string(&payload_val).unwrap_or_default();
 
                     let resp = format!(
                         "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: *\r\nContent-Length: {}\r\n\r\n{}",

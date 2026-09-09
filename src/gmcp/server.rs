@@ -21,14 +21,14 @@ impl GmcpServer {
             }
 
             if trimmed.contains("\"method\":\"initialize\"") {
-                let id = extract_json_id(trimmed).unwrap_or(1);
+                let id = extract_json_id(trimmed).unwrap_or(json!(1));
                 let resp_val = json!({
                     "jsonrpc": "2.0",
                     "id": id,
                     "result": {
                         "protocolVersion": "2024-11-05",
                         "capabilities": {
-                            "tools": {}
+                            "tools": { "listChanged": false }
                         },
                         "serverInfo": {
                             "name": "gmcp-native-server",
@@ -41,7 +41,7 @@ impl GmcpServer {
                     let _ = stdout.flush();
                 }
             } else if trimmed.contains("\"method\":\"tools/list\"") {
-                let id = extract_json_id(trimmed).unwrap_or(2);
+                let id = extract_json_id(trimmed).unwrap_or(json!(2));
                 let tools = ToolRegistry::list_tools();
                 let tools_json: Vec<serde_json::Value> = tools
                     .iter()
@@ -59,7 +59,7 @@ impl GmcpServer {
                     let _ = stdout.flush();
                 }
             } else if trimmed.contains("\"method\":\"tools/call\"") {
-                let id = extract_json_id(trimmed).unwrap_or(3);
+                let id = extract_json_id(trimmed).unwrap_or(json!(3));
                 let tool_name = extract_tool_name(trimmed).unwrap_or_else(|| "status".to_string());
                 let tool_arg = extract_tool_arg(trimmed).unwrap_or_default();
 
@@ -86,11 +86,11 @@ impl GmcpServer {
     }
 }
 
-pub fn extract_json_id(line: &str) -> Option<u64> {
+pub fn extract_json_id(line: &str) -> Option<serde_json::Value> {
     if let Ok(v) = serde_json::from_str::<serde_json::Value>(line)
-        && let Some(id) = v.get("id").and_then(|i| i.as_u64())
+        && let Some(id) = v.get("id")
     {
-        return Some(id);
+        return Some(id.clone());
     }
     None
 }

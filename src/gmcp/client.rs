@@ -191,8 +191,11 @@ impl GmcpClient {
             "method": "initialize",
             "params": {
                 "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": { "name": "gha-master", "version": "0.1.112" }
+                "capabilities": {
+                    "roots": { "listChanged": false },
+                    "sampling": {}
+                },
+                "clientInfo": { "name": "gha-master", "version": crate::GHA_VERSION }
             }
         });
         let _ = writeln!(stdin, "{}", init_req);
