@@ -23,7 +23,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-const GHA_VERSION: &str = "0.1.265";
+const GHA_VERSION: &str = "0.1.266";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -112,10 +112,16 @@ fn print_help() {
 }
 
 fn print_header(cwd: &Path, debug_mode: bool, friendly_mode: bool) {
+    let home = get_home_dir();
+    let global_dir = home.join(".gha");
+    let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+    let repo_home = format!("https://github.com/{}", cfg.gha_repo);
+
     if friendly_mode {
         println!("{}─────────────────────────────────────────────────────────────{}", COLOR_DIM, COLOR_RESET);
         println!("{}🌸 GHA Friendly Guidance Mode (v{}){}", COLOR_BOLD, GHA_VERSION, COLOR_RESET);
         println!("{}Workspace: {}{}", COLOR_DIM, cwd.display(), COLOR_RESET);
+        println!("{}Home: {}{}", COLOR_DIM, repo_home, COLOR_RESET);
 
         let proactive_prompts = crate::gawd::agents::GhaUserAgent::generate_proactive_prompts(cwd);
         if !proactive_prompts.is_empty() {
@@ -134,6 +140,7 @@ fn print_header(cwd: &Path, debug_mode: bool, friendly_mode: bool) {
     println!("{}Ask GHA (v{}){} | Substrate: {}Universal Intelligence Layer{}", COLOR_BOLD, GHA_VERSION, COLOR_RESET, COLOR_GREEN, COLOR_RESET);
     println!("{}Engine: {}{}{} | Model: {}{}{} | Mode: {}{}{}", COLOR_DIM, COLOR_CYAN, engine, COLOR_RESET, COLOR_CYAN, model, COLOR_RESET, COLOR_GREEN, mode_label, COLOR_RESET);
     println!("{}Workspace: {}{}", COLOR_DIM, cwd.display(), COLOR_RESET);
+    println!("{}Home: {}{}", COLOR_DIM, repo_home, COLOR_RESET);
 
     let proactive_prompts = crate::gawd::agents::GhaUserAgent::generate_proactive_prompts(cwd);
     if !proactive_prompts.is_empty() {
@@ -431,6 +438,7 @@ fn run_interactive_shell(cwd: &Path) {
                 println!("  🎓 Pedagogical & Science Learning  (e.g. STEM synthesis, interactive tutoring)");
                 println!("  ⚡ Renewable Energy & Climate      (e.g. solar potential, grid optimization)");
                 println!("  💻 Software & Kernel Engineering   (e.g. Rust/C architecture, debugging)");
+                println!("  🏠 Dynamic GHA Home Support        (Use /setkey GHA_REPO <owner/repo>)");
                 println!("  🌍 Universal Substrate              (e.g. general multi-agent execution)");
             }
             "/status" | ":status" | "status" => {
@@ -613,6 +621,7 @@ fn main() {
             println!("  🎓 Pedagogical & Science Learning  (e.g. STEM synthesis, interactive tutoring)");
             println!("  ⚡ Renewable Energy & Climate      (e.g. solar potential, grid optimization)");
             println!("  💻 Software & Kernel Engineering   (e.g. Rust/C architecture, debugging)");
+            println!("  🏠 Dynamic GHA Home Support        (Use /setkey GHA_REPO <owner/repo>)");
             println!("  🌍 Universal Substrate              (e.g. general multi-agent execution)\n");
         }
         "verify-cloud" | ":verify-cloud" | "/verify-cloud" => {

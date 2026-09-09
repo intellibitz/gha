@@ -13,7 +13,7 @@ New-Item -ItemType Directory -Force -Path $GlobalModelsDir | Out-Null
 $GhaRepo = if ($env:GHA_REPO) { $env:GHA_REPO } else { "intellibitz/gha" }
 $ReleaseUrl = "https://github.com/$GhaRepo/releases/latest/download"
 
-Write-Host "⚡ [gha] Initializing 100% Sandboxed Native AI Runtime..." -ForegroundColor Cyan
+Write-Host "⚡ [gha] Initializing 100% Sandboxed Native AI Runtime (Repo: $GhaRepo)..." -ForegroundColor Cyan
 
 $ExePath = Join-Path $GlobalBinDir "gha.exe"
 

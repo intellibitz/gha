@@ -7,7 +7,9 @@ GLOBAL_BIN_DIR="$GLOBAL_GHA_DIR/bin"
 mkdir -p "$GLOBAL_BIN_DIR"
 mkdir -p "$GLOBAL_GHA_DIR/models"
 
-echo "Initializing gha environment..."
+GHA_REPO="${GHA_REPO:-intellibitz/gha}"
+
+echo "Initializing gha environment (Repo: $GHA_REPO)..."
 
 # 1. Detect Environment
 OS_TYPE="$(uname -s | tr '[:upper:]' '[:lower:]')"
@@ -30,7 +32,7 @@ INSTALLED=0
 # 2. Try Binary Download First (Lightning Fast)
 if [[ "$PLATFORM" != "unknown" && "$ARCH" != "unknown" ]]; then
     BINARY_NAME="gha-$PLATFORM-$ARCH"
-    DOWNLOAD_URL="https://github.com/intellibitz/gha/releases/latest/download/$BINARY_NAME"
+    DOWNLOAD_URL="https://github.com/$GHA_REPO/releases/latest/download/$BINARY_NAME"
 
     echo "Attempting to download pre-compiled binary: $BINARY_NAME..."
 
@@ -42,7 +44,7 @@ if [[ "$PLATFORM" != "unknown" && "$ARCH" != "unknown" ]]; then
             cp "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
             chmod +x "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
             INSTALLED=1
-            echo "Successfully deployed binary from GitHub."
+            echo "Successfully deployed binary from GitHub ($GHA_REPO)."
         fi
     elif command -v wget >/dev/null 2>&1; then
         if wget -q "$DOWNLOAD_URL" -O "$GLOBAL_BIN_DIR/gha-engine-new"; then
@@ -52,7 +54,7 @@ if [[ "$PLATFORM" != "unknown" && "$ARCH" != "unknown" ]]; then
             cp "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
             chmod +x "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
             INSTALLED=1
-            echo "Successfully deployed binary from GitHub."
+            echo "Successfully deployed binary from GitHub ($GHA_REPO)."
         fi
     fi
 fi
@@ -66,9 +68,9 @@ if [ "$INSTALLED" = "0" ]; then
         SCRIPT_DIR="$SCRIPT_DIR_DETECT"
         echo "Using local source directory..."
     else
-        echo "Downloading gha source archive..."
+        echo "Downloading gha source archive ($GHA_REPO)..."
         TEMP_DIR=$(mktemp -d)
-        SOURCE_URL="https://github.com/intellibitz/gha/archive/refs/heads/main.tar.gz"
+        SOURCE_URL="https://github.com/$GHA_REPO/archive/refs/heads/main.tar.gz"
         if command -v curl >/dev/null 2>&1 && command -v tar >/dev/null 2>&1; then
             curl -sSfL "$SOURCE_URL" | tar -xzC "$TEMP_DIR" --strip-components=1 || { echo "Source download failed."; exit 1; }
             SCRIPT_DIR="$TEMP_DIR"

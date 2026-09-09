@@ -13,6 +13,7 @@ pub struct GhaConfig {
     pub default_engine: String,
     pub default_model: String,
     pub auto_download_models: bool,
+    pub gha_repo: String,
 }
 
 impl Default for GhaConfig {
@@ -24,6 +25,7 @@ impl Default for GhaConfig {
             default_engine: "gha".to_string(),
             default_model: "gha-alpha".to_string(),
             auto_download_models: true,
+            gha_repo: "intellibitz/gha".to_string(),
         }
     }
 }
