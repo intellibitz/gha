@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.262`
+* **Current Engine Version**: `v0.1.263`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
 
 ## Unified System Identity
@@ -61,6 +61,7 @@ GHA's GMCP substrate is a 100% industry-standard implementation of the Model Con
 ## Zero Configuration Guarantee Across All Components
 
 * **Zero Setup**: All GHA components (GMA, GAWD, GEMI, GMCP, GmaDaemon, GemiServer) run out-of-the-box with **0 manual configuration**.
+* **Lightning Fast Installer**: The one-line installer (`install.sh`) prioritizes pre-compiled binary downloads based on OS/Arch, falling back to source build only when necessary. It handles process renewal automatically.
 * **Auto-Discovery**: Hardware acceleration (CPUs, CUDA/Metal GPU), local models (Candle, Ollama), and network interfaces are discovered and benchmarked automatically on startup.
 * **Auto-Fallback**: If internet or cloud API keys are absent, GHA operates 100% offline using native Candle tensor weights (`~/.gha/models/gha-alpha.safetensors`) or local GGUF vaults without erroring.
 
