@@ -85,7 +85,7 @@ impl GhaPulse {
 
         if lower.contains("download model") || lower.contains("install model") || lower.contains("pull model") {
             let parts: Vec<&str> = lower.split_whitespace().collect();
-            let model_arg = parts.last().copied().unwrap_or("qwen");
+            let model_arg = parts.last().copied().unwrap_or("gha-alpha");
             return Ok(format!("ACTION: install_model {}", model_arg));
         }
 

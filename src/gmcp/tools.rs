@@ -625,7 +625,7 @@ impl ToolRegistry {
                 let t14 = ModelManager::get_selected_model().is_some();
                 if t14 { passed += 1; details.push("Test 14 [get_model]: PASSED".to_string()); } else { failed += 1; details.push("Test 14 [get_model]: FAILED".to_string()); }
 
-                let t15 = ModelManager::set_selected_model("Qwen/Qwen2.5-1.5B-Instruct-GGUF").is_ok();
+                let t15 = ModelManager::set_selected_model("gha-alpha/gha-alpha-1.5b-instruct-v0.1-GGUF").is_ok();
                 if t15 { passed += 1; details.push("Test 15 [use_model]: PASSED".to_string()); } else { failed += 1; details.push("Test 15 [use_model]: FAILED".to_string()); }
 
                 let t16 = ModelManager::get_download_progress().is_some() || ModelManager::get_model_agent_report().is_some();

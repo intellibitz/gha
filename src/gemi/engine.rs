@@ -35,7 +35,7 @@ impl GemiEngine {
                 return text;
             }
         } else if selected_engine == "ollama" {
-            let model_id = if selected_model.is_empty() { "qwen:latest" } else { &selected_model };
+            let model_id = if selected_model.is_empty() { "gha-alpha:latest" } else { &selected_model };
             return Self::execute_local_ollama(prompt, model_id);
         } else if selected_engine == "candle" {
             if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
@@ -58,9 +58,9 @@ impl GemiEngine {
                 }
             } else if lower_selected.contains("groq") {
                 if let Ok(res) = Self::execute_groq(prompt) {
-                    return format!("☁️ [Selected Model: Groq Qwen]:\n{}", res);
+                    return format!("☁️ [Selected Model: Groq Cloud]:\n{}", res);
                 }
-            } else if lower_selected.contains("ollama") || lower_selected.contains("qwen") || lower_selected.contains("llama") {
+            } else if lower_selected.contains("ollama") || lower_selected.contains("gha-alpha") || lower_selected.contains("llama") {
                 let res = Self::execute_local_ollama(prompt, &selected_model);
                 if !res.contains("❌") {
                     return res;
@@ -95,7 +95,7 @@ impl GemiEngine {
 
         // Priority 2: Groq
         match Self::execute_groq(prompt) {
-            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [🏆 Premier Pick: Groq Qwen]:\n{}", res)), errors),
+            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [🏆 Premier Pick: Groq Cloud]:\n{}", res)), errors),
             Ok(_) => errors.push("Groq: Empty response".to_string()),
             Err(e) => errors.push(format!("Groq: {}", e)),
         }
@@ -113,7 +113,7 @@ impl GemiEngine {
     fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
         let payload = json!({
-            "model": "qwen/qwen3.6-27b",
+            "model": "llama3-70b-8192",
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": 1000
         });

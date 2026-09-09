@@ -65,8 +65,8 @@ impl HardwareProfiler {
             ModelLadderStep {
                 step: 1,
                 label: "1.5B Parameters (Fast Local Edge)",
-                hf_repo: "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
-                hf_file: "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+                hf_repo: "gha-alpha/gha-alpha-1.5b-instruct-v0.1-GGUF",
+                hf_file: "gha-alpha-1.5b-instruct-q4_k_m.gguf",
             },
         ];
 
@@ -74,32 +74,32 @@ impl HardwareProfiler {
             ladder.push(ModelLadderStep {
                 step: 2,
                 label: "7B Parameters (Mid-Range Desktop)",
-                hf_repo: "bartowski/Qwen2.5-7B-Instruct-GGUF",
-                hf_file: "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+                hf_repo: "gha-alpha/gha-alpha-7b-instruct-v0.1-GGUF",
+                hf_file: "gha-alpha-7b-instruct-q4_k_m.gguf",
             });
         }
         if ram_gb >= 16 {
             ladder.push(ModelLadderStep {
                 step: 3,
                 label: "14B Parameters (High-Accuracy Workstation)",
-                hf_repo: "bartowski/Qwen2.5-14B-Instruct-GGUF",
-                hf_file: "Qwen2.5-14B-Instruct-Q4_K_M.gguf",
+                hf_repo: "gha-alpha/gha-alpha-14b-instruct-v0.1-GGUF",
+                hf_file: "gha-alpha-14b-instruct-q4_k_m.gguf",
             });
         }
         if ram_gb >= 32 {
             ladder.push(ModelLadderStep {
                 step: 4,
                 label: "32B Parameters (High-End Workstation)",
-                hf_repo: "bartowski/Qwen2.5-32B-Instruct-GGUF",
-                hf_file: "Qwen2.5-32B-Instruct-Q4_K_M.gguf",
+                hf_repo: "gha-alpha/gha-alpha-32b-instruct-v0.1-GGUF",
+                hf_file: "gha-alpha-32b-instruct-q4_k_m.gguf",
             });
         }
         if ram_gb >= 64 {
             ladder.push(ModelLadderStep {
                 step: 5,
                 label: "72B Parameters (Ultra-Capacity Workstation)",
-                hf_repo: "bartowski/Qwen2.5-72B-Instruct-GGUF",
-                hf_file: "Qwen2.5-72B-Instruct-Q4_K_M.gguf",
+                hf_repo: "gha-alpha/gha-alpha-72b-instruct-v0.1-GGUF",
+                hf_file: "gha-alpha-72b-instruct-q4_k_m.gguf",
             });
         }
 
@@ -113,36 +113,36 @@ impl HardwareProfiler {
         if ram_gb >= 64 {
             HardwareCapacity {
                 ram_gb,
-                recommended_hf_repo: "Qwen/Qwen2.5-72B-Instruct-GGUF",
-                recommended_file: "qwen2.5-72b-instruct-q4_k_m.gguf",
+                recommended_hf_repo: "gha-alpha/gha-alpha-72b-instruct-v0.1-GGUF",
+                recommended_file: "gha-alpha-72b-instruct-q4_k_m.gguf",
                 model_size_label: "72B Parameters (Ultra-Workstation Capacity)",
             }
         } else if ram_gb >= 32 {
             HardwareCapacity {
                 ram_gb,
-                recommended_hf_repo: "Qwen/Qwen2.5-32B-Instruct-GGUF",
-                recommended_file: "qwen2.5-32b-instruct-q4_k_m.gguf",
+                recommended_hf_repo: "gha-alpha/gha-alpha-32b-instruct-v0.1-GGUF",
+                recommended_file: "gha-alpha-32b-instruct-q4_k_m.gguf",
                 model_size_label: "32B Parameters (High-End Workstation Capacity)",
             }
         } else if ram_gb >= 16 {
             HardwareCapacity {
                 ram_gb,
-                recommended_hf_repo: "Qwen/Qwen2.5-14B-Instruct-GGUF",
-                recommended_file: "qwen2.5-14b-instruct-q4_k_m.gguf",
+                recommended_hf_repo: "gha-alpha/gha-alpha-14b-instruct-v0.1-GGUF",
+                recommended_file: "gha-alpha-14b-instruct-q4_k_m.gguf",
                 model_size_label: "14B Parameters (Desktop/Laptop Capacity)",
             }
         } else if ram_gb >= 8 {
             HardwareCapacity {
                 ram_gb,
-                recommended_hf_repo: "Qwen/Qwen2.5-7B-Instruct-GGUF",
-                recommended_file: "qwen2.5-7b-instruct-q4_k_m.gguf",
+                recommended_hf_repo: "gha-alpha/gha-alpha-7b-instruct-v0.1-GGUF",
+                recommended_file: "gha-alpha-7b-instruct-q4_k_m.gguf",
                 model_size_label: "7B Parameters (Mid-Range Hardware Capacity)",
             }
         } else {
             HardwareCapacity {
                 ram_gb,
-                recommended_hf_repo: "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
-                recommended_file: "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+                recommended_hf_repo: "gha-alpha/gha-alpha-1.5b-instruct-v0.1-GGUF",
+                recommended_file: "gha-alpha-1.5b-instruct-q4_k_m.gguf",
                 model_size_label: "1.5B Parameters (Embedded/Edge Hardware Capacity)",
             }
         }

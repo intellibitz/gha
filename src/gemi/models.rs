@@ -666,7 +666,6 @@ impl ModelManager {
                 format!("https://models.gha.ai/{}", exact_file),
                 format!("https://modelscope.cn/api/v1/models/{}/repo?Revision=master&FilePath={}", target, exact_file),
                 format!("https://huggingface.co/{}/resolve/main/{}", target, exact_file),
-                format!("https://huggingface.co/TheBloke/{}-GGUF/resolve/main/{}.Q4_K_M.gguf", target, target),
             ];
 
             let file_name = format!("{}.gguf", target.replace('/', "_"));
@@ -713,9 +712,9 @@ impl ModelManager {
         let lower = goal.to_lowercase();
         if lower.contains("download model") || lower.contains("pull model") || lower.contains("offline model") || lower.contains("install model") {
             let target_model = if lower.contains("code") || lower.contains("rust") || lower.contains("bug") || lower.contains("python") {
-                "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF"
+                "gha-alpha/gha-alpha-1.5b-instruct-v0.1-GGUF"
             } else {
-                "Qwen/Qwen2.5-1.5B-Instruct-GGUF"
+                "gha-alpha/gha-alpha-1.5b-instruct-v0.1-GGUF"
             };
 
             let res = Self::install_model(target_model);
