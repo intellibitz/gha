@@ -69,6 +69,7 @@ impl AgentRegistry {
         agents.push(Arc::new(GhaTruthAgent));
     }
 
+    #[allow(dead_code)]
     pub fn list_all(&self) -> Vec<GawdAgentInfo> {
         let agents = self.agents.read().unwrap();
         agents.iter().map(|a| GawdAgentInfo {
