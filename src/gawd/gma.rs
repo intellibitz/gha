@@ -232,6 +232,19 @@ impl GmaMasterAgent {
                             let fix_tool = fix_parts[0];
                             let fix_arg = fix_parts.get(1).unwrap_or(&"");
                             let fix_res = ToolRegistry::execute_tool(fix_tool, fix_arg, workspace);
+
+                            // 🚀 Tier 2 -> Tier 0 Feedback Loop: Learn from Deep Fixes
+                            if !fix_res.to_lowercase().contains("error") {
+                                let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).unwrap_or_else(|| ".".into());
+                                let global_dir = PathBuf::from(home).join(".gha");
+                                let entry = crate::gawd::pkb::PkbTrainingEntry {
+                                    instruction: fix_prompt.to_string(),
+                                    swarm_flux: vec![],
+                                    tool_calls: vec![format!("{} {}", fix_tool, fix_arg)],
+                                    outcome: "SUCCESS_DEEP_FIX".to_string(),
+                                };
+                                let _ = crate::gawd::pkb::PkbSynthesizer::save_training_data(vec![entry], &global_dir);
+                            }
                             res = fix_res;
                         }
                     }

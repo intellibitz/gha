@@ -18,6 +18,30 @@ pub struct PkbTrainingEntry {
 pub struct PkbSynthesizer;
 
 impl PkbSynthesizer {
+    pub fn calculate_semantic_score(target: &str, candidate: &str) -> f32 {
+        let t_low = target.to_lowercase();
+        let c_low = candidate.to_lowercase();
+
+        let t_words: Vec<&str> = t_low.split_whitespace().collect();
+        let c_words: Vec<&str> = c_low.split_whitespace().collect();
+
+        let mut score = 0.0;
+        for tw in &t_words {
+            if c_low.contains(tw) {
+                score += 1.0;
+            }
+            // Simple character-level overlap for fuzzy matching
+            for cw in &c_words {
+                 if tw.len() > 3 && cw.len() > 3 {
+                     if tw.starts_with(&cw[..4]) || cw.starts_with(&tw[..4]) {
+                         score += 0.5;
+                     }
+                 }
+            }
+        }
+        score
+    }
+
     pub fn generate_sample(intent: &str, workspace: &Path) -> PkbTrainingEntry {
         // This is a bootstrap synthesizer. In a full run, it would use GEMI to generate
         // thousands of these variations.

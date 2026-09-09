@@ -84,7 +84,6 @@ impl AgentRegistry {
     }
 
     pub fn synthesize_fleet(&self, goal: &str) -> Vec<Arc<dyn GawdAgent>> {
-        let lower = goal.to_lowercase();
         let agents = self.agents.read().unwrap();
         let mut fleet = Vec::new();
 
@@ -96,18 +95,28 @@ impl AgentRegistry {
             }
         }
 
-        // 2. Synthesize Specialists based on Keywords
+        // 2. Semantic Synthesis: Score specialists based on role description and keywords
+        use crate::gawd::pkb::PkbSynthesizer;
         for agent in agents.iter() {
             let name = agent.name();
             if name == "GhaUserAgent" || name == "GhaContextAgent" || name == "GhaReasoningAgent" || name == "GhaSafetyAgent" || name == "GhaTruthAgent" {
                 continue;
             }
-            if agent.keywords().iter().any(|k| lower.contains(k)) {
+
+            let mut best_score = PkbSynthesizer::calculate_semantic_score(goal, &agent.role());
+            for kw in agent.keywords() {
+                 let kw_score = PkbSynthesizer::calculate_semantic_score(goal, kw);
+                 if kw_score > best_score {
+                     best_score = kw_score;
+                 }
+            }
+
+            if best_score >= 1.0 {
                 fleet.push(Arc::clone(agent));
             }
         }
 
-        // 3. Fallback to Dynamic Generic Specialist if fleet is just core
+        // 3. Fallback to Dynamic Generic Specialist if fleet is sparse
         if fleet.len() <= 5 {
              let topic = goal.split_whitespace().find(|w| w.len() > 3).unwrap_or("Domain");
              fleet.push(Arc::new(DynamicSpecialist {
