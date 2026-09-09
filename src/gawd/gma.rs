@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use super::gmas::GmasSupervisor;
 use super::safety::SafetyDetector;
 use super::security::SecurityDetector;
+use super::truth::TruthTransformer;
 use crate::gemi::hardware::HardwareProfiler;
 use crate::gmcp::tools::ToolRegistry;
 use crate::error::EaiResult;
@@ -168,7 +169,7 @@ impl GmaMasterAgent {
             report.push('\n');
         }
 
-        let audit = self.audit_truth(goal, &a2a_logs, workspace);
+        let audit = self.audit_truth(goal, &a2a_logs, workspace, &mission_result);
         report.push_str("\n## Validation\n");
         if is_placeholder || mission_result.contains("scouting for specialized brains") {
             report.push_str(" └── Pending solution synthesis.\n");
@@ -212,7 +213,17 @@ impl GmaMasterAgent {
                 if !tool_name.is_empty() {
                     let mut res = ToolRegistry::execute_tool(tool_name, arg, workspace);
 
-                    if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") || res.to_lowercase().contains("cloud_brain_unavailable") {
+                    // 🛡️ Formal Verification Reflex (Rule 15)
+                    match TruthTransformer::verify_mission_reality(goal, tool_name, &res, workspace) {
+                        Ok(verified_res) => res = verified_res,
+                        Err(e) => {
+                            // BLOCK and attempt HEAL
+                            res = format!("{}", e);
+                            crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "TRUTH_BLOCK", &format!("Tool {} blocked: {}", tool_name, e));
+                        }
+                    }
+
+                    if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") || res.to_lowercase().contains("cloud_brain_unavailable") || res.contains("TRUTH VIOLATION") {
                         let mut fix_prompt = format!("Mission '{}' failed at tool '{}' with error: '{}'. Suggest a fixed command.", goal, tool_name, res);
 
                         if res.contains("rate_limit") || res.contains("too large") || res.contains("CLOUD_BRAIN_UNAVAILABLE") {
@@ -270,7 +281,11 @@ impl GmaMasterAgent {
         results.join("\n")
     }
 
-    fn audit_truth(&self, goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path) -> String {
+    fn audit_truth(&self, goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path, mission_result: &str) -> String {
+        if mission_result.contains("TRUTH VIOLATION") {
+             return "🔴 MISSION BLOCKED: Hallucination detected during formal verification.".to_string();
+        }
+
         let mut score = 100;
         let mut flags = Vec::new();
 
