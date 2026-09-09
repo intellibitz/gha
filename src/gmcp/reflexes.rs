@@ -29,7 +29,10 @@ impl GhaTool for ClinicalDiagnosticsTool {
         let mut report = "# Clinical Diagnostic Reflex Report\n\n".to_string();
         report.push_str(&format!("Input Symptoms: {}\n\n", arg));
 
-        if symptoms.contains("fever") && symptoms.contains("cough") {
+        if symptoms.contains("fever") && symptoms.contains("stiff neck") && symptoms.contains("photophobia") {
+            report.push_str("Differential Diagnosis:\n- Bacterial Meningitis (CRITICAL/EMERGENCY)\n- Viral Meningitis (High Priority)\n- Encephalitis (High Priority)\n");
+            report.push_str("\nReflex Action: EMERGENCY: Immediate hospital admission required. Perform Lumbar Puncture and start empirical antibiotics.");
+        } else if symptoms.contains("fever") && symptoms.contains("cough") {
             report.push_str("Differential Diagnosis:\n- Influenza (High Probability)\n- COVID-19 (Moderate Probability)\n- Common Cold (Low Probability)\n");
             report.push_str("\nReflex Action: Recommend rest, hydration, and monitoring of SpO2 levels.");
         } else if symptoms.contains("chest pain") && symptoms.contains("shortness of breath") {
@@ -63,6 +66,9 @@ impl GhaTool for LegalAnalysisTool {
         if text.contains("termination") && text.contains("convenience") {
             risks.push("- ⚠️ **Moderate Risk**: Termination for convenience clause detected. Potential revenue instability.");
         }
+        if text.contains("0 days notice") || text.contains("zero days notice") || text.contains("without notice") {
+            risks.push("- 🚩 **Critical Risk**: Immediate termination with zero notice detected. Severe operational risk.");
+        }
 
         if risks.is_empty() {
             report.push_str("Result: No immediate high-risk patterns detected by microsecond reflex.\n");
@@ -85,7 +91,7 @@ impl GhaTool for VisionReflexTool {
         let input = arg.to_lowercase();
         let mut report = "# Vision Reflex Analysis\n\n".to_string();
 
-        if input.contains("person") || input.contains("face") {
+        if input.contains("person") || input.contains("face") || input.contains("human") {
              report.push_str("Classification: Human Presence Detected\n");
              report.push_str("Confidence: 99.2%\n");
              report.push_str("Reflex: Engage interaction protocol.");

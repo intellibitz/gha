@@ -64,9 +64,39 @@ impl GhaPulse {
              return Ok("ACTION: orchestrate build_speed_analysis".to_string());
         }
 
+        // Mission 9: Legal Analysis Reflex
+        if lower.contains("legal") || lower.contains("clause") || lower.contains("contract") || lower.contains("terminate") {
+             return Ok(format!("ACTION: legal_analysis {}", clean_prompt));
+        }
+
+        // Mission 9: Legal Analysis Reflex
+        if lower.contains("legal") || lower.contains("clause") || lower.contains("contract") || lower.contains("terminate") {
+             return Ok(format!("ACTION: legal_analysis {}", clean_prompt));
+        }
+
         // Mission 10: Medical Reflex
-        if lower.contains("medical") || lower.contains("dehydration") || lower.contains("diagnosis") {
-             return Ok("ACTION: exec_command echo 'Medical Diagnostic Summary: Dehydration symptoms include extreme thirst, less frequent urination, dark-colored urine, fatigue, dizziness, and confusion. Recommended treatment: Immediate fluid replacement (water/electrolytes). Seek medical attention if symptoms persist or are severe.'".to_string());
+        if lower.contains("medical") || lower.contains("dehydration") || lower.contains("diagnosis") || lower.contains("symptoms") {
+             return Ok(format!("ACTION: clinical_diagnostics {}", clean_prompt));
+        }
+
+        // Mission 11: Energy Reflex
+        if lower.contains("energy") || lower.contains("solar") || lower.contains("grid") || lower.contains("wattage") {
+             return Ok(format!("ACTION: energy_reflex {}", clean_prompt));
+        }
+
+        // Mission 12: Education Reflex
+        if lower.contains("explain") || lower.contains("quantum") || lower.contains("math") || lower.contains("teach") {
+             return Ok(format!("ACTION: education_reflex {}", clean_prompt));
+        }
+
+        // Mission 13: Public Safety Reflex
+        if lower.contains("fire") || lower.contains("emergency") || lower.contains("safety") {
+             return Ok(format!("ACTION: public_safety_reflex {}", clean_prompt));
+        }
+
+        // Mission 14: Vision Reflex
+        if lower.contains("image") || lower.contains("vision") || lower.contains("detect") || lower.contains("perimeter") {
+             return Ok(format!("ACTION: vision_reflex {}", clean_prompt));
         }
 
         // Tool Inventory Report: "list all tools and save to [PATH]"

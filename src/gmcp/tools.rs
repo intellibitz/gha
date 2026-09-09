@@ -344,7 +344,13 @@ impl GhaTool for ReasonTool {
                      let parts: Vec<&str> = action.split("ACTION: ").nth(1).unwrap_or("").splitn(2, ' ').collect();
                      let tool = parts[0];
                      let tool_arg = parts.get(1).unwrap_or(&"");
-                     Ok(ToolRegistry::execute_tool(tool, tool_arg, workspace))
+
+                     // 🛡️ Prevent infinite recursion if pulse brain suggests 'reason' tool again
+                     if tool == "reason" {
+                         Ok(GemiEngine::generate_reasoning(tool_arg, workspace))
+                     } else {
+                         Ok(ToolRegistry::execute_tool(tool, tool_arg, workspace))
+                     }
                  } else {
                      Ok(GemiEngine::generate_reasoning(arg, workspace))
                  }
@@ -837,7 +843,13 @@ impl GhaTool for DistillTool {
     fn name(&self) -> String { "distill".to_string() }
     fn description(&self) -> String { "Distill deep reasoning intent into native Rust or Wasm reflex (Rule 17)".to_string() }
     fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
-        ReflexSynthesizer::synthesize_wasm_reflex(arg, workspace)
+        match ReflexSynthesizer::synthesize_wasm_reflex(arg, workspace) {
+             Ok(wasm_path) => Ok(format!("Distilled Wasm reflex created at: {}", wasm_path)),
+             Err(_) => {
+                 // Fallback to Native Distillation (Integrated into src/gmcp/reflexes.rs)
+                 ReflexSynthesizer::distill_native_reflex(arg, workspace)
+             }
+        }
     }
 }
 
