@@ -112,6 +112,19 @@ impl HardwareProfiler {
             && let Ok(bytes) = bytes_str.trim().parse::<usize>()
         {
             return bytes / (1024 * 1024 * 1024);
+        } else if cfg!(target_os = "windows") {
+            let out = Command::new("wmic").args(["ComputerSystem", "get", "TotalPhysicalMemory"]).output();
+            if let Ok(o) = out {
+                let s = String::from_utf8_lossy(&o.stdout);
+                for line in s.lines() {
+                    let trimmed = line.trim();
+                    if !trimmed.is_empty() && trimmed.chars().all(|c| c.is_ascii_digit()) {
+                        if let Ok(bytes) = trimmed.parse::<u64>() {
+                            return (bytes / (1024 * 1024 * 1024)) as usize;
+                        }
+                    }
+                }
+            }
         }
         16 // Conservative fallback
     }
