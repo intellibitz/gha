@@ -4,7 +4,6 @@
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 use candle_core::Device;
-use crate::error::{EaiError, EaiResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareProfile {

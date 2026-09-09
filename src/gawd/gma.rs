@@ -8,7 +8,7 @@ use super::safety::SafetyDetector;
 use super::security::SecurityDetector;
 use crate::gemi::hardware::HardwareProfiler;
 use crate::gmcp::tools::ToolRegistry;
-use crate::error::{EaiError, EaiResult};
+use crate::error::EaiResult;
 
 pub struct GmaMasterAgent;
 
