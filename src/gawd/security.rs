@@ -19,7 +19,7 @@ impl SecurityDetector {
         ];
 
         let exfiltration_patterns = vec![
-            "curl -X POST",
+            "curl -x post",
             "wget --post-data",
             "netcat",
             "nc -e",

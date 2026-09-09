@@ -653,7 +653,7 @@ impl ToolRegistry {
                 let t24 = Self::execute_tool("get_disk_usage", "", workspace);
                 if !t24.is_empty() { passed += 1; details.push("Test 24 [get_disk_usage]: PASSED".to_string()); } else { failed += 1; details.push("Test 24 [get_disk_usage]: FAILED".to_string()); }
 
-                let t25 = Self::extract_plain_text_from_html("<p>Hello GHA</p>").contains("Hello GHA");
+                let t25 = Self::extract_plain_text_from_html("<p>Hello GHA</p>").trim() == "Hello GHA" || Self::extract_plain_text_from_html("<p>Hello GHA</p>").contains("Hello GHA");
                 if t25 { passed += 1; details.push("Test 25 [plain_html]: PASSED".to_string()); } else { failed += 1; details.push("Test 25 [plain_html]: FAILED".to_string()); }
 
                 let t26 = Self::execute_tool("audit", "", workspace);
