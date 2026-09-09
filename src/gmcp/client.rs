@@ -228,6 +228,7 @@ impl GmcpClient {
         "❌ MCP Error: No response from server.".to_string()
     }
 
+    #[allow(dead_code)]
     pub fn scout_tier3_assets() -> Vec<crate::gawd::agents::DiscoverableAsset> {
         vec![
             crate::gawd::agents::DiscoverableAsset {

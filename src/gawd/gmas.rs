@@ -119,6 +119,7 @@ impl GmasSupervisor {
         format!("🌐 [A2A Fallback]: Node '{}' unreachable.", addr)
     }
 
+    #[allow(dead_code)]
     pub fn broadcast_lan_ping() -> Vec<String> {
         let mut active_peers = Vec::new();
         if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {

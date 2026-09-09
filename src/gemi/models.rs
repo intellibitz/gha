@@ -401,6 +401,7 @@ impl ModelManager {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_download_progress() -> Option<ModelDownloadProgress> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let progress_file = home.join(".gha/download_progress.json");
@@ -533,6 +534,7 @@ impl ModelManager {
         report
     }
 
+    #[allow(dead_code)]
     pub fn get_model_agent_report() -> Option<ModelAgentReport> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let report_path = home.join(".gha/model_agent_report.json");
@@ -695,6 +697,7 @@ impl ModelManager {
         format!("🤖 [Progressive 5-Step Model Provisioning]: Configured {}/{} local hardware tiers.\n   {}", completed_steps.len(), ladder.len(), completed_steps.join("\n   "))
     }
 
+    #[allow(dead_code)]
     pub fn scout_tier2_assets() -> Vec<crate::gawd::agents::DiscoverableAsset> {
         vec![
             crate::gawd::agents::DiscoverableAsset {
