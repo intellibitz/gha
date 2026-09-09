@@ -376,7 +376,7 @@ impl GhaBackupManager {
         let backup_file = backups_dir.join(format!("gha_engine_backup_{}.tar.gz", timestamp));
 
         let status = std::process::Command::new("tar")
-            .args(["-czf", backup_file.to_str().unwrap_or("engine_backup.tar.gz"), "--exclude=backups", "."])
+            .args(["-czf", backup_file.to_str().unwrap_or("engine_backup.tar.gz"), "--exclude=backups", "--exclude=models", "."])
             .current_dir(global_dir)
             .status();
 
