@@ -468,21 +468,21 @@ impl ToolRegistry {
                 let provider = arg.to_lowercase();
                 if provider.contains("chat") || provider.contains("openai") {
                     if std::env::var("OPENAI_API_KEY").is_ok() {
-                        "OpenAI / ChatGPT (gpt-4o) model provider is active.".to_string()
+                        "Tier 2 GEMI: OpenAI Cloud provider is active.".to_string()
                     } else {
-                        "OPENAI_API_KEY is not set. Set OPENAI_API_KEY environment variable to connect to ChatGPT / OpenAI models.".to_string()
+                        "OPENAI_API_KEY is not set. Set OPENAI_API_KEY environment variable to connect to Tier 2 GEMI (OpenAI).".to_string()
                     }
                 } else if provider.contains("gemini") {
                     if std::env::var("GEMINI_API_KEY").is_ok() {
-                        "Google Gemini 1.5 Flash provider is active.".to_string()
+                        "Tier 2 GEMI: Google Cloud provider is active.".to_string()
                     } else {
-                        "GEMINI_API_KEY is not set. Set GEMINI_API_KEY environment variable to connect to Google Gemini.".to_string()
+                        "GEMINI_API_KEY is not set. Set GEMINI_API_KEY environment variable to connect to Tier 2 GEMI (Google).".to_string()
                     }
                 } else if provider.contains("claude") || provider.contains("anthropic") {
                     if std::env::var("ANTHROPIC_API_KEY").is_ok() {
-                        "Anthropic Claude 3.5 Sonnet provider is active.".to_string()
+                        "Tier 2 GEMI: Anthropic Cloud provider is active.".to_string()
                     } else {
-                        "ANTHROPIC_API_KEY is not set. Set ANTHROPIC_API_KEY environment variable to connect to Anthropic Claude.".to_string()
+                        "ANTHROPIC_API_KEY is not set. Set ANTHROPIC_API_KEY environment variable to connect to Tier 2 GEMI (Anthropic).".to_string()
                     }
                 } else {
                     format!("Provider status check complete for '{}'. Use 'gha list_models' to view all active models.", arg)

@@ -76,7 +76,7 @@ impl ModelManager {
         if std::env::var("GEMINI_API_KEY").is_ok() {
             list.push(ModelInfo {
                 name: "Google Gemini 1.5 Flash".to_string(),
-                registry: "Google AI Studio".to_string(),
+                registry: "GHA Tier 2 Registry".to_string(),
                 model_id: "google/gemini-1.5-flash".to_string(),
                 description: "1M+ token context cloud reasoning".to_string(),
                 is_local: false,
@@ -87,7 +87,7 @@ impl ModelManager {
         if std::env::var("OPENAI_API_KEY").is_ok() {
             list.push(ModelInfo {
                 name: "OpenAI GPT-4o".to_string(),
-                registry: "OpenAI Cloud".to_string(),
+                registry: "GHA Tier 2 Registry".to_string(),
                 model_id: "openai/gpt-4o".to_string(),
                 description: "Industry-standard reasoning & tool-use".to_string(),
                 is_local: false,
@@ -98,7 +98,7 @@ impl ModelManager {
         if std::env::var("ANTHROPIC_API_KEY").is_ok() {
             list.push(ModelInfo {
                 name: "Anthropic Claude 3.5 Sonnet".to_string(),
-                registry: "Anthropic Cloud".to_string(),
+                registry: "GHA Tier 2 Registry".to_string(),
                 model_id: "anthropic/claude-3.5-sonnet".to_string(),
                 description: "High-precision reasoning specialist".to_string(),
                 is_local: false,
@@ -109,7 +109,7 @@ impl ModelManager {
         if std::env::var("DEEPSEEK_API_KEY").is_ok() {
             list.push(ModelInfo {
                 name: "DeepSeek Chat".to_string(),
-                registry: "DeepSeek Cloud".to_string(),
+                registry: "GHA Tier 2 Registry".to_string(),
                 model_id: "deepseek/deepseek-chat".to_string(),
                 description: "High-throughput code & logic reasoning".to_string(),
                 is_local: false,
@@ -120,7 +120,7 @@ impl ModelManager {
         if std::env::var("MISTRAL_API_KEY").is_ok() {
             list.push(ModelInfo {
                 name: "Mistral Small".to_string(),
-                registry: "Mistral AI".to_string(),
+                registry: "GHA Tier 2 Registry".to_string(),
                 model_id: "mistral/mistral-small-latest".to_string(),
                 description: "Efficient European reasoning specialist".to_string(),
                 is_local: false,
@@ -131,7 +131,7 @@ impl ModelManager {
         if std::env::var("GROQ_API_KEY").is_ok() {
             list.push(ModelInfo {
                 name: "Groq Llama 3.3 70B".to_string(),
-                registry: "Groq Cloud".to_string(),
+                registry: "GHA Tier 2 Registry".to_string(),
                 model_id: "groq/llama-3.3-70b-versatile".to_string(),
                 description: "Ultra-low latency inference".to_string(),
                 is_local: false,
@@ -421,8 +421,6 @@ impl ModelManager {
                                 "Local HuggingFace Cache"
                             } else if path_str.contains("GPT4All") || path_str.contains("gpt4all") {
                                 "Local GPT4All Vault"
-                            } else if path_str.contains("ollama") {
-                                "Local Ollama Vault"
                             } else {
                                 "Local Model Vault"
                             };
@@ -766,15 +764,15 @@ impl ModelManager {
         vec![
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 2: GEMI (Intelligence)".to_string(),
-                name: "Llama-3.1-8B-GGUF".to_string(),
-                provider: "HuggingFace".to_string(),
-                url: "https://huggingface.co/meta-llama/Llama-3.1-8B-GGUF".to_string(),
+                name: "GHA-Alpha-Reflex-Weights".to_string(),
+                provider: "GHA Hub".to_string(),
+                url: "https://gha.ai/models/alpha".to_string(),
             },
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 2: GEMI (Intelligence)".to_string(),
-                name: "vLLM-Server-Binary".to_string(),
-                provider: "vLLM Project".to_string(),
-                url: "https://vllm.ai".to_string(),
+                name: "GEMI-Reasoning-Core".to_string(),
+                provider: "GHA Swarm".to_string(),
+                url: "https://gha.ai/engines/gemi-core".to_string(),
             },
         ]
     }

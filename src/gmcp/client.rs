@@ -91,22 +91,22 @@ impl GmcpClient {
             }
         }
 
-        // 3. Fallback to Default Bootstrap Registry if empty (Anthropic & Community Standards)
+        // 3. Fallback to Default Bootstrap Registry if empty (Standard Protocol Services)
         if entries.is_empty() {
             entries = vec![
-                GlobalMcpEntry { name: "postgres".to_string(), description: "Official Anthropic PostgreSQL Database Server".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
-                GlobalMcpEntry { name: "brave_search".to_string(), description: "Official Anthropic Brave Web Search Server".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
-                GlobalMcpEntry { name: "google_maps".to_string(), description: "Official Anthropic Google Maps & Directions Server".to_string(), package: "@modelcontextprotocol/server-google-maps".to_string(), category: "location".to_string() },
-                GlobalMcpEntry { name: "slack".to_string(), description: "Official Anthropic Slack Collaboration Server".to_string(), package: "@modelcontextprotocol/server-slack".to_string(), category: "productivity".to_string() },
-                GlobalMcpEntry { name: "filesystem".to_string(), description: "Official Anthropic Filesystem Operations Server".to_string(), package: "@modelcontextprotocol/server-filesystem".to_string(), category: "system".to_string() },
-                GlobalMcpEntry { name: "github".to_string(), description: "Official Anthropic GitHub Repos, PRs & Issues Server".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
-                GlobalMcpEntry { name: "memory".to_string(), description: "Official Anthropic Knowledge Graph Memory Server".to_string(), package: "@modelcontextprotocol/server-memory".to_string(), category: "memory".to_string() },
-                GlobalMcpEntry { name: "puppeteer".to_string(), description: "Official Anthropic Headless Browser Automation Server".to_string(), package: "@modelcontextprotocol/server-puppeteer".to_string(), category: "web".to_string() },
-                GlobalMcpEntry { name: "fetch".to_string(), description: "Official Anthropic Web Fetch & Content Scraper Server".to_string(), package: "@modelcontextprotocol/server-fetch".to_string(), category: "web".to_string() },
-                GlobalMcpEntry { name: "sequential_thinking".to_string(), description: "Official Anthropic Step-by-Step Reasoning Server".to_string(), package: "@modelcontextprotocol/server-sequential-thinking".to_string(), category: "reasoning".to_string() },
-                GlobalMcpEntry { name: "alpha_vantage".to_string(), description: "Community Financial Stock & Market Data Server".to_string(), package: "@modelcontextprotocol/server-alpha-vantage".to_string(), category: "finance".to_string() },
-                GlobalMcpEntry { name: "git".to_string(), description: "Community PyPI Git Version Control Server".to_string(), package: "mcp-server-git".to_string(), category: "vcs".to_string() },
-                GlobalMcpEntry { name: "sqlite".to_string(), description: "Community PyPI SQLite Database Server".to_string(), package: "mcp-server-sqlite".to_string(), category: "database".to_string() },
+                GlobalMcpEntry { name: "postgres".to_string(), description: "Standard Protocol SQL Database Server".to_string(), package: "@modelcontextprotocol/server-postgres".to_string(), category: "database".to_string() },
+                GlobalMcpEntry { name: "brave_search".to_string(), description: "Standard Protocol Web Search Server".to_string(), package: "@modelcontextprotocol/server-brave-search".to_string(), category: "search".to_string() },
+                GlobalMcpEntry { name: "google_maps".to_string(), description: "Standard Protocol Maps & Directions Server".to_string(), package: "@modelcontextprotocol/server-google-maps".to_string(), category: "location".to_string() },
+                GlobalMcpEntry { name: "slack".to_string(), description: "Standard Protocol Collaboration Server".to_string(), package: "@modelcontextprotocol/server-slack".to_string(), category: "productivity".to_string() },
+                GlobalMcpEntry { name: "filesystem".to_string(), description: "Standard Protocol Filesystem Operations Server".to_string(), package: "@modelcontextprotocol/server-filesystem".to_string(), category: "system".to_string() },
+                GlobalMcpEntry { name: "github".to_string(), description: "Standard Protocol GitHub Repos, PRs & Issues Server".to_string(), package: "@modelcontextprotocol/server-github".to_string(), category: "vcs".to_string() },
+                GlobalMcpEntry { name: "memory".to_string(), description: "Standard Protocol Knowledge Graph Memory Server".to_string(), package: "@modelcontextprotocol/server-memory".to_string(), category: "memory".to_string() },
+                GlobalMcpEntry { name: "puppeteer".to_string(), description: "Standard Protocol Browser Automation Server".to_string(), package: "@modelcontextprotocol/server-puppeteer".to_string(), category: "web".to_string() },
+                GlobalMcpEntry { name: "fetch".to_string(), description: "Standard Protocol Web Fetch & Content Scraper Server".to_string(), package: "@modelcontextprotocol/server-fetch".to_string(), category: "web".to_string() },
+                GlobalMcpEntry { name: "sequential_thinking".to_string(), description: "Standard Protocol Reasoning Step Server".to_string(), package: "@modelcontextprotocol/server-sequential-thinking".to_string(), category: "reasoning".to_string() },
+                GlobalMcpEntry { name: "alpha_vantage".to_string(), description: "Financial Stock & Market Data Server".to_string(), package: "@modelcontextprotocol/server-alpha-vantage".to_string(), category: "finance".to_string() },
+                GlobalMcpEntry { name: "git".to_string(), description: "Standard Protocol Git Version Control Server".to_string(), package: "mcp-server-git".to_string(), category: "vcs".to_string() },
+                GlobalMcpEntry { name: "sqlite".to_string(), description: "Standard Protocol SQL Database Server".to_string(), package: "mcp-server-sqlite".to_string(), category: "database".to_string() },
             ];
         }
 

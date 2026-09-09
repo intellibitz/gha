@@ -30,7 +30,7 @@ impl GemiEngine {
         let selected_model = super::models::ModelManager::get_selected_model().unwrap_or_default();
 
         if selected_engine == "gemi" || selected_engine == "cloud" || selected_engine.is_empty() {
-            let (res, _) = Self::scout_cloud_providers(prompt);
+            let (res, _) = Self::scout_tier2_providers(prompt);
             if let Some(text) = res {
                 return text;
             }
@@ -49,11 +49,15 @@ impl GemiEngine {
             let lower_selected = selected_model.to_lowercase();
             if lower_selected.contains("gemini") {
                 if let Ok(res) = Self::execute_gemini(prompt) {
-                    return format!("☁️ [Selected Model: Google Gemini]:\n{}", res);
+                    return format!("☁️ [Tier 2 GEMI: Google Cloud]:\n{}", res);
                 }
             } else if lower_selected.contains("openai") || lower_selected.contains("gpt") {
                 if let Ok(res) = Self::execute_openai(prompt) {
-                    return format!("☁️ [Selected Model: OpenAI GPT-4o]:\n{}", res);
+                    return format!("☁️ [Tier 2 GEMI: OpenAI Cloud]:\n{}", res);
+                }
+            } else if lower_selected.contains("groq") {
+                if let Ok(res) = Self::execute_groq(prompt) {
+                    return format!("☁️ [Tier 2 GEMI: Groq Cloud]:\n{}", res);
                 }
             } else if lower_selected.contains("ollama") {
                 let res = Self::execute_local_ollama(prompt, &selected_model);
@@ -63,7 +67,7 @@ impl GemiEngine {
             }
         }
 
-        let (res, errors) = Self::scout_cloud_providers(prompt);
+        let (res, errors) = Self::scout_tier2_providers(prompt);
         if let Some(text) = res {
             return text;
         }
@@ -79,26 +83,26 @@ impl GemiEngine {
         format!("❌ CLOUD_BRAIN_UNAVAILABLE: No responders. Diagnostics:\n  {}", errors.join("\n  "))
     }
 
-    fn scout_cloud_providers(prompt: &str) -> (Option<String>, Vec<String>) {
+    fn scout_tier2_providers(prompt: &str) -> (Option<String>, Vec<String>) {
         let mut errors = Vec::new();
 
-        // Priority 1: Gemini (Reliable for artifacts)
+        // 1. Google GEMI (High Reliability)
         match Self::execute_gemini(prompt) {
-            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [🏆 Premier Pick: Google Gemini]:\n{}", res)), errors),
+            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [Tier 2 GEMI: Google Cloud]:\n{}", res)), errors),
             Ok(_) => errors.push("Gemini: Empty response".to_string()),
             Err(e) => errors.push(format!("Gemini: {}", e)),
         }
 
-        // Priority 2: Groq
+        // 2. Groq GEMI (High Speed)
         match Self::execute_groq(prompt) {
-            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [🏆 Premier Pick: Groq Cloud]:\n{}", res)), errors),
+            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [Tier 2 GEMI: Groq Cloud]:\n{}", res)), errors),
             Ok(_) => errors.push("Groq: Empty response".to_string()),
             Err(e) => errors.push(format!("Groq: {}", e)),
         }
 
-        // Priority 3: OpenAI
+        // 3. OpenAI GEMI (Standard)
         match Self::execute_openai(prompt) {
-            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [🏆 Premier Pick: OpenAI GPT-4o]:\n{}", res)), errors),
+            Ok(res) if !res.trim().is_empty() => return (Some(format!("☁️ [Tier 2 GEMI: OpenAI Cloud]:\n{}", res)), errors),
             Ok(_) => errors.push("OpenAI: Empty response".to_string()),
             Err(e) => errors.push(format!("OpenAI: {}", e)),
         }
@@ -108,8 +112,9 @@ impl GemiEngine {
 
     fn execute_groq(prompt: &str) -> Result<String> {
         let key = std::env::var("GROQ_API_KEY")?;
+        let model = std::env::var("GROQ_MODEL").unwrap_or_else(|_| "llama3-70b-8192".to_string());
         let payload = json!({
-            "model": "llama3-70b-8192",
+            "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": 1000
         });
@@ -121,7 +126,8 @@ impl GemiEngine {
 
     fn execute_gemini(prompt: &str) -> Result<String> {
         let key = std::env::var("GEMINI_API_KEY")?;
-        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}", key.trim());
+        let model = std::env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-1.5-flash".to_string());
+        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}", model, key.trim());
         let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
         let out = Self::curl_pipe(&url, vec![], payload)?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
@@ -131,8 +137,9 @@ impl GemiEngine {
 
     fn execute_openai(prompt: &str) -> Result<String> {
         let key = std::env::var("OPENAI_API_KEY")?;
+        let model = std::env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-4o".to_string());
         let payload = json!({
-            "model": "gpt-4o",
+            "model": model,
             "messages": [{"role": "user", "content": prompt}]
         });
         let out = Self::curl_pipe("https://api.openai.com/v1/chat/completions", vec![("Authorization", &format!("Bearer {}", key))], payload)?;
