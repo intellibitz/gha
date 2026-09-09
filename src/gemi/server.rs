@@ -13,6 +13,7 @@ use super::models::ModelManager;
 pub struct GemiServer;
 
 impl GemiServer {
+    #[allow(dead_code)]
     pub const DEFAULT_PORT: u16 = 9091; // Unique GEMI Port
 
     pub fn start_http_server(workspace: PathBuf, port: u16) {
@@ -116,6 +117,11 @@ impl GemiServer {
                             "/forget" | ":forget" | "clear_memory" => ToolRegistry::execute_tool("clear_memory", "", &workspace),
                             "/backup" | ":backup" | "backup" => ToolRegistry::execute_tool("backup_work", "", &workspace),
                             "/restore" | ":restore" | "restore" => ToolRegistry::execute_tool("restore_work", "", &workspace),
+                            "/audit" | ":audit" | "audit" | "audit_log" => ToolRegistry::execute_tool("audit", "", &workspace),
+                            "/models" | ":models" | "models" => {
+                                let gma = GmaMasterAgent::new();
+                                gma.solve("list_models", &workspace, crate::GHA_VERSION)
+                            }
                             "/domain" | ":domain" | "/domains" | ":domains" => {
                                 "🌍 GHA Intelligence Substrates for World Missions:\n  🌾 Agronomy\n  ⚕️ Clinical Medical\n  ⚖️ Legal & Compliance\n  🎓 Education & Science\n  ⚡ Renewable Energy\n  🔧 Skilled Trades & Building Codes\n  🎨 Creative & Media\n  🏠 Home & Family\n  🏛️ Public Safety\n  💼 Enterprise & Operations\n  💻 Software & Systems Engineering\n  🌍 Universal Substrate".to_string()
                             }
@@ -134,9 +140,11 @@ impl GemiServer {
                         }
                     } else {
                         let gma = GmaMasterAgent::new();
+                        let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(trimmed_prompt);
                         let clean_ans = gma.solve_clean(trimmed_prompt, &workspace, crate::GHA_VERSION);
-                        crate::sandbox::manager::GhaMemory::append_interaction(&workspace, trimmed_prompt, &clean_ans);
-                        clean_ans
+                        let final_resp = format!("🌍 Substrate Mode: {} ({})\n\n{}", badge, badge_desc, clean_ans);
+                        crate::sandbox::manager::GhaMemory::append_interaction(&workspace, trimmed_prompt, &final_resp);
+                        final_resp
                     };
 
                     if is_streaming {

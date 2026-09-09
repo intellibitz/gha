@@ -387,13 +387,17 @@ impl GhaTool for ServersTool {
     fn execute(&self, _arg: &str, _workspace: &Path) -> EaiResult<String> {
         let home = std::env::var_os("HOME").unwrap_or_else(|| ".".into());
         let global_dir = PathBuf::from(home).join(".gha");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
         let daemon_pid = crate::daemon::server::GmaDaemon::check_status(&global_dir);
         let mut out = "GHA Local Servers & Background Hosts:\n".to_string();
         match daemon_pid {
             Some(pid) => out.push_str(&format!("  - GMA Master Daemon: RUNNING (PID {})\n", pid)),
             None => out.push_str("  - GMA Master Daemon: INACTIVE\n"),
         }
-        let ports = vec![(9090, "GMCP JSON-RPC TCP Server"), (9091, "GEMI OpenAI-Compatible REST Server")];
+        let ports = vec![
+            (cfg.gmcp_port, "GMCP JSON-RPC TCP Server"),
+            (cfg.gemi_port, "GEMI OpenAI-Compatible REST Server")
+        ];
         for (port, name) in ports {
             let active = TcpStream::connect_timeout(&format!("127.0.0.1:{}", port).parse().unwrap(), Duration::from_millis(50)).is_ok();
             out.push_str(&format!("  - {} (Port {}): {}\n", name, port, if active { "RUNNING" } else { "STANDBY" }));
@@ -517,10 +521,11 @@ impl GhaTool for ServicesTool {
     fn execute(&self, _arg: &str, _workspace: &Path) -> EaiResult<String> {
         let home = std::env::var_os("HOME").unwrap_or_else(|| ".".into());
         let global_dir = PathBuf::from(home).join(".gha");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
         let daemon_pid = crate::daemon::server::GmaDaemon::check_status(&global_dir);
         let mut out = "# GHA Services\n\n".to_string();
         out.push_str(&format!("- Daemon: {}\n", if daemon_pid.is_some() { "RUNNING" } else { "INACTIVE" }));
-        let ports = vec![(9090, "GMCP"), (9091, "GEMI REST")];
+        let ports = vec![(cfg.gmcp_port, "GMCP"), (cfg.gemi_port, "GEMI REST")];
         for (p, n) in ports {
             let active = TcpStream::connect_timeout(&format!("127.0.0.1:{}", p).parse().unwrap(), Duration::from_millis(50)).is_ok();
             out.push_str(&format!("- {} ({}): {}\n", n, p, if active { "ACTIVE" } else { "OFFLINE" }));

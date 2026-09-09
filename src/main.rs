@@ -24,7 +24,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-const GHA_VERSION: &str = "0.1.280";
+pub const GHA_VERSION: &str = "0.1.287";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -91,7 +91,7 @@ fn print_help() {
     println!("  /audit, :audit           Inspect workspace audit trail and self-audit records");
     println!("  /memory, :memory         Inspect workspace session memory and history");
     println!("  /forget, :forget         Clear workspace session memory");
-    println!("  /setkey <KEY> <VAL>      Save API key to ~/.gha/env (e.g. /setkey OPENAI_API_KEY sk-...)");
+    println!("  /setkey <KEY> <VAL>      Save API key to ~/.gha/env (e.g. /setkey OPENAI_API_KEY key-...)");
     println!("  /renew, :renew           Reload session with latest installed gha binary");
     println!("  /agents, :agents         List active agents in GAWD fleet");
     println!("  /engines, :engines       List active execution & inference engines");
@@ -361,7 +361,7 @@ fn run_interactive_shell(cwd: &Path) {
                     Err(e) => println!("Error saving key: {}", e),
                 }
             } else {
-                println!("Usage: /setkey <KEY_NAME> <KEY_VALUE> (e.g. /setkey OPENAI_API_KEY sk-...)");
+                println!("Usage: /setkey <KEY_NAME> <KEY_VALUE> (e.g. /setkey OPENAI_API_KEY key-...)");
             }
             println!();
             continue;
@@ -508,6 +508,12 @@ fn main() {
     let home = get_home_dir();
     let global_dir = home.join(".gha");
 
+    // 🚀 Liveness Verification & Instant Background Recovery (Compliance Rule)
+    // Ensures GMCP/GEMI servers are always available for external systems/IDEs.
+    if env::args().nth(1).as_deref() != Some("daemon-start") {
+        GmaDaemon::ensure_daemon_running(&cwd, &global_dir);
+    }
+
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
@@ -601,7 +607,8 @@ fn main() {
             println!("{}", res);
         }
         "gemi-server" => {
-            GemiServer::start_http_server(cwd, GemiServer::DEFAULT_PORT);
+            let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+            GemiServer::start_http_server(cwd, cfg.gemi_port);
         }
         "scout" | ":scout" | "/scout" => {
             let res = ToolRegistry::execute_tool("scout", "", &cwd);

@@ -5,7 +5,7 @@ use std::fs;
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 
-const GHA_VERSION: &str = "0.1.209";
+const GHA_VERSION: &str = "0.1.287";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -167,11 +167,43 @@ fn run_native_mcp_server(project_root: &Path) {
     }
 }
 
+fn ensure_daemon_running(global_gha_dir: &Path, project_root: &Path) {
+    if check_daemon_running(global_gha_dir).is_some() {
+        return;
+    }
+
+    let bin_name = if cfg!(target_os = "windows") { "bin/gha-engine.exe" } else { "bin/gha-engine" };
+    let global_bin = global_gha_dir.join(bin_name);
+    let bin_to_run = if global_bin.exists() { global_bin } else { PathBuf::from(if cfg!(target_os = "windows") { "gha.exe" } else { "gha" }) };
+
+    if cfg!(target_os = "windows") {
+        let _ = std::process::Command::new(&bin_to_run)
+            .arg("daemon-start")
+            .arg(project_root.to_str().unwrap_or("."))
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn();
+    } else {
+        let _ = std::process::Command::new("nohup")
+            .arg(bin_to_run)
+            .arg("daemon-start")
+            .arg(project_root.to_str().unwrap_or("."))
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn();
+    }
+}
+
 fn main() {
     let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let home = get_home_dir();
     let global_gha_dir = home.join(".gha");
     let project_root = find_project_root(&cwd);
+
+    // 🚀 Instant Background Recovery (Compliance Rule)
+    ensure_daemon_running(&global_gha_dir, &project_root);
 
     let args: Vec<String> = env::args().skip(1).collect();
     let version = read_version(&project_root, &global_gha_dir);

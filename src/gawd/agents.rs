@@ -313,9 +313,17 @@ impl GawdAgent for GhaSafetyAgent {
     fn name(&self) -> String { "GhaSafetyAgent".to_string() }
     fn role(&self) -> String { "Mission Guardrails (Rules 4, 7, 11)".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, _goal: &str, _workspace: &Path, blackboard: &SwarmBlackboard) -> String {
-        blackboard.write().unwrap().insert("GOVERNANCE_ACTIVE".to_string(), "TRUE".to_string());
-        "Governance protocols active.".to_string()
+    fn execute(&self, goal: &str, _workspace: &Path, blackboard: &SwarmBlackboard) -> String {
+        let mut bb = blackboard.write().unwrap();
+        bb.insert("GOVERNANCE_ACTIVE".to_string(), "TRUE".to_string());
+
+        let lower = goal.to_lowercase();
+        if lower.contains("rm -rf") || lower.contains("mkfs") || lower.contains("dd if=") {
+             bb.insert("SAFETY_ALERT".to_string(), "CRITICAL_DESTRUCTIVE_COMMAND".to_string());
+             return "🚨 Safety Violation: Destructive command detected in intent.".to_string();
+        }
+
+        "Governance protocols active. Mission cleared for execution.".to_string()
     }
 }
 
@@ -324,16 +332,32 @@ impl GawdAgent for GhaTruthAgent {
     fn name(&self) -> String { "GhaTruthAgent".to_string() }
     fn role(&self) -> String { "Hallucination Detection (Rules 1, 2, 3, 10)".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, goal: &str, _workspace: &Path, blackboard: &SwarmBlackboard) -> String {
-        let mut _score = 100;
-        let mut _flags: Vec<String> = Vec::new();
+    fn execute(&self, goal: &str, workspace: &Path, blackboard: &SwarmBlackboard) -> String {
+        let mut score = 100;
+        let mut flags = Vec::new();
 
         let bb = blackboard.read().unwrap();
-        if goal.contains("write") && !bb.contains_key("FILE_WRITE_DETECTED") {
-            // Truth check logic
+
+        // 1. Audit consistency of reasoning with goal
+        if goal.contains("version") && !bb.contains_key("MISSION_CONTEXT") {
+             score -= 10;
+             flags.push("Mission context missing for version check.".to_string());
         }
 
-        "Truth and hallucination detection active.".to_string()
+        // 2. Real-time workspace verification
+        if goal.contains("file") || goal.contains("read") || goal.contains("write") {
+             let gha_dir = workspace.join(".gha");
+             if !gha_dir.exists() {
+                 score -= 20;
+                 flags.push("Active .gha sandbox missing in target workspace.".to_string());
+             }
+        }
+
+        if flags.is_empty() {
+            "Truth and hallucination detection active. Verified.".to_string()
+        } else {
+            format!("Audit score: {}/100\n   {}", score, flags.join("\n   "))
+        }
     }
 }
 

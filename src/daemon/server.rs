@@ -16,6 +16,7 @@ use crate::gmcp::tools::ToolRegistry;
 pub struct GmaDaemon;
 
 impl GmaDaemon {
+    #[allow(dead_code)]
     pub const GMCP_PORT: u16 = 9090;
     #[allow(dead_code)]
     pub const GEMI_PORT: u16 = 9091;
@@ -37,8 +38,9 @@ impl GmaDaemon {
                     return Some(pid);
                 }
             } else {
-                // Cross-platform fallback for Windows & macOS: TCP ping on GMCP server port 9090
-                let addr = format!("127.0.0.1:{}", Self::GMCP_PORT);
+                // Cross-platform fallback for Windows & macOS: TCP ping on GMCP server port
+                let cfg = crate::sandbox::manager::GhaConfig::load(global_dir);
+                let addr = format!("127.0.0.1:{}", cfg.gmcp_port);
                 if let Ok(addr_parsed) = addr.parse()
                     && TcpStream::connect_timeout(&addr_parsed, Duration::from_millis(100)).is_ok()
                 {
@@ -113,7 +115,7 @@ impl GmaDaemon {
         let udp_port = cfg.udp_discovery_port;
         // 3. Spawn A2A Cluster UDP Discovery Listener Thread (Port 9092 / Dynamic)
         thread::spawn(move || {
-            Self::start_udp_discovery_server(udp_port);
+            Self::start_udp_discovery_server(udp_port, gmcp_port);
         });
 
         // 4. Keep main daemon thread alive
@@ -122,7 +124,7 @@ impl GmaDaemon {
         }
     }
 
-    fn start_udp_discovery_server(port: u16) {
+    fn start_udp_discovery_server(port: u16, gmcp_port: u16) {
         let addr = format!("0.0.0.0:{}", port);
         if let Ok(socket) = UdpSocket::bind(&addr) {
             eprintln!("🌐 [A2A Cluster UDP] Discovery listener active on {}", addr);
@@ -130,7 +132,7 @@ impl GmaDaemon {
             while let Ok((amt, src)) = socket.recv_from(&mut buf) {
                 let msg = String::from_utf8_lossy(&buf[..amt]);
                 if msg.contains("GHA_LAN_PING") {
-                    let pong = format!("GHA_LAN_PONG:gha-daemon-node:{}", Self::GMCP_PORT);
+                    let pong = format!("GHA_LAN_PONG:gha-daemon-node:{}", gmcp_port);
                     let _ = socket.send_to(pong.as_bytes(), src);
                 }
             }
@@ -170,8 +172,8 @@ impl GmaDaemon {
                     if trimmed.contains("\"method\":\"initialize\"") {
                         let id = extract_json_id(trimmed).unwrap_or(1);
                         let resp = format!(
-                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gmcp-native-server\",\"version\":\"0.1.87\"}}}}}}\n",
-                            id
+                            "{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{{\"tools\":{{}}}},\"serverInfo\":{{\"name\":\"gmcp-native-server\",\"version\":\"{}\"}}}}}}\n",
+                            id, crate::GHA_VERSION
                         );
                         let _ = writer.write_all(resp.as_bytes());
                         let _ = writer.flush();
