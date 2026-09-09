@@ -54,7 +54,7 @@ impl Default for GhaConfig {
             gmcp_port: 9090,
             gemi_port: 9091,
             udp_discovery_port: 9092,
-            default_engine: "gha".to_string(),
+            default_engine: "gha-offline".to_string(),
             default_model: "gha-alpha".to_string(),
             auto_download_models: true,
             gha_repo: "intellibitz/gha".to_string(),

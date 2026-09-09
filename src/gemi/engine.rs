@@ -26,10 +26,15 @@ impl GemiEngine {
             }
         }
 
-        let selected_engine = super::models::ModelManager::get_selected_engine().unwrap_or_default().to_lowercase();
-        let selected_model = super::models::ModelManager::get_selected_model().unwrap_or_default();
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let global_dir = home.join(".gha");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
 
-        if selected_engine == "gemi" || selected_engine == "cloud" || selected_engine.is_empty() {
+        let selected_engine = super::models::ModelManager::get_selected_engine().unwrap_or(cfg.default_engine).to_lowercase();
+        let selected_model = super::models::ModelManager::get_selected_model().unwrap_or(cfg.default_model);
+
+        // 🚀 Strict Offline Enforcement: Default to local unless explicitly requested
+        if selected_engine == "gemi" || selected_engine == "cloud" {
             let (res, _) = Self::scout_tier2_providers(prompt, workspace);
             if let Some(text) = res {
                 return text;
@@ -67,20 +72,15 @@ impl GemiEngine {
             }
         }
 
-        let (res, errors) = Self::scout_tier2_providers(prompt, workspace);
-        if let Some(text) = res {
-            return text;
-        }
-
+        // Final Fallback: Attempt local discovery before failing, skip cloud scouting by default
         let models = super::models::ModelManager::scout_and_benchmark(workspace);
         for best_model in models {
              if best_model.is_local && best_model.registry.contains("GGUF") {
-                 // Fallback to local GGUF reasoning if cloud is down
                  return format!("[Local GGUF Fallback: {}]: Discovered local model for mission.", best_model.name);
              }
         }
 
-        format!("❌ CLOUD_BRAIN_UNAVAILABLE: No responders. Diagnostics:\n  {}", errors.join("\n  "))
+        format!("ERROR: Local execution engine '{}' is active but no responding models found. Connect a cloud provider to enable Tier 2 reasoning.", selected_engine)
     }
 
     fn scout_tier2_providers(prompt: &str, _workspace: &Path) -> (Option<String>, Vec<String>) {

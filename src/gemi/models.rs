@@ -176,13 +176,17 @@ impl ModelManager {
     }
 
     pub fn get_active_engine_and_model() -> (String, String) {
-        let model = Self::get_selected_model().unwrap_or_else(|| "gha-alpha (Native Reflex)".to_string());
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let global_dir = home.join(".gha");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+
+        let model = Self::get_selected_model().unwrap_or(cfg.default_model);
         let engine_override = Self::get_selected_engine();
 
         let engine = if let Some(e) = engine_override {
             e
         } else {
-            "GEMI Engine (Default Cloud Reasoning)".to_string()
+            format!("{} (Default)", cfg.default_engine)
         };
 
         (engine, model)
