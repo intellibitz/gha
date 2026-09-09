@@ -2,29 +2,19 @@
 // 100% Rust implementation managing GMCP (Port 9090), GEMI (Port 9091) & A2A Cluster UDP (Port 9092)
 
 use std::fs;
-use std::io::{BufRead, BufReader, Write};
-use std::net::{TcpListener, TcpStream, UdpSocket};
+use std::io::Write;
+use std::net::{TcpStream, UdpSocket};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 
-use serde_json::json;
-
 use crate::gemi::GemiServer;
-use crate::gmcp::server::{extract_json_id, extract_tool_arg, extract_tool_name};
-use crate::gmcp::tools::ToolRegistry;
+use crate::gmcp::server::GmcpServer;
 
 pub struct GmaDaemon;
 
 impl GmaDaemon {
-    #[allow(dead_code)]
-    pub const GMCP_PORT: u16 = 9090;
-    #[allow(dead_code)]
-    pub const GEMI_PORT: u16 = 9091;
-    #[allow(dead_code)]
-    pub const UDP_DISCOVERY_PORT: u16 = 9092;
-
     pub fn get_lock_file(global_dir: &Path) -> PathBuf {
         global_dir.join("gma.lock")
     }
@@ -111,7 +101,7 @@ impl GmaDaemon {
         let gmcp_port = cfg.gmcp_port;
         // 2. Spawn GMCP TCP Server Thread (Port 9090 / Dynamic)
         thread::spawn(move || {
-            Self::start_gmcp_tcp_server(workspace_gmcp, gmcp_port);
+            GmcpServer::start_tcp_server(workspace_gmcp, gmcp_port, crate::GHA_VERSION.to_string());
         });
 
         let udp_port = cfg.udp_discovery_port;
@@ -138,104 +128,6 @@ impl GmaDaemon {
                     let _ = socket.send_to(pong.as_bytes(), src);
                 }
             }
-        }
-    }
-
-    fn start_gmcp_tcp_server(workspace: PathBuf, port: u16) {
-        let addr = format!("127.0.0.1:{}", port);
-        let listener = match TcpListener::bind(&addr) {
-            Ok(l) => l,
-            Err(e) => {
-                eprintln!("⚠️ [GMCP TCP Server] Could not bind to {}: {}", addr, e);
-                return;
-            }
-        };
-
-        eprintln!("🔌 [GMCP Server] Always-On TCP MCP Server listening at {}", addr);
-
-        for stream in listener.incoming().flatten() {
-            let workspace = workspace.clone();
-            thread::spawn(move || {
-                let read_stream = match stream.try_clone() {
-                    Ok(s) => s,
-                    Err(_) => return,
-                };
-                let mut reader = BufReader::new(read_stream);
-                let mut line = String::new();
-                let mut writer = stream;
-
-                while reader.read_line(&mut line).is_ok() {
-                    let trimmed = line.trim();
-                    if trimmed.is_empty() {
-                        line.clear();
-                        continue;
-                    }
-
-                    if trimmed.contains("\"method\":\"initialize\"") {
-                        let id = extract_json_id(trimmed).unwrap_or(json!(1));
-                        let resp_val = json!({
-                            "jsonrpc": "2.0",
-                            "id": id,
-                            "result": {
-                                "protocolVersion": "2024-11-05",
-                                "capabilities": {
-                                    "tools": { "listChanged": false }
-                                },
-                                "serverInfo": {
-                                    "name": "gmcp-native-server",
-                                    "version": crate::GHA_VERSION
-                                }
-                            }
-                        });
-                        if let Ok(resp) = serde_json::to_string(&resp_val) {
-                             let _ = writer.write_all(format!("{}\n", resp).as_bytes());
-                             let _ = writer.flush();
-                        }
-                    } else if trimmed.contains("\"method\":\"tools/list\"") {
-                        let id = extract_json_id(trimmed).unwrap_or(json!(2));
-                        let tools = ToolRegistry::list_tools();
-                        let tools_json: Vec<serde_json::Value> = tools
-                            .iter()
-                            .map(|t| json!({"name": t.name, "description": t.description}))
-                            .collect();
-                        let resp_val = json!({
-                            "jsonrpc": "2.0",
-                            "id": id,
-                            "result": {
-                                "tools": tools_json
-                            }
-                        });
-                        if let Ok(resp) = serde_json::to_string(&resp_val) {
-                             let _ = writer.write_all(format!("{}\n", resp).as_bytes());
-                             let _ = writer.flush();
-                        }
-                    } else if trimmed.contains("\"method\":\"tools/call\"") {
-                        let id = extract_json_id(trimmed).unwrap_or(json!(3));
-                        let tool_name = extract_tool_name(trimmed).unwrap_or_else(|| "status".to_string());
-                        let tool_arg = extract_tool_arg(trimmed).unwrap_or_default();
-
-                        let result_text = ToolRegistry::execute_tool(&tool_name, &tool_arg, &workspace);
-
-                        let resp_val = json!({
-                            "jsonrpc": "2.0",
-                            "id": id,
-                            "result": {
-                                "content": [
-                                    {
-                                        "type": "text",
-                                        "text": result_text
-                                    }
-                                ]
-                            }
-                        });
-                        if let Ok(resp) = serde_json::to_string(&resp_val) {
-                             let _ = writer.write_all(format!("{}\n", resp).as_bytes());
-                             let _ = writer.flush();
-                        }
-                    }
-                    line.clear();
-                }
-            });
         }
     }
 

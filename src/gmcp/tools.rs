@@ -105,6 +105,7 @@ impl ToolRegistry {
             Arc::new(ReleaseTool),
             Arc::new(EvolveTool),
             Arc::new(AdvanceTool),
+            Arc::new(DiscoveryTool),
             Arc::new(DistillTool),
             Arc::new(SwarmStatusTool),
             Arc::new(ReplicateStateTool),
@@ -145,6 +146,7 @@ impl ToolRegistry {
         tools.insert("perf_test".to_string(), Arc::new(BenchmarkTool));
         tools.insert("sync".to_string(), Arc::new(VersionSyncTool));
         tools.insert("auto_evolve".to_string(), Arc::new(AdvanceTool));
+        tools.insert("status_json".to_string(), Arc::new(DiscoveryTool));
         tools.insert("audit_compliance".to_string(), Arc::new(ComplianceTool));
         tools.insert("self_evolve".to_string(), Arc::new(EvolveTool));
         tools.insert("download".to_string(), Arc::new(WebSearchDownloadTool));
@@ -761,6 +763,33 @@ impl GhaTool for EvolveTool {
     fn description(&self) -> String { "Analyze audit log and propose native substrate evolution (Rule 17)".to_string() }
     fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
         EvolutionManager::evolve_substrate(workspace)
+    }
+}
+
+struct DiscoveryTool;
+impl GhaTool for DiscoveryTool {
+    fn name(&self) -> String { "discovery".to_string() }
+    fn description(&self) -> String { "Provide machine-readable summary of the substrate (Rule 12)".to_string() }
+    fn execute(&self, _arg: &str, _workspace: &Path) -> EaiResult<String> {
+        let hardware = crate::gemi::hardware::HardwareProfiler::get_profile();
+        let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
+        let tools = ToolRegistry::list_tools();
+
+        let info = serde_json::json!({
+            "version": crate::GHA_VERSION,
+            "identity": "GHA Intelligence Substrate",
+            "engine": engine,
+            "model": model,
+            "hardware": {
+                "cpus": hardware.cpus,
+                "gpu": hardware.gpu_info,
+                "acceleration": hardware.acceleration_active,
+                "os": hardware.os_info
+            },
+            "reflexes": tools.iter().map(|t| &t.name).collect::<Vec<_>>()
+        });
+
+        Ok(serde_json::to_string_pretty(&info).unwrap_or_default())
     }
 }
 

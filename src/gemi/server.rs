@@ -92,6 +92,33 @@ impl GemiServer {
                     );
                     let _ = writer.write_all(resp.as_bytes());
                     let _ = writer.flush();
+                } else if method == "GET" && path == "/well-known/gha" {
+                    let hardware = crate::gemi::hardware::HardwareProfiler::get_profile();
+                    let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
+                    let tools = ToolRegistry::list_tools();
+
+                    let info = json!({
+                        "version": crate::GHA_VERSION,
+                        "identity": "GHA Intelligence Substrate",
+                        "engine": engine,
+                        "model": model,
+                        "hardware": {
+                            "cpus": hardware.cpus,
+                            "gpu": hardware.gpu_info,
+                            "acceleration": hardware.acceleration_active,
+                            "os": hardware.os_info
+                        },
+                        "reflexes": tools.iter().map(|t| &t.name).collect::<Vec<_>>()
+                    });
+
+                    let payload = serde_json::to_string_pretty(&info).unwrap_or_default();
+                    let resp = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: {}\r\n\r\n{}",
+                        payload.len(),
+                        payload
+                    );
+                    let _ = writer.write_all(resp.as_bytes());
+                    let _ = writer.flush();
                 } else if method == "POST" && (path.starts_with("/v1/chat/completions") || path.starts_with("/chat/completions")) {
                     let is_streaming = body_str.contains("\"stream\":true") || body_str.contains("\"stream\": true") || body_str.contains("stream");
                     let active_model = crate::gemi::models::ModelManager::get_selected_model()
