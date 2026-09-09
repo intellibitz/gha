@@ -25,7 +25,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.345";
+pub const GHA_VERSION: &str = "0.1.346";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -47,7 +47,7 @@ impl Completer for GhaHelper {
             "/help", "/domain", "/simple", "/backup", "/restore",
             "/audit", "/memory", "/forget", "/setkey", "/renew", "/agents",
             "/engines", "/clients", "/servers", "/debug", "/models", "/benchmark",
-            "/compliance", "/sync", "/release", "/evolve", "/distill", "/services",
+            "/compliance", "/sync", "/release", "/evolve", "/distill", "/swarm", "/services",
             "/status", "/schedule", "/export_doc", "/clear", "/exit",
         ];
 
@@ -106,6 +106,7 @@ fn print_help() {
     println!("  /sync, :sync             Synchronize project version & terminology");
     println!("  /release, :release       Execute full GHA release & push cycle");
     println!("  /evolve, :evolve         Analyze patterns and propose substrate evolution");
+    println!("  /swarm, :swarm           Inspect cluster mesh & hardware capabilities");
     println!("  /distill <intent>        Distill high-latency reasoning into native reflex");
     println!("  /services, :services     List running services");
     println!("  /status, :status         Inspect health & hardware status");
@@ -463,6 +464,10 @@ fn run_interactive_shell(cwd: &Path) {
                 let res = ToolRegistry::execute_tool("self_evolve", "", cwd);
                 println!("\n{}", res);
             }
+            "/swarm" | ":swarm" | "swarm" => {
+                let res = ToolRegistry::execute_tool("swarm_status", "", cwd);
+                println!("\n{}", res);
+            }
             "/distill" | ":distill" | "distill" => {
                 let arg = command.trim_start_matches("/distill").trim_start_matches(":distill").trim();
                 let res = ToolRegistry::execute_tool("distill", arg, cwd);
@@ -629,6 +634,10 @@ fn main() {
         }
         "evolve" | ":evolve" | "/evolve" => {
             let res = ToolRegistry::execute_tool("self_evolve", "", &cwd);
+            println!("{}", res);
+        }
+        "swarm" | ":swarm" | "/swarm" => {
+            let res = ToolRegistry::execute_tool("swarm_status", "", &cwd);
             println!("{}", res);
         }
         "distill" | ":distill" | "/distill" => {

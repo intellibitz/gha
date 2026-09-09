@@ -46,6 +46,19 @@ impl HardwareProfiler {
         }
     }
 
+    pub fn get_caps_string() -> String {
+        let profile = Self::get_profile();
+        let mut caps = Vec::new();
+        if profile.acceleration_active {
+            caps.push("GPU".to_string());
+        } else {
+            caps.push("CPU".to_string());
+        }
+        caps.push(format!("{}GB", profile.ram_gb));
+        caps.push(format!("{}V", crate::GHA_VERSION));
+        caps.join(",")
+    }
+
     fn get_os_info() -> String {
         if cfg!(target_os = "linux") {
             if let Ok(out) = Command::new("uname").arg("-sr").output() {

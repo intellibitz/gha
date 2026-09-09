@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use serde::{Deserialize, Serialize};
 
 use super::agents::{GawdAgentFleet, GawdAgentInfo};
+use crate::gemi::hardware::HardwareProfiler;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct A2AMessage {
@@ -48,32 +49,47 @@ impl GmasSupervisor {
 
             // Zero-Config Background Discovery Loop
             std::thread::spawn(move || {
-                let socket = UdpSocket::bind(format!("0.0.0.0:{}", Self::UDP_DISCOVERY_PORT)).unwrap();
-                socket.set_broadcast(true).unwrap();
+                let socket_res = UdpSocket::bind(format!("0.0.0.0:{}", Self::UDP_DISCOVERY_PORT));
+                if let Ok(socket) = socket_res {
+                    let _ = socket.set_broadcast(true);
 
-                let mut buf = [0u8; 1024];
-                loop {
-                    if let Ok((amt, src)) = socket.recv_from(&mut buf) {
-                        let msg = String::from_utf8_lossy(&buf[..amt]);
-                        if msg == "GHA_PING" {
-                            let _ = socket.send_to(b"GHA_PONG", src);
-                        } else if msg == "GHA_PONG" {
-                             let mut peers = t_shared.lock().unwrap();
-                             let addr_str = format!("{}:9090", src.ip());
-                             if !peers.iter().any(|p| p.address == addr_str) {
-                                 peers.push(ClusterPeerNode {
-                                     node_id: format!("gha-peer-{}", src.ip()),
-                                     address: addr_str,
-                                     node_type: "PEER".to_string(),
-                                     is_active: true,
-                                     capabilities: vec!["REMOTE_TOOL".to_string()],
-                                 });
-                             }
+                    let mut buf = [0u8; 1024];
+                    loop {
+                        let local_caps = HardwareProfiler::get_caps_string();
+                        let ping_msg = format!("GHA_PING:{}", local_caps);
+
+                        if let Ok((amt, src)) = socket.recv_from(&mut buf) {
+                            let msg = String::from_utf8_lossy(&buf[..amt]);
+                            if msg.starts_with("GHA_PING") {
+                                let pong_msg = format!("GHA_PONG:{}", local_caps);
+                                let _ = socket.send_to(pong_msg.as_bytes(), src);
+                            }
+
+                            if msg.starts_with("GHA_PONG") || msg.starts_with("GHA_PING") {
+                                 let parts: Vec<&str> = msg.split(':').collect();
+                                 let caps = if parts.len() > 1 {
+                                     parts[1].split(',').map(|s| s.to_string()).collect()
+                                 } else {
+                                     vec!["CORE".into()]
+                                 };
+
+                                 let mut peers = t_shared.lock().unwrap();
+                                 let addr_str = format!("{}:9090", src.ip());
+                                 if !peers.iter().any(|p| p.address == addr_str) {
+                                     peers.push(ClusterPeerNode {
+                                         node_id: format!("gha-peer-{}", src.ip()),
+                                         address: addr_str,
+                                         node_type: if caps.contains(&"GPU".to_string()) { "WORKSTATION_NODE".into() } else { "PEER".into() },
+                                         is_active: true,
+                                         capabilities: caps,
+                                     });
+                                 }
+                            }
                         }
+                        // Periodic Beacon
+                        let _ = socket.send_to(ping_msg.as_bytes(), format!("255.255.255.255:{}", Self::UDP_DISCOVERY_PORT));
+                        std::thread::sleep(Duration::from_secs(10));
                     }
-                    // Periodic Beacon
-                    let _ = socket.send_to(b"GHA_PING", format!("255.255.255.255:{}", Self::UDP_DISCOVERY_PORT));
-                    std::thread::sleep(Duration::from_secs(30));
                 }
             });
 
@@ -174,5 +190,21 @@ impl GmasSupervisor {
 
         let _ = std::fs::write(&sync_file, sync_data.to_string());
         format!("Synchronized state across {} nodes (checksum verified).", synced)
+    }
+
+    pub fn borrow_remote_reflex(prompt: &str) -> Option<String> {
+        let nodes = Self::list_cluster_nodes();
+
+        // Find a workstation node with GPU capability
+        let target_node = nodes.iter()
+            .find(|n| n.node_type == "WORKSTATION_NODE" && n.is_active && n.node_id != "gha-local-master");
+
+        if let Some(node) = target_node {
+             let res = Self::dispatch_peer_task(&node.address, "reason", prompt);
+             if !res.contains("fallback") && !res.contains("unreachable") {
+                 return Some(format!("🌐 [Borrowed Reflex from {}]: {}", node.node_id, res));
+             }
+        }
+        None
     }
 }

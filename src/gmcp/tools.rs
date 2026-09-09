@@ -104,6 +104,7 @@ impl ToolRegistry {
             Arc::new(ReleaseTool),
             Arc::new(EvolveTool),
             Arc::new(DistillTool),
+            Arc::new(SwarmStatusTool),
             Arc::new(SelfHealBuildTool),
             Arc::new(InfraCommandTool { name: "docker_ps".into(), bin: "docker".into(), args: vec!["ps", "--format", "table {{.Names}}\t{{.Status}}"] }),
             Arc::new(InfraCommandTool { name: "docker_build".into(), bin: "docker".into(), args: vec!["build", "-t", "gha-app:latest", "."] }),
@@ -131,6 +132,7 @@ impl ToolRegistry {
         tools.insert("list_mcp_clients".to_string(), Arc::new(ClientsTool));
         tools.insert("list_mcp_servers".to_string(), Arc::new(ServersTool));
         tools.insert("set_model".to_string(), Arc::new(UseModelTool));
+        tools.insert("swarm".to_string(), Arc::new(SwarmStatusTool));
         tools.insert("perf_test".to_string(), Arc::new(BenchmarkTool));
         tools.insert("sync".to_string(), Arc::new(VersionSyncTool));
         tools.insert("audit_compliance".to_string(), Arc::new(ComplianceTool));
@@ -758,6 +760,25 @@ impl GhaTool for DistillTool {
     fn description(&self) -> String { "Distill deep reasoning intent into native Rust or Wasm reflex (Rule 17)".to_string() }
     fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
         ReflexSynthesizer::distill_native_reflex(arg, workspace)
+    }
+}
+
+struct SwarmStatusTool;
+impl GhaTool for SwarmStatusTool {
+    fn name(&self) -> String { "swarm_status".to_string() }
+    fn description(&self) -> String { "Inspect GHA cluster mesh and peer hardware capabilities".to_string() }
+    fn execute(&self, _arg: &str, _workspace: &Path) -> EaiResult<String> {
+        let nodes = GmasSupervisor::list_cluster_nodes();
+        let mut out = format!("# GHA Swarm Intelligence Mesh (AOA/A2A)\n\n");
+        out.push_str("| Node ID | Type | Address | Capabilities | Status |\n");
+        out.push_str("| :--- | :--- | :--- | :--- | :--- |\n");
+
+        for n in nodes {
+            let status = if n.is_active { "🟢 ACTIVE" } else { "🔴 OFFLINE" };
+            out.push_str(&format!("| {} | {} | {} | {} | {} |\n", n.node_id, n.node_type, n.address, n.capabilities.join(", "), status));
+        }
+
+        Ok(out)
     }
 }
 

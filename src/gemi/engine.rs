@@ -33,6 +33,15 @@ impl GemiEngine {
         let selected_engine = super::models::ModelManager::get_selected_engine().unwrap_or(cfg.default_engine.clone()).to_lowercase();
         let selected_model = super::models::ModelManager::get_selected_model().unwrap_or(cfg.default_model.clone());
 
+        // 🚀 Cluster Acceleration (Rule 14 & 16)
+        // If local is constrained or explicitly requested, try borrowing a remote workstation reflex
+        let profile = super::hardware::HardwareProfiler::get_profile();
+        if !profile.acceleration_active && selected_engine != "cloud" {
+             if let Some(remote_reflex) = crate::gawd::gmas::GmasSupervisor::borrow_remote_reflex(prompt) {
+                 return remote_reflex;
+             }
+        }
+
         // 🚀 Strict Offline Enforcement: Default to local unless explicitly requested
         if selected_engine == "gemi" || selected_engine == "cloud" {
             let (res, _) = Self::scout_tier2_providers(prompt, workspace);
