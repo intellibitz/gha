@@ -16,7 +16,7 @@ pub fn register_synthesized_reflexes(tools: &mut HashMap<String, Arc<dyn GhaTool
     tools.insert("trades_reflex".to_string(), Arc::new(TradesReflexTool));
     tools.insert("household_reflex".to_string(), Arc::new(HouseholdReflexTool));
     tools.insert("public_safety_reflex".to_string(), Arc::new(PublicSafetyReflexTool));
-    // [AUTONOMOUS REGISTRATION END]
+// [AUTONOMOUS REGISTRATION END]
 }
 
 // [AUTONOMOUS TOOLS START]
@@ -244,4 +244,5 @@ impl GhaTool for PublicSafetyReflexTool {
         Ok(report)
     }
 }
+
 // [AUTONOMOUS TOOLS END]

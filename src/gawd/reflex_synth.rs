@@ -20,12 +20,13 @@ impl ReflexSynthesizer {
             REQUIREMENTS:\n\
             1. Create a Rust struct named `{}` implementing the `GhaTool` trait.\n\
             2. The tool must be high-performance, deterministic, and use standard libraries only.\n\
-            3. Provide ONLY the code block for the struct and its implementation.\n\n\
+            3. Use fully qualified names for external types (e.g., `std::path::Path`, `crate::error::EaiResult`).\n\
+            4. Provide ONLY the code block for the struct and its implementation.\n\n\
             TRAIT DEFINITION:\n\
             pub trait GhaTool: Send + Sync {{\n\
                 fn name(&self) -> String;\n\
                 fn description(&self) -> String;\n\
-                fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String>;\n\
+                fn execute(&self, arg: &str, workspace: &std::path::Path) -> crate::error::EaiResult<String>;\n\
             }}",
             intent, struct_name
         );
@@ -39,7 +40,7 @@ impl ReflexSynthesizer {
                 impl GhaTool for {} {{\n\
                     fn name(&self) -> String {{ \"{}\".to_string() }}\n\
                     fn description(&self) -> String {{ \"Autonomously distilled reflex for {}\".to_string() }}\n\
-                    fn execute(&self, arg: &str, _workspace: &Path) -> EaiResult<String> {{\n\
+                    fn execute(&self, arg: &str, _workspace: &std::path::Path) -> crate::error::EaiResult<String> {{\n\
                         Ok(format!(\"Reflex '{}' executed with arg: {{}}\", arg))\n\
                     }}\n\
                 }}",
@@ -62,6 +63,11 @@ impl ReflexSynthesizer {
         let reflex_rs_path = workspace.join("src/gmcp/reflexes.rs");
         if reflex_rs_path.exists() {
             let mut content = fs::read_to_string(&reflex_rs_path)?;
+
+            // Prevent Duplicates
+            if content.contains(&format!("struct {} ", struct_name)) || content.contains(&format!("struct {}{{}}", struct_name)) {
+                return Ok(format!("Reflex '{}' already exists in substrate.", struct_name));
+            }
 
             // Inject Struct/Impl
             if let Some(pos) = content.find("// [AUTONOMOUS TOOLS END]") {
