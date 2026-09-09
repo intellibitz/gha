@@ -8,7 +8,7 @@ mod gmcp;
 mod sandbox;
 
 use std::env;
-use std::io::{self, Write};
+use std::io::{self, Write, Read, IsTerminal};
 use std::path::{Path, PathBuf};
 
 use crate::gmcp::tools::ToolRegistry;
@@ -24,7 +24,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.321";
+pub const GHA_VERSION: &str = "0.1.323";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
@@ -639,10 +639,28 @@ fn main() {
             println!("{}", res);
         }
         _ => {
-            let goal = args.join(" ");
+            let mut goal = args.join(" ");
+
+            // 🚀 Support for Pipes and Redirection (Rule 7 & 15 Compliance)
+            if !io::stdin().is_terminal() {
+                let mut buffer = String::new();
+                if io::stdin().read_to_string(&mut buffer).is_ok() {
+                    let trimmed = buffer.trim();
+                    if !trimmed.is_empty() {
+                         goal = format!("{}\n\n[INPUT DATA]:\n{}", goal, trimmed);
+                    }
+                }
+            }
+
             let gma = GmaMasterAgent::new();
-            let report = gma.solve(&goal, &cwd, GHA_VERSION);
-            println!("{}", report);
+            if !io::stdout().is_terminal() {
+                // 🚀 Filter Mode: Output strictly the clean answer for piping
+                let answer = gma.solve_clean(&goal, &cwd, GHA_VERSION);
+                print!("{}", answer);
+            } else {
+                let report = gma.solve(&goal, &cwd, GHA_VERSION);
+                println!("{}", report);
+            }
         }
     }
 }

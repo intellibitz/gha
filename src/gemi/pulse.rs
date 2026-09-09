@@ -47,12 +47,23 @@ impl GhaPulse {
         mappings.insert("models", "ACTION: list_models");
         mappings.insert("ls", "ACTION: list_directory");
         mappings.insert("dir", "ACTION: list_directory");
+        mappings.insert("lowercase", "ACTION: exec_command tr '[:upper:]' '[:lower:]'");
+        mappings.insert("uppercase", "ACTION: exec_command tr '[:lower:]' '[:upper:]'");
 
         for word in &words {
             if let Some(action) = mappings.get(word) {
                 if *word == "ls" || *word == "dir" {
                      return Ok(format!("ACTION: list_directory {}", workspace.display()));
                 }
+
+                // 🚀 If we have input data from a pipe, use it with the command
+                if (word == &"lowercase" || word == &"uppercase") && clean_prompt.contains("[INPUT DATA]:") {
+                     if let Some(data) = clean_prompt.split("[INPUT DATA]:\n").nth(1) {
+                         let cmd = if word == &"lowercase" { "tr '[:upper:]' '[:lower:]'" } else { "tr '[:lower:]' '[:upper:]'" };
+                         return Ok(format!("ACTION: exec_command echo \"{}\" | {}", data.replace("\"", "\\\""), cmd));
+                     }
+                }
+
                 return Ok(action.to_string());
             }
         }
