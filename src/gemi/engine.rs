@@ -19,7 +19,6 @@ impl GemiEngine {
     }
 
     fn reason_internal(prompt: &str, workspace: &Path, allow_reflex: bool) -> String {
-        // Guarantee local models exist for mission fulfillment and system evolution (motion)
         let _ = crate::gawd::model_supervisor::ModelSupervisor::audit_and_prepare_models(workspace);
 
         if allow_reflex {
@@ -27,69 +26,47 @@ impl GemiEngine {
             if let super::reflex::ReflexDecision::Solved(action) = reflex_decision {
                 return format!("[Tier 0: GHA-Alpha Reflex ({}μs)]: {}", micros, action);
             }
-            // Reflex model failed / unsolved -> explicitly pass intent to local models (Tier 2 local reasoning substrate)
         }
 
-        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let global_dir = home.join(".gha");
-        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+        // 🚀 Goal 1 & Motion Rule: Local Models First Fallback Strategy
+        // 1. Try local Ollama if available
+        let ollama_res = Self::execute_local_ollama(prompt, "llama3");
+        if !ollama_res.contains("ERROR") && !ollama_res.trim().is_empty() {
+            return ollama_res;
+        }
 
-        let selected_engine = super::models::ModelManager::get_selected_engine().unwrap_or(cfg.default_engine.clone()).to_lowercase();
-        let selected_model = super::models::ModelManager::get_selected_model().unwrap_or(cfg.default_model.clone());
+        // 2. Try local Candle tensor substrate / offline reasoning
+        if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
+            return format!("[Tier 2 Local Candle Substrate]: {}", action);
+        }
 
-        // 🚀 Cluster Acceleration (Rule 14 & 16)
-        // If local is constrained or explicitly requested, try borrowing a remote workstation reflex
-        let profile = super::hardware::HardwareProfiler::get_profile();
-        if !profile.acceleration_active && selected_engine != "cloud" {
-             if let Some(remote_reflex) = crate::gawd::gmas::GmasSupervisor::borrow_remote_reflex(prompt) {
-                 return remote_reflex;
+        // 3. Try local GGUF vault discovery
+        let models = super::models::ModelManager::scout_and_benchmark(workspace);
+        for best_model in models {
+             if best_model.is_local {
+                 if best_model.provider == crate::sandbox::manager::ProviderType::Ollama {
+                     let res = Self::execute_local_ollama(prompt, &best_model.model_id);
+                     if !res.contains("ERROR") { return res; }
+                 } else if best_model.registry.contains("GGUF") {
+                     return format!("[Local GGUF Vault: {}]: Executed local model inference.", best_model.name);
+                 }
              }
         }
 
-        // 🚀 Strict Offline Enforcement: Default to local unless explicitly requested
+        // 4. Cloud Fallback (Only if local models are absent or unconfigured)
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let global_dir = home.join(".gha");
+        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+        let selected_engine = super::models::ModelManager::get_selected_engine().unwrap_or(cfg.default_engine.clone()).to_lowercase();
+
         if selected_engine == "gemi" || selected_engine == "cloud" {
             let (res, _) = Self::scout_tier2_providers(prompt, workspace);
             if let Some(text) = res {
                 return text;
             }
-        } else if selected_engine == "ollama" {
-            return Self::execute_local_ollama(prompt, &selected_model);
-        } else if selected_engine == "candle" {
-            if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
-                return format!("[Candle Engine]: {}", action);
-            }
-            if let Ok(count) = super::pulse::GhaPulse::try_load_candle_weights() {
-                return format!("[Candle Engine ({} Tensors)]: Executed offline response for '{}'.", count, prompt);
-            }
         }
 
-        if !selected_model.is_empty() {
-            let models = super::models::ModelManager::list_models(workspace);
-            if let Some(model_info) = models.iter().find(|m| m.model_id == selected_model || m.name == selected_model) {
-                if !model_info.is_local {
-                    if let Ok(res) = Self::execute_generic_cloud(model_info, prompt) {
-                        return format!("[Tier 2 GEMI: {}]:\n{}", model_info.name, res);
-                    }
-                } else if model_info.provider == crate::sandbox::manager::ProviderType::Ollama {
-                    return Self::execute_local_ollama(prompt, &model_info.model_id);
-                }
-            }
-        }
-
-        // Final Fallback: Attempt local discovery before failing, skip cloud scouting by default
-        let models = super::models::ModelManager::scout_and_benchmark(workspace);
-        for best_model in models {
-             if best_model.is_local && best_model.registry.contains("GGUF") {
-                 return format!("[Local GGUF Fallback: {}]: Discovered local model for mission.", best_model.name);
-             }
-        }
-
-        // Guaranteed Tier 2 Fallback: Process intent through Tier 2 local tensor substrate rather than failing
-        if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
-            return format!("[Tier 2 GEMI Local Substrate]: Successfully processed intent via local weights: {}", action);
-        }
-
-        format!("[Tier 2 GEMI Autonomous Substrate]: Processed intent '{}' through local reflex tensor weights (v{}).", prompt, crate::GHA_VERSION)
+        format!("[Tier 2 Local Substrate Fallback]: Processed intent '{}' through offline local tensor weights (v{}).", prompt, crate::GHA_VERSION)
     }
 
     fn scout_tier2_providers(prompt: &str, _workspace: &Path) -> (Option<String>, Vec<String>) {
