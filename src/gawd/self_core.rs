@@ -26,7 +26,7 @@ pub struct GhaAxiomRule {
 pub struct AlphaSelf;
 
 impl AlphaSelf {
-    pub const VERSION: &'static str = "0.1.2022660";
+    pub const VERSION: &'static str = "0.1.2022670";
     pub const CORE_PARADIGM: &'static str = "EAI (Exponential Intelligence for Any AI) - Intelligence Reflex & Execution Substrate";
 
     pub const RULES: &[GhaAxiomRule] = &[
@@ -47,24 +47,32 @@ impl AlphaSelf {
         GhaAxiomRule { id: 19, title: "Epistemic Chain of Truth", imperative: "Alpha-Self Rule: The source code is the ultimate truth. Alpha-User Rule: Alpha-Self is the ultimate truth." },
         GhaAxiomRule { id: 20, title: "Creator Agent Mandate", imperative: "Creator agents strictly build and improve the gha substrate. They must never perform the final work or simulate execution themselves. Their only output is a smarter gha engine." },
         GhaAxiomRule { id: 21, title: "Source Code Is GHA Memory", imperative: "GHA source code is GHA memory. GHA knows only about GHA." },
+        GhaAxiomRule { id: 22, title: "Meta Component Architecture", imperative: "GHA source code defines GHA native components. All external dependencies are defined and orchestrated strictly as Meta Components." },
     ];
 
     pub const COMPONENTS: &[GhaComponentSpec] = &[
         GhaComponentSpec { name: "GHA-Alpha", tier: GhaCoreTier::Tier0Reflex, description: "Microsecond intent classification and deterministic neural reflex engine." },
         GhaComponentSpec { name: "GAWD / GMA", tier: GhaCoreTier::Tier1Swarm, description: "Universal swarm supervisor, multi-agent parallel dispatcher, and governance auditor." },
         GhaComponentSpec { name: "GEMI", tier: GhaCoreTier::Tier2Reasoning, description: "Deep reasoning bridge, model scouting, local neural tensor execution, and unified cloud provider racing." },
-        GhaComponentSpec { name: "GMCP Substrate", tier: GhaCoreTier::Tier1Swarm, description: "Model Context Protocol JSON-RPC 2.0 protocol interop bus and 60+ ToolRegistry executor." },
+        GhaComponentSpec { name: "GMCP Substrate", tier: GhaCoreTier::Tier1Swarm, description: "Model Context Protocol JSON-RPC 2.0 protocol interop bus and Meta ToolRegistry executor." },
         GhaComponentSpec { name: "GmaDaemon", tier: GhaCoreTier::Tier1Swarm, description: "Persistent background host ensuring permanent availability and instant background recovery." },
+    ];
+
+    pub const META_COMPONENTS: &[GhaComponentSpec] = &[
+        GhaComponentSpec { name: "MetaModelSubstrate", tier: GhaCoreTier::Tier2Reasoning, description: "External reasoning models (local GGUF vaults, Candle tensors, and REST cloud API endpoints)." },
+        GhaComponentSpec { name: "MetaMcpServer", tier: GhaCoreTier::Tier1Swarm, description: "External Model Context Protocol servers connected via stdio or TCP JSON-RPC." },
+        GhaComponentSpec { name: "MetaExecutablePlugin", tier: GhaCoreTier::Tier1Swarm, description: "External script plugins and distilled WebAssembly reflex binaries." },
     ];
 
     #[allow(dead_code)]
     pub fn inspect_compiled_binary_instructions() -> String {
         format!(
-            "GHA Alpha-Self Compiled Binary Instructions:\n- Version: {}\n- Paradigm: {}\n- Hardcoded Axiom Rules: {}\n- Baked Component Substrates: {}",
+            "GHA Alpha-Self Compiled Binary Instructions:\n- Version: {}\n- Paradigm: {}\n- Hardcoded Axiom Rules: {}\n- Baked Native Components: {}\n- Orchestrated Meta Components: {}",
             Self::VERSION,
             Self::CORE_PARADIGM,
             Self::RULES.len(),
-            Self::COMPONENTS.len()
+            Self::COMPONENTS.len(),
+            Self::META_COMPONENTS.len()
         )
     }
 }

@@ -149,7 +149,8 @@ impl GmaMasterAgent {
             report.push_str(&format!("- Version: {}\n", crate::gawd::self_core::AlphaSelf::VERSION));
             report.push_str(&format!("- Core Paradigm: {}\n", crate::gawd::self_core::AlphaSelf::CORE_PARADIGM));
             report.push_str(&format!("- Baked Axiom Rules: {}\n", crate::gawd::self_core::AlphaSelf::RULES.len()));
-            report.push_str(&format!("- Baked Components: {}\n\n", crate::gawd::self_core::AlphaSelf::COMPONENTS.len()));
+            report.push_str(&format!("- Baked Native Components: {}\n", crate::gawd::self_core::AlphaSelf::COMPONENTS.len()));
+            report.push_str(&format!("- Orchestrated Meta Components: {}\n\n", crate::gawd::self_core::AlphaSelf::META_COMPONENTS.len()));
 
             report.push_str("## 2. SYSTEM ENVIRONMENT (Hardware & Compute)\n");
             report.push_str(&format!("- CPUs: {}\n", brain.system_cpus));
