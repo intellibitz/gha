@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.2022608`
+* **Current Engine Version**: `v0.1.2022610`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
 
 ## Universal Neutrality Mandate
@@ -136,6 +136,7 @@ All agents within the GHA ecosystem, including the IDE-integrated assistant (Tie
 16. **Clean Workspace & Testspace Sovereignty**: Maintain a clean, unpolluted workspace at all times. All testing, experimentation, and temporary scaffolding must be performed exclusively in the designated testspace (`./test/world`).
 17. **Native Intent Evolutionary Protocol**: When provided with an `intent: [intent]` prefix, the agent delegates execution to the native `gha` binary exclusively within the designated testspace (`./test/world`). If `gha` encounters a failure or capability gap, the agent intervenes, diagnoses the root cause, and triggers the **Motion Rule** to natively harden and add the required functionality directly to the `gha` source code. Upon successful intent execution, `gha` distills the operational path into Tier 0 reflex weights.
 18. **Creator Aspiration Rule**: When provided with a `creator: [aspiration]` prefix, the agent focuses on future `gha` architectural capabilities and long-term vision. Unlike the **Intent Rule** (which mimics user behavior and solves immediate runtime intents), the **Creator Rule** aspires to future GHA behaviors. Both rules trigger the **Motion Rule**, advancing `gha` evolution one step forward upon successful compilation, audit, and deployment.
+19. **Motion Rule**: When triggered by Intent failure or Creator aspiration, the agent executes the Motion Protocol: (1) Detect capability gap or architectural expansion requirement; (2) Synthesize production-ready native Rust code directly into the `gha` core (`./src/`); (3) Compile and validate tests exclusively within the testspace sandbox (`./test/world`); (4) Distill successful execution paths into Tier 0 reflexes and deploy via automated version increment and push.
 
 ## 100% GPU Acceleration & Hardware Saturation
 
