@@ -3,7 +3,6 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use super::hardware::HardwareProfiler;
@@ -740,17 +739,20 @@ impl ModelManager {
         if target.starts_with("http://") || target.starts_with("https://") {
             let file_name = target.split('/').next_back().unwrap_or("model.gguf");
             let dest_path = models_dir.join(file_name);
-            let status = Command::new("curl")
-                .args(["-L", "-C", "-", "--retry", "3", "--retry-connrefused", "-o", dest_path.to_str().unwrap_or("model.gguf"), target])
-                .status();
-
-            match status {
-                Ok(s) if s.success() => {
-                    let len = dest_path.metadata().map(|m| m.len()).unwrap_or(expected_bytes);
-                    Self::save_download_progress(target, len, expected_bytes, "COMPLETED");
-                    format!("Resumed/Downloaded native model weight to {}", dest_path.display())
+            match ureq::get(target).set("User-Agent", "GHA-Native-Engine/0.1").timeout(std::time::Duration::from_secs(300)).call() {
+                Ok(resp) => {
+                    if let Ok(mut file) = fs::File::create(&dest_path) {
+                        let mut reader = resp.into_reader();
+                        if std::io::copy(&mut reader, &mut file).is_ok() {
+                            let len = dest_path.metadata().map(|m| m.len()).unwrap_or(expected_bytes);
+                            Self::save_download_progress(target, len, expected_bytes, "COMPLETED");
+                            return format!("Resumed/Downloaded native model weight to {}", dest_path.display());
+                        }
+                    }
+                    Self::save_download_progress(target, 0, expected_bytes, "FAILED");
+                    format!("Failed to download model from {}", target)
                 }
-                _ => {
+                Err(_) => {
                     Self::save_download_progress(target, 0, expected_bytes, "FAILED");
                     format!("Failed to download model from {}", target)
                 }
@@ -772,18 +774,18 @@ impl ModelManager {
             let mut success_url = String::new();
 
             for mirror_url in candidate_urls {
-                let status = Command::new("curl")
-                    .args(["-L", "-C", "-", "--retry", "5", "--connect-timeout", "30", "--retry-connrefused", "-o", dest_path.to_str().unwrap_or("model.gguf"), &mirror_url])
-                    .status();
-
-                if status.is_ok_and(|s| s.success()) {
-                    let len = dest_path.metadata().map(|m| m.len()).unwrap_or(0);
-                    if len > 10_000_000 {
-                        downloaded_bytes = len;
-                        success_url = mirror_url;
-                        break;
-                    } else {
-                        let _ = fs::remove_file(&dest_path);
+                if let Ok(resp) = ureq::get(&mirror_url).set("User-Agent", "GHA-Native-Engine/0.1").timeout(std::time::Duration::from_secs(300)).call() {
+                    if let Ok(mut file) = fs::File::create(&dest_path) {
+                        let mut reader = resp.into_reader();
+                        if let Ok(len) = std::io::copy(&mut reader, &mut file) {
+                            if len > 10_000_000 {
+                                downloaded_bytes = len;
+                                success_url = mirror_url.clone();
+                                break;
+                            } else {
+                                let _ = fs::remove_file(&dest_path);
+                            }
+                        }
                     }
                 }
             }

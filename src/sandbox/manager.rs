@@ -415,17 +415,33 @@ impl GhaBackupManager {
             .map(|d| d.as_secs())
             .unwrap_or(0);
 
-        let backup_file = backups_dir.join(format!("work_backup_{}.tar.gz", timestamp));
+        let backup_dir = backups_dir.join(format!("work_backup_{}", timestamp));
 
-        let status = std::process::Command::new("tar")
-            .args(["-czf", backup_file.to_str().unwrap_or("backup.tar.gz"), "--exclude=.gha/backups", "--exclude=target", "--exclude=.git", "--exclude=models", "."])
-            .current_dir(workspace)
-            .status();
-
-        match status {
-            Ok(s) if s.success() => Ok(format!("Workspace work backed up successfully to {}", backup_file.display())),
-            _ => Err(EaiError::Sandbox("Failed to create workspace backup archive using tar.".to_string())),
+        let exclude = ["backups", "target", ".git", "models"];
+        match Self::copy_dir_all_filtered(workspace, &backup_dir, &exclude) {
+            Ok(_) => Ok(format!("Workspace work backed up natively to {}", backup_dir.display())),
+            Err(e) => Err(EaiError::Sandbox(format!("Failed to create workspace backup: {}", e))),
         }
+    }
+
+    fn copy_dir_all_filtered(src: &Path, dst: &Path, exclude_dirs: &[&str]) -> std::io::Result<()> {
+        fs::create_dir_all(dst)?;
+        if let Ok(entries) = fs::read_dir(src) {
+            for entry in entries.flatten() {
+                if let Ok(file_type) = entry.file_type() {
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    if exclude_dirs.contains(&name.as_str()) || name.starts_with("work_backup_") {
+                        continue;
+                    }
+                    if file_type.is_dir() {
+                        let _ = Self::copy_dir_all_filtered(&entry.path(), &dst.join(&name), exclude_dirs);
+                    } else if file_type.is_file() {
+                        let _ = fs::copy(entry.path(), dst.join(&name));
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     pub fn restore_work(workspace: &Path, backup_path: &str) -> EaiResult<String> {
@@ -447,25 +463,21 @@ impl GhaBackupManager {
                 }
             }
             if !latest.exists() {
-                return Err(EaiError::Sandbox("No backup archive found in .gha/backups/".to_string()));
+                return Err(EaiError::Sandbox("No backup found in .gha/backups/".to_string()));
             }
             latest
         } else {
             PathBuf::from(backup_path.trim())
         };
 
-        if !archive.is_file() {
-            return Err(EaiError::Sandbox(format!("Backup archive file not found: {}", archive.display())));
+        if !archive.exists() {
+            return Err(EaiError::Sandbox(format!("Backup path not found: {}", archive.display())));
         }
 
-        let status = std::process::Command::new("tar")
-            .args(["-xzf", archive.to_str().unwrap_or("")])
-            .current_dir(workspace)
-            .status();
-
-        match status {
-            Ok(s) if s.success() => Ok(format!("Workspace work restored successfully from {}", archive.display())),
-            _ => Err(EaiError::Sandbox(format!("Failed to restore workspace work from {}", archive.display()))),
+        let exclude = ["backups", "target", ".git", "models"];
+        match Self::copy_dir_all_filtered(&archive, workspace, &exclude) {
+            Ok(_) => Ok(format!("Workspace work restored natively from {}", archive.display())),
+            Err(e) => Err(EaiError::Sandbox(format!("Failed to restore workspace work: {}", e))),
         }
     }
 
@@ -478,16 +490,12 @@ impl GhaBackupManager {
             .map(|d| d.as_secs())
             .unwrap_or(0);
 
-        let backup_file = backups_dir.join(format!("gha_engine_backup_{}.tar.gz", timestamp));
+        let backup_dir = backups_dir.join(format!("gha_engine_backup_{}", timestamp));
 
-        let status = std::process::Command::new("tar")
-            .args(["-czf", backup_file.to_str().unwrap_or("engine_backup.tar.gz"), "--exclude=backups", "--exclude=models", "."])
-            .current_dir(global_dir)
-            .status();
-
-        match status {
-            Ok(s) if s.success() => Ok(format!("GHA engine backed up successfully to {}", backup_file.display())),
-            _ => Err(EaiError::Sandbox("Failed to create engine backup archive.".to_string())),
+        let exclude = ["backups", "models"];
+        match Self::copy_dir_all_filtered(global_dir, &backup_dir, &exclude) {
+            Ok(_) => Ok(format!("GHA engine backed up natively to {}", backup_dir.display())),
+            Err(e) => Err(EaiError::Sandbox(format!("Failed to create engine backup: {}", e))),
         }
     }
 
@@ -510,24 +518,20 @@ impl GhaBackupManager {
                 }
             }
             if !latest.exists() {
-                return Err(EaiError::Sandbox("No engine backup archive found in ~/.gha/backups/".to_string()));
+                return Err(EaiError::Sandbox("No engine backup found in ~/.gha/backups/".to_string()));
             }
             latest
         } else {
             PathBuf::from(backup_path.trim())
         };
 
-        if !archive.is_file() {
-            return Err(EaiError::Sandbox(format!("Backup archive file not found: {}", archive.display())));
+        if !archive.exists() {
+            return Err(EaiError::Sandbox(format!("Backup path not found: {}", archive.display())));
         }
 
-        let status = std::process::Command::new("tar")
-            .args(["-xzf", archive.to_str().unwrap_or("")])
-            .current_dir(global_dir)
-            .status();
-
-        match status {
-            Ok(s) if s.success() => Ok(format!("GHA engine restored successfully from {}", archive.display())),
+        let exclude = ["backups", "models"];
+        match Self::copy_dir_all_filtered(&archive, global_dir, &exclude) {
+            Ok(_) => Ok(format!("GHA engine restored natively from {}", archive.display())),
             _ => Err(EaiError::Sandbox(format!("Failed to restore engine from {}", archive.display()))),
         }
     }

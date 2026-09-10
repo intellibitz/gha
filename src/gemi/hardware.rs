@@ -79,18 +79,28 @@ impl HardwareProfiler {
     }
 
     fn get_load_avg() -> String {
-        if let Ok(out) = Command::new("uptime").output() {
-            let s = String::from_utf8_lossy(&out.stdout);
-            if let Some(pos) = s.find("load average:") {
-                return s[pos + 13..].trim().to_string();
+        if cfg!(target_os = "linux") {
+            if let Ok(content) = std::fs::read_to_string("/proc/loadavg") {
+                let parts: Vec<&str> = content.split_whitespace().collect();
+                if parts.len() >= 3 {
+                    return format!("{}, {}, {}", parts[0], parts[1], parts[2]);
+                }
             }
         }
         "N/A".to_string()
     }
 
     fn get_uptime() -> String {
-        if let Ok(out) = Command::new("uptime").arg("-p").output() {
-            return String::from_utf8_lossy(&out.stdout).trim().to_string();
+        if cfg!(target_os = "linux") {
+            if let Ok(content) = std::fs::read_to_string("/proc/uptime") {
+                if let Some(secs_str) = content.split_whitespace().next() {
+                    if let Ok(secs) = secs_str.parse::<f64>() {
+                        let hours = (secs / 3600.0) as u64;
+                        let mins = ((secs % 3600.0) / 60.0) as u64;
+                        return format!("up {} hours, {} minutes", hours, mins);
+                    }
+                }
+            }
         }
         "N/A".to_string()
     }
@@ -99,25 +109,13 @@ impl HardwareProfiler {
         std::env::var("HOSTNAME")
             .or_else(|_| std::env::var("COMPUTERNAME"))
             .unwrap_or_else(|_| {
-                Command::new("hostname")
-                    .output()
-                    .ok()
-                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-                    .unwrap_or_else(|| "localhost".to_string())
+                std::fs::read_to_string("/etc/hostname")
+                    .map(|s| s.trim().to_string())
+                    .unwrap_or_else(|_| "localhost".to_string())
             })
     }
 
     fn determine_disk_usage_pct() -> u8 {
-        if let Ok(out) = Command::new("df").arg("/").output() {
-             let s = String::from_utf8_lossy(&out.stdout);
-             if let Some(line) = s.lines().nth(1) {
-                 for part in line.split_whitespace() {
-                     if part.ends_with('%') {
-                         return part.trim_end_matches('%').parse().unwrap_or(0);
-                     }
-                 }
-             }
-        }
         0
     }
 
@@ -136,13 +134,16 @@ impl HardwareProfiler {
 
     fn get_os_info() -> String {
         if cfg!(target_os = "linux") {
-            if let Ok(out) = Command::new("uname").arg("-sr").output() {
-                return String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if let Ok(content) = std::fs::read_to_string("/etc/os-release") {
+                for line in content.lines() {
+                    if line.starts_with("PRETTY_NAME=") {
+                        return line.trim_start_matches("PRETTY_NAME=").trim_matches('"').to_string();
+                    }
+                }
             }
+            return "Linux".to_string();
         } else if cfg!(target_os = "macos") {
-            if let Ok(out) = Command::new("sw_vers").arg("-productVersion").output() {
-                return format!("macOS {}", String::from_utf8_lossy(&out.stdout).trim());
-            }
+            return "macOS".to_string();
         } else if cfg!(target_os = "windows") {
              return "Windows".to_string();
         }

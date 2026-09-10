@@ -20,16 +20,22 @@ impl GhaAdmin {
         // 1. Audit Security Patterns (No hardcoded keys)
         let mut secret_found = false;
         let patterns = ["sk-", "ghp_", "AIza"];
-        for p in patterns {
-             let out = Command::new("grep")
-                .args(["-rE", p, "src/", "--exclude=security.rs", "--exclude=admin.rs"])
-                .current_dir(workspace)
-                .output()?;
-
-             if !out.stdout.is_empty() {
-                 secret_found = true;
-                 report.push_str(&format!("- [FAIL] Security: Potential secret matching '{}' detected in source.\n", p));
-             }
+        let src_dir = workspace.join("src");
+        if let Ok(entries) = fs::read_dir(&src_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+                if path.is_file() && !file_name.contains("security.rs") && !file_name.contains("admin.rs") {
+                    if let Ok(content) = fs::read_to_string(&path) {
+                        for p in patterns {
+                            if content.contains(p) {
+                                secret_found = true;
+                                report.push_str(&format!("- [FAIL] Security: Potential secret matching '{}' detected in {}.\n", p, path.display()));
+                            }
+                        }
+                    }
+                }
+            }
         }
         if !secret_found {
             report.push_str("- [PASS] Security: No hardcoded secrets detected.\n");

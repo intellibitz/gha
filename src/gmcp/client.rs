@@ -49,14 +49,13 @@ impl GmcpClient {
         let mut entries: Vec<GlobalMcpEntry> = Vec::new();
 
         // 1. Try Online Registry Scout from Dynamic Config URL
-        if let Ok(out) = Command::new("curl")
-            .args(["-sL", "--connect-timeout", "5", "--max-time", "15", &cfg.mcp_registry_url])
-            .output()
-            && out.status.success()
-            && let Ok(remote_entries) = serde_json::from_slice::<Vec<GlobalMcpEntry>>(&out.stdout)
-            && !remote_entries.is_empty()
-        {
-            entries = remote_entries;
+        if let Ok(resp) = ureq::get(&cfg.mcp_registry_url).timeout(std::time::Duration::from_secs(10)).call() {
+            let mut reader = resp.into_reader();
+            if let Ok(remote_entries) = serde_json::from_reader::<_, Vec<GlobalMcpEntry>>(&mut reader) {
+                if !remote_entries.is_empty() {
+                    entries = remote_entries;
+                }
+            }
         }
 
         // 2. Read / Merge Local Dynamic Registry Overrides (~/.gha/global_mcp_registry.json)

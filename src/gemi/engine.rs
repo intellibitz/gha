@@ -2,8 +2,6 @@
 // 100% Rust implementation for Exponential Explosive Intelligence (Model Picking & Benchmarking)
 
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
-use std::io::Write;
 use serde_json::json;
 use anyhow::{Result, anyhow};
 
@@ -143,22 +141,17 @@ impl GemiEngine {
     }
 
     fn curl_pipe(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<Vec<u8>> {
-        let mut child = Command::new("curl")
-            .args(["-s", "--connect-timeout", "5", "--max-time", "15", "-X", "POST", url, "-H", "Content-Type: application/json"])
-            .args(headers.into_iter().flat_map(|(k, v)| vec!["-H".to_string(), format!("{}: {}", k, v)]))
-            .arg("-d")
-            .arg("@-")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()?;
-
-        let mut stdin = child.stdin.take().ok_or_else(|| anyhow!("Failed to open stdin"))?;
-        stdin.write_all(payload.to_string().as_bytes())?;
-        drop(stdin);
-
-        let out = child.wait_with_output()?;
-        if !out.status.success() { return Err(anyhow!("Curl failed")); }
-        Ok(out.stdout)
+        let mut req = ureq::post(url)
+            .set("Content-Type", "application/json")
+            .timeout(std::time::Duration::from_secs(15));
+        for (k, v) in headers {
+            req = req.set(k, v);
+        }
+        let resp = req.send_json(payload)?;
+        let mut reader = resp.into_reader();
+        let mut buf = Vec::new();
+        std::io::Read::read_to_end(&mut reader, &mut buf)?;
+        Ok(buf)
     }
 
     fn cleanse_artifact(text: &str) -> String {
