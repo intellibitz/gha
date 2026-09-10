@@ -26,7 +26,7 @@ pub struct GhaAxiomRule {
 pub struct AlphaSelf;
 
 impl AlphaSelf {
-    pub const VERSION: &'static str = "0.1.2022674";
+    pub const VERSION: &'static str = "0.1.2022675";
     pub const CORE_PARADIGM: &'static str = "EAI (Exponential Intelligence for Any AI) - Intelligence Reflex & Execution Substrate";
 
     pub const RULES: &[GhaAxiomRule] = &[
@@ -51,6 +51,7 @@ impl AlphaSelf {
         GhaAxiomRule { id: 23, title: "Meta Context Architecture", imperative: "GHA system environment, user environment, and execution contexts are dynamic Meta Contexts orchestrated by GHA." },
         GhaAxiomRule { id: 24, title: "Universal Meta Principle", imperative: "Anything that requires external dependencies or external information is classified and orchestrated strictly as Meta." },
         GhaAxiomRule { id: 25, title: "Substrate Self-Sufficiency & Optional Meta Extensions", imperative: "GHA core internal components are mandatory, compiled-in, and self-sufficient. External meta components are optional extensions that expand GHA capabilities to realize its full potential." },
+        GhaAxiomRule { id: 26, title: "Dynamic Meta Codebase Paradigm", imperative: "GHA source code is dynamic and meta. It provides pure execution, governance, and protocol primitives without static domain rules, vendor bindings, or query matchers." },
     ];
 
     pub const COMPONENTS: &[GhaComponentSpec] = &[
