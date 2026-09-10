@@ -1493,7 +1493,7 @@ dependencies = [
 
 [[package]]
 name = "gha"
-version = "0.1.2022629"
+version = "0.1.2022630"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

@@ -1,9 +1,13 @@
-![GHA Version](https://img.shields.io/badge/version-v0.1.2022629-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
+![GHA Version](https://img.shields.io/badge/version-v0.1.2022630-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
 
-**GHA (Exponential Intelligence for Any AI Substrate)** empowers any world user to master any mission through a native Rust intelligence reflex engine. It features an ultra-lightweight launcher (<2ms startup) that orchestrates a persistent background swarm daemon for zero-latency tool execution and world-scale missions. 
+**GHA (Exponential Intelligence for Any AI Substrate)** is an Intelligence Reflex & Execution Substrate (EAI) empowering any world user to execute any intent through a native Rust intelligence engine. It features an ultra-lightweight launcher (<2ms startup) managing a persistent background daemon for zero-latency tool execution and local hardware sovereignty.
 
-## Universal Neutrality Mandate
-GHA is 100% universal and neutral. It contains zero sector/domain bias, zero vendor bias, zero platform bias, and zero specific model bias—supporting any cloud or local intelligence provider, any hardware platform, and any human mission equitably.
+## The Unified Neural Paradigm
+
+GHA operates through a dual-section neural architecture:
+1. **Alpha-Self**: Immutable system constitution, architectural rules, and component topologies compiled directly into binary instructions (`src/gawd/self_core.rs`), providing instant self-awareness across all engine components.
+2. **Alpha-User**: Experiential memory and distilled intent reflexes stored in local neural weights (`gha-alpha.safetensors`), expanding exponentially through continuous Procedural Knowledge Base (PKB) distillation.
+3. **Local-First Fallback**: Automatically prioritizes local execution (Ollama, local GGUF vaults, and Candle tensor substrates) before scouting cloud providers, ensuring strict hardware sovereignty.
 
 ## Installation
 
@@ -19,15 +23,13 @@ iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/install.ps1 | i
 
 ## Usage
 
-```bash
-gha "what is your version?"
-gha "check system status"
-gha "list_models"
-```
+Invoking `gha` with no arguments exits quietly with zero overhead. To execute intents or commands, provide them directly:
 
-Interactive mode:
 ```bash
-gha
+gha "read projects.md and agents.md"
+gha "list the number of android studio installed in my system"
+gha status
+gha mcp
 ```
 
 ## Maintainers
