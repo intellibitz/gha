@@ -541,9 +541,18 @@ mod tests {
         let temp_dir = std::env::temp_dir().join("gha_test_checkpoint");
         let _ = fs::create_dir_all(&temp_dir);
 
-        SandboxManager::save_mission_checkpoint(&temp_dir, "test mission", &["tool1".to_string()], "IN_PROGRESS");
+        let cp = NeuralCheckpoint {
+            intent: "test mission".to_string(),
+            timestamp: 12345,
+            completed_tools: vec!["tool1".to_string()],
+            blackboard: std::collections::HashMap::new(),
+            status: "IN_PROGRESS".to_string(),
+        };
+
+        SandboxManager::save_mission_checkpoint(&temp_dir, &cp);
         let interrupted = SandboxManager::check_interrupted_checkpoint(&temp_dir);
-        assert_eq!(interrupted, Some("test mission".to_string()));
+        assert!(interrupted.is_some());
+        assert_eq!(interrupted.unwrap().intent, "test mission".to_string());
 
         SandboxManager::clear_mission_checkpoint(&temp_dir);
         assert!(SandboxManager::check_interrupted_checkpoint(&temp_dir).is_none());
