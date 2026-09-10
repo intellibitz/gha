@@ -19,7 +19,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-pub const GHA_VERSION: &str = "0.1.2022648";
+pub const GHA_VERSION: &str = "0.1.2022649";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -146,12 +146,11 @@ fn main() {
                 return;
             }
 
+            let answer = gma.solve_clean(&goal, &cwd, GHA_VERSION);
             if !io::stdout().is_terminal() {
-                let answer = gma.solve_clean(&goal, &cwd, GHA_VERSION);
                 print!("{}", answer);
             } else {
-                let report = gma.solve(&goal, &cwd, GHA_VERSION);
-                println!("{}", report);
+                println!("{}", answer);
             }
         }
     }

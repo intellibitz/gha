@@ -8,7 +8,6 @@ use super::gmas::GmasSupervisor;
 use super::safety::SafetyDetector;
 use super::security::SecurityDetector;
 use super::truth::TruthTransformer;
-use crate::gemi::hardware::HardwareProfiler;
 use crate::sandbox::manager::NeuralCheckpoint;
 use crate::gmcp::tools::ToolRegistry;
 use crate::gawd::reflex_synth::ReflexSynthesizer;
@@ -30,7 +29,6 @@ impl GmaMasterAgent {
             return res;
         }
 
-        let brain = crate::gawd::brain::AlphaBrainContext::initialize(workspace);
         let (a2a_logs, _) = GmasSupervisor::supervise_mission(goal, workspace);
 
         let governance_check = self.audit_governance(&a2a_logs, workspace);
@@ -39,20 +37,10 @@ impl GmaMasterAgent {
         }
 
         let raw_response = self.solve_clean_raw(goal, &a2a_logs, workspace, version);
-        let engine_used = if raw_response.contains("Tier 0") { "Tier 0: GHA-Alpha Reflex Engine" } else { "Tier 2 GEMI Autonomous Substrate" };
-        let model_used = Self::determine_model_used(&raw_response, &a2a_logs);
-
-        format!(
-            "### GHA Intent Summary\n- **Engine Used**: {}\n- **Model Used**: {}\n- **Alpha Brain Substrate**: Self ({} Rules, {} Components) | System ({} CPUs, {}) | User Config (Workspace: {}, Engine: {})\n- **GHA Response Output**:\n{}\n",
-            engine_used, model_used,
-            crate::gawd::self_core::AlphaSelf::RULES.len(),
-            crate::gawd::self_core::AlphaSelf::COMPONENTS.len(),
-            brain.system_cpus, brain.system_gpu,
-            brain.workspace_path.display(), brain.default_engine,
-            raw_response
-        )
+        raw_response.trim().to_string()
     }
 
+    #[allow(dead_code)]
     pub fn determine_model_used(raw_response: &str, a2a_logs: &[super::gmas::A2AMessage]) -> String {
         let combined = format!("{} {}", raw_response, a2a_logs.iter().map(|m| m.payload.as_str()).collect::<Vec<_>>().join(" "));
         if combined.contains("Tier 0") || combined.contains("Reflex") || combined.contains("local reflex tensor weights") {
@@ -114,23 +102,7 @@ impl GmaMasterAgent {
             }
 
             if read_success {
-                let brain = crate::gawd::brain::AlphaBrainContext::initialize(workspace);
-                let model_used = crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "gha-alpha.safetensors".to_string());
-                let mut report = String::new();
-                report.push_str("# gha Execution Report\n\n");
-                report.push_str("## Intent Summary\n");
-                report.push_str("- **Engine Used**: Tier 0/2 Substrate (Read Tool Dispatch)\n");
-                report.push_str(&format!("- **Model Used**: {}\n", model_used));
-                report.push_str(&format!("- **Alpha Brain Substrate**: Self ({} Rules, {} Components) | System ({} CPUs, {}) | User Config (Workspace: {}, Engine: {})\n\n",
-                    crate::gawd::self_core::AlphaSelf::RULES.len(),
-                    crate::gawd::self_core::AlphaSelf::COMPONENTS.len(),
-                    brain.system_cpus, brain.system_gpu,
-                    brain.workspace_path.display(), brain.default_engine
-                ));
-                report.push_str("## Output\n");
-                report.push_str(&found_content);
-                report.push_str("\n## Validation\n └── Verified: Files successfully located and read.\n");
-                return Some(report);
+                return Some(found_content.trim().to_string());
             }
         }
         None
@@ -206,7 +178,7 @@ impl GmaMasterAgent {
         self.solve(goal, workspace, version)
     }
 
-    pub fn solve(&self, goal: &str, workspace: &Path, version: &str) -> String {
+    pub fn solve(&self, goal: &str, workspace: &Path, _version: &str) -> String {
         crate::gawd::axiom::AxiomSubstrate::ingest_constitution(workspace);
         if let Some(res) = Self::handle_self_awareness_intent(goal, workspace) {
             return res;
@@ -216,7 +188,6 @@ impl GmaMasterAgent {
         }
 
         crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "MISSION_START", goal);
-        let hardware = HardwareProfiler::get_profile();
         let trim_goal = goal.trim();
 
         let (cmd, arg) = trim_goal.split_once(' ').unwrap_or((trim_goal, ""));
@@ -245,12 +216,7 @@ impl GmaMasterAgent {
                 checkpoint.blackboard.insert(format!("RESULT_{}", actual_cmd), tool_res.clone());
                 crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
 
-                let mut report = String::new();
-                report.push_str("# gha Execution Report\n\n");
-                report.push_str("## Output\n");
-                report.push_str(&format!("   └── [Tool: {}]: {}\n\n", actual_cmd, tool_res));
-                report.push_str("## Validation\n └── Verified.\n");
-                return report;
+                return tool_res.trim().to_string();
             } else {
                 crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "TOOL_FAILURE", &format!("Tool {} failed: {}. Escalating to GEMI.", actual_cmd, tool_res));
                 // Fall through to Swarm/GEMI orchestration
@@ -265,14 +231,7 @@ impl GmaMasterAgent {
                 let res = ToolRegistry::execute_tool(&clean_intent, arg, workspace);
 
                 if !res.to_lowercase().contains("error") && !res.to_lowercase().contains("failed") && !res.contains("TRUTH VIOLATION") {
-                    let mut report = String::new();
-                    report.push_str("# gha Native Reflex Execution\n\n");
-                    report.push_str(&format!("- **Intent**: \"{}\"\n", goal));
-                    report.push_str(&format!("- **Reflex**: {}\n\n", clean_intent));
-                    report.push_str("## Output\n");
-                    report.push_str(&format!("   └── {}\n", res));
-                    report.push_str("\n## Validation\n └── Verified by Tier 0 Substrate.\n");
-                    return report;
+                    return res.trim().to_string();
                 } else {
                     crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "REFLEX_FAILURE", &format!("Reflex {} failed: {}. Falling back to GEMI.", clean_intent, res));
                     // Fall through to Swarm/GEMI orchestration
@@ -282,24 +241,19 @@ impl GmaMasterAgent {
             // If no reflex exists, attempt to distill one
             if !goal.contains('/') && !goal.contains('\\') {
                 if let Ok(evolve_res) = self.trigger_autonomous_evolution(goal, workspace) {
-                    return format!("# gha Autonomous Evolution\n\n- **Intent**: \"{}\"\n- **Status**: Distilled native reflex substrate.\n- **Action**: Applied architectural integration.\n\n{}\n\nRun 'gha release' to deploy the new reflex.", goal, evolve_res);
+                    return format!("Distilled native reflex for \"{}\". Applied architectural integration.\n{}", goal, evolve_res);
                 }
             }
         }
 
-        let (a2a_logs, fleet) = GmasSupervisor::supervise_mission(goal, workspace);
-        let active_tools = ToolRegistry::list_tools();
+        let (a2a_logs, _) = GmasSupervisor::supervise_mission(goal, workspace);
 
-        let mut is_reflex = false;
         let mut reasoning_content = String::new();
         let mut intelligence_gap = false;
 
         for msg in &a2a_logs {
             if msg.sender == "GhaUniversalSubstrateAgent" {
                 reasoning_content = msg.payload.clone();
-                if msg.payload.contains("Tier 0") {
-                    is_reflex = true;
-                }
                 if msg.payload.contains("no responding models found") {
                     intelligence_gap = true;
                 }
@@ -310,95 +264,44 @@ impl GmaMasterAgent {
         if intelligence_gap && !goal.contains("scout_model") {
              crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "INTELLIGENCE_GAP", "No models found. Bootstrapping local intelligence.");
              let scout_res = ToolRegistry::execute_tool("scout_model", "mistral", workspace);
-             return format!("# gha Intelligence Bootstrapping\n\n- **Status**: Critical reasoning gap detected.\n- **Action**: Autonomously scouting for local models.\n\n{}\n\nRun the mission again once the model is pulled.", scout_res);
+             return format!("Critical reasoning gap detected. Scouting for local models...\n{}", scout_res);
         }
 
-        let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(goal);
-        let is_placeholder = reasoning_content.contains("scouting for specialized brains");
-
-        let mut report = String::new();
-        report.push_str("# gha Execution Report\n\n");
-
-        let engine_used = if is_reflex { "Tier 0: GHA-Alpha Reflex Engine" } else { "Tier 2 GEMI Autonomous Substrate" };
-        let model_used = Self::determine_model_used(&reasoning_content, &a2a_logs);
-
-        report.push_str("## Intent Summary\n");
-        report.push_str(&format!("- **Engine Used**: {}\n", engine_used));
-        report.push_str(&format!("- **Model Used**: {}\n", model_used));
-        report.push_str(&format!("- **Performance Metrics**: Latency: <250μs (Tier 0) | Hardware: {} CPUs | {} | {}GB RAM\n", hardware.cpus, hardware.gpu_info, hardware.ram_gb));
-        report.push('\n');
-
-        report.push_str("## Domain Substrate\n");
-        report.push_str(&format!("- **Mode**: {}\n", badge));
-        report.push_str(&format!("- **Scope**: {}\n", badge_desc));
-        report.push('\n');
-
-        if is_orchestration || !is_reflex {
-            report.push_str("## Environment\n");
-            report.push_str(&format!("- Engine: v{}\n", version));
-            report.push_str(&format!("- Fleet: {} agents active\n", fleet.len()));
-            report.push_str(&format!("- Hardware: {} CPUs | {} | {}GB RAM\n\n", hardware.cpus, hardware.gpu_info, hardware.ram_gb));
-        }
-
-        report.push_str("## Intent\n");
-        report.push_str(&format!("\"{}\"\n\n", goal));
-
-        if is_orchestration || !is_reflex {
-            report.push_str("## Execution Trace\n");
-            for (i, msg) in a2a_logs.iter().enumerate() {
-                let connector = if i == a2a_logs.len() - 1 { "└──" } else { "├──" };
-                report.push_str(&format!(" {} [{}] {} ('{}')\n", connector, msg.sender, msg.action, msg.payload));
-            }
-        }
-
-        if is_orchestration {
-            report.push_str("\n## Tools\n");
-            report.push_str(&format!("- Active Registry: {} tools\n", active_tools.len()));
-        }
-
-        // Governance Protocol: Safety & Security Audit
         let governance_check = self.audit_governance(&a2a_logs, workspace);
         if let Err(e) = governance_check {
-            report.push_str("\n## Governance Status\n");
-            report.push_str(&format!("   └── Aborted: {}\n", e));
-            return report;
-        }
-
-        if is_placeholder {
-             let registry = crate::gmcp::client::GmcpClient::fetch_global_registry();
-             if let Some(entry) = registry.iter().find(|e| goal.to_lowercase().contains(&e.name) || goal.to_lowercase().contains(&e.category)) {
-                 report.push_str("\n## Capability Required\n");
-                 report.push_str(&format!("   └── Missing: '{}' ({})\n", entry.name, entry.package));
-                 report.push_str(&format!("   └── Install command: 'gha \"install mcp {}\"'\n", entry.name));
-             }
+            return format!("Governance Error: {}", e);
         }
 
         let mission_result = self.execute_autonomous_flux(goal, &a2a_logs, workspace);
         if !mission_result.is_empty() {
-            report.push_str("\n## Output\n");
-            report.push_str(&mission_result);
-            report.push('\n');
-
-            // 🌀 Rule 18: Baked-in Step 10 - Synchronous Distillation
-            // If the mission was solved via reasoning, distill it into a native reflex immediately.
-            if !is_reflex && !mission_result.contains("ERROR") && !mission_result.contains("TRUTH VIOLATION") {
-                if let Ok(evolve_res) = self.trigger_autonomous_evolution(goal, workspace) {
-                    report.push_str("\n## Substrate Evolution\n");
-                    report.push_str(&format!(" └── [PASS] {}\n", evolve_res));
-                    report.push_str(" └── Note: Run 'gha release' to activate this microsecond reflex.\n");
+            let mut lines = Vec::new();
+            for l in mission_result.lines() {
+                if l.contains("└── [Tool:") {
+                    if let Some(res) = l.split("]: ").nth(1) {
+                        lines.push(res.to_string());
+                    } else {
+                        lines.push(l.to_string());
+                    }
+                } else {
+                    lines.push(l.to_string());
                 }
             }
+            let clean_out = lines.join("\n");
+            return clean_out.trim().to_string();
         }
 
-        let audit = self.audit_truth(goal, &a2a_logs, workspace, &mission_result);
-        report.push_str("\n## Validation\n");
-        if is_placeholder || mission_result.contains("scouting for specialized brains") {
-            report.push_str(" └── Pending solution synthesis.\n");
-        } else {
-            report.push_str(&format!(" └── {}\n", audit));
+        if !reasoning_content.is_empty() {
+            let clean_text = if let Some((_, rest)) = reasoning_content.split_once("]:\n") {
+                rest
+            } else if let Some((_, rest)) = reasoning_content.split_once("]: ") {
+                rest
+            } else {
+                &reasoning_content
+            };
+            return clean_text.trim().to_string();
         }
 
-        report
+        "Completed.".to_string()
     }
 
     fn audit_governance(&self, logs: &[super::gmas::A2AMessage], workspace: &Path) -> EaiResult<()> {
@@ -505,7 +408,7 @@ impl GmaMasterAgent {
                     crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
                     GmasSupervisor::replicate_checkpoint(&checkpoint);
 
-                    results.push(format!("   └── [Tool: {}]: {}", tool_name, res));
+                    results.push(res);
                 }
             }
         }
@@ -522,6 +425,7 @@ impl GmaMasterAgent {
         results.join("\n")
     }
 
+    #[allow(dead_code)]
     fn audit_truth(&self, goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path, mission_result: &str) -> String {
         if mission_result.contains("TRUTH VIOLATION") {
              return "MISSION BLOCKED: Hallucination detected during formal verification.".to_string();
