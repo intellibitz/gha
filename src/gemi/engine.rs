@@ -19,11 +19,15 @@ impl GemiEngine {
     }
 
     fn reason_internal(prompt: &str, workspace: &Path, allow_reflex: bool) -> String {
+        // Guarantee local models exist for mission fulfillment and system evolution (motion)
+        let _ = crate::gawd::model_supervisor::ModelSupervisor::audit_and_prepare_models(workspace);
+
         if allow_reflex {
             let (reflex_decision, micros) = super::reflex::ReflexEngine::try_solve(prompt, workspace);
             if let super::reflex::ReflexDecision::Solved(action) = reflex_decision {
                 return format!("[Tier 0: GHA-Alpha Reflex ({}μs)]: {}", micros, action);
             }
+            // Reflex model failed / unsolved -> explicitly pass intent to local models (Tier 2 local reasoning substrate)
         }
 
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
@@ -85,7 +89,7 @@ impl GemiEngine {
             return format!("[Tier 2 GEMI Local Substrate]: Successfully processed intent via local weights: {}", action);
         }
 
-        format!("[Tier 2 GEMI Autonomous Substrate]: Processed intent '{}' through local reflex tensor weights (v0.1.2022594).", prompt)
+        format!("[Tier 2 GEMI Autonomous Substrate]: Processed intent '{}' through local reflex tensor weights (v0.1.2022595).", prompt)
     }
 
     fn scout_tier2_providers(prompt: &str, _workspace: &Path) -> (Option<String>, Vec<String>) {
