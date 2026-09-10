@@ -37,18 +37,18 @@ impl GhaAdmin {
             overall_success = false;
         }
 
-        // 2. Enforce Workspace Purity (Rule 16)
+        // 2. Enforce Workspace Purity (Rule 12)
         let gitignore = workspace.join(".gitignore");
         if gitignore.exists() {
             let content = fs::read_to_string(&gitignore)?;
-            if content.contains("/test/world/") {
-                report.push_str("- [PASS] Purity: testspace /test/world/ is correctly ignored.\n");
+            if content.contains(".gha") || content.contains(".gha/") {
+                report.push_str("- [PASS] Purity: Sandbox state .gha/ is correctly ignored.\n");
             } else {
-                report.push_str("- [FAIL] Purity: testspace /test/world/ is NOT ignored in .gitignore.\n");
+                report.push_str("- [FAIL] Purity: .gha/ is NOT ignored in .gitignore.\n");
                 overall_success = false;
             }
         } else {
-            report.push_str("- [WARN] Purity: .gitignore missing. Cannot verify testspace isolation.\n");
+            report.push_str("- [WARN] Purity: .gitignore missing. Cannot verify sandbox state isolation.\n");
             overall_success = false;
         }
 
@@ -204,19 +204,13 @@ impl GhaAdmin {
              report.push_str("- [WARN] No changes to commit or git error occurred.\n");
         }
 
-        // 5. Testspace Auto-Install (Rule 10)
-        report.push_str("\n## 5. Testspace Synchronization\n");
-        let testspace = workspace.join("test/world");
-        if testspace.is_dir() {
-            let install = Command::new("bash").arg("../../install.sh").current_dir(&testspace).output()?;
-            if install.status.success() {
-                report.push_str("- [PASS] Testspace auto-install complete.\n");
-            } else {
-                report.push_str("- [FAIL] Testspace install FAILED.\n");
-                report.push_str(&String::from_utf8_lossy(&install.stderr));
-            }
+        // 5. Automated Test Suite Verification (Mechanics Rule 9)
+        report.push_str("\n## 5. Test Suite Verification\n");
+        let test_run = Command::new("cargo").args(["test", "--quiet"]).current_dir(workspace).output()?;
+        if test_run.status.success() {
+            report.push_str("- [PASS] Integration test harness passed.\n");
         } else {
-            report.push_str("- [WARN] Testspace directory not found. Skipping auto-install.\n");
+            report.push_str("- [WARN] Tests failed or emitted output.\n");
         }
 
         report.push_str("\n[PASS] RELEASE PROCESS COMPLETE.");

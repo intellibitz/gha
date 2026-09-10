@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.2022641`
+* **Current Engine Version**: `v0.1.2022642`
 
 ## Architecture
 
@@ -59,10 +59,10 @@
 5. **Natural Language Only**: `gha` interactions with users are natural language only.
 6. **100% Platform Independent**: `gha` is 100% platform independent, self-contained, and cross-platform across Linux, macOS, Windows, WSL, and mobile architectures.
 7. **Zero Configuration, Self-Tuning & Self-Healing**: `gha` is 100% zero configuration, self-tuning, and self-healing. It automatically adapts, discovers local hardware and models, and self-heals runtime errors without requiring manual user setup.
-8. **Workspace Boundaries**: Project root (`.`) is the main workspace. `./test/world` is designated as the testspace (ignored in `.gitignore`).
-9. **Testspace Auto-Install on Push**: After a successful git push, execute a one-line install (`../../install.sh`) in the testspace (`./test/world`).
+8. **Workspace Boundaries**: Project root (`.`) is the target workspace. Temporary runtime state is isolated inside local git-ignored directories (`.gha/` / `~/.gha/`).
+9. **Automated Build & Test Harness**: Every GitHub push verifies clean compilation (`cargo check`) and unit/integration test suite pass (`cargo test`).
 10. **Conventional Commit Format**: Git commit messages must use plain text conventional commit prefixes (e.g., `feat:`, `fix:`, `refactor:`, `chore:`, `release:`) without emojis.
 11. **Dynamic Configuration Enforcement**: Zero hardcoded static configurations in code. All engine, server, port, model, and network parameters must be dynamic and loaded from configuration files (`~/.gha/config.json`, `~/.gha/env`, `~/.gha/mcp_config.json`, `~/.gha/global_mcp_registry.json`) with automated dynamic defaults.
-12. **Workspace Purity Enforcement**: The main workspace must remain free of temporary artifacts and test pollutants. All runtime tests and validation missions must execute within the testspace sandbox.
+12. **Workspace Purity Enforcement**: The main workspace must remain free of temporary artifacts and test pollutants. All runtime tests must use isolated ephemeral directories or `.gha/`.
 13. **Full Compliance Enforcement on Push**: Before every GitHub push, the agent MUST apply all Agent Instructions and GHA Execution Rules to the entire codebase. This includes verifying version synchronization, auditing security patterns, enforcing workspace purity, and ensuring that no hardcoded simulations remain.
 14. **Intent & Creator Auto-Push**: As a result of fulfilling an intent or executing a creator directive through the Motion Rule, when the `gha` codebase changes, the agent MUST automatically push the changes to GitHub following a successful clean build and version increment.
