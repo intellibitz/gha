@@ -1167,40 +1167,6 @@ impl GhaTool for GlobalRegistryScanTool {
 
 
 
-fn decode_html_entities(text: &str) -> String {
-    text.replace("&quot;", "\"")
-        .replace("&apos;", "'")
-        .replace("&#039;", "'")
-        .replace("&#39;", "'")
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&nbsp;", " ")
-        .replace("&#x27;", "'")
-        .replace("&#x2F;", "/")
-        .replace("&ndash;", "-")
-        .replace("&mdash;", "—")
-}
-
-fn sanitize_search_query(raw_query: &str) -> String {
-    let mut q = raw_query.trim().to_string();
-    let lower = q.to_lowercase();
-    for directive in &[
-        " and translate to ",
-        " and translate it to ",
-        " and translate ",
-        " and summarize ",
-        " and explain ",
-        " and save to ",
-    ] {
-        if let Some(pos) = lower.find(directive) {
-            q = q[..pos].trim().to_string();
-            break;
-        }
-    }
-    q
-}
-
 fn strip_html_tags(html: &str) -> String {
     let mut result = String::new();
     let mut in_tag = false;
@@ -1229,7 +1195,19 @@ fn strip_html_tags(html: &str) -> String {
         }
     }
 
-    let decoded = decode_html_entities(&result);
+    let decoded = result.replace("&quot;", "\"")
+        .replace("&apos;", "'")
+        .replace("&#039;", "'")
+        .replace("&#39;", "'")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&nbsp;", " ")
+        .replace("&#x27;", "'")
+        .replace("&#x2F;", "/")
+        .replace("&ndash;", "-")
+        .replace("&mdash;", "—");
+
     let mut clean_lines = Vec::new();
     for line in decoded.lines() {
         let trimmed = line.trim();
@@ -1264,142 +1242,29 @@ impl GhaTool for WebSearchDownloadTool {
             return Ok(format!("Fetched URL [{}] and saved to [{}]:\n\n{}", clean_arg, save_path.display(), preview));
         }
 
-        // Case 2: Web Search Query
-        let clean_query = sanitize_search_query(clean_arg);
-        let encoded_query = clean_query.replace(' ', "%20");
-
+        // Case 2: Web Search Query (Generic HTTP Query)
+        let encoded_query = clean_arg.replace(' ', "%20");
         let mut extracted_text = String::new();
-        let mut top_urls = Vec::new();
 
-        // 1. Primary Engine: Bing Search (Native ureq HTTP)
-        let bing_url = format!("https://www.bing.com/search?q={}&setlang=en-us&cc=US", encoded_query);
-        if let Ok(resp) = ureq::get(&bing_url)
-            .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        // Generic HTTP Query
+        let search_url = format!("https://html.duckduckgo.com/html/?q={}", encoded_query);
+        if let Ok(resp) = ureq::get(&search_url)
+            .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
             .timeout(std::time::Duration::from_secs(10))
             .call()
         {
-            if let Ok(bing_html) = resp.into_string() {
-                if bing_html.contains("b_algo") {
-                    for block in bing_html.split("<li class=\"b_algo\"") {
-                        if let Some(h2_start) = block.find("<h2") {
-                            if let Some(h2_end) = block[h2_start..].find("</h2>") {
-                                let h2_html = &block[h2_start..h2_start + h2_end];
-                                if let Some(href_start) = h2_html.find("href=\"") {
-                                    let sub = &h2_html[href_start + 6..];
-                                    if let Some(href_end) = sub.find('"') {
-                                        let raw_url = &sub[..href_end];
-                                        let clean_raw_url = decode_html_entities(raw_url);
-                                        if clean_raw_url.starts_with("http") && !clean_raw_url.contains("bing.com") {
-                                            top_urls.push(clean_raw_url);
-                                        }
-                                    }
-                                }
-                                let title = strip_html_tags(h2_html);
-                                if !title.is_empty() {
-                                    extracted_text.push_str(&format!("• {}\n", title));
-                                }
-                            }
-                        }
-                        if let Some(cap_start) = block.find("class=\"b_caption\"") {
-                            if let Some(cap_end) = block[cap_start..].find("</div>") {
-                                let cap_html = &block[cap_start..cap_start + cap_end];
-                                let raw_snippet = strip_html_tags(cap_html);
-                                let clean_snippet = raw_snippet.trim_start_matches("class=\"b_caption\"")
-                                    .trim_start_matches("class='b_caption'")
-                                    .trim();
-                                if !clean_snippet.is_empty() {
-                                    extracted_text.push_str(&format!("  {}\n\n", clean_snippet));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 2. Fallback Engine: DuckDuckGo Lite POST search
-        if extracted_text.trim().is_empty() {
-            if let Ok(resp) = ureq::post("https://lite.duckduckgo.com/lite/")
-                .set("Content-Type", "application/x-www-form-urlencoded")
-                .set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0")
-                .timeout(std::time::Duration::from_secs(10))
-                .send_string(&format!("q={}", encoded_query))
-            {
-                if let Ok(raw_html) = resp.into_string() {
-                    if raw_html.contains("result-snippet") || raw_html.contains("result-link") {
-                        let mut current_title = String::new();
-                        for line in raw_html.lines() {
-                            if line.contains("class='result-link'") || line.contains("class=\"result-link\"") {
-                                if let Some(href_start) = line.find("href=\"").or_else(|| line.find("href='")) {
-                                    let sub = &line[href_start + 6..];
-                                    if let Some(href_end) = sub.find('"').or_else(|| sub.find('\'')) {
-                                        let url = &sub[..href_end];
-                                        if url.starts_with("http") && !url.contains("duckduckgo.com") {
-                                            top_urls.push(url.to_string());
-                                        }
-                                    }
-                                }
-                                let title = strip_html_tags(line);
-                                if !title.is_empty() {
-                                    current_title = title;
-                                }
-                            } else if line.contains("class='result-snippet'") || line.contains("class=\"result-snippet\"") {
-                                let snippet = strip_html_tags(line);
-                                if !snippet.is_empty() {
-                                    if !current_title.is_empty() {
-                                        extracted_text.push_str(&format!("• {}\n", current_title));
-                                        current_title.clear();
-                                    }
-                                    extracted_text.push_str(&format!("  {}\n\n", snippet));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Deep Content Fetch: If query asks for specific articles, docs, or detailed content, fetch top result URL
-        let lower_arg = clean_arg.to_lowercase();
-        let needs_deep_content = lower_arg.contains("lyrics")
-            || lower_arg.contains("article")
-            || lower_arg.contains("documentation")
-            || lower_arg.contains("full text")
-            || lower_arg.contains("get ")
-            || lower_arg.contains("fetch");
-
-        if needs_deep_content && !top_urls.is_empty() {
-            for target_url in &top_urls {
-                if let Ok(resp) = ureq::get(target_url)
-                    .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                    .timeout(std::time::Duration::from_secs(10))
-                    .call()
-                {
-                    if let Ok(page_html) = resp.into_string() {
-                        let page_clean = strip_html_tags(&page_html);
-                        let page_lower = page_clean.to_lowercase();
-                        if !page_clean.trim().is_empty()
-                            && !page_lower.contains("make sure you're a human")
-                            && !page_lower.contains("captcha")
-                            && !page_lower.contains("are you a human")
-                            && !page_lower.contains("access denied")
-                            && page_clean.len() > 100
-                        {
-                            extracted_text = format!("=== Extracted Page Content ({}) ===\n{}\n", target_url, page_clean);
-                            break;
-                        }
-                    }
-                }
+            if let Ok(raw_html) = resp.into_string() {
+                extracted_text = strip_html_tags(&raw_html);
             }
         }
 
         if extracted_text.trim().is_empty() {
-            extracted_text = format!("No search results found for '{}'.", clean_query);
+            extracted_text = format!("No search results found for '{}'.", clean_arg);
         }
 
         let _ = fs::write(&save_path, &extracted_text);
         let preview: String = extracted_text.lines().take(15).collect::<Vec<_>>().join("\n");
-        Ok(format!("Saved results for '{}' to [{}]\n\nContent Preview:\n{}", clean_query, save_path.display(), preview))
+        Ok(format!("Saved results for '{}' to [{}]\n\nContent Preview:\n{}", clean_arg, save_path.display(), preview))
     }
 }
 
