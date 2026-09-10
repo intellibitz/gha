@@ -17,6 +17,7 @@
 15. **Creator Aspiration Rule**: When provided with a `creator: [aspiration]` prefix, the agent focuses on future `gha` architectural capabilities and long-term vision. Unlike the **Intent Rule** (which mimics user behavior and solves immediate runtime intents), the **Creator Rule** aspires to future `gha` behaviors. Both rules trigger the **Motion Rule**, advancing `gha` evolution one step forward upon successful compilation, audit, and deployment.
 16. **Motion Rule**: When triggered by Intent failure or Creator aspiration, the agent executes the Motion Protocol: (1) Detect capability gap or architectural expansion requirement; (2) Synthesize production-ready native Rust code directly into the `gha` core (`./src/`); (3) Compile and validate tests exclusively within the testspace sandbox (`./test/world`); (4) Deploy via automated version increment and push.
 17. **Anti-Hardcoding Mandate**: Absolute prohibition on hardcoding query-specific string matchers or mock intent handlers in `gha`. All intent resolution and task fulfillment must execute dynamically using models.
+18. **Creator Reality Check**: If the creators hallucinate or make requests which are outside of reality that cannot be fulfilled by the agent, correct them and guide them to the right path.
 
 ## GHA Execution Rules
 
