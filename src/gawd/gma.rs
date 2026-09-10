@@ -37,7 +37,42 @@ impl GmaMasterAgent {
         }
 
         let raw_response = self.solve_clean_raw(goal, &a2a_logs, workspace, version);
-        raw_response.trim().to_string()
+        let thinking = Self::format_thinking_trace(goal, workspace);
+        format!("{}{}", thinking, raw_response.trim())
+    }
+
+    pub fn format_thinking_trace(goal: &str, _workspace: &Path) -> String {
+        let mut strategy: Vec<String> = Vec::new();
+        let lower = goal.to_lowercase();
+
+        if lower.contains("get") || lower.contains("fetch") || lower.contains("search") || lower.contains("download") {
+            strategy.push("Search web for content".to_string());
+        }
+        if lower.contains("read") || lower.contains("file") {
+            strategy.push("Inspect local workspace files".to_string());
+        }
+        if lower.contains("translate") {
+            let lang = if lower.contains("tamil") { "Tamil" } else { "target language" };
+            strategy.push(format!("Translate text to {}", lang));
+        } else if lower.contains("summarize") {
+            strategy.push("Synthesize summary".to_string());
+        } else if lower.contains("code") || lower.contains("build") || lower.contains("fix") {
+            strategy.push("Analyze code and apply native fixes".to_string());
+        }
+
+        if strategy.is_empty() {
+            strategy.push("Reason and execute intent".to_string());
+        }
+
+        let plan = strategy.join(" → ");
+        let active_model = crate::gemi::models::ModelManager::get_selected_model()
+            .unwrap_or_else(|| "gha-alpha.safetensors".to_string());
+        let model_display = active_model.split('/').last().unwrap_or(&active_model);
+
+        format!(
+            "[Thinking Process]:\n ├── Plan: {}\n └── Substrate: {}\n\n",
+            plan, model_display
+        )
     }
 
     #[allow(dead_code)]
