@@ -27,8 +27,6 @@ impl GmaMasterAgent {
         }
 
         let hardware = HardwareProfiler::get_profile();
-        let model_used = crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "gha-alpha.safetensors".to_string());
-
         let (a2a_logs, _) = GmasSupervisor::supervise_mission(goal, workspace);
 
         let governance_check = self.audit_governance(&a2a_logs, workspace);
@@ -38,11 +36,27 @@ impl GmaMasterAgent {
 
         let raw_response = self.solve_clean_raw(goal, &a2a_logs, workspace, version);
         let engine_used = if raw_response.contains("Tier 0") { "Tier 0: GHA-Alpha Reflex Engine" } else { "Tier 2 GEMI Autonomous Substrate" };
+        let model_used = Self::determine_model_used(&raw_response, &a2a_logs);
 
         format!(
             "### GHA Intent Summary\n- **Engine Used**: {}\n- **Model Used**: {}\n- **Performance Metrics**: Hardware: {} CPUs | {} | {}GB RAM\n- **GHA Response Output**:\n{}\n",
             engine_used, model_used, hardware.cpus, hardware.gpu_info, hardware.ram_gb, raw_response
         )
+    }
+
+    pub fn determine_model_used(raw_response: &str, a2a_logs: &[super::gmas::A2AMessage]) -> String {
+        let combined = format!("{} {}", raw_response, a2a_logs.iter().map(|m| m.payload.as_str()).collect::<Vec<_>>().join(" "));
+        if combined.contains("Tier 0") || combined.contains("Reflex") || combined.contains("local reflex tensor weights") {
+            "gha-alpha.safetensors (Local Neural Reflex)".to_string()
+        } else if combined.contains("Candle") || combined.contains("Local Candle Substrate") {
+            "local-candle-tensor-substrate".to_string()
+        } else if combined.contains("Ollama") {
+            "local-ollama-model".to_string()
+        } else if combined.contains("GGUF") {
+            "local-gguf-vault".to_string()
+        } else {
+            crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "gha-alpha.safetensors".to_string())
+        }
     }
 
     pub fn handle_file_read_intent(goal: &str, workspace: &Path) -> Option<String> {
@@ -260,7 +274,7 @@ impl GmaMasterAgent {
         report.push_str("# gha Execution Report\n\n");
 
         let engine_used = if is_reflex { "Tier 0: GHA-Alpha Reflex Engine" } else { "Tier 2 GEMI Autonomous Substrate" };
-        let model_used = crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "gha-alpha.safetensors".to_string());
+        let model_used = Self::determine_model_used(&reasoning_content, &a2a_logs);
 
         report.push_str("## Intent Summary\n");
         report.push_str(&format!("- **Engine Used**: {}\n", engine_used));
