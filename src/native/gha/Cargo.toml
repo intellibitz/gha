@@ -1,6 +1,6 @@
 [package]
 name = "gha"
-version = "0.1.2022660"
+version = "0.1.2022661"
 edition = "2021"
 authors = ["IntelliBitz", "Muthu Ramadoss", "GHA EAI Core"]
 description = "GHA Master Agent (GMA) Lightweight Native CLI Binary Launcher"

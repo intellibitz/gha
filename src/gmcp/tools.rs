@@ -153,6 +153,8 @@ impl ToolRegistry {
         tools.insert("self_evolve".to_string(), Arc::new(EvolveTool));
         tools.insert("download".to_string(), Arc::new(WebSearchDownloadTool));
         tools.insert("web_fetch".to_string(), Arc::new(WebSearchDownloadTool));
+        tools.insert("translate".to_string(), Arc::new(TranslateTool));
+        tools.insert("translate_text".to_string(), Arc::new(TranslateTool));
         tools.insert("audit_log".to_string(), Arc::new(AuditTool));
     }
 
@@ -1162,6 +1164,123 @@ impl GhaTool for GlobalRegistryScanTool {
     fn execute(&self, _arg: &str, _workspace: &Path) -> EaiResult<String> {
         let reg = GmcpClient::fetch_global_registry();
         Ok(format!("Discovered {} entries.", reg.len()))
+    }
+}
+
+fn urlencoding_simple(s: &str) -> String {
+    let mut encoded = String::new();
+    for b in s.bytes() {
+        match b {
+            b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(b as char);
+            }
+            b' ' => encoded.push_str("%20"),
+            _ => {
+                encoded.push_str(&format!("%{:02X}", b));
+            }
+        }
+    }
+    encoded
+}
+
+pub fn map_language_code(target: &str) -> &'static str {
+    let lower = target.to_lowercase();
+    if lower.contains("tamil") || lower.contains("ta") {
+        "ta"
+    } else if lower.contains("spanish") || lower.contains("es") {
+        "es"
+    } else if lower.contains("french") || lower.contains("fr") {
+        "fr"
+    } else if lower.contains("german") || lower.contains("de") {
+        "de"
+    } else if lower.contains("hindi") || lower.contains("hi") {
+        "hi"
+    } else if lower.contains("chinese") || lower.contains("zh") {
+        "zh"
+    } else if lower.contains("japanese") || lower.contains("ja") {
+        "ja"
+    } else if lower.contains("korean") || lower.contains("ko") {
+        "ko"
+    } else if lower.contains("russian") || lower.contains("ru") {
+        "ru"
+    } else if lower.contains("italian") || lower.contains("it") {
+        "it"
+    } else if lower.contains("portuguese") || lower.contains("pt") {
+        "pt"
+    } else {
+        "ta"
+    }
+}
+
+pub fn translate_text_native(text: &str, target_lang: &str) -> EaiResult<String> {
+    let lang_code = map_language_code(target_lang);
+    let mut translated_lines = Vec::new();
+
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            translated_lines.push(String::new());
+            continue;
+        }
+
+        if trimmed.starts_with('•') || trimmed.starts_with("===") || trimmed.starts_with('#') {
+            translated_lines.push(trimmed.to_string());
+            continue;
+        }
+
+        let encoded_line = urlencoding_simple(trimmed);
+        let url = format!("https://api.mymemory.translated.net/get?q={}&langpair=en%7C{}", encoded_line, lang_code);
+
+        let mut success = false;
+        if let Ok(resp) = ureq::get(&url).timeout(std::time::Duration::from_secs(5)).call() {
+            if let Ok(json_val) = serde_json::from_reader::<_, serde_json::Value>(resp.into_reader()) {
+                if let Some(trans) = json_val.get("responseData").and_then(|d| d.get("translatedText")).and_then(|t| t.as_str()) {
+                    let clean_trans = decode_html_entities(trans);
+                    if !clean_trans.trim().is_empty() {
+                        translated_lines.push(clean_trans);
+                        success = true;
+                    }
+                }
+            }
+        }
+
+        if !success {
+            translated_lines.push(trimmed.to_string());
+        }
+    }
+
+    Ok(translated_lines.join("\n"))
+}
+
+struct TranslateTool;
+impl GhaTool for TranslateTool {
+    fn name(&self) -> String { "translate".to_string() }
+    fn description(&self) -> String { "Translate text into target language using GHA native translation substrate".to_string() }
+    fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
+        let trim_arg = arg.trim();
+        let target_lang = if trim_arg.to_lowercase().contains("tamil") {
+            "tamil"
+        } else if let Some(parts) = trim_arg.split_once("to ") {
+            parts.1.trim()
+        } else {
+            "tamil"
+        };
+
+        let mut input_text = String::new();
+        let download_file = workspace.join("download_content.txt");
+        if download_file.is_file() {
+            if let Ok(c) = fs::read_to_string(&download_file) {
+                input_text = c;
+            }
+        }
+        if input_text.trim().is_empty() {
+            input_text = trim_arg.to_string();
+        }
+
+        let translated = translate_text_native(&input_text, target_lang)?;
+        let save_path = workspace.join("download_content.txt");
+        let _ = fs::write(&save_path, &translated);
+        Ok(format!("Translated content to {} [Saved to {}]:\n\n{}", target_lang, save_path.display(), translated.trim()))
     }
 }
 

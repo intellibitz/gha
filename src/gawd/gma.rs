@@ -479,6 +479,9 @@ impl GmaMasterAgent {
 
             let save_path = workspace.join("download_content.txt");
 
+            let mut final_result = String::new();
+            let mut synthesis_success = false;
+
             if !clean_model_resp.trim().is_empty()
                 && !clean_model_resp.contains("Executed intent for")
                 && !clean_model_resp.contains("Processed intent")
@@ -486,12 +489,33 @@ impl GmaMasterAgent {
                 && !clean_model_resp.contains("Provide the complete response")
                 && !clean_model_resp.contains("STATUS:")
             {
-                let _ = fs::write(&save_path, &clean_model_resp);
-                return format!("Here is the result [Saved to: {}]:\n\n{}", save_path.display(), clean_model_resp.trim());
+                final_result = clean_model_resp.trim().to_string();
+                synthesis_success = true;
+            } else if lower_goal.contains("translate") {
+                let target_lang = if lower_goal.contains("tamil") { "tamil" } else { "target language" };
+                if let Ok(native_trans) = crate::gmcp::tools::translate_text_native(&clean_fetched, target_lang) {
+                    if !native_trans.trim().is_empty() && native_trans.trim() != clean_fetched.trim() {
+                        final_result = native_trans.trim().to_string();
+                        synthesis_success = true;
+                    }
+                }
+            }
+
+            if synthesis_success && !final_result.is_empty() {
+                let _ = fs::write(&save_path, &final_result);
+                checkpoint.status = "COMPLETED".to_string();
+                crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
+                GmasSupervisor::replicate_checkpoint(&checkpoint);
+                return format!("Here is the result [Saved to: {}]:\n\n{}", save_path.display(), final_result);
             } else {
-                let _ = fs::write(&save_path, &clean_fetched);
+                checkpoint.status = "FAILED_INCOMPLETE".to_string();
+                crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
+                GmasSupervisor::replicate_checkpoint(&checkpoint);
                 let preview: String = clean_fetched.lines().take(15).collect::<Vec<_>>().join("\n");
-                return format!("Fetched and saved content to [{}]\n\nContent Preview:\n{}\n\nNote: To generate full AI translations or summaries, set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env.", save_path.display(), preview);
+                return format!(
+                    "[TASK FAILED - INCOMPLETE EXECUTION]\n\nReason: Fetched raw content successfully, but failed to synthesize or translate output into target language.\n\nFetched Raw Content Saved to [{}]:\n{}",
+                    save_path.display(), preview
+                );
             }
         }
 
