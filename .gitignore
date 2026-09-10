@@ -52,7 +52,3 @@ Thumbs.db
 *.log
 *.tmp
 .artifacts/
-
-# Testspace
-/test/world/
-/test/creator/
