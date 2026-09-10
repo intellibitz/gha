@@ -575,14 +575,14 @@ impl GhaTool for ListModelsTool {
         let mut cloud_models = Vec::new();
 
         for m in models {
-            let badge = if m.is_local { "🟢 LOCAL" } else { "🌐 CLOUD" };
+            let badge = if m.is_local { "LOCAL" } else { "CLOUD" };
             let entry = format!("   - [{}] {} ({})", badge, m.name, m.model_id);
             if m.is_local { local_models.push(entry); } else { cloud_models.push(entry); }
         }
 
-        output.push_str("\n🟢 LOCAL MODELS:\n");
+        output.push_str("\nLOCAL MODELS:\n");
         output.push_str(&local_models.join("\n"));
-        output.push_str("\n🌐 CLOUD MODELS:\n");
+        output.push_str("\nCLOUD MODELS:\n");
         output.push_str(&cloud_models.join("\n"));
         output.push_str(&format!("\n\nActive: {}", selected.unwrap_or_else(|| "Auto".to_string())));
         Ok(output)
@@ -702,7 +702,7 @@ impl GhaTool for ProvisionMcpTool {
         let target = arg.to_lowercase();
         if let Some(entry) = registry.iter().find(|e| e.name.contains(&target) || e.description.to_lowercase().contains(&target)) {
             let res = GmcpClient::auto_configure_server(&entry.name, &entry.package);
-            return Ok(if res == "SUCCESS_CONFIGURED" { format!("✅ Provisioned '{}'.", entry.name) } else { "❌ Failed.".into() });
+            return Ok(if res == "SUCCESS_CONFIGURED" { format!("[PASS] Provisioned '{}'.", entry.name) } else { "[FAIL] Failed.".into() });
         }
         Ok("Capability not found in global registry.".into())
     }
@@ -715,7 +715,7 @@ impl GhaTool for DebugEngineTool {
     fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
         let source = fs::read_to_string(workspace.join("src/main.rs")).unwrap_or_default();
         let reasoning = GemiEngine::generate_reasoning_deep(&format!("Debug error: {}\n\n{}", arg, source), workspace);
-        Ok(format!("🛠️ [Self-Debug]:\n{}", reasoning))
+        Ok(format!("[Self-Debug]:\n{}", reasoning))
     }
 }
 
@@ -737,7 +737,7 @@ impl GhaTool for RunTestHarnessTool {
     fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
         if workspace.join("Cargo.toml").exists() {
             let out = Command::new("cargo").args(["test", "--no-run"]).current_dir(workspace).output().map_err(|e| EaiError::Hardware(e.to_string()))?;
-            return Ok(if out.status.success() { "✅ Test build PASSED." } else { "❌ Test build FAILED." }.into());
+            return Ok(if out.status.success() { "[PASS] Test build PASSED." } else { "[FAIL] Test build FAILED." }.into());
         }
         Ok("Generic harness ready.".into())
     }
@@ -864,7 +864,7 @@ impl GhaTool for SwarmStatusTool {
         out.push_str("| :--- | :--- | :--- | :--- | :--- |\n");
 
         for n in nodes {
-            let status = if n.is_active { "🟢 ACTIVE" } else { "🔴 OFFLINE" };
+            let status = if n.is_active { "[ACTIVE]" } else { "[OFFLINE]" };
             out.push_str(&format!("| {} | {} | {} | {} | {} |\n", n.node_id, n.node_type, n.address, n.capabilities.join(", "), status));
         }
 
@@ -977,7 +977,7 @@ impl GhaTool for SelfHealBuildTool {
             let out = Command::new("cargo").arg("check").current_dir(workspace).output().map_err(|e| EaiError::Hardware(e.to_string()))?;
 
             if out.status.success() {
-                return Ok("✅ Build clean. No healing required.".into());
+                return Ok("[PASS] Build clean. No healing required.".into());
             }
 
             let stderr = String::from_utf8_lossy(&out.stderr);
@@ -1010,7 +1010,7 @@ impl GhaTool for SelfHealBuildTool {
 
             return Ok(format!("Build failed. Could not synthesize autonomous fix.\nError:\n{}", stderr));
         }
-        Ok("❌ Error: No Cargo.toml found in workspace root.".into())
+        Ok("[FAIL] Error: No Cargo.toml found in workspace root.".into())
     }
 }
 
@@ -1020,7 +1020,7 @@ impl GhaTool for InfraCommandTool {
     fn description(&self) -> String { format!("Execute {} command", self.bin) }
     fn execute(&self, _arg: &str, workspace: &Path) -> EaiResult<String> {
         let out = Command::new(&self.bin).args(&self.args).current_dir(workspace).output().map_err(|e| EaiError::Hardware(e.to_string()))?;
-        Ok(format!("✅ [{} Result]:\n{}", self.bin, String::from_utf8_lossy(&out.stdout)))
+        Ok(format!("[PASS] [{} Result]:\n{}", self.bin, String::from_utf8_lossy(&out.stdout)))
     }
 }
 
@@ -1067,7 +1067,7 @@ impl GhaTool for WriteFileTool {
         }
 
         fs::write(&full_path, content).map_err(|e| EaiError::Sandbox(format!("Failed to write file {}: {}", path_str, e)))?;
-        Ok(format!("✅ Wrote to {}", path_str))
+        Ok(format!("[PASS] Wrote to {}", path_str))
     }
 }
 

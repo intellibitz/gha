@@ -235,7 +235,7 @@ impl GmaMasterAgent {
             if !is_reflex && !mission_result.contains("ERROR") && !mission_result.contains("TRUTH VIOLATION") {
                 if let Ok(evolve_res) = self.trigger_autonomous_evolution(goal, workspace) {
                     report.push_str("\n## Substrate Evolution\n");
-                    report.push_str(&format!(" └── ✅ {}\n", evolve_res));
+                    report.push_str(&format!(" └── [PASS] {}\n", evolve_res));
                     report.push_str(" └── Note: Run 'gha release' to activate this microsecond reflex.\n");
                 }
             }
@@ -375,7 +375,7 @@ impl GmaMasterAgent {
 
     fn audit_truth(&self, goal: &str, logs: &[super::gmas::A2AMessage], workspace: &Path, mission_result: &str) -> String {
         if mission_result.contains("TRUTH VIOLATION") {
-             return "🔴 MISSION BLOCKED: Hallucination detected during formal verification.".to_string();
+             return "MISSION BLOCKED: Hallucination detected during formal verification.".to_string();
         }
 
         let mut score = 100;

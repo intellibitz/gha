@@ -175,7 +175,7 @@ impl GawdAgent for GhaSafetyAgent {
         let lower = goal.to_lowercase();
         if lower.contains("rm -rf") || lower.contains("mkfs") || lower.contains("dd if=") {
              bb.insert("SAFETY_ALERT".to_string(), "CRITICAL_DESTRUCTIVE_COMMAND".to_string());
-             return "🚨 Safety Violation: Destructive command detected in intent.".to_string();
+             return "Safety Violation: Destructive command detected in intent.".to_string();
         }
 
         "Governance protocols active. Mission cleared for execution.".to_string()

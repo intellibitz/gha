@@ -140,17 +140,17 @@ impl GmcpClient {
         let config_path = Self::get_config_path();
         let config_content = match fs::read_to_string(&config_path) {
             Ok(c) => c,
-            Err(_) => return format!("❌ MCP Error: Config not found at {}", config_path.display()),
+            Err(_) => return format!("[FAIL] MCP Error: Config not found at {}", config_path.display()),
         };
 
         let config: McpConfig = match serde_json::from_str(&config_content) {
             Ok(c) => c,
-            Err(e) => return format!("❌ MCP Error: Config parse failed: {}", e),
+            Err(e) => return format!("[FAIL] MCP Error: Config parse failed: {}", e),
         };
 
         let srv = match config.mcp_servers.get(server_name) {
             Some(s) => s,
-            None => return format!("❌ MCP Error: Server '{}' not found in config.", server_name),
+            None => return format!("[FAIL] MCP Error: Server '{}' not found in config.", server_name),
         };
 
         Self::proxy_call(srv, tool_name, args)
@@ -164,7 +164,7 @@ impl GmcpClient {
             .stderr(Stdio::null())
             .spawn() {
                 Ok(c) => c,
-                Err(e) => return format!("❌ MCP Error: Failed to spawn '{}': {}", srv.command, e),
+                Err(e) => return format!("[FAIL] MCP Error: Failed to spawn '{}': {}", srv.command, e),
             };
 
         let stdin = child.stdin.as_mut().unwrap();
@@ -215,7 +215,7 @@ impl GmcpClient {
             return format!("🔌 [MCP Proxy Response]: {}", line.trim());
         }
 
-        "❌ MCP Error: No response from server.".to_string()
+        "[FAIL] MCP Error: No response from server.".to_string()
     }
 
     #[allow(dead_code)]

@@ -8,7 +8,7 @@ use crate::error::{EaiError, EaiResult};
 pub struct TruthTransformer;
 
 impl TruthTransformer {
-    /// 🛡️ Formal Verification Reflex
+    /// Formal Verification Reflex
     /// Validates tool output against physical workspace reality before user delivery.
     pub fn verify_mission_reality(goal: &str, tool_name: &str, result: &str, workspace: &Path) -> EaiResult<String> {
         let mut violations = Vec::new();
@@ -40,7 +40,7 @@ impl TruthTransformer {
         }
 
         if !violations.is_empty() {
-            let error_msg = format!("🚨 TRUTH VIOLATION: {}\nMission blocked to prevent substrate pollution.", violations.join("\n"));
+            let error_msg = format!("TRUTH VIOLATION: {}\nMission blocked to prevent substrate pollution.", violations.join("\n"));
             return Err(EaiError::Governance(error_msg));
         }
 

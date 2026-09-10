@@ -145,7 +145,7 @@ fn run_native_mcp_server(project_root: &Path) {
             Ok(s) => break s,
             Err(e) => {
                 if retries > 5 {
-                    eprintln!("❌ [GMCP Proxy] Connection failed: {}", e);
+                    eprintln!("[FAIL] [GMCP Proxy] Connection failed: {}", e);
                     eprintln!("   └── Falling back to degraded local mode.");
                     run_degraded_mcp_server(project_root);
                     return;
@@ -156,7 +156,7 @@ fn run_native_mcp_server(project_root: &Path) {
         }
     };
 
-    eprintln!("✅ [GMCP Proxy] Active for {}", project_root.display());
+    eprintln!("[PASS] [GMCP Proxy] Active for {}", project_root.display());
 
     let mut stream_in = stream.try_clone().expect("Failed to clone stream");
     let stream_out = stream;

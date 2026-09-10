@@ -343,10 +343,10 @@ fn run_interactive_shell(cwd: &Path) {
                             println!("{}", clean_answer);
                         }
                     } else {
-                        println!("❌ Error: Could not read file content at '{}'", full_path.display());
+                        println!("[FAIL] Error: Could not read file content at '{}'", full_path.display());
                     }
                 } else {
-                    println!("❌ Error: File not found at '{}'", full_path.display());
+                    println!("[FAIL] Error: File not found at '{}'", full_path.display());
                 }
             }
             println!();
@@ -491,7 +491,7 @@ fn run_interactive_shell(cwd: &Path) {
                      println!("\n🔍 Scanning cluster for replicated checkpoints...");
                      let cluster = crate::gawd::gmas::GmasSupervisor::query_cluster_checkpoints();
                      if let Some(cp) = cluster.first() {
-                          println!("🌐 Found replicated mission: \"{}\"", cp.intent);
+                          println!("[INFO] Found replicated mission: \"{}\"", cp.intent);
                           let report = gma.solve(&cp.intent, cwd, GHA_VERSION);
                           println!("\n{}", report);
                      } else {
@@ -690,7 +690,7 @@ fn main() {
             } else {
                  let cluster = crate::gawd::gmas::GmasSupervisor::query_cluster_checkpoints();
                  if let Some(cp) = cluster.first() {
-                      println!("🌐 Resuming replicated mission: \"{}\"", cp.intent);
+                      println!("[INFO] Resuming replicated mission: \"{}\"", cp.intent);
                       let gma = GmaMasterAgent::new();
                       let report = gma.solve(&cp.intent, &cwd, GHA_VERSION);
                       println!("{}", report);
