@@ -26,7 +26,7 @@ pub struct GhaAxiomRule {
 pub struct AlphaSelf;
 
 impl AlphaSelf {
-    pub const VERSION: &'static str = "0.1.2022630";
+    pub const VERSION: &'static str = "0.1.2022631";
     pub const CORE_PARADIGM: &'static str = "EAI (Exponential Intelligence for Any AI) - Intelligence Reflex & Execution Substrate";
 
     pub const RULES: &[GhaAxiomRule] = &[

@@ -3,8 +3,15 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.2022630`
+* **Current Engine Version**: `v0.1.2022631`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
+
+## Unified Neural Paradigm (Alpha Brain Architecture)
+
+GHA operates through a dual-section neural and compiled architecture:
+* **Alpha-Self (Compiled Binary Instructions Core)**: Immutable system rules (`AGENTS.md`), architecture axioms, and component topologies (`PROJECTS.md`) compiled directly into strongly-typed Rust data structures (`AlphaSelf`). Eliminates runtime string parsing and provides instantaneous, zero-latency self-awareness to all GHA components.
+* **Alpha-User (Distilled Experiential Memory)**: Experiential intent resolutions and distilled reflexes stored in local neural tensor weights (`gha-alpha.safetensors`), expanding exponentially through continuous Procedural Knowledge Base (PKB) distillation.
+* **Local-First Hardware Sovereignty**: Automatic fallback strategy that prioritizes local execution (Ollama, local GGUF vaults, and Candle tensor substrates) before scouting cloud providers.
 
 ## Universal Neutrality Mandate
 

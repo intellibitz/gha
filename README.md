@@ -1,4 +1,4 @@
-![GHA Version](https://img.shields.io/badge/version-v0.1.2022630-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
+![GHA Version](https://img.shields.io/badge/version-v0.1.2022631-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
 
 **GHA (Exponential Intelligence for Any AI Substrate)** is an Intelligence Reflex & Execution Substrate (EAI) empowering any world user to execute any intent through a native Rust intelligence engine. It features an ultra-lightweight launcher (<2ms startup) managing a persistent background daemon for zero-latency tool execution and local hardware sovereignty.
 
