@@ -1167,6 +1167,23 @@ impl GhaTool for GlobalRegistryScanTool {
     }
 }
 
+fn decode_bing_url(raw_url: &str) -> String {
+    if let Some(pos) = raw_url.find("&u=") {
+        let sub = &raw_url[pos + 3..];
+        let param = sub.split('&').next().unwrap_or(sub);
+        let b64_str = if param.starts_with("a1") { &param[2..] } else { param };
+        use base64::Engine;
+        if let Ok(decoded_bytes) = base64::engine::general_purpose::STANDARD.decode(b64_str) {
+            if let Ok(decoded_str) = String::from_utf8(decoded_bytes) {
+                if decoded_str.starts_with("http") {
+                    return decoded_str;
+                }
+            }
+        }
+    }
+    raw_url.to_string()
+}
+
 fn urlencoding_simple(s: &str) -> String {
     let mut encoded = String::new();
     for b in s.bytes() {
@@ -1221,6 +1238,10 @@ pub fn translate_text_native(text: &str, target_lang: &str) -> EaiResult<String>
         if trimmed.is_empty() {
             translated_lines.push(String::new());
             continue;
+        }
+
+        if trimmed.starts_with("0-9") || trimmed.starts_with("LyricsMania.com") || trimmed.starts_with("AJR -") || trimmed.starts_with("Copyright") {
+            break;
         }
 
         if trimmed.starts_with('•') || trimmed.starts_with("===") || trimmed.starts_with('#') {
@@ -1404,9 +1425,11 @@ impl GhaTool for WebSearchDownloadTool {
                                 if let Some(href_start) = h2_html.find("href=\"") {
                                     let sub = &h2_html[href_start + 6..];
                                     if let Some(href_end) = sub.find('"') {
-                                        let url = &sub[..href_end];
-                                        if url.starts_with("http") && !url.contains("bing.com") {
-                                            top_urls.push(url.to_string());
+                                        let raw_url = &sub[..href_end];
+                                        let clean_raw_url = decode_html_entities(raw_url);
+                                        let decoded_url = decode_bing_url(&clean_raw_url);
+                                        if decoded_url.starts_with("http") && !decoded_url.contains("bing.com") {
+                                            top_urls.push(decoded_url);
                                         }
                                     }
                                 }
@@ -1475,6 +1498,22 @@ impl GhaTool for WebSearchDownloadTool {
             }
         }
 
+fn extract_azlyrics(html: &str) -> Option<String> {
+    if let Some(start_pos) = html.find("<!-- Usage of azlyrics") {
+        if let Some(div_pos) = html[start_pos..].find("-->") {
+            let sub = &html[start_pos + div_pos + 3..];
+            if let Some(end_pos) = sub.find("</div>") {
+                let raw_lyrics = &sub[..end_pos];
+                let clean_lyrics = strip_html_tags(raw_lyrics);
+                if clean_lyrics.lines().count() > 5 {
+                    return Some(clean_lyrics);
+                }
+            }
+        }
+    }
+    None
+}
+
         // Deep Content Fetch: If query asks for specific lyrics, articles, docs, or detailed content, fetch top result URL
         let lower_arg = clean_arg.to_lowercase();
         let needs_deep_content = lower_arg.contains("lyrics")
@@ -1485,13 +1524,20 @@ impl GhaTool for WebSearchDownloadTool {
             || lower_arg.contains("fetch");
 
         if needs_deep_content && !top_urls.is_empty() {
-            for target_url in top_urls.iter().take(3) {
+            let mut prioritized_urls = top_urls.clone();
+            prioritized_urls.sort_by_key(|u| if u.contains("azlyrics.com") { 0 } else if u.contains("songlyrics") { 1 } else { 2 });
+
+            for target_url in &prioritized_urls {
                 if let Ok(resp) = ureq::get(target_url)
                     .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                     .timeout(std::time::Duration::from_secs(10))
                     .call()
                 {
                     if let Ok(page_html) = resp.into_string() {
+                        if let Some(az_lyrics) = extract_azlyrics(&page_html) {
+                            extracted_text = format!("=== Full Song Lyrics ({}) ===\n{}\n", target_url, az_lyrics);
+                            break;
+                        }
                         let page_clean = strip_html_tags(&page_html);
                         let page_lower = page_clean.to_lowercase();
                         if !page_clean.trim().is_empty()
@@ -1501,7 +1547,7 @@ impl GhaTool for WebSearchDownloadTool {
                             && !page_lower.contains("access denied")
                             && page_clean.len() > 100
                         {
-                            extracted_text.push_str(&format!("\n=== Extracted Page Content ({}) ===\n{}\n", target_url, page_clean));
+                            extracted_text = format!("=== Extracted Page Content ({}) ===\n{}\n", target_url, page_clean);
                             break;
                         }
                     }
