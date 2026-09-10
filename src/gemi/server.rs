@@ -131,42 +131,16 @@ impl GemiServer {
                     // Audit Log & Session Memory Unified Execution
                     crate::sandbox::manager::GhaAuditLogger::log_event(&workspace, "WEB_MISSION_START", &user_prompt);
 
-                    // Dual-Interface Alignment: Support Slash Commands in Web App
                     let trimmed_prompt = user_prompt.trim();
-                    let content = if trimmed_prompt.starts_with('/') || trimmed_prompt.starts_with(':') {
-                        let cmd_lower = trimmed_prompt.to_lowercase();
-                        match cmd_lower.as_str() {
-                            "/status" | ":status" | "status" => ToolRegistry::execute_tool("status", "", &workspace),
-                            "/services" | ":services" | "services" => ToolRegistry::execute_tool("services", "", &workspace),
-                            "/agents" | ":agents" | "agents" => ToolRegistry::execute_tool("agents", "", &workspace),
-                            "/engines" | ":engines" | "engines" => ToolRegistry::execute_tool("engines", "", &workspace),
-                            "/clients" | ":clients" | "clients" => ToolRegistry::execute_tool("clients", "", &workspace),
-                            "/servers" | ":servers" | "servers" => ToolRegistry::execute_tool("servers", "", &workspace),
-                            "/memory" | ":memory" | "memory" => ToolRegistry::execute_tool("memory", "", &workspace),
-                            "/forget" | ":forget" | "clear_memory" => ToolRegistry::execute_tool("clear_memory", "", &workspace),
-                            "/backup" | ":backup" | "backup" => ToolRegistry::execute_tool("backup_work", "", &workspace),
-                            "/restore" | ":restore" | "restore" => ToolRegistry::execute_tool("restore_work", "", &workspace),
-                            "/audit" | ":audit" | "audit" | "audit_log" => ToolRegistry::execute_tool("audit", "", &workspace),
-                            "/models" | ":models" | "models" => {
-                                let gma = GmaMasterAgent::new();
-                                gma.solve("list_models", &workspace, crate::GHA_VERSION)
-                            }
-                            "/domain" | ":domain" | "/domains" | ":domains" => {
-                                "Intelligence Substrates for World Missions:\n  Agronomy\n  Clinical Medical\n  Legal & Compliance\n  Education & Science\n  Renewable Energy\n  Skilled Trades & Building Codes\n  Creative & Media\n  Home & Family\n  Public Safety\n  Enterprise & Operations\n  Software & Systems Engineering\n  Universal Substrate".to_string()
-                            }
-                            _ => {
-                                if cmd_lower.starts_with("/schedule") || cmd_lower.starts_with(":schedule") {
-                                    let arg = trimmed_prompt.trim_start_matches("/schedule").trim_start_matches(":schedule").trim();
-                                    ToolRegistry::execute_tool("schedule_task", arg, &workspace)
-                                } else if cmd_lower.starts_with("/export_doc") || cmd_lower.starts_with(":export_doc") {
-                                    let arg = trimmed_prompt.trim_start_matches("/export_doc").trim_start_matches(":export_doc").trim();
-                                    ToolRegistry::execute_tool("export_doc", arg, &workspace)
-                                } else {
-                                    let gma = GmaMasterAgent::new();
-                                    gma.solve_clean(trimmed_prompt, &workspace, crate::GHA_VERSION)
-                                }
-                            }
-                        }
+                    let clean_cmd = trimmed_prompt.trim_start_matches('/').trim_start_matches(':');
+                    let parts: Vec<&str> = clean_cmd.splitn(2, ' ').collect();
+                    let tool_name = parts[0].to_lowercase();
+                    let tool_arg = parts.get(1).copied().unwrap_or("").trim();
+
+                    let content = if ToolRegistry::exists(&tool_name) {
+                        ToolRegistry::execute_tool(&tool_name, tool_arg, &workspace)
+                    } else if tool_name == "domain" || tool_name == "domains" {
+                        "Intelligence Substrates for World Missions:\n  Agronomy\n  Clinical Medical\n  Legal & Compliance\n  Education & Science\n  Renewable Energy\n  Skilled Trades & Building Codes\n  Creative & Media\n  Home & Family\n  Public Safety\n  Enterprise & Operations\n  Software & Systems Engineering\n  Universal Substrate".to_string()
                     } else {
                         let gma = GmaMasterAgent::new();
                         let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(trimmed_prompt);
