@@ -103,7 +103,7 @@ impl GemiEngine {
         let server_bin = Self::find_local_llama_server().ok_or_else(|| anyhow!("llama-server not found"))?;
 
         // 1. Check if server is already running on port 8085
-        let health = Command::new("curl").args(["-s", "http://127.0.0.1:8085/health"]).output();
+        let health = Command::new("curl").args(["-s", "--connect-timeout", "2", "--max-time", "3", "http://127.0.0.1:8085/health"]).output();
         let server_active = matches!(health, Ok(ref o) if o.status.success() && String::from_utf8_lossy(&o.stdout).contains("ok"));
 
         if !server_active {
@@ -115,9 +115,9 @@ impl GemiEngine {
                 .spawn();
 
             let start = std::time::Instant::now();
-            while start.elapsed().as_secs() < 30 {
+            while start.elapsed().as_secs() < 20 {
                 std::thread::sleep(std::time::Duration::from_millis(500));
-                if let Ok(o) = Command::new("curl").args(["-s", "http://127.0.0.1:8085/health"]).output() {
+                if let Ok(o) = Command::new("curl").args(["-s", "--connect-timeout", "2", "--max-time", "3", "http://127.0.0.1:8085/health"]).output() {
                     let body = String::from_utf8_lossy(&o.stdout);
                     if o.status.success() && (body.contains("ok") || body.contains("no slot available")) {
                         break;
@@ -129,7 +129,7 @@ impl GemiEngine {
         let formatted_prompt = format!("<bos>User: {}\nAssistant:", prompt);
         let payload = json!({
             "prompt": formatted_prompt,
-            "n_predict": 512,
+            "n_predict": 256,
             "temperature": 0.2
         });
 
@@ -247,7 +247,7 @@ impl GemiEngine {
 
     fn curl_pipe(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<Vec<u8>> {
         let mut child = Command::new("curl")
-            .args(["-s", "-X", "POST", url, "-H", "Content-Type: application/json"])
+            .args(["-s", "--connect-timeout", "5", "--max-time", "15", "-X", "POST", url, "-H", "Content-Type: application/json"])
             .args(headers.into_iter().flat_map(|(k, v)| vec!["-H".to_string(), format!("{}: {}", k, v)]))
             .arg("-d")
             .arg("@-")
