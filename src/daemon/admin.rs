@@ -106,7 +106,14 @@ impl GhaAdmin {
                     let mut updated_lines = Vec::new();
                     for line in file_content.lines() {
                         if line.contains(prefix) && line.contains(suffix) {
-                            if path.to_string_lossy().contains("Cargo.toml") || path.to_string_lossy().contains("main.rs") {
+                            if path.to_string_lossy().contains("Cargo.toml") {
+                                if line.starts_with(prefix) {
+                                    let updated = format!("{}{}{}", prefix, new_version, suffix);
+                                    updated_lines.push(updated);
+                                } else {
+                                    updated_lines.push(line.to_string());
+                                }
+                            } else if path.to_string_lossy().contains("main.rs") {
                                 let updated = format!("{}{}{}", prefix, new_version, suffix);
                                 updated_lines.push(updated);
                             } else if path.to_string_lossy().contains("README.md") {

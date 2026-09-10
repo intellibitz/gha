@@ -1,4 +1,4 @@
-version-v0.1.2022632-blue.svg
+version-v0.1.2022633-blue.svg
 
 **GHA (Exponential Intelligence for Any AI Substrate)** is an Intelligence Reflex & Execution Substrate (EAI) empowering any world user to execute any intent through a native Rust intelligence engine. It features an ultra-lightweight launcher (<2ms startup) managing a persistent background daemon for zero-latency tool execution and local hardware sovereignty.
 
