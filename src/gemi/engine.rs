@@ -32,9 +32,10 @@ impl GemiEngine {
         eprintln!("[GHA Substrate]: Tier 0 GHA-Alpha Reflex missed intent '{}'. Selecting local models first...", prompt);
 
         // 1. Try local Ollama if available
-        let ollama_res = Self::execute_local_ollama(prompt, "llama3");
+        let active_model = super::models::ModelManager::get_selected_model().unwrap_or_else(|| "llama3".to_string());
+        let ollama_res = Self::execute_local_ollama(prompt, &active_model);
         if !ollama_res.contains("ERROR") && !ollama_res.trim().is_empty() {
-            eprintln!("[GHA Substrate]: Selected local Ollama model. Execution success.");
+            eprintln!("[GHA Substrate]: Selected local Ollama model ({}). Execution success.", active_model);
             return ollama_res;
         }
 
@@ -150,7 +151,7 @@ impl GemiEngine {
                 let url = format!("{}/messages", api_base.trim_end_matches('/'));
                 let payload = json!({
                     "model": model.model_id,
-                    "max_tokens": 1024,
+                    "max_tokens": 8192,
                     "messages": [{"role": "user", "content": prompt}]
                 });
                 let out = Self::curl_pipe(&url, vec![

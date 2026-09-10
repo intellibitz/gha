@@ -50,7 +50,7 @@ impl GmcpClient {
 
         // 1. Try Online Registry Scout from Dynamic Config URL
         if let Ok(out) = Command::new("curl")
-            .args(["-sL", "--connect-timeout", "2", "--max-time", "4", &cfg.mcp_registry_url])
+            .args(["-sL", "--connect-timeout", "5", "--max-time", "15", &cfg.mcp_registry_url])
             .output()
             && out.status.success()
             && let Ok(remote_entries) = serde_json::from_slice::<Vec<GlobalMcpEntry>>(&out.stdout)

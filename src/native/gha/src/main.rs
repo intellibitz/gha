@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-const GHA_VERSION: &str = "0.1.2022645";
+const GHA_VERSION: &str = "0.1.2022646";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -145,14 +145,14 @@ fn run_native_mcp_server(project_root: &Path) {
         match TcpStream::connect("127.0.0.1:9090") {
             Ok(s) => break s,
             Err(e) => {
-                if retries > 5 {
+                if retries > 25 {
                     eprintln!("[FAIL] [GMCP Proxy] Connection failed: {}", e);
                     eprintln!("   └── Falling back to degraded local mode.");
                     run_degraded_mcp_server(project_root);
                     return;
                 }
                 retries += 1;
-                thread::sleep(Duration::from_millis(500));
+                thread::sleep(Duration::from_millis(200));
             }
         }
     };
