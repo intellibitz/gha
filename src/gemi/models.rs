@@ -140,6 +140,96 @@ impl ModelManager {
         Ok(format!("Selected active model override set to: '{}'", model_name.trim()))
     }
 
+    pub fn identify_best_suited_local_model(workspace: &Path) -> Option<ModelInfo> {
+        let hw = HardwareProfiler::get_profile();
+        let models = Self::list_models(workspace);
+        let local_models: Vec<ModelInfo> = models.into_iter()
+            .filter(|m| m.is_local && !m.model_id.contains("native"))
+            .collect();
+
+        if local_models.is_empty() {
+            return None;
+        }
+
+        let ram_budget_gb = (hw.ram_gb as f32 - 2.0).max(1.0);
+        let vram_budget_gb = hw.gpu_vram_gb as f32;
+
+        let mut scored_models: Vec<(f32, ModelInfo)> = Vec::new();
+
+        for m in local_models {
+            let mut model_size_gb: f32 = 4.0; // Default assumption (~7B Q4)
+
+            // 1. Check if model ID is a file and get exact file size
+            let p = PathBuf::from(&m.model_id);
+            if p.is_file() {
+                if let Ok(meta) = p.metadata() {
+                    let len_gb = meta.len() as f32 / (1024.0 * 1024.0 * 1024.0);
+                    if len_gb > 0.1 {
+                        model_size_gb = len_gb;
+                    }
+                }
+            } else {
+                // Heuristic estimation for Ollama or registry tag models
+                let name_lower = m.model_id.to_lowercase();
+                if name_lower.contains("70b") || name_lower.contains("72b") {
+                    model_size_gb = 40.0;
+                } else if name_lower.contains("32b") || name_lower.contains("33b") {
+                    model_size_gb = 20.0;
+                } else if name_lower.contains("13b") || name_lower.contains("14b") || name_lower.contains("15b") {
+                    model_size_gb = 9.0;
+                } else if name_lower.contains("7b") || name_lower.contains("8b") {
+                    model_size_gb = 4.5;
+                } else if name_lower.contains("1.5b") || name_lower.contains("2b") || name_lower.contains("3b") {
+                    model_size_gb = 2.0;
+                }
+            }
+
+            // 2. Score Suitability
+            let mut score = 0.0f32;
+
+            // Severe penalty if model exceeds total system RAM
+            if model_size_gb > ram_budget_gb {
+                score -= 1000.0;
+            } else {
+                // Fits in RAM
+                score += model_size_gb * 5.0; // Prefer larger parameter count within budget
+
+                // GPU VRAM Acceleration Bonus
+                if hw.acceleration_active && vram_budget_gb > 0.0 {
+                    if model_size_gb <= vram_budget_gb {
+                        score += 100.0; // 100% VRAM offload capability
+                    } else {
+                        score -= (model_size_gb - vram_budget_gb) * 5.0; // Partial VRAM overflow
+                    }
+                }
+            }
+
+            // Provider preferences
+            if m.provider == ProviderType::Ollama {
+                score += 15.0;
+            } else if m.registry.contains("GGUF") || m.registry.contains("Vault") {
+                score += 10.0;
+            }
+
+            scored_models.push((score, m));
+        }
+
+        scored_models.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+
+        if let Some((best_score, best_model)) = scored_models.first() {
+            if *best_score > -500.0 {
+                let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+                let gha_dir = home.join(".gha");
+                let _ = fs::create_dir_all(&gha_dir);
+                let auto_file = gha_dir.join("selected_model_auto.txt");
+                let _ = fs::write(&auto_file, best_model.model_id.trim());
+                return Some(best_model.clone());
+            }
+        }
+
+        None
+    }
+
     pub fn get_selected_model() -> Option<String> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let override_file = home.join(".gha/selected_model_override.txt");
@@ -150,6 +240,11 @@ impl ModelManager {
             if !trimmed.is_empty() {
                 return Some(trimmed.to_string());
             }
+        }
+
+        let ws = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        if let Some(best) = Self::identify_best_suited_local_model(&ws) {
+            return Some(best.model_id);
         }
 
         let auto_file = home.join(".gha/selected_model_auto.txt");
@@ -437,7 +532,8 @@ impl ModelManager {
                     && let Some(ext) = path.extension().and_then(|e| e.to_str())
                 {
                     let lower_ext = ext.to_lowercase();
-                    if (lower_ext == "gguf" || lower_ext == "safetensors" || lower_ext == "onnx" || lower_ext == "bin")
+                    let is_valid_model_ext = lower_ext == "gguf" || lower_ext == "safetensors" || lower_ext == "onnx" || (lower_ext == "bin" && (path.to_string_lossy().to_lowercase().contains("model") || path.to_string_lossy().to_lowercase().contains("ggml") || path.to_string_lossy().to_lowercase().contains("pytorch")));
+                    if is_valid_model_ext
                         && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
                     {
                         let len_bytes = path.metadata().map(|m| m.len()).unwrap_or(0);

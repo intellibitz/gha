@@ -1,6 +1,6 @@
 # gha
 
-![GHA Version](https://img.shields.io/badge/version-v0.1.2022640-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
+![GHA Version](https://img.shields.io/badge/version-v0.1.2022641-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
 
 **gha** is a Rust-based local-first AI execution engine. It provides a sub-2ms CLI launcher that proxies commands to a persistent background daemon for zero-latency tool execution and agent orchestration.
 
@@ -8,6 +8,7 @@
 
 * **Binary Core**: Immutable system rules and agent definitions are compiled directly into the binary.
 * **Model Routing**: Prioritizes local runtimes (Candle, Ollama, GGUF vaults) before falling back to cloud inference.
+* **Hardware-Aware Selection**: Automatically profiles system RAM, VRAM, and GPU acceleration to identify and default to the best-suited local model.
 * **Capabilities**: MCP (Model Context Protocol) integration, file I/O, system command execution, and autonomous task looping.
 
 ## Installation
