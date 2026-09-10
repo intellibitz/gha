@@ -3,14 +3,15 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use super::self_core::AlphaSelf;
 
 pub struct AxiomSubstrate;
 
 impl AxiomSubstrate {
-    /// Ingests AGENTS.md and PROJECTS.md into runtime memory and PKB training seed
+    /// Ingests AGENTS.md and PROJECTS.md into runtime memory from compiled AlphaSelf or disk fallback
     pub fn ingest_constitution(workspace: &Path) -> (String, String) {
-        let mut agents_content = String::new();
-        let mut projects_content = String::new();
+        let mut agents_content = AlphaSelf::get_agents_axiom().to_string();
+        let mut projects_content = AlphaSelf::get_projects_axiom().to_string();
 
         let mut current = workspace.to_path_buf();
         loop {
@@ -48,9 +49,9 @@ impl AxiomSubstrate {
     pub fn get_self_awareness_summary() -> String {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let global_dir = home.join(".gha");
-        let agents = fs::read_to_string(global_dir.join("cached_agents.md")).unwrap_or_else(|_| "Axioms not yet ingested.".into());
-        let projects = fs::read_to_string(global_dir.join("cached_projects.md")).unwrap_or_else(|_| "Projects not yet ingested.".into());
+        let agents = fs::read_to_string(global_dir.join("cached_agents.md")).unwrap_or_else(|_| AlphaSelf::get_agents_axiom().to_string());
+        let projects = fs::read_to_string(global_dir.join("cached_projects.md")).unwrap_or_else(|_| AlphaSelf::get_projects_axiom().to_string());
 
-        format!("GHA Self-Awareness State:\n- AGENTS.md Loaded: {} bytes\n- PROJECTS.md Loaded: {} bytes\n- Neural Axiom Substrate: ACTIVE", agents.len(), projects.len())
+        format!("GHA Self-Awareness State:\n- Alpha-Self Axioms Loaded: {} bytes (AGENTS.md) & {} bytes (PROJECTS.md)\n- Neural Axiom Substrate: ACTIVE", agents.len(), projects.len())
     }
 }
