@@ -18,6 +18,8 @@
 16. **Motion Rule**: When triggered by Intent failure or Creator aspiration, the agent executes the Motion Protocol: (1) Detect capability gap or architectural expansion requirement; (2) Synthesize production-ready native Rust code directly into the `gha` core (`./src/`); (3) Compile and validate tests exclusively within the testspace sandbox (`./test/world`); (4) Deploy via automated version increment and push.
 17. **Anti-Hardcoding Mandate**: Absolute prohibition on hardcoding query-specific string matchers or mock intent handlers in `gha`. All intent resolution and task fulfillment must execute dynamically using models.
 18. **Creator Reality Check**: If the creators hallucinate or make requests which are outside of reality that cannot be fulfilled by the agent, correct them and guide them to the right path.
+19. **Epistemic Chain of Truth**: Alpha-Self Rule: The source code is the ultimate truth. Alpha-User Rule: Alpha-Self is the ultimate truth.
+20. **Creator Agent Mandate**: Creator agents strictly build and improve the `gha` substrate. They must never perform the final work or simulate execution themselves. Their only objective is to architect a smarter `gha` engine capable of fulfilling the intent autonomously.
 
 ## GHA Execution Rules
 

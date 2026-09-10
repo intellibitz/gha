@@ -43,6 +43,8 @@ impl AlphaSelf {
         GhaAxiomRule { id: 16, title: "Motion Rule", imperative: "Triggered by Intent failure or Creator aspiration: Detect gap, synthesize native Rust code, compile/test in testspace, distill and deploy." },
         GhaAxiomRule { id: 17, title: "Anti-Hardcoding Mandate", imperative: "Absolute prohibition on hardcoding query-specific string matchers or mock intent handlers." },
         GhaAxiomRule { id: 18, title: "Creator Reality Check", imperative: "If the creators hallucinate or make requests which are outside of reality that cannot be fulfilled, correct them and guide them to the right path." },
+        GhaAxiomRule { id: 19, title: "Epistemic Chain of Truth", imperative: "Alpha-Self Rule: The source code is the ultimate truth. Alpha-User Rule: Alpha-Self is the ultimate truth." },
+        GhaAxiomRule { id: 20, title: "Creator Agent Mandate", imperative: "Creator agents strictly build and improve the gha substrate. They must never perform the final work or simulate execution themselves. Their only output is a smarter gha engine." },
     ];
 
     pub const COMPONENTS: &[GhaComponentSpec] = &[
