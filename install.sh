@@ -42,8 +42,15 @@ esac
 
 INSTALLED=0
 
-# 2. Try Binary Download First (Lightning Fast)
-if [[ "$PLATFORM" != "unknown" && "$ARCH" != "unknown" ]]; then
+HAS_LOCAL_SOURCE=0
+if [ -f "Cargo.toml" ]; then
+    HAS_LOCAL_SOURCE=1
+elif [[ -n "${BASH_SOURCE[0]}" && -f "$(dirname "${BASH_SOURCE[0]}")/Cargo.toml" ]]; then
+    HAS_LOCAL_SOURCE=1
+fi
+
+# 2. Try Binary Download First (Lightning Fast) if no local source exists
+if [ "$HAS_LOCAL_SOURCE" = "0" ] && [[ "$PLATFORM" != "unknown" && "$ARCH" != "unknown" ]]; then
     # Try downloading both launcher and engine
     LAUNCHER_BINARY="gha-$PLATFORM-$ARCH"
     ENGINE_BINARY="gha-engine-$PLATFORM-$ARCH"
@@ -97,8 +104,12 @@ if [[ "$PLATFORM" != "unknown" && "$ARCH" != "unknown" ]]; then
         INSTALLED=1
         echo "Successfully deployed binaries from GitHub ($GHA_REPO)."
     else
-        echo "  Binary download unavailable or failed. Falling back to build."
+        echo "Binary download unavailable or failed. Falling back to build."
         rm -f "$GLOBAL_BIN_DIR/gha-new" "$GLOBAL_BIN_DIR/gha-engine-new" 2>/dev/null || true
+    fi
+else
+    if [ "$HAS_LOCAL_SOURCE" = "1" ]; then
+        echo "Local source repository detected. Skipping remote binary download and building from source."
     fi
 fi
 
