@@ -62,7 +62,16 @@ impl GemiEngine {
         }
 
         eprintln!("[GHA Substrate]: Local models selected and executed via offline local tensor weights. Success.");
-        format!("[Tier 2 Local Substrate Fallback]: Processed intent '{}' through offline local tensor weights (v{}).", prompt, crate::GHA_VERSION)
+        let resolution = format!("[Tier 2 Local Substrate Fallback]: Processed intent '{}' through offline local tensor weights (v{}).", prompt, crate::GHA_VERSION);
+
+        // 🚀 Unified Neural Paradigm: Automatic Post-Mission PKB Distillation into Alpha
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let global_dir = home.join(".gha");
+        let sample = crate::gawd::pkb::PkbSynthesizer::generate_sample(prompt, workspace);
+        let _ = crate::gawd::pkb::PkbSynthesizer::save_training_data(vec![sample], &global_dir);
+        let _ = crate::gawd::pkb::PkbSynthesizer::distill_step_0_to_63(&global_dir);
+
+        resolution
     }
 
     fn scout_tier2_providers(prompt: &str, _workspace: &Path) -> (Option<String>, Vec<String>) {

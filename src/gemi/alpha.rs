@@ -32,6 +32,14 @@ impl GhaAlphaModel {
     }
 
     pub fn predict_intent(&self, prompt: &str) -> Result<String> {
+        let (action, confidence) = self.predict_intent_with_confidence(prompt)?;
+        if confidence > 0.5 {
+            return Ok(action);
+        }
+        Err(anyhow!("Low confidence in neural reflex."))
+    }
+
+    pub fn predict_intent_with_confidence(&self, prompt: &str) -> Result<(String, f32)> {
         let device = Device::Cpu;
         let input_vec = self.vectorize(prompt)?;
         let input_tensor = Tensor::from_vec(input_vec, (1, Self::DIM), &device)?;
@@ -52,12 +60,9 @@ impl GhaAlphaModel {
             }
         }
 
-        // Mapping index back to tool names
-        if max_val > 0.5 {
-             let intents = ["status", "version", "self_heal_build", "run_test_harness", "write_file", "read_file", "list_directory", "scout", "reason"];
-             if let Some(&intent) = intents.get(max_idx) {
-                 return Ok(format!("ACTION: {}", intent));
-             }
+        let intents = ["status", "version", "self_heal_build", "run_test_harness", "write_file", "read_file", "list_directory", "scout", "reason"];
+        if let Some(&intent) = intents.get(max_idx) {
+            return Ok((format!("ACTION: {}", intent), max_val));
         }
 
         Err(anyhow!("Low confidence in neural reflex."))
