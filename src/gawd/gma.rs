@@ -280,6 +280,12 @@ impl GmaMasterAgent {
                     }
 
                     if res.to_lowercase().contains("error") || res.to_lowercase().contains("failed") || res.to_lowercase().contains("cloud_brain_unavailable") || res.contains("TRUTH VIOLATION") {
+                        if goal.contains(&res) || res.contains(tool_name) {
+                             // Break potential recursion if the error is already about this tool or contains the goal
+                             crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "RECURSION_BLOCK", &format!("Bypassing reflex retry for {}", tool_name));
+                             continue;
+                        }
+
                         let mut fix_prompt = format!("Mission '{}' failed at tool '{}' with error: '{}'. Suggest a fixed command.", goal, tool_name, res);
 
                         if res.contains("rate_limit") || res.contains("too large") || res.contains("CLOUD_BRAIN_UNAVAILABLE") {

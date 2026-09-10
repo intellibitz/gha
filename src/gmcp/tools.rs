@@ -114,17 +114,6 @@ impl ToolRegistry {
             Arc::new(GetCheckpointsTool),
             Arc::new(ScoutModelTool),
             Arc::new(SelfHealBuildTool),
-            Arc::new(DomainReflexTool { name: "finance_reflex".into(), domain: "Finance".into() }),
-            Arc::new(DomainReflexTool { name: "logistics_reflex".into(), domain: "Logistics".into() }),
-            Arc::new(DomainReflexTool { name: "aerospace_reflex".into(), domain: "Aerospace".into() }),
-            Arc::new(DomainReflexTool { name: "cybersecurity_reflex".into(), domain: "Cybersecurity".into() }),
-            Arc::new(DomainReflexTool { name: "stem_reflex".into(), domain: "STEM".into() }),
-            Arc::new(DomainReflexTool { name: "energy_reflex".into(), domain: "Energy".into() }),
-            Arc::new(DomainReflexTool { name: "clinical_diagnostics".into(), domain: "Clinical".into() }),
-            Arc::new(DomainReflexTool { name: "legal_analysis".into(), domain: "Legal".into() }),
-            Arc::new(DomainReflexTool { name: "public_safety_reflex".into(), domain: "Public Safety".into() }),
-            Arc::new(DomainReflexTool { name: "vision_reflex".into(), domain: "Vision".into() }),
-            Arc::new(DomainReflexTool { name: "education_reflex".into(), domain: "Education".into() }),
             Arc::new(InfraCommandTool { name: "docker_ps".into(), bin: "docker".into(), args: vec!["ps", "--format", "table {{.Names}}\t{{.Status}}"] }),
             Arc::new(InfraCommandTool { name: "docker_build".into(), bin: "docker".into(), args: vec!["build", "-t", "gha-app:latest", "."] }),
             Arc::new(InfraCommandTool { name: "terraform_plan".into(), bin: "terraform".into(), args: vec!["plan", "-no-color"] }),
@@ -1187,6 +1176,7 @@ impl GhaTool for WebSearchDownloadTool {
     }
 }
 
+#[allow(dead_code)]
 struct DomainReflexTool {
     name: String,
     domain: String,

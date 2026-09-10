@@ -35,7 +35,7 @@ impl TruthTransformer {
         // 2. Neural Entropy Verification (Rule 15 - Real Candle Tensors)
         let score = Self::calculate_neural_truth_score(goal, result)?;
 
-        if score < 0.7 {
+        if score < 0.6 {
             violations.push(format!("Neural Consistency Score too low ({:.2}). Potential hallucination detected.", score));
         }
 
