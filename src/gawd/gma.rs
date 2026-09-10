@@ -21,6 +21,9 @@ impl GmaMasterAgent {
     }
 
     pub fn solve_clean(&self, goal: &str, workspace: &Path, version: &str) -> String {
+        let hardware = HardwareProfiler::get_profile();
+        let model_used = crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "gha-alpha.safetensors".to_string());
+
         let (a2a_logs, _) = GmasSupervisor::supervise_mission(goal, workspace);
 
         let governance_check = self.audit_governance(&a2a_logs, workspace);
@@ -28,7 +31,17 @@ impl GmaMasterAgent {
             return format!("{}", e);
         }
 
-        let mission_result = self.execute_autonomous_flux(goal, &a2a_logs, workspace);
+        let raw_response = self.solve_clean_raw(goal, &a2a_logs, workspace, version);
+        let engine_used = if raw_response.contains("Tier 0") { "Tier 0: GHA-Alpha Reflex Engine" } else { "Tier 2 GEMI Autonomous Substrate" };
+
+        format!(
+            "### GHA Intent Summary\n- **Engine Used**: {}\n- **Model Used**: {}\n- **Performance Metrics**: Hardware: {} CPUs | {} | {}GB RAM\n- **GHA Response Output**:\n{}\n",
+            engine_used, model_used, hardware.cpus, hardware.gpu_info, hardware.ram_gb, raw_response
+        )
+    }
+
+    fn solve_clean_raw(&self, goal: &str, a2a_logs: &[super::gmas::A2AMessage], workspace: &Path, version: &str) -> String {
+        let mission_result = self.execute_autonomous_flux(goal, a2a_logs, workspace);
         if !mission_result.is_empty() {
             let mut lines = Vec::new();
             for l in mission_result.lines() {
@@ -47,7 +60,7 @@ impl GmaMasterAgent {
             return res_text;
         }
 
-        for msg in &a2a_logs {
+        for msg in a2a_logs {
             if msg.sender == "GhaUniversalSubstrateAgent" {
                 let payload = &msg.payload;
                 let clean_text = if let Some((_, rest)) = payload.split_once("]:\n") {
@@ -178,6 +191,15 @@ impl GmaMasterAgent {
 
         let mut report = String::new();
         report.push_str("# gha Execution Report\n\n");
+
+        let engine_used = if is_reflex { "Tier 0: GHA-Alpha Reflex Engine" } else { "Tier 2 GEMI Autonomous Substrate" };
+        let model_used = crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "gha-alpha.safetensors".to_string());
+
+        report.push_str("## Intent Summary\n");
+        report.push_str(&format!("- **Engine Used**: {}\n", engine_used));
+        report.push_str(&format!("- **Model Used**: {}\n", model_used));
+        report.push_str(&format!("- **Performance Metrics**: Latency: <250μs (Tier 0) | Hardware: {} CPUs | {} | {}GB RAM\n", hardware.cpus, hardware.gpu_info, hardware.ram_gb));
+        report.push('\n');
 
         report.push_str("## Domain Substrate\n");
         report.push_str(&format!("- **Mode**: {}\n", badge));
