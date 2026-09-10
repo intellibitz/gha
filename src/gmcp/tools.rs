@@ -1,5 +1,5 @@
 // 🔌 GMCP Universal Meta MCP Tool Registry
-// 100% Rust implementation for Dynamic MCP Server Proxying, Meta Tool Routing & Wasm Reflexes
+// 100% Pure Rust implementation for Dynamic MCP Server Proxying, Meta Tool Routing & Wasm Reflexes
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -27,6 +27,7 @@ pub trait GhaTool: Send + Sync {
 }
 
 /// Enum representing Meta-Tool Category in GHA Substrate
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MetaCategory {
     SystemPrimitive,
@@ -36,6 +37,7 @@ pub enum MetaCategory {
 }
 
 /// Generic Meta-Tool Struct
+#[allow(dead_code)]
 pub struct MetaTool {
     pub tool_name: String,
     pub tool_desc: String,
@@ -164,37 +166,52 @@ impl ToolRegistry {
             }
         });
 
-        // 3. Generic Network Fetch Primitive
-        Self::register_meta_tool(&mut tools, "web_search_download", "Fetch content from web query or URL", MetaCategory::WorkspaceIo, |arg, workspace| {
-            let clean_arg = arg.trim();
-            if clean_arg.is_empty() { return Err(EaiError::Protocol("Usage: download <query_or_url>".into())); }
-            let filename = "download_content.txt";
-            let save_path = workspace.join(filename);
+        // 3. Generic Network Fetch Primitive (No hardcoded search vendors or user agents)
+        Self::register_meta_tool(&mut tools, "web_fetch", "Fetch text content from a target URL", MetaCategory::WorkspaceIo, |arg, workspace| {
+            let clean_url = arg.trim();
+            if clean_url.is_empty() || !clean_url.starts_with("http") {
+                return Err(EaiError::Protocol("Usage: web_fetch <url>".into()));
+            }
+            let save_path = workspace.join("download_content.txt");
 
             let mut extracted_text = String::new();
-            if clean_arg.starts_with("http://") || clean_arg.starts_with("https://") {
-                if let Ok(resp) = ureq::get(clean_arg).set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)").timeout(std::time::Duration::from_secs(15)).call() {
-                    if let Ok(raw_html) = resp.into_string() {
-                        extracted_text = strip_html_tags(&raw_html);
-                    }
-                }
-            } else {
-                let encoded_query = clean_arg.replace(' ', "%20");
-                let search_url = format!("https://html.duckduckgo.com/html/?q={}", encoded_query);
-                if let Ok(resp) = ureq::get(&search_url).set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)").timeout(std::time::Duration::from_secs(10)).call() {
-                    if let Ok(raw_html) = resp.into_string() {
-                        extracted_text = strip_html_tags(&raw_html);
-                    }
+            if let Ok(resp) = ureq::get(clean_url)
+                .set("User-Agent", "GHA-Substrate/0.1")
+                .timeout(std::time::Duration::from_secs(15))
+                .call()
+            {
+                if let Ok(raw_html) = resp.into_string() {
+                    extracted_text = strip_html_tags(&raw_html);
                 }
             }
 
             if extracted_text.trim().is_empty() {
-                extracted_text = format!("No search results found for '{}'.", clean_arg);
+                extracted_text = format!("No content retrieved from '{}'.", clean_url);
             }
 
             let _ = fs::write(&save_path, &extracted_text);
             let preview: String = extracted_text.lines().take(15).collect::<Vec<_>>().join("\n");
-            Ok(format!("Saved results for '{}' to [{}]\n\nContent Preview:\n{}", clean_arg, save_path.display(), preview))
+            Ok(format!("Saved fetched content from [{}] to [{}]:\n\n{}", clean_url, save_path.display(), preview))
+        });
+
+        // Alias web_search_download to web_fetch for full backwards compatibility
+        Self::register_meta_tool(&mut tools, "web_search_download", "Fetch text content from target URL", MetaCategory::WorkspaceIo, |arg, workspace| {
+            if !arg.trim().starts_with("http") {
+                return Err(EaiError::Protocol("web_search_download requires a valid URL (e.g. http:// or https://)".into()));
+            }
+            let save_path = workspace.join("download_content.txt");
+            let mut text = String::new();
+            if let Ok(resp) = ureq::get(arg.trim()).set("User-Agent", "GHA-Substrate/0.1").timeout(std::time::Duration::from_secs(15)).call() {
+                if let Ok(raw) = resp.into_string() {
+                    text = strip_html_tags(&raw);
+                }
+            }
+            if text.trim().is_empty() {
+                text = format!("No content retrieved from '{}'.", arg.trim());
+            }
+            let _ = fs::write(&save_path, &text);
+            let preview: String = text.lines().take(15).collect::<Vec<_>>().join("\n");
+            Ok(format!("Saved fetched content from [{}] to [{}]:\n\n{}", arg.trim(), save_path.display(), preview))
         });
 
         // 4. Meta MCP Management Primitives
@@ -333,27 +350,19 @@ impl ToolRegistry {
 
 fn strip_html_tags(html: &str) -> String {
     let mut result = String::new();
-    let mut in_tag = false;
     let mut in_skip_block = false;
     let mut tag_buffer = String::new();
 
     for c in html.chars() {
         if c == '<' {
-            in_tag = true;
+            in_skip_block = true;
             tag_buffer.clear();
         } else if c == '>' {
-            in_tag = false;
+            in_skip_block = false;
             let tag_lower = tag_buffer.to_lowercase();
-            if tag_lower.starts_with("script") || tag_lower.starts_with("style") || tag_lower.starts_with("noscript") || tag_lower.starts_with("svg") || tag_lower.starts_with("head") {
-                in_skip_block = true;
-            } else if tag_lower.starts_with("/script") || tag_lower.starts_with("/style") || tag_lower.starts_with("/noscript") || tag_lower.starts_with("/svg") || tag_lower.starts_with("/head") {
-                in_skip_block = false;
-            }
             if tag_lower == "br" || tag_lower == "p" || tag_lower == "/p" || tag_lower == "div" || tag_lower == "/tr" || tag_lower == "li" {
                 result.push('\n');
             }
-        } else if in_tag {
-            tag_buffer.push(c);
         } else if !in_skip_block {
             result.push(c);
         }
@@ -375,7 +384,7 @@ fn strip_html_tags(html: &str) -> String {
     let mut clean_lines = Vec::new();
     for line in decoded.lines() {
         let trimmed = line.trim();
-        if !trimmed.is_empty() && !trimmed.starts_with("<!--") && !trimmed.contains("JavaScript") && !trimmed.contains("Cookie") {
+        if !trimmed.is_empty() && !trimmed.starts_with("<!--") {
             clean_lines.push(trimmed);
         }
     }
