@@ -150,17 +150,24 @@ impl GmaMasterAgent {
             report.push_str(&format!("- Core Paradigm: {}\n", crate::gawd::self_core::AlphaSelf::CORE_PARADIGM));
             report.push_str(&format!("- Baked Axiom Rules: {}\n", crate::gawd::self_core::AlphaSelf::RULES.len()));
             report.push_str(&format!("- Baked Native Components: {}\n", crate::gawd::self_core::AlphaSelf::COMPONENTS.len()));
-            report.push_str(&format!("- Orchestrated Meta Components: {}\n\n", crate::gawd::self_core::AlphaSelf::META_COMPONENTS.len()));
+            report.push_str(&format!("- Orchestrated Meta Components: {}\n", crate::gawd::self_core::AlphaSelf::META_COMPONENTS.len()));
+            report.push_str(&format!("- Orchestrated Meta Contexts: {}\n\n", crate::gawd::self_core::AlphaSelf::META_CONTEXTS.len()));
 
-            report.push_str("## 2. SYSTEM ENVIRONMENT (Hardware & Compute)\n");
+            report.push_str("## 2. META SYSTEM ENVIRONMENT (Hardware & Compute)\n");
             report.push_str(&format!("- CPUs: {}\n", brain.system_cpus));
             report.push_str(&format!("- GPU Acceleration: {}\n", brain.system_gpu));
             report.push_str(&format!("- RAM: {}GB\n\n", brain.system_ram_gb));
 
-            report.push_str("## 3. USER ENVIRONMENT (Configuration & Workspace)\n");
+            report.push_str("## 3. META USER ENVIRONMENT (Configuration & Workspace)\n");
             report.push_str(&format!("- Workspace: {}\n", brain.workspace_path.display()));
             report.push_str(&format!("- Default Engine: {}\n", brain.default_engine));
             report.push_str(&format!("- Default Model: {}\n\n", brain.default_model));
+
+            report.push_str("## 4. META EXECUTION CONTEXT (State & Memory)\n");
+            let status = crate::sandbox::manager::SandboxManager::check_interrupted_checkpoint(workspace)
+                .map(|c| c.status)
+                .unwrap_or_else(|| "IDLE".to_string());
+            report.push_str(&format!("- Execution Status: {}\n\n", status));
 
             report.push_str("## Validation\n └── Verified: Alpha Brain fully operational and self-aware.\n");
             return Some(report);

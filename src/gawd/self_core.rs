@@ -48,6 +48,7 @@ impl AlphaSelf {
         GhaAxiomRule { id: 20, title: "Creator Agent Mandate", imperative: "Creator agents strictly build and improve the gha substrate. They must never perform the final work or simulate execution themselves. Their only output is a smarter gha engine." },
         GhaAxiomRule { id: 21, title: "Source Code Is GHA Memory", imperative: "GHA source code is GHA memory. GHA knows only about GHA." },
         GhaAxiomRule { id: 22, title: "Meta Component Architecture", imperative: "GHA source code defines GHA native components. All external dependencies are defined and orchestrated strictly as Meta Components." },
+        GhaAxiomRule { id: 23, title: "Meta Context Architecture", imperative: "GHA system environment, user environment, and execution contexts are dynamic Meta Contexts orchestrated by GHA." },
     ];
 
     pub const COMPONENTS: &[GhaComponentSpec] = &[
@@ -64,15 +65,22 @@ impl AlphaSelf {
         GhaComponentSpec { name: "MetaExecutablePlugin", tier: GhaCoreTier::Tier1Swarm, description: "External script plugins and distilled WebAssembly reflex binaries." },
     ];
 
+    pub const META_CONTEXTS: &[GhaComponentSpec] = &[
+        GhaComponentSpec { name: "MetaSystemEnvironment", tier: GhaCoreTier::Tier0Reflex, description: "Dynamic host CPU, RAM, GPU acceleration, and OS hardware profile." },
+        GhaComponentSpec { name: "MetaUserEnvironment", tier: GhaCoreTier::Tier1Swarm, description: "Dynamic workspace path, active engine selection, default model substrate, and environment keys." },
+        GhaComponentSpec { name: "MetaExecutionContext", tier: GhaCoreTier::Tier1Swarm, description: "Dynamic mission blackboard state, neural checkpoints, session memory, and A2A swarm logs." },
+    ];
+
     #[allow(dead_code)]
     pub fn inspect_compiled_binary_instructions() -> String {
         format!(
-            "GHA Alpha-Self Compiled Binary Instructions:\n- Version: {}\n- Paradigm: {}\n- Hardcoded Axiom Rules: {}\n- Baked Native Components: {}\n- Orchestrated Meta Components: {}",
+            "GHA Alpha-Self Compiled Binary Instructions:\n- Version: {}\n- Paradigm: {}\n- Hardcoded Axiom Rules: {}\n- Baked Native Components: {}\n- Orchestrated Meta Components: {}\n- Orchestrated Meta Contexts: {}",
             Self::VERSION,
             Self::CORE_PARADIGM,
             Self::RULES.len(),
             Self::COMPONENTS.len(),
-            Self::META_COMPONENTS.len()
+            Self::META_COMPONENTS.len(),
+            Self::META_CONTEXTS.len()
         )
     }
 }
