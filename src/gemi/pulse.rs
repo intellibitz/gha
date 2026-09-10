@@ -57,6 +57,14 @@ impl GhaPulse {
             }
         }
 
+        // 🌀 Rule 18: Autonomous URL Context Retrieval
+        if lower.contains("http://") || lower.contains("https://") {
+             let url = words.iter().find(|w| w.starts_with("http")).unwrap_or(&"");
+             if !url.is_empty() {
+                 return Ok(format!("ACTION: web_search_download {}", url));
+             }
+        }
+
         // 2. Precise Keyword Mapping (High-Speed Reflex)
         let mut mappings = HashMap::new();
         mappings.insert("status", "ACTION: status");

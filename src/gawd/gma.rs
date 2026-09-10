@@ -119,13 +119,25 @@ impl GmaMasterAgent {
 
         let mut is_reflex = false;
         let mut reasoning_content = String::new();
+        let mut intelligence_gap = false;
+
         for msg in &a2a_logs {
             if msg.sender == "GhaReasoningAgent" {
                 reasoning_content = msg.payload.clone();
                 if msg.payload.contains("Tier 0") {
                     is_reflex = true;
                 }
+                if msg.payload.contains("no responding models found") {
+                    intelligence_gap = true;
+                }
             }
+        }
+
+        // 🌀 Rule 18: Autonomous Intelligence Bootstrapping
+        if intelligence_gap && !goal.contains("scout_model") {
+             crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "INTELLIGENCE_GAP", "No models found. Bootstrapping local intelligence.");
+             let scout_res = ToolRegistry::execute_tool("scout_model", "mistral", workspace);
+             return format!("# gha Intelligence Bootstrapping\n\n- **Status**: Critical reasoning gap detected.\n- **Action**: Autonomously scouting for local models.\n\n{}\n\nRun the mission again once the model is pulled.", scout_res);
         }
 
         let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(goal);

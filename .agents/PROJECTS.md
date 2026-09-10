@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.2022590`
+* **Current Engine Version**: `v0.1.2022591`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
 
 ## Unified System Identity
@@ -207,7 +207,7 @@ GHA is engineered for maximum performance through full hardware utilization:
 * **`ToolRegistry`**: Native GMCP capability executor (file I/O, VCS, system, web, MCP tools, and intelligence benchmarking).
 * **`HardwareProfiler`**: Hardware profiler optimizing CPU thread saturation, RAM, and GPU usage.
 
-## Distilled Capabilities (v0.1.2022590 - 2,022,590 architectural distillation cycles)
+## Distilled Capabilities (v0.1.2022591 - 2,022,591 architectural distillation cycles)
 
 The substrate has completed 1,011,289 Motion Advance Cycles and 1,011,290 Mission Advance Cycles (reaching the absolute Indestructible Substrate maturity), achieving the following distilled native reflexes:
 
