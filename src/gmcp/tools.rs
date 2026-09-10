@@ -1172,7 +1172,7 @@ impl GhaTool for WebSearchDownloadTool {
         let out = Command::new("curl").args(["-sL", "-A", "Mozilla/5.0", &search_url]).output().map_err(|e| EaiError::Hardware(e.to_string()))?;
         let html = String::from_utf8_lossy(&out.stdout).to_string();
         let _ = fs::write(&save_path, &html);
-        Ok(format!("Fetched content for '{}' and saved to {}.", clean_query, filename))
+        Ok(format!("Saved results for '{}' to file:\n{}", clean_query, save_path.display()))
     }
 }
 

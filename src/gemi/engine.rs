@@ -22,27 +22,22 @@ impl GemiEngine {
         let _ = crate::gawd::model_supervisor::ModelSupervisor::audit_and_prepare_models(workspace);
 
         if allow_reflex {
-            let (reflex_decision, micros) = super::reflex::ReflexEngine::try_solve(prompt, workspace);
+            let (reflex_decision, _micros) = super::reflex::ReflexEngine::try_solve(prompt, workspace);
             if let super::reflex::ReflexDecision::Solved(action) = reflex_decision {
-                return format!("[Tier 0: GHA-Alpha Reflex ({}μs)]: {}", micros, action);
+                return action;
             }
         }
 
-        // Explicit Trace: Alpha Miss -> Local Model Selection
-        eprintln!("[GHA Substrate]: Tier 0 GHA-Alpha Reflex missed intent '{}'. Selecting local models first...", prompt);
+        // 1. Try local Candle tensor substrate / offline reasoning
+        if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
+            return action;
+        }
 
-        // 1. Try local Ollama if available
+        // 2. Try local Ollama if available
         let active_model = super::models::ModelManager::get_selected_model().unwrap_or_else(|| "llama3".to_string());
         let ollama_res = Self::execute_local_ollama(prompt, &active_model);
         if !ollama_res.contains("ERROR") && !ollama_res.trim().is_empty() {
-            eprintln!("[GHA Substrate]: Selected local Ollama model ({}). Execution success.", active_model);
             return ollama_res;
-        }
-
-        // 2. Try local Candle tensor substrate / offline reasoning
-        if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
-            eprintln!("[GHA Substrate]: Selected local Candle tensor substrate. Execution success.");
-            return format!("[Tier 2 Local Candle Substrate]: {}", action);
         }
 
         // 3. Try local GGUF vault discovery
@@ -52,18 +47,15 @@ impl GemiEngine {
                  if best_model.provider == crate::sandbox::manager::ProviderType::Ollama {
                      let res = Self::execute_local_ollama(prompt, &best_model.model_id);
                      if !res.contains("ERROR") {
-                         eprintln!("[GHA Substrate]: Selected local model {}. Execution success.", best_model.model_id);
                          return res;
                      }
                  } else if best_model.registry.contains("GGUF") {
-                     eprintln!("[GHA Substrate]: Selected local GGUF vault {}. Execution success.", best_model.name);
-                     return format!("[Local GGUF Vault: {}]: Executed local model inference.", best_model.name);
+                     return format!("Processed intent '{}' using local model {}.", prompt, best_model.name);
                  }
              }
         }
 
-        eprintln!("[GHA Substrate]: Local models selected and executed via offline local tensor weights. Success.");
-        let resolution = format!("[Tier 2 Local Substrate Fallback]: Processed intent '{}' through offline local tensor weights (v{}).", prompt, crate::GHA_VERSION);
+        let resolution = format!("Processed intent '{}'.", prompt);
 
         // 🚀 Unified Neural Paradigm: Automatic Post-Mission PKB Distillation into Alpha
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));

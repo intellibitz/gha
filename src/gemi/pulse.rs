@@ -46,7 +46,7 @@ impl GhaPulse {
         // Evolution engine will now distill specific tools for these intents.
 
         // Model Downloading: "pull model [NAME]" or "install model [NAME]"
-        if lower.contains("model") && (lower.contains("pull") || lower.contains("install") || lower.contains("download")) {
+        if lower.contains("model") && (lower.contains("pull") || lower.contains("install")) {
             let model_name = if let Some(pos) = lower.find("model ") {
                 clean_prompt[pos + 6..].trim().trim_end_matches('.').to_string()
             } else {
@@ -57,12 +57,22 @@ impl GhaPulse {
             }
         }
 
-        // 🌀 Rule 18: Autonomous URL Context Retrieval
-        if lower.contains("http://") || lower.contains("https://") {
-             let url = words.iter().find(|w| w.starts_with("http")).unwrap_or(&"");
-             if !url.is_empty() {
-                 return Ok(format!("ACTION: web_search_download {}", url));
-             }
+        // Fetch / Download / Web Search / URL Retrieval
+        if lower.contains("fetch") || lower.contains("download") || lower.contains("search") || lower.contains("http://") || lower.contains("https://") {
+            let query = if lower.contains("http://") || lower.contains("https://") {
+                words.iter().find(|w| w.starts_with("http")).map(|s| s.to_string()).unwrap_or_default()
+            } else if let Some(pos) = lower.find("download ") {
+                clean_prompt[pos + 9..].trim().to_string()
+            } else if let Some(pos) = lower.find("fetch ") {
+                clean_prompt[pos + 6..].trim().to_string()
+            } else if let Some(pos) = lower.find("search ") {
+                clean_prompt[pos + 7..].trim().to_string()
+            } else {
+                clean_prompt.clone()
+            };
+            if !query.is_empty() && !query.contains("list") {
+                return Ok(format!("ACTION: web_search_download {}", query));
+            }
         }
 
         // 2. Precise Keyword Mapping (High-Speed Reflex)
