@@ -89,15 +89,21 @@ impl GmaMasterAgent {
             let clean_intent = goal.replace(|c: char| !c.is_alphanumeric() && c != ' ', "").replace(' ', "_").to_lowercase();
             if ToolRegistry::exists(&clean_intent) {
                 // Execute existing synthesized reflex
-                let mut report = String::new();
-                report.push_str("# gha Native Reflex Execution\n\n");
-                report.push_str(&format!("- **Intent**: \"{}\"\n", goal));
-                report.push_str(&format!("- **Reflex**: {}\n\n", clean_intent));
                 let res = ToolRegistry::execute_tool(&clean_intent, arg, workspace);
-                report.push_str("## Output\n");
-                report.push_str(&format!("   └── {}\n", res));
-                report.push_str("\n## Validation\n └── Verified by Tier 0 Substrate.\n");
-                return report;
+
+                if !res.to_lowercase().contains("error") && !res.to_lowercase().contains("failed") && !res.contains("TRUTH VIOLATION") {
+                    let mut report = String::new();
+                    report.push_str("# gha Native Reflex Execution\n\n");
+                    report.push_str(&format!("- **Intent**: \"{}\"\n", goal));
+                    report.push_str(&format!("- **Reflex**: {}\n\n", clean_intent));
+                    report.push_str("## Output\n");
+                    report.push_str(&format!("   └── {}\n", res));
+                    report.push_str("\n## Validation\n └── Verified by Tier 0 Substrate.\n");
+                    return report;
+                } else {
+                    crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "REFLEX_FAILURE", &format!("Reflex {} failed: {}. Falling back to GEMI.", clean_intent, res));
+                    // Fall through to Swarm/GEMI orchestration
+                }
             }
 
             // If no reflex exists, attempt to distill one
@@ -147,15 +153,20 @@ impl GmaMasterAgent {
 
             let tool_res = ToolRegistry::execute_tool(actual_cmd, arg, workspace);
 
-            checkpoint.status = "COMPLETED".to_string();
-            checkpoint.completed_tools.push(actual_cmd.to_string());
-            checkpoint.blackboard.insert(format!("RESULT_{}", actual_cmd), tool_res.clone());
-            crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
+            if !tool_res.to_lowercase().contains("error") && !tool_res.to_lowercase().contains("failed") && !tool_res.contains("TRUTH VIOLATION") {
+                checkpoint.status = "COMPLETED".to_string();
+                checkpoint.completed_tools.push(actual_cmd.to_string());
+                checkpoint.blackboard.insert(format!("RESULT_{}", actual_cmd), tool_res.clone());
+                crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
 
-            report.push_str("## Output\n");
-            report.push_str(&format!("   └── [Tool: {}]: {}\n\n", actual_cmd, tool_res));
-            report.push_str("## Validation\n └── Verified.\n");
-            return report;
+                report.push_str("## Output\n");
+                report.push_str(&format!("   └── [Tool: {}]: {}\n\n", actual_cmd, tool_res));
+                report.push_str("## Validation\n └── Verified.\n");
+                return report;
+            } else {
+                crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "TOOL_FAILURE", &format!("Tool {} failed: {}. Escalating to GEMI.", actual_cmd, tool_res));
+                // Fall through to Swarm/GEMI orchestration
+            }
         }
 
         if is_orchestration || !is_reflex {

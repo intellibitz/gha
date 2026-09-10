@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::collections::HashMap;
 use crate::gmcp::tools::GhaTool;
 
-pub fn register_synthesized_reflexes(tools: &mut HashMap<String, Arc<dyn GhaTool>>) {
+pub fn register_synthesized_reflexes(_tools: &mut HashMap<String, Arc<dyn GhaTool>>) {
     // [AUTONOMOUS REGISTRATION START]
 // [AUTONOMOUS REGISTRATION END]
 }

@@ -25,7 +25,7 @@ use rustyline::hint::Hinter;
 use rustyline::validate::Validator;
 use rustyline::{Context, Helper};
 
-pub const GHA_VERSION: &str = "0.1.2022588";
+pub const GHA_VERSION: &str = "0.1.2022589";
 
 // ANSI Formatting Codes
 const COLOR_CYAN: &str = "\x1b[1;36m";
