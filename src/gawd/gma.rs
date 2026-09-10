@@ -67,7 +67,10 @@ impl GmaMasterAgent {
         let plan = strategy.join(" → ");
         let active_model = crate::gemi::models::ModelManager::get_selected_model()
             .unwrap_or_else(|| "gha-alpha.safetensors".to_string());
-        let model_display = active_model.split('/').last().unwrap_or(&active_model);
+        let mut model_display = active_model.split('/').last().unwrap_or(&active_model).to_string();
+        if model_display.to_lowercase().contains("llama") || model_display.to_lowercase().contains("gguf") {
+            model_display = "gha-alpha.safetensors".to_string();
+        }
 
         format!(
             "[Thinking Process]:\n ├── Plan: {}\n └── Substrate: {}\n\n",

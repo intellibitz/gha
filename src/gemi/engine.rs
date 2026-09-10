@@ -48,30 +48,19 @@ impl GemiEngine {
             }
         }
 
-        // 3. Try local GGUF Gemma model via llama-server
+        // 3. Try local Ollama if available
         let selected_model = super::models::ModelManager::get_selected_model();
-        if let Some(model_id) = &selected_model {
-            let model_path = PathBuf::from(model_id);
-            if model_path.is_file() {
-                if let Ok(res) = Self::execute_local_gguf(prompt, &model_path) {
-                    if !res.trim().is_empty() {
-                        return res;
-                    }
-                }
-            }
-        }
-
-        // 4. Try local Ollama if available
-        let active_model = selected_model.unwrap_or_else(|| "llama3".to_string());
+        let active_model = selected_model.unwrap_or_else(|| "gemma2".to_string());
         let ollama_res = Self::execute_local_ollama(prompt, &active_model);
         if !ollama_res.contains("ERROR") && !ollama_res.trim().is_empty() {
             return ollama_res;
         }
 
-        // 5. Fallback: Local reasoning substrate unavailable
+        // 4. Fallback: Local reasoning substrate unavailable
         "STATUS: Local reasoning substrate unavailable. Set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env or start an Ollama model server.".to_string()
     }
 
+    #[allow(dead_code)]
     pub fn find_local_llama_server() -> Option<PathBuf> {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let candidates = vec![
@@ -91,6 +80,7 @@ impl GemiEngine {
         None
     }
 
+    #[allow(dead_code)]
     pub fn execute_local_gguf(prompt: &str, model_path: &Path) -> Result<String> {
         let server_bin = Self::find_local_llama_server().ok_or_else(|| anyhow!("llama-server not found"))?;
 
