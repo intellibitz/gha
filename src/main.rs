@@ -19,7 +19,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-pub const GHA_VERSION: &str = "0.1.2022602";
+pub const GHA_VERSION: &str = "0.1.2022603";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -32,11 +32,11 @@ fn print_help() {
     println!("gha v{}", GHA_VERSION);
     println!("Usage: gha [COMMAND | INTENT]\n");
     println!("Commands:");
-    println!("  :version, -v, --version  Print version");
-    println!("  :status                  Print workspace health report");
-    println!("  :help, -h, --help        Show help");
-    println!("  :install                 Initialize sandboxed .gha environment");
-    println!("  :uninstall               Clean up sandboxed .gha environment");
+    println!("  version, -v, --version   Print version");
+    println!("  status                   Print workspace health report");
+    println!("  help, -h, --help         Show help");
+    println!("  install                  Initialize sandboxed .gha environment");
+    println!("  uninstall                Clean up sandboxed .gha environment");
     println!("  build                    Build validation");
     println!("  test                     Run test harness");
     println!("  clean                    Clean workspace build artifacts");
