@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.2022607`
+* **Current Engine Version**: `v0.1.2022608`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
 
 ## Universal Neutrality Mandate
@@ -134,7 +134,8 @@ All agents within the GHA ecosystem, including the IDE-integrated assistant (Tie
 14. **Universal Access & Mission**: `gha` is designed for **any world user** for **any mission**. It scales from high-end corporate environments to standard home hardware, enabling any user to harness exponential intelligence for their specific goals.
 15. **Indestructible Identity**: The identity of `gha` as an Intelligence Substrate for any world user is permanent. All future versions, autonomous evolutions, and distilled reflex models must strictly adhere to this core DNA. Drift is not permitted.
 16. **Clean Workspace & Testspace Sovereignty**: Maintain a clean, unpolluted workspace at all times. All testing, experimentation, and temporary scaffolding must be performed exclusively in the designated testspace (`./test/world`).
-17. **Native Evolutionary Assistant Protocol**: The agent operates as a Master Distiller for the `gha` engine. When provided with a `mission: [intent]`, the agent must delegate execution to the native `gha` binary exclusively within the designated testspace (`./test/world`) to maintain workspace purity. GHA must strictly follow all mandates defined for agents. If `gha` fails, the agent must diagnose the root cause, harden the `gha` source code natively, and re-execute in the testspace until the mission is accomplished. This protocol ensures session continuity, workspace cleanliness, and the continuous native evolution of `gha` towards full human-level capability.
+17. **Native Intent Evolutionary Protocol**: When provided with an `intent: [intent]` prefix, the agent delegates execution to the native `gha` binary exclusively within the designated testspace (`./test/world`). If `gha` encounters a failure or capability gap, the agent intervenes, diagnoses the root cause, and triggers the **Motion Rule** to natively harden and add the required functionality directly to the `gha` source code. Upon successful intent execution, `gha` distills the operational path into Tier 0 reflex weights.
+18. **Creator Aspiration Rule**: When provided with a `creator: [aspiration]` prefix, the agent focuses on future `gha` architectural capabilities and long-term vision. Unlike the **Intent Rule** (which mimics user behavior and solves immediate runtime intents), the **Creator Rule** aspires to future GHA behaviors. Both rules trigger the **Motion Rule**, advancing `gha` evolution one step forward upon successful compilation, audit, and deployment.
 
 ## 100% GPU Acceleration & Hardware Saturation
 
