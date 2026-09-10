@@ -3,8 +3,16 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.2022598`
+* **Current Engine Version**: `v0.1.2022599`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
+
+## Universal Neutrality Mandate
+
+GHA is architecturally universal and neutral. It strictly maintains:
+* **Zero Sector / Domain Bias**: Operates equitably across any human or machine domain (agronomy, medical, engineering, legal, education, creative, enterprise, etc.).
+* **Zero Vendor Bias**: Supports any model provider (OpenAI, Anthropic, Google, Groq, DeepSeek, Mistral, Ollama) without favoring or locking into any single commercial vendor.
+* **Zero Platform Bias**: 100% platform-independent across Linux, macOS, Windows, WSL, and mobile architectures.
+* **Zero Specific Model Bias**: Supports cloud inference, local GGUF vaults, safetensors, and native Candle tensor engines dynamically based on hardware capability and user intent.
 
 ## Unified System Identity
 
