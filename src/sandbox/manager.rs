@@ -19,7 +19,7 @@ pub enum ProviderType {
     OpenAI,
     Google,
     Anthropic,
-    Ollama,
+    NativeCandle,
     LocalGGUF,
 }
 
@@ -112,9 +112,9 @@ impl Default for GhaConfig {
                     env_key: Some("ANTHROPIC_API_KEY".to_string()),
                 },
                 ModelInfo {
-                    name: "Groq Llama 3 70B".to_string(),
+                    name: "Groq Gemma 2 9B".to_string(),
                     registry: "GHA Tier 2 Registry".to_string(),
-                    model_id: "groq/llama3-70b-8192".to_string(),
+                    model_id: "groq/gemma2-9b-it".to_string(),
                     description: "Ultra-low latency cloud reasoning".to_string(),
                     is_local: false,
                     tier: ModelTier::Specialist,

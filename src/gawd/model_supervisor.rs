@@ -50,7 +50,7 @@ impl ModelSupervisor {
 
         let mut valid_local_found = false;
         for v in &verifications {
-            if v.is_valid_gguf || v.model_id.contains("native") || v.model_id.contains("ollama") {
+            if v.is_valid_gguf || v.model_id.contains("native") {
                 valid_local_found = true;
                 report.push_str(&format!(" [VERIFIED] Local model ready: {} (Size: {}, Status: {})\n", v.model_id, v.file_size_formatted, v.test_inference_status));
             }

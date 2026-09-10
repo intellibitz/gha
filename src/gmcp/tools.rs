@@ -480,9 +480,6 @@ impl GhaTool for EnginesTool {
         out.push_str("  - Tier 0 GHA-Alpha (Native Microsecond Reflex Engine)\n");
         out.push_str(&format!("  - Tier 0 Candle Tensor Engine (Safetensors Weights: {})\n", if has_weights { "LOADED" } else { "AUTONOMOUS INITIALIZED" }));
         out.push_str(&format!("  - Hardware Acceleration: {} CPUs | {}\n", hardware.cpus, hardware.gpu_info));
-        if std::process::Command::new("ollama").arg("list").output().is_ok() {
-            out.push_str("  - Local Ollama Engine (Available for local-only missions)\n");
-        }
         Ok(out)
     }
 }

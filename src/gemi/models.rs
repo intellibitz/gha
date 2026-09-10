@@ -89,29 +89,7 @@ impl ModelManager {
             }
         }
 
-        // 3. Autonomous Scouting
-        if let Ok(o) = Command::new("ollama").arg("list").output()
-            && o.status.success()
-        {
-            let stdout = String::from_utf8_lossy(&o.stdout);
-            for line in stdout.lines().skip(1) {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if let Some(m) = parts.first() {
-                    list.push(ModelInfo {
-                        name: format!("Ollama: {}", m),
-                        registry: "Local Ollama Engine".to_string(),
-                        model_id: m.to_string(),
-                        description: "High-throughput local inference".to_string(),
-                        is_local: true,
-                        tier: ModelTier::Specialist,
-                        latency_ms: None,
-                        provider: ProviderType::Ollama,
-                        api_base: Some("http://localhost:11434".to_string()),
-                        env_key: None,
-                    });
-                }
-            }
-        }
+
 
         if list.is_empty() {
              list.push(ModelInfo {
@@ -205,7 +183,7 @@ impl ModelManager {
             }
 
             // Provider preferences
-            if m.provider == ProviderType::Ollama {
+            if m.provider == ProviderType::NativeCandle {
                 score += 15.0;
             } else if m.registry.contains("GGUF") || m.registry.contains("Vault") {
                 score += 10.0;
@@ -311,11 +289,7 @@ impl ModelManager {
                 let mut latency = 9999;
                 let mut updated = m_clone.clone();
 
-                if updated.is_local && updated.registry.contains("Ollama") {
-                    if Command::new("ollama").args(["run", &updated.model_id, "hi"]).output().is_ok() {
-                        latency = start.elapsed().as_millis();
-                    }
-                } else if updated.is_local && updated.registry.contains("GGUF") {
+                if updated.is_local && updated.registry.contains("GGUF") {
                     let path = PathBuf::from(&updated.model_id);
                     if path.is_file() {
                         let size_bytes = path.metadata().map(|meta| meta.len()).unwrap_or(0);
@@ -431,30 +405,12 @@ impl ModelManager {
         };
 
         for m in filtered_models {
-            let start = std::time::Instant::now();
+            let _start = std::time::Instant::now();
             let mut status = "SUCCESS".to_string();
             let mut tps = 0.0;
             let mut latency = 0;
 
-            if m.is_local && m.provider == ProviderType::Ollama {
-                // Run a simple prompt and measure time
-                let output = Command::new("ollama")
-                    .args(["run", &m.model_id, "hi"])
-                    .output();
-
-                match output {
-                    Ok(out) if out.status.success() => {
-                        latency = start.elapsed().as_millis();
-                        let text = String::from_utf8_lossy(&out.stdout);
-                        let tokens = text.split_whitespace().count().max(1);
-                        tps = (tokens as f32 / (latency as f32 / 1000.0)).max(0.0);
-                    }
-                    _ => {
-                        status = "FAILED (Ollama execution error)".to_string();
-                        latency = start.elapsed().as_millis();
-                    }
-                }
-            } else if m.is_local && m.provider == ProviderType::LocalGGUF {
+            if m.is_local && m.provider == ProviderType::LocalGGUF {
                  if m.model_id.contains("native") {
                      latency = 1;
                      tps = 1000.0;
@@ -846,7 +802,7 @@ impl ModelManager {
     #[allow(dead_code)]
     pub fn auto_provision_model_for_intent(goal: &str, workspace: &Path) -> Option<String> {
         let existing = Self::list_models(workspace);
-        if existing.iter().any(|m| m.is_local && (m.registry.contains("GGUF") || m.registry.contains("Ollama"))) {
+        if existing.iter().any(|m| m.is_local && m.registry.contains("GGUF")) {
             return None;
         }
 

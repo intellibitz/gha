@@ -85,10 +85,6 @@ impl GmaMasterAgent {
             "gha-alpha.safetensors (Local Neural Reflex)".to_string()
         } else if combined.contains("Candle") || combined.contains("Local Candle Substrate") {
             "local-candle-tensor-substrate".to_string()
-        } else if combined.contains("Ollama") {
-            "local-ollama-model".to_string()
-        } else if combined.contains("GGUF") {
-            "local-gguf-vault".to_string()
         } else {
             crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "gha-alpha.safetensors".to_string())
         }
@@ -495,7 +491,7 @@ impl GmaMasterAgent {
             } else {
                 let _ = fs::write(&save_path, &clean_fetched);
                 let preview: String = clean_fetched.lines().take(15).collect::<Vec<_>>().join("\n");
-                return format!("Fetched and saved content to [{}]\n\nContent Preview:\n{}\n\nNote: To generate full AI translations or summaries, set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env or start llama-server / Ollama model server.", save_path.display(), preview);
+                return format!("Fetched and saved content to [{}]\n\nContent Preview:\n{}\n\nNote: To generate full AI translations or summaries, set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env.", save_path.display(), preview);
             }
         }
 

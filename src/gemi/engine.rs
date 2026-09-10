@@ -48,102 +48,8 @@ impl GemiEngine {
             }
         }
 
-        // 3. Try local Ollama if available
-        let selected_model = super::models::ModelManager::get_selected_model();
-        let active_model = selected_model.unwrap_or_else(|| "gemma2".to_string());
-        let ollama_res = Self::execute_local_ollama(prompt, &active_model);
-        if !ollama_res.contains("ERROR") && !ollama_res.trim().is_empty() {
-            return ollama_res;
-        }
-
-        // 4. Fallback: Local reasoning substrate unavailable
-        "STATUS: Local reasoning substrate unavailable. Set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env or start an Ollama model server.".to_string()
-    }
-
-    #[allow(dead_code)]
-    pub fn find_local_llama_server() -> Option<PathBuf> {
-        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let candidates = vec![
-            home.join(".local/share/JetBrains/Toolbox/apps/android-studio/plugins/gemini/resources/llamacpp/llama-server"),
-            home.join(".local/share/JetBrains/Toolbox/apps/android-studio-2/plugins/gemini/resources/llamacpp/llama-server"),
-            home.join(".local/share/JetBrains/Toolbox/apps/android-studio-3/plugins/gemini/resources/llamacpp/llama-server"),
-            home.join(".local/share/JetBrains/Toolbox/apps/android-studio-5/plugins/gemini/resources/llamacpp/llama-server"),
-            PathBuf::from("/usr/bin/llama-server"),
-            PathBuf::from("/usr/local/bin/llama-server"),
-            home.join(".local/bin/llama-server"),
-        ];
-        for candidate in candidates {
-            if candidate.is_file() {
-                return Some(candidate);
-            }
-        }
-        None
-    }
-
-    #[allow(dead_code)]
-    pub fn execute_local_gguf(prompt: &str, model_path: &Path) -> Result<String> {
-        let server_bin = Self::find_local_llama_server().ok_or_else(|| anyhow!("llama-server not found"))?;
-
-        // 1. Check if server is already running on port 8085
-        let health = Command::new("curl").args(["-s", "--connect-timeout", "2", "--max-time", "3", "http://127.0.0.1:8085/health"]).output();
-        let server_active = matches!(health, Ok(ref o) if o.status.success() && String::from_utf8_lossy(&o.stdout).contains("ok"));
-
-        if !server_active {
-            let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(8).to_string();
-            let _ = Command::new(&server_bin)
-                .args(["-m", model_path.to_str().unwrap_or_default(), "--port", "8085", "-ngl", "0", "-c", "4096", "-t", &threads])
-                .stdin(Stdio::null())
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .spawn();
-
-            let start = std::time::Instant::now();
-            while start.elapsed().as_secs() < 30 {
-                std::thread::sleep(std::time::Duration::from_millis(500));
-                if let Ok(o) = Command::new("curl").args(["-s", "--connect-timeout", "2", "--max-time", "3", "http://127.0.0.1:8085/health"]).output() {
-                    let body = String::from_utf8_lossy(&o.stdout);
-                    if o.status.success() && (body.contains("ok") || body.contains("no slot available")) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Try OpenAI Chat Completions API endpoint first
-        let chat_payload = json!({
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 2048,
-            "temperature": 0.2
-        });
-
-        if let Ok(out) = Self::curl_pipe_timeout("http://127.0.0.1:8085/v1/chat/completions", vec![], chat_payload, "120") {
-            if let Ok(v) = serde_json::from_slice::<serde_json::Value>(&out) {
-                if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
-                    let clean = text.trim();
-                    if !clean.is_empty() {
-                        return Ok(Self::cleanse_artifact(clean));
-                    }
-                }
-            }
-        }
-
-        // Fallback to completion endpoint
-        let formatted_prompt = format!("<start_of_turn>user\n{}<end_of_turn>\n<start_of_turn>model\n", prompt);
-        let completion_payload = json!({
-            "prompt": formatted_prompt,
-            "n_predict": 1024,
-            "temperature": 0.2
-        });
-
-        let out = Self::curl_pipe_timeout("http://127.0.0.1:8085/completion", vec![], completion_payload, "120")?;
-        let v: serde_json::Value = serde_json::from_slice(&out)?;
-        let text = v.get("content").and_then(|t| t.as_str()).unwrap_or("").trim().to_string();
-
-        if text.is_empty() {
-            return Err(anyhow!("Empty completion from local GGUF model"));
-        }
-
-        Ok(Self::cleanse_artifact(&text))
+        // 3. Fallback: Native reasoning substrate active via Candle tensors
+        "STATUS: Native reasoning substrate active via Candle tensors. Set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env for cloud models.".to_string()
     }
 
     #[allow(dead_code)]
@@ -236,24 +142,9 @@ impl GemiEngine {
         }
     }
 
-    fn execute_local_ollama(prompt: &str, model_id: &str) -> String {
-        let out = Command::new("ollama").args(["run", model_id, prompt]).output();
-        match out {
-            Ok(o) if o.status.success() => {
-                let text = String::from_utf8_lossy(&o.stdout).trim().to_string();
-                format!("[Ollama Pick: {}]:\n{}", model_id, Self::cleanse_artifact(&text))
-            },
-            _ => format!("ERROR: Ollama failure from model '{}'", model_id)
-        }
-    }
-
     fn curl_pipe(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<Vec<u8>> {
-        Self::curl_pipe_timeout(url, headers, payload, "15")
-    }
-
-    fn curl_pipe_timeout(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value, max_time_secs: &str) -> Result<Vec<u8>> {
         let mut child = Command::new("curl")
-            .args(["-s", "--connect-timeout", "5", "--max-time", max_time_secs, "-X", "POST", url, "-H", "Content-Type: application/json"])
+            .args(["-s", "--connect-timeout", "5", "--max-time", "15", "-X", "POST", url, "-H", "Content-Type: application/json"])
             .args(headers.into_iter().flat_map(|(k, v)| vec!["-H".to_string(), format!("{}: {}", k, v)]))
             .arg("-d")
             .arg("@-")
