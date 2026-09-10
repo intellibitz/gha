@@ -58,32 +58,26 @@ impl PkbSynthesizer {
             payload: "Governance protocols active.".to_string(),
         });
 
-        match intent {
-            "version" => {
-                logs.push(A2AMessage {
-                    sender: "GhaReasoningAgent".to_string(),
-                    recipient: "GMA".to_string(),
-                    action: "MISSION_FLUX".to_string(),
-                    payload: "[Native Synthesis]: ACTION: version".to_string(),
-                });
-                tool_calls.push("version".to_string());
-            }
-            _ => {
-                logs.push(A2AMessage {
-                    sender: "GhaContextAgent".to_string(),
-                    recipient: "GMA".to_string(),
-                    action: "MISSION_FLUX".to_string(),
-                    payload: format!("Contextualizing mission for '{}' in {}", intent, workspace.display()),
-                });
-                logs.push(A2AMessage {
-                    sender: "GhaReasoningAgent".to_string(),
-                    recipient: "GMA".to_string(),
-                    action: "MISSION_FLUX".to_string(),
-                    payload: "[Native Synthesis]: ACTION: status".to_string(),
-                });
-                tool_calls.push("status".to_string());
-            }
-        }
+        let action = crate::gemi::pulse::GhaPulse::reason(intent, workspace).unwrap_or_else(|_| "ACTION: status".to_string());
+        let clean_action = if action.contains("ACTION: ") {
+            action.split("ACTION: ").nth(1).unwrap_or("status").to_string()
+        } else {
+            action
+        };
+
+        logs.push(A2AMessage {
+            sender: "GhaContextAgent".to_string(),
+            recipient: "GMA".to_string(),
+            action: "MISSION_FLUX".to_string(),
+            payload: format!("Contextualizing mission for '{}' in {}", intent, workspace.display()),
+        });
+        logs.push(A2AMessage {
+            sender: "GhaReasoningAgent".to_string(),
+            recipient: "GMA".to_string(),
+            action: "MISSION_FLUX".to_string(),
+            payload: format!("[Native Synthesis]: ACTION: {}", clean_action),
+        });
+        tool_calls.push(clean_action.split_whitespace().next().unwrap_or("status").to_string());
 
         PkbTrainingEntry {
             instruction: intent.to_string(),
