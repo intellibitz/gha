@@ -219,7 +219,7 @@ impl GmaMasterAgent {
         let hardware = HardwareProfiler::get_profile();
         let trim_goal = goal.trim();
 
-        let (mut cmd, arg) = trim_goal.split_once(' ').unwrap_or((trim_goal, ""));
+        let (cmd, arg) = trim_goal.split_once(' ').unwrap_or((trim_goal, ""));
 
         let is_direct_tool = ToolRegistry::exists(cmd) || cmd == "models";
         let is_orchestration = goal.contains("orchestrate") || goal.contains("mission");

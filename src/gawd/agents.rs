@@ -95,6 +95,7 @@ impl GawdAgent for GhaUserAgent {
 }
 
 impl GhaUserAgent {
+    #[allow(dead_code)]
     pub fn generate_proactive_prompts(workspace: &Path) -> Vec<(String, String)> {
         let mut prompts = Vec::new();
         let is_dev = workspace.join("Cargo.toml").exists() || workspace.join(".git").exists();
@@ -110,20 +111,16 @@ impl GhaUserAgent {
         prompts
     }
 
-    pub fn detect_domain_badge(goal: &str) -> (&'static str, &'static str) {
-        let lower = goal.to_lowercase();
-        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") { ("Agronomy", "Agricultural & Crop Intelligence") }
-        else if lower.contains("health") || lower.contains("medical") { ("Medical", "Clinical & Health Intelligence") }
-        else if lower.contains("legal") || lower.contains("law") { ("Legal", "Legal & Regulatory Compliance") }
-        else if lower.contains("education") || lower.contains("math") || lower.contains("school") { ("Education", "Pedagogical & Science Learning") }
-        else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") { ("Energy", "Renewable Energy & Climate Science") }
-        else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") { ("Skilled Trades", "Field Engineering & Building Codes") }
-        else if lower.contains("story") || lower.contains("script") || lower.contains("video") { ("Creative & Media", "Content & Visual Storytelling") }
-        else if lower.contains("recipe") || lower.contains("cook") || lower.contains("home") { ("Home & Family", "Household, Budget & Family Life") }
-        else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") { ("Public Safety", "Emergency Response & Infrastructure") }
-        else if lower.contains("ceo") || lower.contains("product") || lower.contains("business") { ("Enterprise", "Business & Corporate Operations") }
-        else if lower.contains("code") || lower.contains("build") || lower.contains("rust") || lower.contains("api") { ("Engineering", "Software & Systems Architecture") }
-        else { ("Universal", "Intelligence Reflex & Execution Substrate") }
+    pub fn detect_domain_badge(goal: &str) -> (String, String) {
+        let prompt = format!("Analyze the domain of this intent: '{}'. Respond strictly in this format: BadgeName|BadgeDescription", goal);
+        let ws = std::path::PathBuf::from(".");
+        if let Ok(res) = crate::gemi::pulse::GhaPulse::reason(&prompt, &ws) {
+            let parts: Vec<&str> = res.split('|').collect();
+            if parts.len() == 2 {
+                return (parts[0].trim().to_string(), parts[1].trim().to_string());
+            }
+        }
+        ("Universal".to_string(), "Intelligence Reflex & Execution Substrate".to_string())
     }
 }
 
@@ -244,38 +241,14 @@ impl GawdAgentFleet {
     }
 
     pub fn get_domain_context_guideline(goal: &str) -> String {
-        let lower = goal.to_lowercase();
-        if lower.contains("farm") || lower.contains("crop") || lower.contains("soil") || lower.contains("agri") {
-            "[DOMAIN CONTEXT: Agronomy & Crop Science — Focus on soil pH, N-P-K nutrient ratios, crop yield, and sustainable soil management]".to_string()
-        } else if lower.contains("health") || lower.contains("doctor") || lower.contains("medical") || lower.contains("medicine") || lower.contains("clinic") || lower.contains("patient") || lower.contains("fever") {
-            "[DOMAIN CONTEXT: Medical & Clinical Guidance — Focus on evidence-based health information, patient-friendly explanations, and safety disclaimers]".to_string()
-        } else if lower.contains("legal") || lower.contains("contract") || lower.contains("law") || lower.contains("clause") || lower.contains("court") {
-            "[DOMAIN CONTEXT: Legal & Regulatory Analysis — Focus on contract terms, risk obligations, compliance, and clear layperson summaries]".to_string()
-        } else if lower.contains("education") || lower.contains("math") || lower.contains("teach") || lower.contains("school") || lower.contains("learn") || lower.contains("homework") {
-            "[DOMAIN CONTEXT: Education & Pedagogy — Focus on step-by-step conceptual explanations, examples, and clear learning progressions]".to_string()
-        } else if lower.contains("energy") || lower.contains("solar") || lower.contains("climate") || lower.contains("battery") || lower.contains("grid") || lower.contains("wattage") {
-            "[DOMAIN CONTEXT: Renewable Energy & Climate — Focus on solar potential, grid-scale storage, wattage optimization, and climate impact]".to_string()
-        } else if lower.contains("cyber") || lower.contains("security") || lower.contains("hack") || lower.contains("exploit") || lower.contains("firewall") || lower.contains("zero-day") {
-            "[DOMAIN CONTEXT: Cybersecurity & Active Defense — Focus on zero-day detection, DDoS mitigation, firewall hardening, and swarm-based defense]".to_string()
-        } else if lower.contains("quantum") || lower.contains("qubit") || lower.contains("entanglement") || lower.contains("quantum computer") {
-            "[DOMAIN CONTEXT: Quantum Computing & Simulation — Focus on qubit error correction, entanglement simulation, and quantum algorithm design]".to_string()
-        } else if lower.contains("space") || lower.contains("orbit") || lower.contains("rocket") || lower.contains("lunar") || lower.contains("martian") || lower.contains("aerospace") {
-            "[DOMAIN CONTEXT: Aerospace & Orbital Mechanics — Focus on trajectory calculations, lunar/martian orbital missions, and aerospace engineering]".to_string()
-        } else if lower.contains("logistics") || lower.contains("supply chain") || lower.contains("warehouse") || lower.contains("delivery") || lower.contains("route") {
-            "[DOMAIN CONTEXT: Global Logistics & Supply Chain — Focus on cluster-scale route optimization, inventory management, and supply chain resilience]".to_string()
-        } else if lower.contains("plumb") || lower.contains("pipe") || lower.contains("electric") || lower.contains("hvac") || lower.contains("wire") {
-            "[DOMAIN CONTEXT: Skilled Trades & Field Services — Focus on building codes (NEC/UPC/IMC), safety compliance, diagnostic steps, and cost estimation]".to_string()
-        } else if lower.contains("recipe") || lower.contains("cook") || lower.contains("dinner") || lower.contains("family") || lower.contains("mom") || lower.contains("diy") {
-            "[DOMAIN CONTEXT: Home & Family Operations — Focus on quick preparation preparation steps, budget management, safety, and clear household guidance]".to_string()
-        } else if lower.contains("story") || lower.contains("script") || lower.contains("video") || lower.contains("design") || lower.contains("music") {
-            "[DOMAIN CONTEXT: Creative & Media Synthesis — Focus on narrative arcs, audience engagement, visual layout, and content branding]".to_string()
-        } else if lower.contains("fire") || lower.contains("police") || lower.contains("emergency") || lower.contains("disaster") || lower.contains("safety") {
-            "[DOMAIN CONTEXT: Public Safety & Emergency Response — Focus on emergency triage protocols, safety compliance, and crisis coordination]".to_string()
-        } else if lower.contains("ceo") || lower.contains("product") || lower.contains("agile") || lower.contains("business") || lower.contains("corporate") {
-            "[DOMAIN CONTEXT: Enterprise & Corporate Strategy — Focus on ROI, product roadmaps, operational efficiency, and executive summaries]".to_string()
-        } else {
-            String::new()
+        let prompt = format!("Generate a brief domain context guideline for this intent: '{}'. Respond with strictly the guideline text inside [DOMAIN CONTEXT: ...]", goal);
+        let ws = std::path::PathBuf::from(".");
+        if let Ok(res) = crate::gemi::pulse::GhaPulse::reason(&prompt, &ws) {
+            if res.starts_with("[DOMAIN") {
+                return res.trim().to_string();
+            }
         }
+        String::new()
     }
 
     pub fn dispatch_explosive_swarm(goal: String, workspace: PathBuf) -> Vec<(String, String)> {

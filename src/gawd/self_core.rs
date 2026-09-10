@@ -51,6 +51,7 @@ impl AlphaSelf {
         GhaComponentSpec { name: "GmaDaemon", tier: GhaCoreTier::Tier1Swarm, description: "Persistent background host ensuring permanent availability and instant background recovery." },
     ];
 
+    #[allow(dead_code)]
     pub fn inspect_compiled_binary_instructions() -> String {
         format!(
             "GHA Alpha-Self Compiled Binary Instructions:\n- Version: {}\n- Paradigm: {}\n- Hardcoded Axiom Rules: {}\n- Baked Component Substrates: {}",

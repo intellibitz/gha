@@ -7,6 +7,7 @@ use crate::gemi::hardware::HardwareProfiler;
 use crate::sandbox::manager::GhaConfig;
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct AlphaBrainContext {
     pub self_version: &'static str,
     pub system_cpus: usize,
@@ -39,6 +40,7 @@ impl AlphaBrainContext {
         }
     }
 
+    #[allow(dead_code)]
     pub fn inspect_tri_state(&self) -> String {
         format!(
             "GHA Alpha Brain Tri-State Awareness:\n\

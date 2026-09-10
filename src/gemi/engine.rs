@@ -74,6 +74,7 @@ impl GemiEngine {
         resolution
     }
 
+    #[allow(dead_code)]
     fn scout_tier2_providers(prompt: &str, _workspace: &Path) -> (Option<String>, Vec<String>) {
         use std::sync::mpsc::channel;
         use std::thread;

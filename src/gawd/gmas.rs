@@ -218,6 +218,7 @@ impl GmasSupervisor {
         format!("Synchronized state across {} nodes in parallel (checksum verified).", synced)
     }
 
+    #[allow(dead_code)]
     pub fn borrow_remote_reflex(prompt: &str) -> Option<String> {
         let nodes = Self::list_cluster_nodes();
 
@@ -245,6 +246,7 @@ impl GmasSupervisor {
         }
     }
 
+    #[allow(dead_code)]
     pub fn query_cluster_checkpoints() -> Vec<NeuralCheckpoint> {
         let nodes = Self::list_cluster_nodes();
         let mut checkpoints = Vec::new();

@@ -202,6 +202,7 @@ impl SandboxManager {
         }
     }
 
+    #[allow(dead_code)]
     pub fn save_env_key(global_dir: &Path, key: &str, val: &str) -> EaiResult<String> {
         let env_file = global_dir.join("env");
         let mut lines = Vec::new();
