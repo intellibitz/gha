@@ -315,7 +315,7 @@ impl GhaMemory {
         let entry = serde_json::json!({
             "timestamp": timestamp,
             "user_intent": intent,
-            "assistant_response": response.chars().take(500).collect::<String>()
+            "assistant_response": response
         });
 
         if let Ok(line) = serde_json::to_string(&entry) {

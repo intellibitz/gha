@@ -31,14 +31,9 @@ impl PkbSynthesizer {
             if c_low.contains(tw) {
                 score += 1.0;
             }
-            // Simple character-level overlap for fuzzy matching
             for cw in &c_words {
-                 if tw.len() > 3 && cw.len() > 3 {
-                     let tw_chars: Vec<char> = tw.chars().take(4).collect();
-                     let cw_chars: Vec<char> = cw.chars().take(4).collect();
-                     if tw_chars == cw_chars {
-                         score += 0.5;
-                     }
+                 if tw.len() > 3 && cw.len() > 3 && tw == cw {
+                     score += 0.5;
                  }
             }
         }

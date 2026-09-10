@@ -513,7 +513,7 @@ impl ModelManager {
     }
 
     fn recursive_scan_model_dir(dir: &Path, discovered: &mut Vec<ModelInfo>, depth: usize) {
-        if depth > 6 { return; }
+        if depth > 12 { return; }
 
         let folder_name = dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
         if folder_name == ".git" || folder_name == "node_modules" || folder_name == "target" || folder_name == "vendor"
