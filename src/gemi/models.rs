@@ -485,6 +485,7 @@ impl ModelManager {
 
     pub fn scan_system_for_local_models(workspace: &Path) -> Vec<ModelInfo> {
         let mut discovered = Vec::new();
+        let mut visited = std::collections::HashSet::new();
         let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_default();
         let home_path = PathBuf::from(home);
 
@@ -492,18 +493,18 @@ impl ModelManager {
         let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
 
         if workspace.is_dir() {
-            Self::recursive_scan_model_dir(workspace, &mut discovered, 0);
+            Self::recursive_scan_model_dir(workspace, &mut discovered, &mut visited);
         }
 
         if home_path.is_dir() {
-            Self::recursive_scan_model_dir(&home_path, &mut discovered, 0);
+            Self::recursive_scan_model_dir(&home_path, &mut discovered, &mut visited);
         }
 
         // 🚀 Fully Flexible Local Scanning: Use custom paths from config
         for path_str in cfg.local_scan_paths {
             let p = PathBuf::from(path_str);
             if p.is_dir() {
-                Self::recursive_scan_model_dir(&p, &mut discovered, 0);
+                Self::recursive_scan_model_dir(&p, &mut discovered, &mut visited);
             }
         }
 
@@ -512,13 +513,17 @@ impl ModelManager {
         discovered
     }
 
-    fn recursive_scan_model_dir(dir: &Path, discovered: &mut Vec<ModelInfo>, depth: usize) {
-        if depth > 12 { return; }
+    fn recursive_scan_model_dir(dir: &Path, discovered: &mut Vec<ModelInfo>, visited: &mut std::collections::HashSet<PathBuf>) {
+        if let Ok(canonical) = dir.canonicalize() {
+            if !visited.insert(canonical) {
+                return; // Already visited (prevents infinite symlink loops)
+            }
+        }
 
         let folder_name = dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
         if folder_name == ".git" || folder_name == "node_modules" || folder_name == "target" || folder_name == "vendor"
             || folder_name == ".cargo" || folder_name == ".rustup" || folder_name == ".gradle" || folder_name == "proc" || folder_name == "sys"
-            || folder_name == "GLCache" || folder_name == "startupCache" || folder_name == "snapshots" || folder_name == "lint"
+            || folder_name == "GLCache" || folder_name == "startupCache" || folder_name == "lint"
         {
             return;
         }
@@ -527,7 +532,7 @@ impl ModelManager {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
-                    Self::recursive_scan_model_dir(&path, discovered, depth + 1);
+                    Self::recursive_scan_model_dir(&path, discovered, visited);
                 } else if path.is_file()
                     && let Some(ext) = path.extension().and_then(|e| e.to_str())
                 {
@@ -546,6 +551,8 @@ impl ModelManager {
                                 "Local HuggingFace Cache"
                             } else if path_str.contains("GPT4All") || path_str.contains("gpt4all") {
                                 "Local GPT4All Vault"
+                            } else if path_str.contains("ollama") {
+                                "Local Ollama Vault"
                             } else {
                                 "Local Model Vault"
                             };
