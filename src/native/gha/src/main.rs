@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-const GHA_VERSION: &str = "0.1.2022604";
+const GHA_VERSION: &str = "0.1.2022605";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -74,15 +74,16 @@ fn print_help() {
     println!("gha v{}", GHA_VERSION);
     println!("Usage: gha [COMMAND | INTENT]\n");
     println!("Commands:");
-    println!("  :version, -v, --version  Print version");
-    println!("  :status                  Print workspace health report");
-    println!("  :help, -h, --help        Show help");
-    println!("  :install                 Initialize sandboxed .gha environment");
-    println!("  :uninstall               Clean up sandboxed .gha environment");
+    println!("  version, -v, --version   Print version");
+    println!("  status                   Print workspace health report");
+    println!("  help, -h, --help         Show help");
+    println!("  install                  Initialize sandboxed .gha environment");
+    println!("  uninstall                Clean up sandboxed .gha environment");
     println!("  build                    Build validation");
     println!("  test                     Run test harness");
     println!("  clean                    Clean workspace build artifacts");
     println!("  mcp                      Start native MCP server");
+    println!("  gemi                     Start GEMI REST server");
 }
 
 fn print_status(project_root: &Path, global_gha_dir: &Path, version: &str) {

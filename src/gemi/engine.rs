@@ -89,7 +89,7 @@ impl GemiEngine {
             return format!("[Tier 2 GEMI Local Substrate]: Successfully processed intent via local weights: {}", action);
         }
 
-        format!("[Tier 2 GEMI Autonomous Substrate]: Processed intent '{}' through local reflex tensor weights (v0.1.2022604).", prompt)
+        format!("[Tier 2 GEMI Autonomous Substrate]: Processed intent '{}' through local reflex tensor weights (v0.1.2022605).", prompt)
     }
 
     fn scout_tier2_providers(prompt: &str, _workspace: &Path) -> (Option<String>, Vec<String>) {
