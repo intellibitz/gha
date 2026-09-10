@@ -36,29 +36,36 @@ impl GemiEngine {
             }
         }
 
-        // 2. Try local Candle tensor substrate / pulse action parser
-        if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
-            return action;
+        let prompt_lower = prompt.to_lowercase();
+        let is_synthesis = prompt_lower.contains("fetched content:")
+            || prompt_lower.contains("user intent:")
+            || prompt_lower.contains("please fulfill");
+
+        // 2. Try pulse action parser (for tools/actions, skipping synthesis prompts)
+        if !is_synthesis {
+            if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
+                return action;
+            }
         }
 
-        // 3. Try local Ollama if available
-        let active_model = super::models::ModelManager::get_selected_model().unwrap_or_else(|| "llama3".to_string());
+        // 3. Try local GGUF Gemma model via llama-server
+        let selected_model = super::models::ModelManager::get_selected_model();
+        if let Some(model_id) = &selected_model {
+            let model_path = PathBuf::from(model_id);
+            if model_path.is_file() {
+                if let Ok(res) = Self::execute_local_gguf(prompt, &model_path) {
+                    if !res.trim().is_empty() {
+                        return res;
+                    }
+                }
+            }
+        }
+
+        // 4. Try local Ollama if available
+        let active_model = selected_model.unwrap_or_else(|| "llama3".to_string());
         let ollama_res = Self::execute_local_ollama(prompt, &active_model);
         if !ollama_res.contains("ERROR") && !ollama_res.trim().is_empty() {
             return ollama_res;
-        }
-
-        // 4. Try local GGUF vault discovery
-        let models = super::models::ModelManager::scout_and_benchmark(workspace);
-        for best_model in models {
-             if best_model.is_local {
-                 if best_model.provider == crate::sandbox::manager::ProviderType::Ollama {
-                     let res = Self::execute_local_ollama(prompt, &best_model.model_id);
-                     if !res.contains("ERROR") {
-                         return res;
-                     }
-                 }
-             }
         }
 
         // 5. Fallback: Check if download_content.txt or an output file exists in workspace
@@ -71,6 +78,70 @@ impl GemiEngine {
         }
 
         format!("Executed intent for: \"{}\"", prompt)
+    }
+
+    pub fn find_local_llama_server() -> Option<PathBuf> {
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let candidates = vec![
+            home.join(".local/share/JetBrains/Toolbox/apps/android-studio/plugins/gemini/resources/llamacpp/llama-server"),
+            home.join(".local/share/JetBrains/Toolbox/apps/android-studio-2/plugins/gemini/resources/llamacpp/llama-server"),
+            home.join(".local/share/JetBrains/Toolbox/apps/android-studio-3/plugins/gemini/resources/llamacpp/llama-server"),
+            home.join(".local/share/JetBrains/Toolbox/apps/android-studio-5/plugins/gemini/resources/llamacpp/llama-server"),
+            PathBuf::from("/usr/bin/llama-server"),
+            PathBuf::from("/usr/local/bin/llama-server"),
+            home.join(".local/bin/llama-server"),
+        ];
+        for candidate in candidates {
+            if candidate.is_file() {
+                return Some(candidate);
+            }
+        }
+        None
+    }
+
+    pub fn execute_local_gguf(prompt: &str, model_path: &Path) -> Result<String> {
+        let server_bin = Self::find_local_llama_server().ok_or_else(|| anyhow!("llama-server not found"))?;
+
+        // 1. Check if server is already running on port 8085
+        let health = Command::new("curl").args(["-s", "http://127.0.0.1:8085/health"]).output();
+        let server_active = matches!(health, Ok(ref o) if o.status.success() && String::from_utf8_lossy(&o.stdout).contains("ok"));
+
+        if !server_active {
+            let _ = Command::new(&server_bin)
+                .args(["-m", model_path.to_str().unwrap_or_default(), "--port", "8085", "-ngl", "0", "-c", "2048"])
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn();
+
+            let start = std::time::Instant::now();
+            while start.elapsed().as_secs() < 30 {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                if let Ok(o) = Command::new("curl").args(["-s", "http://127.0.0.1:8085/health"]).output() {
+                    let body = String::from_utf8_lossy(&o.stdout);
+                    if o.status.success() && (body.contains("ok") || body.contains("no slot available")) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        let formatted_prompt = format!("<bos>User: {}\nAssistant:", prompt);
+        let payload = json!({
+            "prompt": formatted_prompt,
+            "n_predict": 512,
+            "temperature": 0.2
+        });
+
+        let out = Self::curl_pipe("http://127.0.0.1:8085/completion", vec![], payload)?;
+        let v: serde_json::Value = serde_json::from_slice(&out)?;
+        let text = v.get("content").and_then(|t| t.as_str()).unwrap_or("").trim().to_string();
+
+        if text.is_empty() {
+            return Err(anyhow!("Empty completion from local GGUF model"));
+        }
+
+        Ok(Self::cleanse_artifact(&text))
     }
 
     #[allow(dead_code)]

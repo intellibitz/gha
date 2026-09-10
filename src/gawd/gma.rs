@@ -457,17 +457,32 @@ impl GmaMasterAgent {
             || lower_goal.contains("explain");
 
         if needs_synthesis && !results.is_empty() {
-            let tool_output = results.join("\n");
+            let mut clean_fetched = String::new();
+            let download_file = workspace.join("download_content.txt");
+            if download_file.is_file() {
+                if let Ok(c) = fs::read_to_string(&download_file) {
+                    clean_fetched = c;
+                }
+            }
+            if clean_fetched.trim().is_empty() {
+                clean_fetched = results.join("\n");
+            }
+
             let synthesis_prompt = format!(
-                "User Intent: {}\n\nFetched Content:\n{}\n\nPlease fulfill the user intent completely (including any requested translation, summary, or explanation) in clear, high-quality text.",
-                goal, tool_output
+                "Goal: {}\n\nContent:\n{}\n\nProvide the complete response (e.g. translation or summary) in clean text.",
+                goal, clean_fetched
             );
             let model_response = crate::gemi::engine::GemiEngine::generate_reasoning(&synthesis_prompt, workspace);
+            let clean_model_resp = model_response.lines()
+                .filter(|l| !l.starts_with("ACTION:") && !l.contains("Fetched Content:") && !l.contains("Saved results"))
+                .collect::<Vec<_>>()
+                .join("\n");
+
             let save_path = workspace.join("download_content.txt");
 
-            if !model_response.trim().is_empty() && !model_response.contains("Executed intent for") && !model_response.contains("Processed intent") {
-                let _ = fs::write(&save_path, &model_response);
-                return format!("Here is the result [Saved to: {}]:\n\n{}", save_path.display(), model_response.trim());
+            if !clean_model_resp.trim().is_empty() && !clean_model_resp.contains("Executed intent for") && !clean_model_resp.contains("Processed intent") {
+                let _ = fs::write(&save_path, &clean_model_resp);
+                return format!("Here is the result [Saved to: {}]:\n\n{}", save_path.display(), clean_model_resp.trim());
             } else {
                 return format!("Saved fetched content to file:\n{}\n\nNote: To generate full AI translations or summaries, set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env or start an Ollama model server.", save_path.display());
             }

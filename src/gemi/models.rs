@@ -299,6 +299,7 @@ impl ModelManager {
         (engine, model)
     }
 
+    #[allow(dead_code)]
     pub fn scout_and_benchmark(workspace: &Path) -> Vec<ModelInfo> {
         let models = Self::list_models(workspace);
         let mut handles = Vec::new();
