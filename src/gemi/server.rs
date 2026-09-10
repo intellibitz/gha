@@ -1,5 +1,5 @@
-// GEMI REST Server: OpenAI-Compatible Streaming & Non-Streaming REST Server
-// 100% Rust implementation supporting text/event-stream SSE for Android Studio / IDEs
+// GEMI REST Server: GHA Unified Native REST Server Interface
+// 100% Rust implementation supporting text/event-stream SSE for IDE Substrates
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
@@ -27,7 +27,7 @@ impl GemiServer {
             }
         };
 
-        eprintln!("[GEMI Server] Unique OpenAI-Compatible REST Server active at http://{}/v1", addr);
+        eprintln!("[GEMI Server] GHA Unified Native REST Server active at http://{}/v1", addr);
 
         for stream in listener.incoming().flatten() {
             let workspace = workspace.clone();

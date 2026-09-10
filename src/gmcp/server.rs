@@ -11,7 +11,7 @@ use serde_json::json;
 pub struct GmcpServer;
 
 impl GmcpServer {
-    /// 🚀 Run MCP server over stdio (Standard for Claude Desktop/Cursor)
+    /// 🚀 Run MCP server over stdio (Standard for GHA MCP Clients & IDE Substrates)
     pub fn run_stdio(workspace: &Path, version: &str) {
         eprintln!("🔌 [GMCP Server] Started (Listening on stdio).");
         let stdin = io::stdin();

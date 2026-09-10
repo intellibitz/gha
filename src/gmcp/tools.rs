@@ -518,7 +518,7 @@ impl GhaTool for ServersTool {
         }
         let ports = vec![
             (cfg.gmcp_port, "GMCP JSON-RPC TCP Server"),
-            (cfg.gemi_port, "GEMI OpenAI-Compatible REST Server")
+            (cfg.gemi_port, "GEMI Unified Native REST Server")
         ];
         for (port, name) in ports {
             let active = TcpStream::connect_timeout(&format!("127.0.0.1:{}", port).parse().unwrap(), Duration::from_millis(50)).is_ok();

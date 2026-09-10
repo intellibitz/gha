@@ -1,8 +1,8 @@
 [package]
 name = "gha"
-version = "0.1.2022659"
+version = "0.1.2022660"
 edition = "2024"
-authors = ["IntelliBitz", "Muthu Ramadoss", "Gemini (Google AI)"]
+authors = ["IntelliBitz", "Muthu Ramadoss", "GHA EAI Core"]
 description = "gha: EAI: Exponential Intelligence for Any AI. - GAWD, GEMI & GMCP Multi-Agent Engine"
 license = "Apache-2.0"
 

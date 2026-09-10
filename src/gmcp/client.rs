@@ -222,9 +222,9 @@ impl GmcpClient {
         vec![
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 3: GMCP (Capabilities)".to_string(),
-                name: "Claude Desktop".to_string(),
-                provider: "Anthropic".to_string(),
-                url: "https://claude.ai/download".to_string(),
+                name: "GHA Desktop Substrate".to_string(),
+                provider: "GHA".to_string(),
+                url: "https://gha.ai/download".to_string(),
             },
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 3: GMCP (Capabilities)".to_string(),

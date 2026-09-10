@@ -128,15 +128,15 @@ impl GhaPulse {
              }
         }
 
-        if lower.contains("chat gpt") || lower.contains("openai") {
+        if lower.contains("connect openai") {
             return Ok("ACTION: connect_provider openai".to_string());
         }
 
-        if lower.contains("gemini") && (lower.contains("connect") || lower.contains("use")) {
+        if lower.contains("connect gemini") {
             return Ok("ACTION: connect_provider gemini".to_string());
         }
 
-        if lower.contains("claude") || lower.contains("anthropic") {
+        if lower.contains("connect anthropic") {
             return Ok("ACTION: connect_provider anthropic".to_string());
         }
 
