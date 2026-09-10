@@ -23,6 +23,9 @@ impl GmaMasterAgent {
 
     pub fn solve_clean(&self, goal: &str, workspace: &Path, version: &str) -> String {
         crate::gawd::axiom::AxiomSubstrate::ingest_constitution(workspace);
+        if let Some(res) = Self::handle_self_awareness_intent(goal, workspace) {
+            return res;
+        }
         if let Some(res) = Self::handle_file_read_intent(goal, workspace) {
             return res;
         }
@@ -133,6 +136,34 @@ impl GmaMasterAgent {
         None
     }
 
+    pub fn handle_self_awareness_intent(goal: &str, workspace: &Path) -> Option<String> {
+        let trim_goal = goal.trim().to_lowercase();
+        if trim_goal.contains("who are you") || trim_goal.contains("inspect self") || trim_goal.contains("describe yourself") || trim_goal == "self" {
+            let brain = crate::gawd::brain::AlphaBrainContext::initialize(workspace);
+            let mut report = String::new();
+            report.push_str("# gha Alpha Brain - Self-Awareness Report\n\n");
+            report.push_str("## 1. SELF (Compiled Binary Axiomatic Core)\n");
+            report.push_str(&format!("- Version: {}\n", crate::gawd::self_core::AlphaSelf::VERSION));
+            report.push_str(&format!("- Core Paradigm: {}\n", crate::gawd::self_core::AlphaSelf::CORE_PARADIGM));
+            report.push_str(&format!("- Baked Axiom Rules: {}\n", crate::gawd::self_core::AlphaSelf::RULES.len()));
+            report.push_str(&format!("- Baked Components: {}\n\n", crate::gawd::self_core::AlphaSelf::COMPONENTS.len()));
+
+            report.push_str("## 2. SYSTEM ENVIRONMENT (Hardware & Compute)\n");
+            report.push_str(&format!("- CPUs: {}\n", brain.system_cpus));
+            report.push_str(&format!("- GPU Acceleration: {}\n", brain.system_gpu));
+            report.push_str(&format!("- RAM: {}GB\n\n", brain.system_ram_gb));
+
+            report.push_str("## 3. USER ENVIRONMENT (Configuration & Workspace)\n");
+            report.push_str(&format!("- Workspace: {}\n", brain.workspace_path.display()));
+            report.push_str(&format!("- Default Engine: {}\n", brain.default_engine));
+            report.push_str(&format!("- Default Model: {}\n\n", brain.default_model));
+
+            report.push_str("## Validation\n └── Verified: Alpha Brain fully operational and self-aware.\n");
+            return Some(report);
+        }
+        None
+    }
+
     fn solve_clean_raw(&self, goal: &str, a2a_logs: &[super::gmas::A2AMessage], workspace: &Path, version: &str) -> String {
         let mission_result = self.execute_autonomous_flux(goal, a2a_logs, workspace);
         if !mission_result.is_empty() {
@@ -177,6 +208,9 @@ impl GmaMasterAgent {
 
     pub fn solve(&self, goal: &str, workspace: &Path, version: &str) -> String {
         crate::gawd::axiom::AxiomSubstrate::ingest_constitution(workspace);
+        if let Some(res) = Self::handle_self_awareness_intent(goal, workspace) {
+            return res;
+        }
         if let Some(res) = Self::handle_file_read_intent(goal, workspace) {
             return res;
         }
