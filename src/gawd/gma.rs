@@ -258,7 +258,7 @@ impl GmaMasterAgent {
         }
 
         // 🌀 Rule 18: Autonomous Capability Mapping & Gap Detection
-        if !is_direct_tool && !is_orchestration && goal.len() > 5 && goal.len() < 100 {
+        if !is_direct_tool && !is_orchestration && goal.len() > 3 {
             let clean_intent = goal.replace(|c: char| !c.is_alphanumeric() && c != ' ', "").replace(' ', "_").to_lowercase();
             if ToolRegistry::exists(&clean_intent) {
                 // Execute existing synthesized reflex

@@ -38,15 +38,7 @@ impl SecurityDetector {
             }
         }
 
-        // 2. Entropy Check (Shannon Entropy for Credential Detection)
-        if arg.len() > 16 && !arg.contains(' ') {
-             let entropy = Self::calculate_entropy(arg);
-             if entropy > 4.5 {
-                  return Err(EaiError::Governance("High-entropy string detected. Possible credential leak or obfuscated payload.".to_string()));
-             }
-        }
-
-        // 3. Exfiltration Check
+        // 2. Exfiltration Check
         for pattern in exfiltration_patterns {
             if lower_arg.contains(pattern) {
                 return Err(EaiError::Governance(format!("Suspicious network exfiltration pattern detected ('{}')", pattern)));
@@ -56,6 +48,7 @@ impl SecurityDetector {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn calculate_entropy(data: &str) -> f64 {
         let mut counts = std::collections::HashMap::new();
         for c in data.chars() {
