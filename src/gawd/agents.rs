@@ -1,5 +1,6 @@
 // GAWD Agent Fleet: Dynamic Intelligence Substrate
 // RULE 11: Agents must add functionality directly to the gha engine.
+// Unified Singular Reflex Architecture (v1.0.0 Autonomous Threshold)
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::channel;
@@ -31,6 +32,7 @@ pub trait GawdAgent: Send + Sync {
     fn name(&self) -> String;
     fn role(&self) -> String;
     fn protocol(&self) -> String { "A2A".to_string() }
+    #[allow(dead_code)]
     fn keywords(&self) -> Vec<&'static str>;
     fn execute(&self, goal: &str, workspace: &Path, blackboard: &SwarmBlackboard) -> String;
 }
@@ -55,26 +57,7 @@ impl AgentRegistry {
         let mut agents = self.agents.write().unwrap();
         agents.push(Arc::new(GhaUserAgent));
         agents.push(Arc::new(GhaContextAgent));
-        agents.push(Arc::new(GhaReasoningAgent));
-        agents.push(Arc::new(GhaKernelAgent));
-        agents.push(Arc::new(GhaEconomicAgent));
-        agents.push(Arc::new(GhaLinguistAgent));
-        agents.push(Arc::new(GhaAgronomyAgent));
-        agents.push(Arc::new(GhaMedicalAgent));
-        agents.push(Arc::new(GhaLegalAgent));
-        agents.push(Arc::new(GhaEducationAgent));
-        agents.push(Arc::new(GhaEnergyAgent));
-        agents.push(Arc::new(GhaCyberAgent));
-        agents.push(Arc::new(GhaQuantumAgent));
-        agents.push(Arc::new(GhaAerospaceAgent));
-        agents.push(Arc::new(GhaLogisticsAgent));
-        agents.push(Arc::new(GhaConsensusAgent));
-        agents.push(Arc::new(GhaTensorPartitioner));
-        agents.push(Arc::new(GhaTradesAgent));
-        agents.push(Arc::new(GhaHouseholdAgent));
-        agents.push(Arc::new(GhaCreativeAgent));
-        agents.push(Arc::new(GhaPublicSafetyAgent));
-        agents.push(Arc::new(GhaEnterpriseAgent));
+        agents.push(Arc::new(GhaUniversalSubstrateAgent));
         agents.push(Arc::new(GhaSafetyAgent));
         agents.push(Arc::new(GhaTruthAgent));
     }
@@ -89,49 +72,11 @@ impl AgentRegistry {
         }).collect()
     }
 
-    pub fn synthesize_fleet(&self, goal: &str) -> Vec<Arc<dyn GawdAgent>> {
+    pub fn synthesize_fleet(&self, _goal: &str) -> Vec<Arc<dyn GawdAgent>> {
         let agents = self.agents.read().unwrap();
-        let mut fleet = Vec::new();
-
-        // 1. Always include Core Agents
-        for agent in agents.iter() {
-            let name = agent.name();
-            if name == "GhaUserAgent" || name == "GhaContextAgent" || name == "GhaReasoningAgent" || name == "GhaSafetyAgent" || name == "GhaTruthAgent" {
-                fleet.push(Arc::clone(agent));
-            }
-        }
-
-        // 2. Semantic Synthesis: Score specialists based on role description and keywords
-        use crate::gawd::pkb::PkbSynthesizer;
-        for agent in agents.iter() {
-            let name = agent.name();
-            if name == "GhaUserAgent" || name == "GhaContextAgent" || name == "GhaReasoningAgent" || name == "GhaSafetyAgent" || name == "GhaTruthAgent" {
-                continue;
-            }
-
-            let mut best_score = PkbSynthesizer::calculate_semantic_score(goal, &agent.role());
-            for kw in agent.keywords() {
-                 let kw_score = PkbSynthesizer::calculate_semantic_score(goal, kw);
-                 if kw_score > best_score {
-                     best_score = kw_score;
-                 }
-            }
-
-            if best_score >= 1.0 {
-                fleet.push(Arc::clone(agent));
-            }
-        }
-
-        // 3. Fallback to Dynamic Generic Specialist if fleet is sparse
-        if fleet.len() <= 5 {
-             let topic = goal.split_whitespace().find(|w| w.len() > 3).unwrap_or("Domain");
-             fleet.push(Arc::new(DynamicSpecialist {
-                 topic: topic.to_string(),
-                 goal: goal.to_string(),
-             }));
-        }
-
-        fleet
+        // 🌀 Rule 18: Singular Reflex Architecture
+        // Every mission is handled by the unified core fleet.
+        agents.iter().map(Arc::clone).collect()
     }
 }
 
@@ -194,10 +139,10 @@ impl GawdAgent for GhaContextAgent {
     }
 }
 
-struct GhaReasoningAgent;
-impl GawdAgent for GhaReasoningAgent {
-    fn name(&self) -> String { "GhaReasoningAgent".to_string() }
-    fn role(&self) -> String { "Core Inference".to_string() }
+struct GhaUniversalSubstrateAgent;
+impl GawdAgent for GhaUniversalSubstrateAgent {
+    fn name(&self) -> String { "GhaUniversalSubstrateAgent".to_string() }
+    fn role(&self) -> String { "Unified Intelligence Reflex for Infinite Domains".to_string() }
     fn keywords(&self) -> Vec<&'static str> { vec![] }
     fn execute(&self, goal: &str, workspace: &Path, _blackboard: &SwarmBlackboard) -> String {
         // High-Priority Reflex Check: Direct mapping for common assistant missions
@@ -216,160 +161,6 @@ impl GawdAgent for GhaReasoningAgent {
 
         crate::gemi::engine::GemiEngine::generate_reasoning(&enriched_goal, workspace)
     }
-}
-
-struct GhaKernelAgent;
-impl GawdAgent for GhaKernelAgent {
-    fn name(&self) -> String { "GhaKernelAgent".to_string() }
-    fn role(&self) -> String { "Low-Level Engineering & Self-Healing Kernel Integration".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["os", "kernel", "bootloader", "driver", "assembly", "firmware", "self-healing", "interrupt"] }
-    fn execute(&self, goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String {
-        format!("Low-level self-healing kernel substrate engaged. Analyzing {} for syscall optimization and interrupt resilience.", goal)
-    }
-}
-
-struct GhaEconomicAgent;
-impl GawdAgent for GhaEconomicAgent {
-    fn name(&self) -> String { "GhaEconomicAgent".to_string() }
-    fn role(&self) -> String { "Financial Intelligence".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["business", "stock", "money", "economic", "finance", "market", "roi"] }
-    fn execute(&self, goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { format!("Financial flux analysis applied to '{}'.", goal) }
-}
-
-struct GhaLinguistAgent;
-impl GawdAgent for GhaLinguistAgent {
-    fn name(&self) -> String { "GhaLinguistAgent".to_string() }
-    fn role(&self) -> String { "Universal Translation".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["japanese", "tamil", "translate", "language", "linguist"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Universal linguist substrate active.".to_string() }
-}
-
-struct GhaAgronomyAgent;
-impl GawdAgent for GhaAgronomyAgent {
-    fn name(&self) -> String { "GhaAgronomyAgent".to_string() }
-    fn role(&self) -> String { "Agricultural & Crop Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["farm", "crop", "soil", "agri", "harvest", "planting", "ph"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Agronomy domain context active (soil pH, N-P-K nutrient ratios, crop yield guidance).".to_string() }
-}
-
-struct GhaMedicalAgent;
-impl GawdAgent for GhaMedicalAgent {
-    fn name(&self) -> String { "GhaMedicalAgent".to_string() }
-    fn role(&self) -> String { "Clinical & Health Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["health", "doctor", "medical", "medicine", "clinic", "patient", "fever", "pain"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Clinical health domain context active (evidence-based wellness guidance).".to_string() }
-}
-
-struct GhaLegalAgent;
-impl GawdAgent for GhaLegalAgent {
-    fn name(&self) -> String { "GhaLegalAgent".to_string() }
-    fn role(&self) -> String { "Legal & Contract Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["legal", "contract", "law", "clause", "court", "attorney", "liability"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Legal contract domain context active (liability & compliance analysis).".to_string() }
-}
-
-struct GhaEducationAgent;
-impl GawdAgent for GhaEducationAgent {
-    fn name(&self) -> String { "GhaEducationAgent".to_string() }
-    fn role(&self) -> String { "Pedagogical & Science Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["education", "math", "teach", "school", "learn", "homework", "essay"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Pedagogical domain context active (step-by-step educational breakdown).".to_string() }
-}
-
-struct GhaEnergyAgent;
-impl GawdAgent for GhaEnergyAgent {
-    fn name(&self) -> String { "GhaEnergyAgent".to_string() }
-    fn role(&self) -> String { "Climate & Renewable Energy Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["energy", "solar", "climate", "battery", "grid", "wattage"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Renewable energy domain context active (efficiency & grid storage optimization).".to_string() }
-}
-
-struct GhaCyberAgent;
-impl GawdAgent for GhaCyberAgent {
-    fn name(&self) -> String { "GhaCyberAgent".to_string() }
-    fn role(&self) -> String { "Cybersecurity & Active Defense Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["cyber", "security", "hack", "exploit", "firewall", "ddos", "mitigation"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Cybersecurity substrate active (zero-day detection & DDoS mitigation).".to_string() }
-}
-
-struct GhaQuantumAgent;
-impl GawdAgent for GhaQuantumAgent {
-    fn name(&self) -> String { "GhaQuantumAgent".to_string() }
-    fn role(&self) -> String { "Quantum Computing & Simulation Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["quantum", "qubit", "entanglement", "simulation", "circuit", "algorithm"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Quantum computing substrate active (qubit error correction & entanglement simulation).".to_string() }
-}
-
-struct GhaAerospaceAgent;
-impl GawdAgent for GhaAerospaceAgent {
-    fn name(&self) -> String { "GhaAerospaceAgent".to_string() }
-    fn role(&self) -> String { "Aerospace & Orbital Mechanics Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["space", "orbit", "rocket", "lunar", "martian", "aerospace", "trajectory"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Aerospace substrate active (trajectory calculations & orbital mission design).".to_string() }
-}
-
-struct GhaLogisticsAgent;
-impl GawdAgent for GhaLogisticsAgent {
-    fn name(&self) -> String { "GhaLogisticsAgent".to_string() }
-    fn role(&self) -> String { "Global Logistics & Supply Chain Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["logistics", "supply chain", "warehouse", "delivery", "route", "inventory"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Logistics substrate active (cluster-scale route optimization & supply chain resilience).".to_string() }
-}
-
-struct GhaConsensusAgent;
-impl GawdAgent for GhaConsensusAgent {
-    fn name(&self) -> String { "GhaConsensusAgent".to_string() }
-    fn role(&self) -> String { "Swarm Consensus & P2P Trust Protocol".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["consensus", "trust", "p2p", "swarm", "election", "quorum"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Near-instantaneous global swarm consensus active (RAFT/Paxos reflex engaged).".to_string() }
-}
-
-struct GhaTensorPartitioner;
-impl GawdAgent for GhaTensorPartitioner {
-    fn name(&self) -> String { "GhaTensorPartitioner".to_string() }
-    fn role(&self) -> String { "Multi-Node GPU Tensor Partitioning".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["tensor", "partition", "gpu", "vram", "sharding", "distributed"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Multi-node GPU tensor partitioning active (auto-sharding across cluster VRAM).".to_string() }
-}
-
-struct GhaTradesAgent;
-impl GawdAgent for GhaTradesAgent {
-    fn name(&self) -> String { "GhaTradesAgent".to_string() }
-    fn role(&self) -> String { "Skilled Trades & Building Codes Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["plumb", "pipe", "electric", "hvac", "wire", "carpenter", "mechanic"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Skilled trades domain context active (NEC/UPC/IMC building code compliance & field diagnostic).".to_string() }
-}
-
-struct GhaHouseholdAgent;
-impl GawdAgent for GhaHouseholdAgent {
-    fn name(&self) -> String { "GhaHouseholdAgent".to_string() }
-    fn role(&self) -> String { "Home & Family Operations Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["recipe", "cook", "dinner", "family", "mom", "diy", "chore", "home"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Home & family operations domain context active (budget, recipes, household care).".to_string() }
-}
-
-struct GhaCreativeAgent;
-impl GawdAgent for GhaCreativeAgent {
-    fn name(&self) -> String { "GhaCreativeAgent".to_string() }
-    fn role(&self) -> String { "Narrative & Media Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["story", "script", "video", "design", "music", "content", "movie", "write"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Narrative & media specialist engaged.".to_string() }
-}
-
-struct GhaPublicSafetyAgent;
-impl GawdAgent for GhaPublicSafetyAgent {
-    fn name(&self) -> String { "GhaPublicSafetyAgent".to_string() }
-    fn role(&self) -> String { "Emergency & Public Safety Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["fire", "police", "emergency", "disaster", "safety", "civil", "triage"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Public safety domain context active (emergency response & crisis coordination).".to_string() }
-}
-
-struct GhaEnterpriseAgent;
-impl GawdAgent for GhaEnterpriseAgent {
-    fn name(&self) -> String { "GhaEnterpriseAgent".to_string() }
-    fn role(&self) -> String { "Corporate & Enterprise Specialist".to_string() }
-    fn keywords(&self) -> Vec<&'static str> { vec!["ceo", "product", "agile", "business", "corporate", "roadmap", "sales"] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { "Enterprise domain context active (product roadmaps, ROI & executive summary).".to_string() }
 }
 
 struct GhaSafetyAgent;
@@ -437,17 +228,6 @@ impl GawdAgent for GhaTruthAgent {
             msg
         }
     }
-}
-
-struct DynamicSpecialist {
-    topic: String,
-    goal: String,
-}
-impl GawdAgent for DynamicSpecialist {
-    fn name(&self) -> String { format!("Gha{}SpecialistAgent", self.topic) }
-    fn role(&self) -> String { format!("Dynamic Specialist for '{}'", self.goal) }
-    fn keywords(&self) -> Vec<&'static str> { vec![] }
-    fn execute(&self, _goal: &str, _workspace: &Path, _blackboard: &SwarmBlackboard) -> String { format!("Specialized agent '{}' executing intent.", self.name()) }
 }
 
 pub struct GawdAgentFleet;
@@ -533,9 +313,9 @@ impl GawdAgentFleet {
         vec![
             DiscoverableAsset {
                 tier: "Tier 1: GAWD (AOA)".to_string(),
-                name: "GhaCyberAgent".to_string(),
+                name: "GhaUniversalSubstrateAgent".to_string(),
                 provider: "GHA Hub".to_string(),
-                url: "https://gha.ai/agents/cyber".to_string(),
+                url: "https://gha.ai/agents/substrate".to_string(),
             },
             DiscoverableAsset {
                 tier: "Tier 1: GAWD (AOA)".to_string(),
@@ -554,8 +334,8 @@ mod tests {
     #[test]
     fn test_registry_lookup() {
         let registry = AgentRegistry::global();
-        let fleet = registry.synthesize_fleet("crop soil pH");
-        assert!(fleet.iter().any(|a| a.name() == "GhaAgronomyAgent"));
+        let fleet = registry.synthesize_fleet("any goal");
+        assert!(fleet.iter().any(|a| a.name() == "GhaUniversalSubstrateAgent"));
     }
 
     #[test]

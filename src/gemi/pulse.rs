@@ -142,14 +142,6 @@ impl GhaPulse {
             return Ok(format!("ACTION: list_directory {}", workspace.display()));
         }
 
-        if lower.contains("translate") {
-             return Ok(format!("ACTION: reason {}", clean_prompt));
-        }
-
-        if lower.contains("reason") || lower.contains("explain") || lower.contains("summarize") || lower.contains("orchestrate") {
-             return Ok(format!("ACTION: reason {}", clean_prompt));
-        }
-
         Err(anyhow!("Pulse Brain: Transitioning to Tier 2 Deep Reasoning..."))
     }
 }

@@ -48,7 +48,7 @@ impl GmaMasterAgent {
         }
 
         for msg in &a2a_logs {
-            if msg.sender == "GhaReasoningAgent" {
+            if msg.sender == "GhaUniversalSubstrateAgent" {
                 let payload = &msg.payload;
                 let clean_text = if let Some((_, rest)) = payload.split_once("]:\n") {
                     rest
@@ -83,6 +83,39 @@ impl GmaMasterAgent {
 
         let is_direct_tool = ToolRegistry::exists(cmd) || cmd == "models";
         let is_orchestration = goal.contains("orchestrate") || goal.contains("mission");
+
+        // 🚀 Phase 0: Direct Tool Execution (High-Performance Path)
+        if is_direct_tool {
+            let actual_cmd = if cmd == "models" { "list_models" } else { cmd };
+
+            let mut checkpoint = NeuralCheckpoint {
+                intent: goal.to_string(),
+                timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
+                completed_tools: vec![],
+                blackboard: std::collections::HashMap::new(),
+                status: "IN_PROGRESS".to_string(),
+            };
+            crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
+
+            let tool_res = ToolRegistry::execute_tool(actual_cmd, arg, workspace);
+
+            if !tool_res.to_lowercase().contains("error") && !tool_res.to_lowercase().contains("failed") && !tool_res.contains("TRUTH VIOLATION") {
+                checkpoint.status = "COMPLETED".to_string();
+                checkpoint.completed_tools.push(actual_cmd.to_string());
+                checkpoint.blackboard.insert(format!("RESULT_{}", actual_cmd), tool_res.clone());
+                crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
+
+                let mut report = String::new();
+                report.push_str("# gha Execution Report\n\n");
+                report.push_str("## Output\n");
+                report.push_str(&format!("   └── [Tool: {}]: {}\n\n", actual_cmd, tool_res));
+                report.push_str("## Validation\n └── Verified.\n");
+                return report;
+            } else {
+                crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "TOOL_FAILURE", &format!("Tool {} failed: {}. Escalating to GEMI.", actual_cmd, tool_res));
+                // Fall through to Swarm/GEMI orchestration
+            }
+        }
 
         // 🌀 Rule 18: Autonomous Capability Mapping & Gap Detection
         if !is_direct_tool && !is_orchestration && goal.len() > 5 && goal.len() < 100 {
@@ -122,7 +155,7 @@ impl GmaMasterAgent {
         let mut intelligence_gap = false;
 
         for msg in &a2a_logs {
-            if msg.sender == "GhaReasoningAgent" {
+            if msg.sender == "GhaUniversalSubstrateAgent" {
                 reasoning_content = msg.payload.clone();
                 if msg.payload.contains("Tier 0") {
                     is_reflex = true;
@@ -150,36 +183,6 @@ impl GmaMasterAgent {
         report.push_str(&format!("- **Mode**: {}\n", badge));
         report.push_str(&format!("- **Scope**: {}\n", badge_desc));
         report.push('\n');
-
-        if is_direct_tool {
-            let actual_cmd = if cmd == "models" { "list_models" } else { cmd };
-
-            let mut checkpoint = NeuralCheckpoint {
-                intent: goal.to_string(),
-                timestamp: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
-                completed_tools: vec![],
-                blackboard: std::collections::HashMap::new(),
-                status: "IN_PROGRESS".to_string(),
-            };
-            crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
-
-            let tool_res = ToolRegistry::execute_tool(actual_cmd, arg, workspace);
-
-            if !tool_res.to_lowercase().contains("error") && !tool_res.to_lowercase().contains("failed") && !tool_res.contains("TRUTH VIOLATION") {
-                checkpoint.status = "COMPLETED".to_string();
-                checkpoint.completed_tools.push(actual_cmd.to_string());
-                checkpoint.blackboard.insert(format!("RESULT_{}", actual_cmd), tool_res.clone());
-                crate::sandbox::manager::SandboxManager::save_mission_checkpoint(workspace, &checkpoint);
-
-                report.push_str("## Output\n");
-                report.push_str(&format!("   └── [Tool: {}]: {}\n\n", actual_cmd, tool_res));
-                report.push_str("## Validation\n └── Verified.\n");
-                return report;
-            } else {
-                crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "TOOL_FAILURE", &format!("Tool {} failed: {}. Escalating to GEMI.", actual_cmd, tool_res));
-                // Fall through to Swarm/GEMI orchestration
-            }
-        }
 
         if is_orchestration || !is_reflex {
             report.push_str("## Environment\n");
@@ -368,7 +371,7 @@ impl GmaMasterAgent {
 
         let mut reasoning = String::new();
         for msg in logs {
-            if msg.sender == "GhaReasoningAgent" {
+            if msg.sender == "GhaUniversalSubstrateAgent" {
                 reasoning = msg.payload.clone();
                 break;
             }

@@ -18,6 +18,7 @@ pub struct PkbTrainingEntry {
 pub struct PkbSynthesizer;
 
 impl PkbSynthesizer {
+    #[allow(dead_code)]
     pub fn calculate_semantic_score(target: &str, candidate: &str) -> f32 {
         let t_low = target.to_lowercase();
         let c_low = candidate.to_lowercase();
