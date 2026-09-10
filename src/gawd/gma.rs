@@ -413,8 +413,29 @@ impl GmaMasterAgent {
             }
         }
 
-        if results.is_empty() {
-             // Logic for direct tool calls...
+        // Secondary Synthesis: If goal requires translation, summarization, or analysis after tool execution
+        let lower_goal = goal.to_lowercase();
+        let needs_synthesis = lower_goal.contains("translate")
+            || lower_goal.contains("tamil")
+            || lower_goal.contains("summarize")
+            || lower_goal.contains("analyze")
+            || lower_goal.contains("explain");
+
+        if needs_synthesis && !results.is_empty() {
+            let tool_output = results.join("\n");
+            let synthesis_prompt = format!(
+                "User Intent: {}\n\nFetched Content:\n{}\n\nPlease fulfill the user intent completely (including any requested translation, summary, or explanation) in clear, high-quality text.",
+                goal, tool_output
+            );
+            let model_response = crate::gemi::engine::GemiEngine::generate_reasoning(&synthesis_prompt, workspace);
+            let save_path = workspace.join("download_content.txt");
+
+            if !model_response.trim().is_empty() && !model_response.contains("Executed intent for") && !model_response.contains("Processed intent") {
+                let _ = fs::write(&save_path, &model_response);
+                return format!("Here is the result [Saved to: {}]:\n\n{}", save_path.display(), model_response.trim());
+            } else {
+                return format!("Saved fetched content to file:\n{}\n\nNote: To generate full AI translations or summaries, set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env or start an Ollama model server.", save_path.display());
+            }
         }
 
         // Fulfill Indestructible Identity: Set status to COMPLETED
