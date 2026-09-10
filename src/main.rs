@@ -19,7 +19,7 @@ use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-pub const GHA_VERSION: &str = "0.1.2022606";
+pub const GHA_VERSION: &str = "0.1.2022607";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -84,7 +84,6 @@ fn main() {
                 }
             }
         }
-        print_help();
         return;
     }
 

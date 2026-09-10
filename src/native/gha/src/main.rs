@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
-const GHA_VERSION: &str = "0.1.2022606";
+const GHA_VERSION: &str = "0.1.2022607";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -250,7 +250,6 @@ fn main() {
     let version = read_version(&project_root, &global_gha_dir);
 
     if args.is_empty() {
-        print_help();
         return;
     }
 
