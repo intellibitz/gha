@@ -1158,10 +1158,44 @@ impl GhaTool for GlobalRegistryScanTool {
     }
 }
 
+fn decode_html_entities(text: &str) -> String {
+    text.replace("&quot;", "\"")
+        .replace("&apos;", "'")
+        .replace("&#039;", "'")
+        .replace("&#39;", "'")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&nbsp;", " ")
+        .replace("&#x27;", "'")
+        .replace("&#x2F;", "/")
+        .replace("&ndash;", "-")
+        .replace("&mdash;", "—")
+}
+
+fn sanitize_search_query(raw_query: &str) -> String {
+    let mut q = raw_query.trim().to_string();
+    let lower = q.to_lowercase();
+    for directive in &[
+        " and translate to ",
+        " and translate it to ",
+        " and translate ",
+        " and summarize ",
+        " and explain ",
+        " and save to ",
+    ] {
+        if let Some(pos) = lower.find(directive) {
+            q = q[..pos].trim().to_string();
+            break;
+        }
+    }
+    q
+}
+
 fn strip_html_tags(html: &str) -> String {
     let mut result = String::new();
     let mut in_tag = false;
-    let mut in_script_or_style = false;
+    let mut in_skip_block = false;
     let mut tag_buffer = String::new();
 
     for c in html.chars() {
@@ -1171,25 +1205,26 @@ fn strip_html_tags(html: &str) -> String {
         } else if c == '>' {
             in_tag = false;
             let tag_lower = tag_buffer.to_lowercase();
-            if tag_lower.starts_with("script") || tag_lower.starts_with("style") {
-                in_script_or_style = true;
-            } else if tag_lower.starts_with("/script") || tag_lower.starts_with("/style") {
-                in_script_or_style = false;
+            if tag_lower.starts_with("script") || tag_lower.starts_with("style") || tag_lower.starts_with("noscript") || tag_lower.starts_with("svg") || tag_lower.starts_with("head") {
+                in_skip_block = true;
+            } else if tag_lower.starts_with("/script") || tag_lower.starts_with("/style") || tag_lower.starts_with("/noscript") || tag_lower.starts_with("/svg") || tag_lower.starts_with("/head") {
+                in_skip_block = false;
             }
-            if tag_lower == "br" || tag_lower == "p" || tag_lower == "/p" || tag_lower == "div" || tag_lower == "/tr" {
+            if tag_lower == "br" || tag_lower == "p" || tag_lower == "/p" || tag_lower == "div" || tag_lower == "/tr" || tag_lower == "li" {
                 result.push('\n');
             }
         } else if in_tag {
             tag_buffer.push(c);
-        } else if !in_script_or_style {
+        } else if !in_skip_block {
             result.push(c);
         }
     }
 
+    let decoded = decode_html_entities(&result);
     let mut clean_lines = Vec::new();
-    for line in result.lines() {
+    for line in decoded.lines() {
         let trimmed = line.trim();
-        if !trimmed.is_empty() && !trimmed.starts_with("<!--") && !trimmed.contains("JavaScript") {
+        if !trimmed.is_empty() && !trimmed.starts_with("<!--") && !trimmed.contains("JavaScript") && !trimmed.contains("Cookie") {
             clean_lines.push(trimmed);
         }
     }
@@ -1201,19 +1236,195 @@ impl GhaTool for WebSearchDownloadTool {
     fn name(&self) -> String { "web_search_download".to_string() }
     fn description(&self) -> String { "Search the web and download content".to_string() }
     fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
-        let clean_query = arg.trim();
-        if clean_query.is_empty() { return Err(EaiError::Protocol("Usage: download <query>".into())); }
+        let clean_arg = arg.trim();
+        if clean_arg.is_empty() { return Err(EaiError::Protocol("Usage: download <query_or_url>".into())); }
         let filename = "download_content.txt";
         let save_path = workspace.join(filename);
-        let encoded_query = clean_query.replace(' ', "+");
-        let search_url = format!("https://html.duckduckgo.com/html/?q={}", encoded_query);
-        let out = Command::new("curl").args(["-sL", "-A", "Mozilla/5.0", &search_url]).output().map_err(|e| EaiError::Hardware(e.to_string()))?;
-        let raw_html = String::from_utf8_lossy(&out.stdout).to_string();
-        let clean_text = strip_html_tags(&raw_html);
-        let _ = fs::write(&save_path, &clean_text);
 
-        let preview: String = clean_text.lines().take(12).collect::<Vec<_>>().join("\n");
-        Ok(format!("Saved results to [{}]\n\nContent Preview:\n{}", save_path.display(), preview))
+        // Case 1: Direct URL
+        if clean_arg.starts_with("http://") || clean_arg.starts_with("https://") {
+            let out = Command::new("curl")
+                .args(["-sL", "--connect-timeout", "5", "--max-time", "15", "-A", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", clean_arg])
+                .output()
+                .map_err(|e| EaiError::Hardware(e.to_string()))?;
+            let raw_html = String::from_utf8_lossy(&out.stdout).to_string();
+            let clean_text = strip_html_tags(&raw_html);
+            let _ = fs::write(&save_path, &clean_text);
+            let preview: String = clean_text.lines().take(15).collect::<Vec<_>>().join("\n");
+            return Ok(format!("Fetched URL [{}] and saved to [{}]:\n\n{}", clean_arg, save_path.display(), preview));
+        }
+
+        // Case 2: Web Search Query
+        let clean_query = sanitize_search_query(clean_arg);
+        let encoded_query = clean_query.replace(' ', "%20");
+
+        let mut extracted_text = String::new();
+        let mut top_urls = Vec::new();
+
+        // 1. Primary Engine: Bing Search
+        let bing_url = format!("https://www.bing.com/search?q={}&setlang=en-us&cc=US", encoded_query);
+        if let Ok(bing_out) = Command::new("curl")
+            .args([
+                "-sL",
+                "--connect-timeout", "5",
+                "--max-time", "10",
+                "-A", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                &bing_url
+            ])
+            .output()
+        {
+            let bing_html = String::from_utf8_lossy(&bing_out.stdout).to_string();
+            if bing_html.contains("b_algo") {
+                for block in bing_html.split("<li class=\"b_algo\"") {
+                    if let Some(h2_start) = block.find("<h2") {
+                        if let Some(h2_end) = block[h2_start..].find("</h2>") {
+                            let h2_html = &block[h2_start..h2_start + h2_end];
+                            if let Some(href_start) = h2_html.find("href=\"") {
+                                let sub = &h2_html[href_start + 6..];
+                                if let Some(href_end) = sub.find('"') {
+                                    let url = &sub[..href_end];
+                                    if url.starts_with("http") && !url.contains("bing.com") {
+                                        top_urls.push(url.to_string());
+                                    }
+                                }
+                            }
+                            let title = strip_html_tags(h2_html);
+                            if !title.is_empty() {
+                                extracted_text.push_str(&format!("• {}\n", title));
+                            }
+                        }
+                    }
+                    if let Some(cap_start) = block.find("class=\"b_caption\"") {
+                        if let Some(cap_end) = block[cap_start..].find("</div>") {
+                            let cap_html = &block[cap_start..cap_start + cap_end];
+                            let raw_snippet = strip_html_tags(cap_html);
+                            let clean_snippet = raw_snippet.trim_start_matches("class=\"b_caption\"")
+                                .trim_start_matches("class='b_caption'")
+                                .trim();
+                            if !clean_snippet.is_empty() {
+                                extracted_text.push_str(&format!("  {}\n\n", clean_snippet));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Fallback Engine: DuckDuckGo Lite POST search
+        if extracted_text.trim().is_empty() {
+            let out = Command::new("curl")
+                .args([
+                    "-sL",
+                    "--connect-timeout", "5",
+                    "--max-time", "10",
+                    "-X", "POST",
+                    "-d", &format!("q={}", encoded_query),
+                    "-A", "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0",
+                    "https://lite.duckduckgo.com/lite/"
+                ])
+                .output()
+                .map_err(|e| EaiError::Hardware(e.to_string()))?;
+
+            let raw_html = String::from_utf8_lossy(&out.stdout).to_string();
+
+            if raw_html.contains("result-snippet") || raw_html.contains("result-link") {
+                let mut current_title = String::new();
+                for line in raw_html.lines() {
+                    if line.contains("class='result-link'") || line.contains("class=\"result-link\"") {
+                        if let Some(href_start) = line.find("href=\"").or_else(|| line.find("href='")) {
+                            let sub = &line[href_start + 6..];
+                            if let Some(href_end) = sub.find('"').or_else(|| sub.find('\'')) {
+                                let url = &sub[..href_end];
+                                if url.starts_with("http") && !url.contains("duckduckgo.com") {
+                                    top_urls.push(url.to_string());
+                                }
+                            }
+                        }
+                        let title = strip_html_tags(line);
+                        if !title.is_empty() {
+                            current_title = title;
+                        }
+                    } else if line.contains("class='result-snippet'") || line.contains("class=\"result-snippet\"") {
+                        let snippet = strip_html_tags(line);
+                        if !snippet.is_empty() {
+                            if !current_title.is_empty() {
+                                extracted_text.push_str(&format!("• {}\n", current_title));
+                                current_title.clear();
+                            }
+                            extracted_text.push_str(&format!("  {}\n\n", snippet));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: If DDG Lite gave no snippets, try DDG Instant Answer API
+        if extracted_text.trim().is_empty() {
+            let api_url = format!("https://api.duckduckgo.com/?q={}&format=json", encoded_query);
+            if let Ok(api_out) = Command::new("curl").args(["-sL", "--connect-timeout", "5", "--max-time", "10", &api_url]).output() {
+                if let Ok(json_val) = serde_json::from_slice::<serde_json::Value>(&api_out.stdout) {
+                    if let Some(abstract_text) = json_val.get("AbstractText").and_then(|v| v.as_str()) {
+                        if !abstract_text.is_empty() {
+                            extracted_text.push_str(&format!("Abstract: {}\n\n", abstract_text));
+                        }
+                    }
+                    if let Some(related) = json_val.get("RelatedTopics").and_then(|v| v.as_array()) {
+                        for topic in related {
+                            if let Some(text) = topic.get("Text").and_then(|v| v.as_str()) {
+                                extracted_text.push_str(&format!("• {}\n", text));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Deep Content Fetch: If query asks for specific lyrics, articles, docs, or detailed content, fetch top result URL
+        let lower_arg = clean_arg.to_lowercase();
+        let needs_deep_content = lower_arg.contains("lyrics")
+            || lower_arg.contains("article")
+            || lower_arg.contains("documentation")
+            || lower_arg.contains("full text")
+            || lower_arg.contains("get ")
+            || lower_arg.contains("fetch");
+
+        if needs_deep_content && !top_urls.is_empty() {
+            for target_url in top_urls.iter().take(3) {
+                if let Ok(page_out) = Command::new("curl")
+                    .args([
+                        "-sL",
+                        "--connect-timeout", "5",
+                        "--max-time", "10",
+                        "-A", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        target_url
+                    ])
+                    .output()
+                {
+                    let page_html = String::from_utf8_lossy(&page_out.stdout).to_string();
+                    let page_clean = strip_html_tags(&page_html);
+                    let page_lower = page_clean.to_lowercase();
+                    if !page_clean.trim().is_empty()
+                        && !page_lower.contains("make sure you're a human")
+                        && !page_lower.contains("captcha")
+                        && !page_lower.contains("are you a human")
+                        && !page_lower.contains("access denied")
+                        && page_clean.len() > 100
+                    {
+                        extracted_text.push_str(&format!("\n=== Extracted Page Content ({}) ===\n{}\n", target_url, page_clean));
+                        break;
+                    }
+                }
+            }
+        }
+
+        // If all parsing failed
+        if extracted_text.trim().is_empty() {
+            extracted_text = format!("No search results found for '{}'.", clean_query);
+        }
+
+        let _ = fs::write(&save_path, &extracted_text);
+        let preview: String = extracted_text.lines().take(15).collect::<Vec<_>>().join("\n");
+        Ok(format!("Saved results for '{}' to [{}]\n\nContent Preview:\n{}", clean_query, save_path.display(), preview))
     }
 }
 

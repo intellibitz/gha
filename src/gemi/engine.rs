@@ -68,16 +68,8 @@ impl GemiEngine {
             return ollama_res;
         }
 
-        // 5. Fallback: Check if download_content.txt or an output file exists in workspace
-        let download_file = workspace.join("download_content.txt");
-        if download_file.is_file() {
-            if let Ok(content) = std::fs::read_to_string(&download_file) {
-                let preview: String = content.lines().take(12).collect::<Vec<_>>().join("\n");
-                return format!("Fetched and saved content to [{}]\n\nContent Preview:\n{}", download_file.display(), preview);
-            }
-        }
-
-        format!("Executed intent for: \"{}\"", prompt)
+        // 5. Fallback: Local reasoning substrate unavailable
+        "STATUS: Local reasoning substrate unavailable. Set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env or start an Ollama model server.".to_string()
     }
 
     pub fn find_local_llama_server() -> Option<PathBuf> {
@@ -107,15 +99,16 @@ impl GemiEngine {
         let server_active = matches!(health, Ok(ref o) if o.status.success() && String::from_utf8_lossy(&o.stdout).contains("ok"));
 
         if !server_active {
+            let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(8).to_string();
             let _ = Command::new(&server_bin)
-                .args(["-m", model_path.to_str().unwrap_or_default(), "--port", "8085", "-ngl", "0", "-c", "2048"])
+                .args(["-m", model_path.to_str().unwrap_or_default(), "--port", "8085", "-ngl", "0", "-c", "4096", "-t", &threads])
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .spawn();
 
             let start = std::time::Instant::now();
-            while start.elapsed().as_secs() < 20 {
+            while start.elapsed().as_secs() < 30 {
                 std::thread::sleep(std::time::Duration::from_millis(500));
                 if let Ok(o) = Command::new("curl").args(["-s", "--connect-timeout", "2", "--max-time", "3", "http://127.0.0.1:8085/health"]).output() {
                     let body = String::from_utf8_lossy(&o.stdout);
@@ -126,14 +119,33 @@ impl GemiEngine {
             }
         }
 
-        let formatted_prompt = format!("<bos>User: {}\nAssistant:", prompt);
-        let payload = json!({
-            "prompt": formatted_prompt,
-            "n_predict": 256,
+        // Try OpenAI Chat Completions API endpoint first
+        let chat_payload = json!({
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 2048,
             "temperature": 0.2
         });
 
-        let out = Self::curl_pipe("http://127.0.0.1:8085/completion", vec![], payload)?;
+        if let Ok(out) = Self::curl_pipe_timeout("http://127.0.0.1:8085/v1/chat/completions", vec![], chat_payload, "120") {
+            if let Ok(v) = serde_json::from_slice::<serde_json::Value>(&out) {
+                if let Some(text) = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()) {
+                    let clean = text.trim();
+                    if !clean.is_empty() {
+                        return Ok(Self::cleanse_artifact(clean));
+                    }
+                }
+            }
+        }
+
+        // Fallback to completion endpoint
+        let formatted_prompt = format!("<start_of_turn>user\n{}<end_of_turn>\n<start_of_turn>model\n", prompt);
+        let completion_payload = json!({
+            "prompt": formatted_prompt,
+            "n_predict": 1024,
+            "temperature": 0.2
+        });
+
+        let out = Self::curl_pipe_timeout("http://127.0.0.1:8085/completion", vec![], completion_payload, "120")?;
         let v: serde_json::Value = serde_json::from_slice(&out)?;
         let text = v.get("content").and_then(|t| t.as_str()).unwrap_or("").trim().to_string();
 
@@ -246,8 +258,12 @@ impl GemiEngine {
     }
 
     fn curl_pipe(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value) -> Result<Vec<u8>> {
+        Self::curl_pipe_timeout(url, headers, payload, "15")
+    }
+
+    fn curl_pipe_timeout(url: &str, headers: Vec<(&str, &str)>, payload: serde_json::Value, max_time_secs: &str) -> Result<Vec<u8>> {
         let mut child = Command::new("curl")
-            .args(["-s", "--connect-timeout", "5", "--max-time", "15", "-X", "POST", url, "-H", "Content-Type: application/json"])
+            .args(["-s", "--connect-timeout", "5", "--max-time", max_time_secs, "-X", "POST", url, "-H", "Content-Type: application/json"])
             .args(headers.into_iter().flat_map(|(k, v)| vec!["-H".to_string(), format!("{}: {}", k, v)]))
             .arg("-d")
             .arg("@-")

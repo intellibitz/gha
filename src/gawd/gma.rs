@@ -480,11 +480,19 @@ impl GmaMasterAgent {
 
             let save_path = workspace.join("download_content.txt");
 
-            if !clean_model_resp.trim().is_empty() && !clean_model_resp.contains("Executed intent for") && !clean_model_resp.contains("Processed intent") {
+            if !clean_model_resp.trim().is_empty()
+                && !clean_model_resp.contains("Executed intent for")
+                && !clean_model_resp.contains("Processed intent")
+                && !clean_model_resp.contains("Local reasoning substrate unavailable")
+                && !clean_model_resp.contains("Provide the complete response")
+                && !clean_model_resp.contains("STATUS:")
+            {
                 let _ = fs::write(&save_path, &clean_model_resp);
                 return format!("Here is the result [Saved to: {}]:\n\n{}", save_path.display(), clean_model_resp.trim());
             } else {
-                return format!("Saved fetched content to file:\n{}\n\nNote: To generate full AI translations or summaries, set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env or start an Ollama model server.", save_path.display());
+                let _ = fs::write(&save_path, &clean_fetched);
+                let preview: String = clean_fetched.lines().take(15).collect::<Vec<_>>().join("\n");
+                return format!("Fetched and saved content to [{}]\n\nContent Preview:\n{}\n\nNote: To generate full AI translations or summaries, set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env or start llama-server / Ollama model server.", save_path.display(), preview);
             }
         }
 
