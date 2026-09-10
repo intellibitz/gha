@@ -117,10 +117,10 @@ impl GhaAdmin {
                                 let updated = format!("{}{}{}", prefix, new_version, suffix);
                                 updated_lines.push(updated);
                             } else if path.to_string_lossy().contains("README.md") {
-                                let updated = format!("version-v{}-blue.svg", new_version);
+                                let updated = format!("![GHA Version](https://img.shields.io/badge/version-v{}-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)", new_version);
                                 updated_lines.push(updated);
                             } else if path.to_string_lossy().contains("PROJECTS.md") {
-                                let updated = format!("**Current Engine Version**: `v{}`", new_version);
+                                let updated = format!("* **Current Engine Version**: `v{}`", new_version);
                                 updated_lines.push(updated);
                             } else if path.to_string_lossy().contains("engine.rs") {
                                 let updated = format!("        format!(\"[Tier 2 GEMI Autonomous Substrate]: Processed intent '{{}}' through local reflex tensor weights (v{}).\", prompt)", new_version);
