@@ -57,16 +57,20 @@ impl GhaPulse {
             }
         }
 
-        // Fetch / Download / Web Search / URL Retrieval
-        if lower.contains("fetch") || lower.contains("download") || lower.contains("search") || lower.contains("http://") || lower.contains("https://") {
+        // Fetch / Download / Web Search / Get / Find / URL Retrieval
+        if lower.contains("get ") || lower.contains("fetch") || lower.contains("download") || lower.contains("search") || lower.contains("find ") || lower.contains("http://") || lower.contains("https://") {
             let query = if lower.contains("http://") || lower.contains("https://") {
                 words.iter().find(|w| w.starts_with("http")).map(|s| s.to_string()).unwrap_or_default()
             } else if let Some(pos) = lower.find("download ") {
                 clean_prompt[pos + 9..].trim().to_string()
             } else if let Some(pos) = lower.find("fetch ") {
                 clean_prompt[pos + 6..].trim().to_string()
+            } else if let Some(pos) = lower.find("get ") {
+                clean_prompt[pos + 4..].trim().to_string()
             } else if let Some(pos) = lower.find("search ") {
                 clean_prompt[pos + 7..].trim().to_string()
+            } else if let Some(pos) = lower.find("find ") {
+                clean_prompt[pos + 5..].trim().to_string()
             } else {
                 clean_prompt.clone()
             };

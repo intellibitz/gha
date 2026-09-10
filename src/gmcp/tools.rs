@@ -1158,6 +1158,44 @@ impl GhaTool for GlobalRegistryScanTool {
     }
 }
 
+fn strip_html_tags(html: &str) -> String {
+    let mut result = String::new();
+    let mut in_tag = false;
+    let mut in_script_or_style = false;
+    let mut tag_buffer = String::new();
+
+    for c in html.chars() {
+        if c == '<' {
+            in_tag = true;
+            tag_buffer.clear();
+        } else if c == '>' {
+            in_tag = false;
+            let tag_lower = tag_buffer.to_lowercase();
+            if tag_lower.starts_with("script") || tag_lower.starts_with("style") {
+                in_script_or_style = true;
+            } else if tag_lower.starts_with("/script") || tag_lower.starts_with("/style") {
+                in_script_or_style = false;
+            }
+            if tag_lower == "br" || tag_lower == "p" || tag_lower == "/p" || tag_lower == "div" || tag_lower == "/tr" {
+                result.push('\n');
+            }
+        } else if in_tag {
+            tag_buffer.push(c);
+        } else if !in_script_or_style {
+            result.push(c);
+        }
+    }
+
+    let mut clean_lines = Vec::new();
+    for line in result.lines() {
+        let trimmed = line.trim();
+        if !trimmed.is_empty() && !trimmed.starts_with("<!--") && !trimmed.contains("JavaScript") {
+            clean_lines.push(trimmed);
+        }
+    }
+    clean_lines.join("\n")
+}
+
 struct WebSearchDownloadTool;
 impl GhaTool for WebSearchDownloadTool {
     fn name(&self) -> String { "web_search_download".to_string() }
@@ -1170,9 +1208,12 @@ impl GhaTool for WebSearchDownloadTool {
         let encoded_query = clean_query.replace(' ', "+");
         let search_url = format!("https://html.duckduckgo.com/html/?q={}", encoded_query);
         let out = Command::new("curl").args(["-sL", "-A", "Mozilla/5.0", &search_url]).output().map_err(|e| EaiError::Hardware(e.to_string()))?;
-        let html = String::from_utf8_lossy(&out.stdout).to_string();
-        let _ = fs::write(&save_path, &html);
-        Ok(format!("Saved results for '{}' to file:\n{}", clean_query, save_path.display()))
+        let raw_html = String::from_utf8_lossy(&out.stdout).to_string();
+        let clean_text = strip_html_tags(&raw_html);
+        let _ = fs::write(&save_path, &clean_text);
+
+        let preview: String = clean_text.lines().take(12).collect::<Vec<_>>().join("\n");
+        Ok(format!("Saved results to [{}]\n\nContent Preview:\n{}", save_path.display(), preview))
     }
 }
 
