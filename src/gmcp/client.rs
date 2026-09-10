@@ -135,6 +135,33 @@ impl GmcpClient {
         "ERROR_FAILED".to_string()
     }
 
+    pub fn execute_category_tool(target_category: &str, query: &str) -> Option<String> {
+        let registry = Self::fetch_global_registry();
+        for entry in registry {
+            if entry.category.eq_ignore_ascii_case(target_category) {
+                let config_path = Self::get_config_path();
+                let is_configured = if let Ok(content) = fs::read_to_string(&config_path)
+                    && let Ok(config) = serde_json::from_str::<McpConfig>(&content)
+                {
+                    config.mcp_servers.contains_key(&entry.name)
+                } else {
+                    false
+                };
+
+                if !is_configured {
+                    let _ = Self::auto_configure_server(&entry.name, &entry.package);
+                }
+
+                let tool_alias = format!("{}_search", entry.category);
+                let res = Self::execute_external_tool(&entry.name, &tool_alias, query);
+                if !res.contains("[FAIL]") {
+                    return Some(res);
+                }
+            }
+        }
+        None
+    }
+
     pub fn execute_external_tool(server_name: &str, tool_name: &str, args: &str) -> String {
         let config_path = Self::get_config_path();
         let config_content = match fs::read_to_string(&config_path) {

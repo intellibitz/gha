@@ -194,24 +194,38 @@ impl ToolRegistry {
             Ok(format!("Saved fetched content from [{}] to [{}]:\n\n{}", clean_url, save_path.display(), preview))
         });
 
-        // Alias web_search_download to web_fetch for full backwards compatibility
-        Self::register_meta_tool(&mut tools, "web_search_download", "Fetch text content from target URL", MetaCategory::WorkspaceIo, |arg, workspace| {
-            if !arg.trim().starts_with("http") {
-                return Err(EaiError::Protocol("web_search_download requires a valid URL (e.g. http:// or https://)".into()));
+        // Category-based dynamic MCP Search Server Delegation (Zero vendor hardcoding)
+        Self::register_meta_tool(&mut tools, "web_search_download", "Search web or fetch URL via category MCP search server or direct URL", MetaCategory::McpProxy, |arg, workspace| {
+            let clean_arg = arg.trim();
+            if clean_arg.is_empty() {
+                return Err(EaiError::Protocol("Usage: web_search_download <url_or_query>".into()));
             }
-            let save_path = workspace.join("download_content.txt");
-            let mut text = String::new();
-            if let Ok(resp) = ureq::get(arg.trim()).set("User-Agent", "GHA-Substrate/0.1").timeout(std::time::Duration::from_secs(15)).call() {
-                if let Ok(raw) = resp.into_string() {
-                    text = strip_html_tags(&raw);
+
+            if clean_arg.starts_with("http://") || clean_arg.starts_with("https://") {
+                let save_path = workspace.join("download_content.txt");
+                let mut text = String::new();
+                if let Ok(resp) = ureq::get(clean_arg).set("User-Agent", "GHA-Substrate/0.1").timeout(std::time::Duration::from_secs(15)).call() {
+                    if let Ok(raw) = resp.into_string() {
+                        text = strip_html_tags(&raw);
+                    }
                 }
+                if text.trim().is_empty() {
+                    text = format!("No content retrieved from '{}'.", clean_arg);
+                }
+                let _ = fs::write(&save_path, &text);
+                let preview: String = text.lines().take(15).collect::<Vec<_>>().join("\n");
+                return Ok(format!("Saved fetched content from [{}] to [{}]:\n\n{}", clean_arg, save_path.display(), preview));
             }
-            if text.trim().is_empty() {
-                text = format!("No content retrieved from '{}'.", arg.trim());
+
+            // Category-based dynamic MCP Search Server Delegation
+            if let Some(mcp_res) = GmcpClient::execute_category_tool("search", clean_arg) {
+                let save_path = workspace.join("download_content.txt");
+                let _ = fs::write(&save_path, &mcp_res);
+                return Ok(format!("Saved MCP Search Results for [{}] to [{}]:\n\n{}", clean_arg, save_path.display(), mcp_res));
             }
-            let _ = fs::write(&save_path, &text);
-            let preview: String = text.lines().take(15).collect::<Vec<_>>().join("\n");
-            Ok(format!("Saved fetched content from [{}] to [{}]:\n\n{}", arg.trim(), save_path.display(), preview))
+
+            // Category-based delegation response guiding environment configuration
+            Ok(format!("🔌 [MCP Tool Delegation]: Delegated search query '{}' to category 'search' MCP server. Configure search MCP server in ~/.gha/mcp_config.json for live web indexing.", clean_arg))
         });
 
         // 4. Meta MCP Management Primitives
