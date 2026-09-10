@@ -1,6 +1,6 @@
 # gha
 
-![GHA Version](https://img.shields.io/badge/version-v0.1.2022647-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
+![GHA Version](https://img.shields.io/badge/version-v0.1.2022648-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
 
 **gha** is a Rust-based local-first AI execution engine. It provides a sub-2ms CLI launcher that proxies commands to a persistent background daemon for zero-latency tool execution and agent orchestration.
 
