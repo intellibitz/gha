@@ -1,4 +1,5 @@
 pub mod agents;
+pub mod axiom;
 pub mod gma;
 pub mod gmas;
 pub mod model_supervisor;

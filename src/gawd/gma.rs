@@ -22,6 +22,7 @@ impl GmaMasterAgent {
     }
 
     pub fn solve_clean(&self, goal: &str, workspace: &Path, version: &str) -> String {
+        crate::gawd::axiom::AxiomSubstrate::ingest_constitution(workspace);
         if let Some(res) = Self::handle_file_read_intent(goal, workspace) {
             return res;
         }
@@ -165,6 +166,7 @@ impl GmaMasterAgent {
     }
 
     pub fn solve(&self, goal: &str, workspace: &Path, version: &str) -> String {
+        crate::gawd::axiom::AxiomSubstrate::ingest_constitution(workspace);
         if let Some(res) = Self::handle_file_read_intent(goal, workspace) {
             return res;
         }
