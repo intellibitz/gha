@@ -27,7 +27,7 @@ impl GmaMasterAgent {
             return res;
         }
 
-        let hardware = HardwareProfiler::get_profile();
+        let brain = crate::gawd::brain::AlphaBrainContext::initialize(workspace);
         let (a2a_logs, _) = GmasSupervisor::supervise_mission(goal, workspace);
 
         let governance_check = self.audit_governance(&a2a_logs, workspace);
@@ -40,8 +40,13 @@ impl GmaMasterAgent {
         let model_used = Self::determine_model_used(&raw_response, &a2a_logs);
 
         format!(
-            "### GHA Intent Summary\n- **Engine Used**: {}\n- **Model Used**: {}\n- **Performance Metrics**: Hardware: {} CPUs | {} | {}GB RAM\n- **GHA Response Output**:\n{}\n",
-            engine_used, model_used, hardware.cpus, hardware.gpu_info, hardware.ram_gb, raw_response
+            "### GHA Intent Summary\n- **Engine Used**: {}\n- **Model Used**: {}\n- **Alpha Brain Substrate**: Self ({} Rules, {} Components) | System ({} CPUs, {}) | User Config (Workspace: {}, Engine: {})\n- **GHA Response Output**:\n{}\n",
+            engine_used, model_used,
+            crate::gawd::self_core::AlphaSelf::RULES.len(),
+            crate::gawd::self_core::AlphaSelf::COMPONENTS.len(),
+            brain.system_cpus, brain.system_gpu,
+            brain.workspace_path.display(), brain.default_engine,
+            raw_response
         )
     }
 
@@ -106,14 +111,19 @@ impl GmaMasterAgent {
             }
 
             if read_success {
-                let hardware = HardwareProfiler::get_profile();
+                let brain = crate::gawd::brain::AlphaBrainContext::initialize(workspace);
                 let model_used = crate::gemi::models::ModelManager::get_selected_model().unwrap_or_else(|| "gha-alpha.safetensors".to_string());
                 let mut report = String::new();
                 report.push_str("# gha Execution Report\n\n");
                 report.push_str("## Intent Summary\n");
                 report.push_str("- **Engine Used**: Tier 0/2 Substrate (Read Tool Dispatch)\n");
                 report.push_str(&format!("- **Model Used**: {}\n", model_used));
-                report.push_str(&format!("- **Performance Metrics**: Latency: <1ms | Hardware: {} CPUs | {} | {}GB RAM\n\n", hardware.cpus, hardware.gpu_info, hardware.ram_gb));
+                report.push_str(&format!("- **Alpha Brain Substrate**: Self ({} Rules, {} Components) | System ({} CPUs, {}) | User Config (Workspace: {}, Engine: {})\n\n",
+                    crate::gawd::self_core::AlphaSelf::RULES.len(),
+                    crate::gawd::self_core::AlphaSelf::COMPONENTS.len(),
+                    brain.system_cpus, brain.system_gpu,
+                    brain.workspace_path.display(), brain.default_engine
+                ));
                 report.push_str("## Output\n");
                 report.push_str(&found_content);
                 report.push_str("\n## Validation\n └── Verified: Files successfully located and read.\n");
