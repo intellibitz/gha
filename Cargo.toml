@@ -1,6 +1,6 @@
 [package]
 name = "gha"
-version = "0.1.2022664"
+version = "0.1.2022665"
 edition = "2024"
 authors = ["IntelliBitz", "Muthu Ramadoss", "GHA EAI Core"]
 description = "gha: EAI: Exponential Intelligence for Any AI. - GAWD, GEMI & GMCP Multi-Agent Engine"

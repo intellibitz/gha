@@ -153,8 +153,6 @@ impl ToolRegistry {
         tools.insert("self_evolve".to_string(), Arc::new(EvolveTool));
         tools.insert("download".to_string(), Arc::new(WebSearchDownloadTool));
         tools.insert("web_fetch".to_string(), Arc::new(WebSearchDownloadTool));
-        tools.insert("translate".to_string(), Arc::new(TranslateTool));
-        tools.insert("translate_text".to_string(), Arc::new(TranslateTool));
         tools.insert("audit_log".to_string(), Arc::new(AuditTool));
     }
 
@@ -1167,143 +1165,7 @@ impl GhaTool for GlobalRegistryScanTool {
     }
 }
 
-fn decode_bing_url(raw_url: &str) -> String {
-    if let Some(pos) = raw_url.find("&u=") {
-        let sub = &raw_url[pos + 3..];
-        let param = sub.split('&').next().unwrap_or(sub);
-        let b64_str = if param.starts_with("a1") { &param[2..] } else { param };
-        use base64::Engine;
-        if let Ok(decoded_bytes) = base64::engine::general_purpose::STANDARD.decode(b64_str) {
-            if let Ok(decoded_str) = String::from_utf8(decoded_bytes) {
-                if decoded_str.starts_with("http") {
-                    return decoded_str;
-                }
-            }
-        }
-    }
-    raw_url.to_string()
-}
 
-fn urlencoding_simple(s: &str) -> String {
-    let mut encoded = String::new();
-    for b in s.bytes() {
-        match b {
-            b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
-                encoded.push(b as char);
-            }
-            b' ' => encoded.push_str("%20"),
-            _ => {
-                encoded.push_str(&format!("%{:02X}", b));
-            }
-        }
-    }
-    encoded
-}
-
-pub fn map_language_code(target: &str) -> &'static str {
-    let lower = target.to_lowercase();
-    if lower.contains("tamil") || lower.contains("ta") {
-        "ta"
-    } else if lower.contains("spanish") || lower.contains("es") {
-        "es"
-    } else if lower.contains("french") || lower.contains("fr") {
-        "fr"
-    } else if lower.contains("german") || lower.contains("de") {
-        "de"
-    } else if lower.contains("hindi") || lower.contains("hi") {
-        "hi"
-    } else if lower.contains("chinese") || lower.contains("zh") {
-        "zh"
-    } else if lower.contains("japanese") || lower.contains("ja") {
-        "ja"
-    } else if lower.contains("korean") || lower.contains("ko") {
-        "ko"
-    } else if lower.contains("russian") || lower.contains("ru") {
-        "ru"
-    } else if lower.contains("italian") || lower.contains("it") {
-        "it"
-    } else if lower.contains("portuguese") || lower.contains("pt") {
-        "pt"
-    } else {
-        "ta"
-    }
-}
-
-pub fn translate_text_native(text: &str, target_lang: &str) -> EaiResult<String> {
-    let lang_code = map_language_code(target_lang);
-    let mut translated_lines = Vec::new();
-
-    for line in text.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            translated_lines.push(String::new());
-            continue;
-        }
-
-        if trimmed.starts_with("0-9") || trimmed.starts_with("LyricsMania.com") || trimmed.starts_with("AJR -") || trimmed.starts_with("Copyright") {
-            break;
-        }
-
-        if trimmed.starts_with('•') || trimmed.starts_with("===") || trimmed.starts_with('#') {
-            translated_lines.push(trimmed.to_string());
-            continue;
-        }
-
-        let encoded_line = urlencoding_simple(trimmed);
-        let url = format!("https://api.mymemory.translated.net/get?q={}&langpair=en%7C{}", encoded_line, lang_code);
-
-        let mut success = false;
-        if let Ok(resp) = ureq::get(&url).timeout(std::time::Duration::from_secs(5)).call() {
-            if let Ok(json_val) = serde_json::from_reader::<_, serde_json::Value>(resp.into_reader()) {
-                if let Some(trans) = json_val.get("responseData").and_then(|d| d.get("translatedText")).and_then(|t| t.as_str()) {
-                    let clean_trans = decode_html_entities(trans);
-                    if !clean_trans.trim().is_empty() {
-                        translated_lines.push(clean_trans);
-                        success = true;
-                    }
-                }
-            }
-        }
-
-        if !success {
-            translated_lines.push(trimmed.to_string());
-        }
-    }
-
-    Ok(translated_lines.join("\n"))
-}
-
-struct TranslateTool;
-impl GhaTool for TranslateTool {
-    fn name(&self) -> String { "translate".to_string() }
-    fn description(&self) -> String { "Translate text into target language using GHA native translation substrate".to_string() }
-    fn execute(&self, arg: &str, workspace: &Path) -> EaiResult<String> {
-        let trim_arg = arg.trim();
-        let target_lang = if trim_arg.to_lowercase().contains("tamil") {
-            "tamil"
-        } else if let Some(parts) = trim_arg.split_once("to ") {
-            parts.1.trim()
-        } else {
-            "tamil"
-        };
-
-        let mut input_text = String::new();
-        let download_file = workspace.join("download_content.txt");
-        if download_file.is_file() {
-            if let Ok(c) = fs::read_to_string(&download_file) {
-                input_text = c;
-            }
-        }
-        if input_text.trim().is_empty() {
-            input_text = trim_arg.to_string();
-        }
-
-        let translated = translate_text_native(&input_text, target_lang)?;
-        let save_path = workspace.join("download_content.txt");
-        let _ = fs::write(&save_path, &translated);
-        Ok(format!("Translated content to {} [Saved to {}]:\n\n{}", target_lang, save_path.display(), translated.trim()))
-    }
-}
 
 fn decode_html_entities(text: &str) -> String {
     text.replace("&quot;", "\"")
@@ -1427,9 +1289,8 @@ impl GhaTool for WebSearchDownloadTool {
                                     if let Some(href_end) = sub.find('"') {
                                         let raw_url = &sub[..href_end];
                                         let clean_raw_url = decode_html_entities(raw_url);
-                                        let decoded_url = decode_bing_url(&clean_raw_url);
-                                        if decoded_url.starts_with("http") && !decoded_url.contains("bing.com") {
-                                            top_urls.push(decoded_url);
+                                        if clean_raw_url.starts_with("http") && !clean_raw_url.contains("bing.com") {
+                                            top_urls.push(clean_raw_url);
                                         }
                                     }
                                 }
@@ -1498,23 +1359,7 @@ impl GhaTool for WebSearchDownloadTool {
             }
         }
 
-fn extract_azlyrics(html: &str) -> Option<String> {
-    if let Some(start_pos) = html.find("<!-- Usage of azlyrics") {
-        if let Some(div_pos) = html[start_pos..].find("-->") {
-            let sub = &html[start_pos + div_pos + 3..];
-            if let Some(end_pos) = sub.find("</div>") {
-                let raw_lyrics = &sub[..end_pos];
-                let clean_lyrics = strip_html_tags(raw_lyrics);
-                if clean_lyrics.lines().count() > 5 {
-                    return Some(clean_lyrics);
-                }
-            }
-        }
-    }
-    None
-}
-
-        // Deep Content Fetch: If query asks for specific lyrics, articles, docs, or detailed content, fetch top result URL
+        // Deep Content Fetch: If query asks for specific articles, docs, or detailed content, fetch top result URL
         let lower_arg = clean_arg.to_lowercase();
         let needs_deep_content = lower_arg.contains("lyrics")
             || lower_arg.contains("article")
@@ -1524,20 +1369,13 @@ fn extract_azlyrics(html: &str) -> Option<String> {
             || lower_arg.contains("fetch");
 
         if needs_deep_content && !top_urls.is_empty() {
-            let mut prioritized_urls = top_urls.clone();
-            prioritized_urls.sort_by_key(|u| if u.contains("azlyrics.com") { 0 } else if u.contains("songlyrics") { 1 } else { 2 });
-
-            for target_url in &prioritized_urls {
+            for target_url in &top_urls {
                 if let Ok(resp) = ureq::get(target_url)
                     .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                     .timeout(std::time::Duration::from_secs(10))
                     .call()
                 {
                     if let Ok(page_html) = resp.into_string() {
-                        if let Some(az_lyrics) = extract_azlyrics(&page_html) {
-                            extracted_text = format!("=== Full Song Lyrics ({}) ===\n{}\n", target_url, az_lyrics);
-                            break;
-                        }
                         let page_clean = strip_html_tags(&page_html);
                         let page_lower = page_clean.to_lowercase();
                         if !page_clean.trim().is_empty()
