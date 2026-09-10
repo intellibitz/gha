@@ -102,7 +102,7 @@ impl GemiEngine {
         let api_base = model.api_base.as_ref().ok_or_else(|| anyhow!("No API base URL configured for model"))?;
 
         match model.provider {
-            ProviderType::OpenAI => {
+            ProviderType::StandardOpenAi => {
                 let url = format!("{}/chat/completions", api_base.trim_end_matches('/'));
                 let payload = json!({
                     "model": model.model_id,
@@ -110,18 +110,18 @@ impl GemiEngine {
                 });
                 let out = Self::curl_pipe(&url, vec![("Authorization", &format!("Bearer {}", api_key))], payload)?;
                 let v: serde_json::Value = serde_json::from_slice(&out)?;
-                let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("OpenAI-compatible failure"))?;
+                let text = v.get("choices").and_then(|c| c.get(0)).and_then(|choice| choice.get("message")).and_then(|msg| msg.get("content")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Standard REST API completion failure"))?;
                 Ok(Self::cleanse_artifact(text))
             },
-            ProviderType::Google => {
+            ProviderType::StandardGoogle => {
                 let url = format!("{}/models/{}:generateContent?key={}", api_base.trim_end_matches('/'), model.model_id.replace("google/", ""), api_key.trim());
                 let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
                 let out = Self::curl_pipe(&url, vec![], payload)?;
                 let v: serde_json::Value = serde_json::from_slice(&out)?;
-                let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Gemini failure"))?;
+                let text = v.get("candidates").and_then(|c| c.get(0)).and_then(|cand| cand.get("content")).and_then(|cnt| cnt.get("parts")).and_then(|parts| parts.get(0)).and_then(|p| p.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Standard REST API completion failure"))?;
                 Ok(Self::cleanse_artifact(text))
             },
-            ProviderType::Anthropic => {
+            ProviderType::StandardAnthropic => {
                 let url = format!("{}/messages", api_base.trim_end_matches('/'));
                 let payload = json!({
                     "model": model.model_id,
@@ -133,7 +133,7 @@ impl GemiEngine {
                     ("anthropic-version", "2023-06-01")
                 ], payload)?;
                 let v: serde_json::Value = serde_json::from_slice(&out)?;
-                let text = v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Anthropic failure"))?;
+                let text = v.get("content").and_then(|c| c.get(0)).and_then(|item| item.get("text")).and_then(|t| t.as_str()).ok_or_else(|| anyhow!("Standard REST API completion failure"))?;
                 Ok(Self::cleanse_artifact(text))
             },
             _ => Err(anyhow!("Unsupported provider type for cloud execution")),
