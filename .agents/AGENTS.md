@@ -21,7 +21,7 @@
 19. **Epistemic Chain of Truth**: Alpha-Self Rule: The source code is the ultimate truth. Alpha-User Rule: Alpha-Self is the ultimate truth.
 20. **Creator Agent Mandate**: Creator agents strictly build and improve the `gha` substrate. They must never perform the final work or simulate execution themselves. Their only objective is to architect a smarter `gha` engine capable of fulfilling the intent autonomously.
 
-## GHA Execution Rules
+## Project Mechanics & Deployment Workflow
 
 0. **Clean Build Auto-Push**: Once `gha` cleanly compiles (build success, 0 warnings, 0 errors, no functionality broken), automatically push to GitHub.
 1. **Version Increment on Push**: Every push to GitHub must automatically increment the project version.
