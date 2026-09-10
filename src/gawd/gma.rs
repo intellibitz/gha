@@ -23,7 +23,7 @@ impl GmaMasterAgent {
     pub fn solve_clean(&self, goal: &str, workspace: &Path, version: &str) -> String {
         let (a2a_logs, _) = GmasSupervisor::supervise_mission(goal, workspace);
 
-        let governance_check = self.audit_governance(&a2a_logs);
+        let governance_check = self.audit_governance(&a2a_logs, workspace);
         if let Err(e) = governance_check {
             return format!("{}", e);
         }
@@ -208,7 +208,7 @@ impl GmaMasterAgent {
         }
 
         // Governance Protocol: Safety & Security Audit
-        let governance_check = self.audit_governance(&a2a_logs);
+        let governance_check = self.audit_governance(&a2a_logs, workspace);
         if let Err(e) = governance_check {
             report.push_str("\n## Governance Status\n");
             report.push_str(&format!("   └── Aborted: {}\n", e));
@@ -229,6 +229,16 @@ impl GmaMasterAgent {
             report.push_str("\n## Output\n");
             report.push_str(&mission_result);
             report.push('\n');
+
+            // 🌀 Rule 18: Baked-in Step 10 - Synchronous Distillation
+            // If the mission was solved via reasoning, distill it into a native reflex immediately.
+            if !is_reflex && !mission_result.contains("ERROR") && !mission_result.contains("TRUTH VIOLATION") {
+                if let Ok(evolve_res) = self.trigger_autonomous_evolution(goal, workspace) {
+                    report.push_str("\n## Substrate Evolution\n");
+                    report.push_str(&format!(" └── ✅ {}\n", evolve_res));
+                    report.push_str(" └── Note: Run 'gha release' to activate this microsecond reflex.\n");
+                }
+            }
         }
 
         let audit = self.audit_truth(goal, &a2a_logs, workspace, &mission_result);
@@ -242,7 +252,9 @@ impl GmaMasterAgent {
         report
     }
 
-    fn audit_governance(&self, logs: &[super::gmas::A2AMessage]) -> EaiResult<()> {
+    fn audit_governance(&self, logs: &[super::gmas::A2AMessage], workspace: &Path) -> EaiResult<()> {
+        super::model_supervisor::ModelSupervisor::audit_and_prepare_models(workspace)?;
+
         for msg in logs {
             if msg.payload.contains("ACTION:")
                 && let Some(action_part) = msg.payload.split("ACTION: ").nth(1)

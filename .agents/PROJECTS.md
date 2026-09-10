@@ -3,7 +3,7 @@
 ## System Information
 
 * **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.2022592`
+* **Current Engine Version**: `v0.1.2022593`
 * **Core Paradigm**: EAI (Exponential Intelligence for Any AI) — Intelligence Reflex & Execution Substrate for Any World User (Indestructible DNA)
 
 ## Unified System Identity
@@ -144,7 +144,7 @@ GHA is engineered for maximum performance through full hardware utilization:
 
 ## 100% Safety, Security & Governance Architecture
 
-* **Pre-Execution Governance Protocol**: `SafetyDetector::audit_action` & `SecurityDetector::audit_action` inspect all tool execution signatures prior to execution, blocking destructive commands (`rm -rf /`, raw disk formatting) and credential/secret leaks (`OPENAI_API_KEY`, `AWS_SECRET_ACCESS_KEY`, private keys).
+* **Pre-Execution Governance Protocol**: `ModelSupervisor::audit_and_prepare_models` inspects cloud and local models, verifying readiness or autonomously bootstrapping weights based on hardware profile. Additionally, `SafetyDetector::audit_action` & `SecurityDetector::audit_action` inspect all tool execution signatures prior to execution, blocking destructive commands (`rm -rf /`, raw disk formatting) and credential/secret leaks (`OPENAI_API_KEY`, `AWS_SECRET_ACCESS_KEY`, private keys).
 * **Sandboxed State Isolation**: All engine states, temporary build artifacts, and configuration settings are isolated inside `.gha` sandbox containers, preventing host OS corruption.
 * **Real-Time Audit Trail Logging**: `GhaAuditLogger` logs every intent, governance check result, tool invocation, and truth audit score into `.gha/audit.log` for full external system interrogation (`gha audit` / `/audit`).
 * **Truth & Hallucination Audit**: `GhaTruthAgent` verifies that claimed action artifacts (written files, build status) actually exist and match technical specifications before completing a mission.
