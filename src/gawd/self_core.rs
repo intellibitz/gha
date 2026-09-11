@@ -26,7 +26,7 @@ pub struct GhaAxiomRule {
 pub struct AlphaSelf;
 
 impl AlphaSelf {
-    pub const VERSION: &'static str = "0.1.2022677";
+    pub const VERSION: &'static str = "0.1.2022682";
     pub const CORE_PARADIGM: &'static str = "EAI (Exponential Intelligence for Any AI) - Intelligence Reflex & Execution Substrate";
 
     pub const RULES: &[GhaAxiomRule] = &[
@@ -54,6 +54,7 @@ impl AlphaSelf {
         GhaAxiomRule { id: 26, title: "Dynamic Meta Codebase Paradigm", imperative: "GHA source code is dynamic and meta. It provides pure execution, governance, and protocol primitives without static domain rules, vendor bindings, or query matchers." },
         GhaAxiomRule { id: 27, title: "Substrate Purity Mandate", imperative: "GHA source code contains zero hardcoding, zero vendor bindings, and zero platform binary tools. It is 100% pure native Rust substrate." },
         GhaAxiomRule { id: 28, title: "Full Delegation & Evolutionary Substrate Mandate", imperative: "GHA fully delegates deep reasoning to Tier 2 GEMI models and all specialized tooling to MCP. GHA source code exists strictly to evolve GHA substrate capabilities." },
+        GhaAxiomRule { id: 29, title: "Dependency & Configuration Meta Rule", imperative: "Any component that requires any external dependency, environment configuration, or remote asset is classified and orchestrated strictly as Meta." },
     ];
 
     pub const COMPONENTS: &[GhaComponentSpec] = &[
