@@ -302,7 +302,7 @@ impl GmaMasterAgent {
         // 🌀 Rule 18: Autonomous Intelligence Bootstrapping
         if intelligence_gap && !goal.contains("scout_model") {
              crate::sandbox::manager::GhaAuditLogger::log_event(workspace, "INTELLIGENCE_GAP", "No models found. Bootstrapping local intelligence.");
-             let scout_res = ToolRegistry::execute_tool("scout_model", "mistral", workspace);
+             let scout_res = ToolRegistry::execute_tool("scout_model", "default_model", workspace);
              return format!("Critical reasoning gap detected. Scouting for local models...\n{}", scout_res);
         }
 

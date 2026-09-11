@@ -146,7 +146,7 @@ impl ModelManager {
                     }
                 }
             } else {
-                // Heuristic estimation for Ollama or registry tag models
+                // Heuristic estimation for local model registry tag models
                 let name_lower = m.model_id.to_lowercase();
                 if name_lower.contains("70b") || name_lower.contains("72b") {
                     model_size_gb = 40.0;

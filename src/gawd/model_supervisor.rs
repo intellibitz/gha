@@ -24,9 +24,6 @@ impl ModelSupervisor {
             "MODEL_API_KEY",
             "EAI_API_KEY",
             "API_KEY",
-            "GEMINI_API_KEY",
-            "OPENAI_API_KEY",
-            "ANTHROPIC_API_KEY",
         ];
 
         let mut cloud_available = false;

@@ -50,7 +50,7 @@ fn print_help() {
     println!("Examples:");
     println!("  gha \"analyze current git status\"");
     println!("  cat error.log | gha \"debug this error\"");
-    println!("  gha scout_model mistral > model.json");
+    println!("  gha scout_model <model_id> > model.json");
 }
 
 fn run_install(global_dir: &Path) {

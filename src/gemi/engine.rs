@@ -26,7 +26,7 @@ impl GemiEngine {
             }
         }
 
-        // 1. Try cloud providers first if configured (Gemini, OpenAI, Groq, Anthropic)
+        // 1. Try cloud providers first if configured
         let (cloud_res, _) = Self::scout_tier2_providers(prompt, workspace);
         if let Some(text) = cloud_res {
             if !text.trim().is_empty() {
@@ -114,7 +114,7 @@ impl GemiEngine {
                 Ok(Self::cleanse_artifact(text))
             },
             ProviderType::StandardGoogle => {
-                let url = format!("{}/models/{}:generateContent?key={}", api_base.trim_end_matches('/'), model.model_id.replace("google/", ""), api_key.trim());
+                let url = format!("{}/models/{}:generateContent?key={}", api_base.trim_end_matches('/'), model.model_id, api_key.trim());
                 let payload = json!({ "contents": [{"parts": [{"text": prompt}]}] });
                 let out = Self::curl_pipe(&url, vec![], payload)?;
                 let v: serde_json::Value = serde_json::from_slice(&out)?;
