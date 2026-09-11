@@ -502,7 +502,7 @@ impl GmaMasterAgent {
                 GmasSupervisor::replicate_checkpoint(&checkpoint);
                 let preview: String = clean_fetched.lines().take(15).collect::<Vec<_>>().join("\n");
                 return format!(
-                    "[TASK FAILED - INCOMPLETE EXECUTION]\n\nReason: Substrate model unfulfilled or unavailable for synthesis/translation. Configure active model or GEMINI_API_KEY / OPENAI_API_KEY in ~/.gha/env.\n\nFetched Raw Content Saved to [{}]:\n{}",
+                    "[TASK FAILED - INCOMPLETE EXECUTION]\n\nReason: Substrate model unfulfilled or unavailable for synthesis/translation. Configure active model or GHA_API_KEY in ~/.gha/env.\n\nFetched Raw Content Saved to [{}]:\n{}",
                     save_path.display(), preview
                 );
             }

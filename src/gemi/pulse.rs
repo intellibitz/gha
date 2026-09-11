@@ -128,16 +128,9 @@ impl GhaPulse {
              }
         }
 
-        if lower.contains("connect openai") {
-            return Ok("ACTION: connect_provider openai".to_string());
-        }
-
-        if lower.contains("connect gemini") {
-            return Ok("ACTION: connect_provider gemini".to_string());
-        }
-
-        if lower.contains("connect anthropic") {
-            return Ok("ACTION: connect_provider anthropic".to_string());
+        if lower.contains("connect_provider") || lower.contains("connect provider") {
+            let provider = lower.split_whitespace().last().unwrap_or("cloud");
+            return Ok(format!("ACTION: connect_provider {}", provider));
         }
 
         if lower.contains("backup") || lower.contains("restore") {

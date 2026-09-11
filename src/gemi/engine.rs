@@ -47,7 +47,7 @@ impl GemiEngine {
         }
 
         // 3. Fallback: Native reasoning substrate active via Candle tensors
-        "STATUS: Native reasoning substrate active via Candle tensors. Set GEMINI_API_KEY (or OPENAI_API_KEY) in ~/.gha/env for cloud models.".to_string()
+        "STATUS: Native reasoning substrate active via Candle tensors. Set GHA_API_KEY in ~/.gha/env for cloud models.".to_string()
     }
 
     #[allow(dead_code)]

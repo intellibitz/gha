@@ -249,21 +249,15 @@ impl GmcpClient {
         vec![
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 3: GMCP (Capabilities)".to_string(),
-                name: "GHA Desktop Substrate".to_string(),
-                provider: "GHA".to_string(),
+                name: "GHA Substrate Protocol".to_string(),
+                provider: "GHA Engine".to_string(),
                 url: "https://gha.ai/download".to_string(),
             },
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 3: GMCP (Capabilities)".to_string(),
-                name: "Cursor IDE".to_string(),
-                provider: "Anysphere".to_string(),
-                url: "https://cursor.sh".to_string(),
-            },
-            crate::gawd::agents::DiscoverableAsset {
-                tier: "Tier 3: GMCP (Capabilities)".to_string(),
-                name: "Brave Search MCP".to_string(),
-                provider: "Brave Software".to_string(),
-                url: "https://brave.com/search/api".to_string(),
+                name: "Meta MCP Protocol Hub".to_string(),
+                provider: "MCP Standard".to_string(),
+                url: "https://modelcontextprotocol.io".to_string(),
             },
         ]
     }

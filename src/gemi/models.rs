@@ -505,10 +505,6 @@ impl ModelManager {
                                 "Local LM Studio Vault"
                             } else if path_str.contains("huggingface") {
                                 "Local HuggingFace Cache"
-                            } else if path_str.contains("GPT4All") || path_str.contains("gpt4all") {
-                                "Local GPT4All Vault"
-                            } else if path_str.contains("ollama") {
-                                "Local Ollama Vault"
                             } else {
                                 "Local Model Vault"
                             };

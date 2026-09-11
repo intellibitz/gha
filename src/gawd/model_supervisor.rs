@@ -20,13 +20,13 @@ impl ModelSupervisor {
 
         // 1. Cloud Model Inspection
         let cloud_env_keys = vec![
-            "OPENAI_API_KEY",
+            "GHA_API_KEY",
+            "MODEL_API_KEY",
+            "EAI_API_KEY",
+            "API_KEY",
             "GEMINI_API_KEY",
+            "OPENAI_API_KEY",
             "ANTHROPIC_API_KEY",
-            "GROQ_API_KEY",
-            "DEEPSEEK_API_KEY",
-            "MISTRAL_API_KEY",
-            "GEMI_API_KEY",
         ];
 
         let mut cloud_available = false;
