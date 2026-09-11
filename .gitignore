@@ -8,13 +8,13 @@
 # Rust build outputs
 /target/
 **/target/
-gha-native
+aeon-native
 
 # Kotlin compiler & cache
 .kotlin/
 
-# Sandboxed GHA runtime, caches, & local home
-.gha/
+# Sandboxed AEON runtime, caches, & local home
+.aeon/
 
 # Local properties & secrets
 local.properties

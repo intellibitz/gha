@@ -1,4 +1,4 @@
-// GHA Unified Error Protocol
+// AEON Unified Error Protocol
 // Categorized error handling for Exponential Intelligence Substrate
 
 use std::fmt;

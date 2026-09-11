@@ -1,9 +1,9 @@
 [package]
-name = "gha"
-version = "0.1.2022682"
+name = "aeon-engine"
+version = "0.1.2022683"
 edition = "2024"
-authors = ["IntelliBitz", "Muthu Ramadoss", "GHA EAI Core"]
-description = "gha: EAI: Exponential Intelligence for Any AI. - GAWD, GEMI & GMCP Multi-Agent Engine"
+authors = ["IntelliBitz", "Muthu Ramadoss", "AEON EAI Core"]
+description = "aeon-engine: EAI: Exponential Intelligence for Any AI. - GAWD, GEMI & GMCP Multi-Agent Engine"
 license = "Apache-2.0"
 
 [dependencies]

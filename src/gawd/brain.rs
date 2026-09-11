@@ -1,10 +1,10 @@
-// GHA Alpha Brain Runtime Substrate: Unified Tri-State Awareness
+// AEON Alpha Brain Runtime Substrate: Unified Tri-State Awareness
 // Unifies Self (Compiled Binary Instructions), System Environment (Hardware/OS), and User (Configurations/Workspace).
 
 use std::path::{Path, PathBuf};
 use super::self_core::AlphaSelf;
 use crate::gemi::hardware::HardwareProfiler;
-use crate::sandbox::manager::GhaConfig;
+use crate::sandbox::manager::AeonConfig;
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -24,8 +24,8 @@ impl AlphaBrainContext {
     pub fn initialize(workspace: &Path) -> Self {
         let hardware = HardwareProfiler::get_profile();
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let global_dir = home.join(".gha");
-        let cfg = GhaConfig::load(&global_dir);
+        let global_dir = home.join(".aeon");
+        let cfg = AeonConfig::load(&global_dir);
 
         Self {
             self_version: AlphaSelf::VERSION,
@@ -43,9 +43,9 @@ impl AlphaBrainContext {
     #[allow(dead_code)]
     pub fn inspect_tri_state(&self) -> String {
         format!(
-            "GHA Alpha Brain Tri-State Awareness:\n\
-             1. [SELF - Compiled Core]: Version {}, {} Baked Rules, {} Baked Components\n\
-             2. [SYSTEM - Hardware Environment]: {} CPUs | {} | {}GB RAM\n\
+            "AEON Alpha Brain Tri-State Awareness:\\\n\
+             1. [SELF - Compiled Core]: Version {}, {} Baked Rules, {} Baked Components\\\n\
+             2. [SYSTEM - Hardware Environment]: {} CPUs | {} | {}GB RAM\\\n\
              3. [USER - Dynamic Configuration]: Workspace: {} | Engine: {} | Model: {} | GMCP Port: {} | GEMI Port: {}",
             self.self_version,
             AlphaSelf::RULES.len(),

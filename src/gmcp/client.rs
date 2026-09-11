@@ -1,4 +1,4 @@
-// 🔌 GMCP Universal Client: Bridges GHA to Industry Protocol Standard MCP Servers
+// 🔌 GMCP Universal Client: Bridges AEON to Industry Protocol Standard MCP Servers
 // 100% Rust implementation for Stdio-based Multi-Server Orchestration
 
 use std::collections::HashMap;
@@ -17,11 +17,11 @@ pub struct GmcpClient;
 impl GmcpClient {
     pub fn get_config_path() -> PathBuf {
         let home = std::env::var("HOME").unwrap_or_default();
-        let gha_dir = PathBuf::from(home).join(".gha");
-        if !gha_dir.exists() {
-            let _ = fs::create_dir_all(&gha_dir);
+        let aeon_dir = PathBuf::from(home).join(".aeon");
+        if !aeon_dir.exists() {
+            let _ = fs::create_dir_all(&aeon_dir);
         }
-        gha_dir.join("mcp_config.json")
+        aeon_dir.join("mcp_config.json")
     }
 
     pub fn list_external_tools() -> Vec<McpTool> {
@@ -42,9 +42,9 @@ impl GmcpClient {
 
     pub fn fetch_global_registry() -> Vec<GlobalMcpEntry> {
         let home = std::env::var("HOME").unwrap_or_default();
-        let global_dir = PathBuf::from(home).join(".gha");
+        let global_dir = PathBuf::from(home).join(".aeon");
         let registry_path = global_dir.join("global_mcp_registry.json");
-        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+        let cfg = crate::sandbox::manager::AeonConfig::load(&global_dir);
 
         let mut entries: Vec<GlobalMcpEntry> = Vec::new();
 
@@ -58,7 +58,7 @@ impl GmcpClient {
             }
         }
 
-        // 2. Read / Merge Local Dynamic Registry Overrides (~/.gha/global_mcp_registry.json)
+        // 2. Read / Merge Local Dynamic Registry Overrides (~/.aeon/global_mcp_registry.json)
         if registry_path.is_file()
             && let Ok(content) = fs::read_to_string(&registry_path)
             && let Ok(local_entries) = serde_json::from_str::<Vec<GlobalMcpEntry>>(&content)
@@ -80,6 +80,7 @@ impl GmcpClient {
         entries
     }
 
+    #[allow(dead_code)]
     pub fn benchmark_server(name: &str) -> (u128, bool) {
         let start = Instant::now();
         let config_path = Self::get_config_path();
@@ -112,12 +113,12 @@ impl GmcpClient {
             } else if has_npx {
                 ("npx".to_string(), vec!["-y".to_string(), package.trim_start_matches("pypi:").to_string()])
             } else {
-                ("gha".to_string(), vec!["mcp".to_string(), name.to_string()])
+                ("aeon".to_string(), vec!["mcp".to_string(), name.to_string()])
             }
         } else if has_npx {
             ("npx".to_string(), vec!["-y".to_string(), package.to_string()])
         } else {
-            ("gha".to_string(), vec!["mcp".to_string(), name.to_string()])
+            ("aeon".to_string(), vec!["mcp".to_string(), name.to_string()])
         };
 
         let new_srv = McpServerConfig {
@@ -135,6 +136,7 @@ impl GmcpClient {
         "ERROR_FAILED".to_string()
     }
 
+    #[allow(dead_code)]
     pub fn execute_category_tool(target_category: &str, query: &str) -> Option<String> {
         let registry = Self::fetch_global_registry();
         for entry in registry {
@@ -208,7 +210,7 @@ impl GmcpClient {
                     "roots": { "listChanged": false },
                     "sampling": {}
                 },
-                "clientInfo": { "name": "gha-master", "version": crate::GHA_VERSION }
+                "clientInfo": { "name": "aeon-master", "version": crate::AEON_VERSION }
             }
         });
         let _ = writeln!(stdin, "{}", init_req);
@@ -249,9 +251,9 @@ impl GmcpClient {
         vec![
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 3: GMCP (Capabilities)".to_string(),
-                name: "GHA Substrate Protocol".to_string(),
-                provider: "GHA Engine".to_string(),
-                url: "https://gha.ai/download".to_string(),
+                name: "AEON Substrate Protocol".to_string(),
+                provider: "AEON Engine".to_string(),
+                url: "https://aeon.ai/download".to_string(),
             },
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 3: GMCP (Capabilities)".to_string(),

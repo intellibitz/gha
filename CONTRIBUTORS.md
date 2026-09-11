@@ -1,6 +1,6 @@
-# GHA Project Contributors
+# AEON Project Contributors
 
-GHA is created and maintained by a collaboration of human creators and AI co-creators:
+AEON is created and maintained by a collaboration of human creators and AI co-creators:
 
 ## Core Creators & Contributors
 - **IntelliBitz** ([@intellibitz](https://github.com/intellibitz)) - Founder & Lead Maintainer

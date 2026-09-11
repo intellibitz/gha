@@ -1,73 +1,60 @@
-// GEMI REST Server: GHA Unified Native REST Server Interface
-// 100% Rust implementation supporting text/event-stream SSE for IDE Substrates
+// GEMI HTTP REST Substrate: OpenAI-Compatible Interface & Adaptive Web Interface
+// 100% Rust implementation serving Tier 1 & Tier 2 Intelligence Swarms
 
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 use std::path::PathBuf;
 use std::thread;
 use serde_json::json;
 
-use crate::gawd::GmaMasterAgent;
+use crate::gawd::ama::AmaMasterAgent;
 use crate::gmcp::tools::ToolRegistry;
-use super::models::ModelManager;
+use crate::gemi::models::ModelManager;
 
 pub struct GemiServer;
 
 impl GemiServer {
-    #[allow(dead_code)]
-    pub const DEFAULT_PORT: u16 = 9091; // Unique GEMI Port
-
     pub fn start_http_server(workspace: PathBuf, port: u16) {
-        let addr = format!("127.0.0.1:{}", port);
-        let listener = match TcpListener::bind(&addr) {
-            Ok(l) => l,
-            Err(e) => {
-                eprintln!("⚠️ [GEMI HTTP Server] Could not bind to {}: {}", addr, e);
-                return;
-            }
-        };
+        let addr = format!("0.0.0.0:{}", port);
+        let listener = TcpListener::bind(&addr).expect("Failed to bind GEMI HTTP server");
+        eprintln!("🚀 [GEMI REST] Substrate active on {}", addr);
+        eprintln!("🔗 [GEMI Web] UI Interface: http://localhost:{}/app", port);
 
-        eprintln!("[GEMI Server] GHA Unified Native REST Server active at http://{}/v1", addr);
-
-        for stream in listener.incoming().flatten() {
+        for stream in listener.incoming() {
+            let mut stream = stream.expect("GEMI Stream Error");
             let workspace = workspace.clone();
+
             thread::spawn(move || {
-                let mut reader = BufReader::new(&stream);
+                let mut reader = BufReader::new(&mut stream);
                 let mut first_line = String::new();
-                if reader.read_line(&mut first_line).is_err() {
-                    return;
+                let _ = reader.read_line(&mut first_line);
+
+                let parts: Vec<&str> = first_line.split_whitespace().collect();
+                if parts.len() < 2 { return; }
+                let method = parts[0];
+                let path = parts[1];
+
+                let mut body_str = String::new();
+                let mut content_length = 0;
+
+                loop {
+                    let mut line = String::new();
+                    let _ = reader.read_line(&mut line);
+                    if line == "\r\n" || line.is_empty() { break; }
+                    if line.to_lowercase().starts_with("content-length:") {
+                        content_length = line.split(':').nth(1).unwrap_or("0").trim().parse::<usize>().unwrap_or(0);
+                    }
                 }
 
-                // Parse HTTP headers
-                let mut content_length: usize = 0;
-                let mut header_line = String::new();
-                while reader.read_line(&mut header_line).is_ok() {
-                    let trimmed = header_line.trim();
-                    if trimmed.is_empty() {
-                        break;
-                    }
-                    let lower = trimmed.to_lowercase();
-                    if lower.starts_with("content-length:")
-                        && let Some(val) = lower.split(':').nth(1)
-                    {
-                        content_length = val.trim().parse::<usize>().unwrap_or(0);
-                    }
-                    header_line.clear();
-                }
-
-                let mut body_bytes = vec![0u8; content_length];
                 if content_length > 0 {
-                    let _ = reader.read_exact(&mut body_bytes);
+                    let mut buffer = vec![0u8; content_length];
+                    let _ = std::io::Read::read_exact(&mut reader, &mut buffer);
+                    body_str = String::from_utf8_lossy(&buffer).to_string();
                 }
-                let body_str = String::from_utf8_lossy(&body_bytes);
 
                 let mut writer = stream;
 
-                let req_parts: Vec<&str> = first_line.split_whitespace().collect();
-                let method = req_parts.first().copied().unwrap_or("");
-                let path = req_parts.get(1).copied().unwrap_or("");
-
-                if method == "GET" && (path == "/" || path == "/index.html" || path.starts_with("/ui") || path.starts_with("/app") || path == "/favicon.ico") {
+                if method == "GET" && (path == "/" || path.starts_with("/app") || path == "/favicon.ico") {
                     let html = get_web_app_html();
                     let resp = format!(
                         "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: {}\r\n\r\n{}",
@@ -80,7 +67,7 @@ impl GemiServer {
                     let models = ModelManager::list_models(&workspace);
                     let json_models: Vec<serde_json::Value> = models
                         .iter()
-                        .map(|m| json!({"id": m.model_id, "object": "model", "owned_by": "gha"}))
+                        .map(|m| json!({"id": m.model_id, "object": "model", "owned_by": "aeon"}))
                         .collect();
                     let payload_val = json!({"object": "list", "data": json_models});
                     let payload = serde_json::to_string(&payload_val).unwrap_or_default();
@@ -92,14 +79,14 @@ impl GemiServer {
                     );
                     let _ = writer.write_all(resp.as_bytes());
                     let _ = writer.flush();
-                } else if method == "GET" && path == "/well-known/gha" {
+                } else if method == "GET" && path == "/well-known/aeon" {
                     let hardware = crate::gemi::hardware::HardwareProfiler::get_profile();
                     let (engine, model) = crate::gemi::models::ModelManager::get_active_engine_and_model();
                     let tools = ToolRegistry::list_tools();
 
                     let info = json!({
-                        "version": crate::GHA_VERSION,
-                        "identity": "GHA Intelligence Substrate",
+                        "version": crate::AEON_VERSION,
+                        "identity": "AEON Intelligence Substrate",
                         "engine": engine,
                         "model": model,
                         "hardware": {
@@ -122,14 +109,14 @@ impl GemiServer {
                 } else if method == "POST" && (path.starts_with("/v1/chat/completions") || path.starts_with("/chat/completions")) {
                     let is_streaming = body_str.contains("\"stream\":true") || body_str.contains("\"stream\": true") || body_str.contains("stream");
                     let active_model = crate::gemi::models::ModelManager::get_selected_model()
-                        .unwrap_or_else(|| "gha-native-synthesis".to_string());
+                        .unwrap_or_else(|| "aeon-native-synthesis".to_string());
                     let model_name = active_model.as_str();
 
                     // Extract actual user prompt from JSON payload
                     let user_prompt = extract_prompt_from_json(&body_str).unwrap_or_else(|| "list workspace health".to_string());
 
                     // Audit Log & Session Memory Unified Execution
-                    crate::sandbox::manager::GhaAuditLogger::log_event(&workspace, "WEB_MISSION_START", &user_prompt);
+                    crate::sandbox::manager::AeonAuditLogger::log_event(&workspace, "WEB_MISSION_START", &user_prompt);
 
                     let trimmed_prompt = user_prompt.trim();
                     let clean_cmd = trimmed_prompt.trim_start_matches('/').trim_start_matches(':');
@@ -142,11 +129,11 @@ impl GemiServer {
                     } else if tool_name == "domain" || tool_name == "domains" {
                         "Intelligence Substrates for World Missions:\n  Agronomy\n  Clinical Medical\n  Legal & Compliance\n  Education & Science\n  Renewable Energy\n  Skilled Trades & Building Codes\n  Creative & Media\n  Home & Family\n  Public Safety\n  Enterprise & Operations\n  Software & Systems Engineering\n  Universal Substrate".to_string()
                     } else {
-                        let gma = GmaMasterAgent::new();
-                        let (badge, badge_desc) = crate::gawd::agents::GhaUserAgent::detect_domain_badge(trimmed_prompt);
-                        let clean_ans = gma.solve_clean(trimmed_prompt, &workspace, crate::GHA_VERSION);
+                        let ama = AmaMasterAgent::new();
+                        let (badge, badge_desc) = crate::gawd::agents::AeonUserAgent::detect_domain_badge(trimmed_prompt);
+                        let clean_ans = ama.solve_clean(trimmed_prompt, &workspace, crate::AEON_VERSION);
                         let final_resp = format!("Substrate Mode: {} ({})\n\n{}", badge, badge_desc, clean_ans);
-                        crate::sandbox::manager::GhaMemory::append_interaction(&workspace, trimmed_prompt, &final_resp);
+                        crate::sandbox::manager::AeonMemory::save_interaction(&workspace, trimmed_prompt, &final_resp);
                         final_resp
                     };
 
@@ -159,7 +146,7 @@ impl GemiServer {
 
                         // Chunk 1: Role
                         let chunk1 = format!(
-                            "data: {{\"id\":\"chatcmpl-gha-{}\",\"object\":\"chat.completion.chunk\",\"created\":{},\"model\":\"{}\",\"choices\":[{{\"index\":0,\"delta\":{{\"role\":\"assistant\"}},\"finish_reason\":null}}]}}\n\n",
+                            "data: {{\"id\":\"chatcmpl-aeon-{}\",\"object\":\"chat.completion.chunk\",\"created\":{},\"model\":\"{}\",\"choices\":[{{\"index\":0,\"delta\":{{\"role\":\"assistant\"}},\"finish_reason\":null}}]}}\n\n",
                             now, now, model_name
                         );
                         let _ = writer.write_all(chunk1.as_bytes());
@@ -168,7 +155,7 @@ impl GemiServer {
                         // Chunk 2: Content
                         let json_content = serde_json::to_string(&content).unwrap_or_default();
                         let chunk2 = format!(
-                            "data: {{\"id\":\"chatcmpl-gha-{}\",\"object\":\"chat.completion.chunk\",\"created\":{},\"model\":\"{}\",\"choices\":[{{\"index\":0,\"delta\":{{\"content\":{}}},\"finish_reason\":null}}]}}\n\n",
+                            "data: {{\"id\":\"chatcmpl-aeon-{}\",\"object\":\"chat.completion.chunk\",\"created\":{},\"model\":\"{}\",\"choices\":[{{\"index\":0,\"delta\":{{\"content\":{}}},\"finish_reason\":null}}]}}\n\n",
                             now, now, model_name, json_content
                         );
                         let _ = writer.write_all(chunk2.as_bytes());
@@ -176,7 +163,7 @@ impl GemiServer {
 
                         // Chunk 3: Finish Reason
                         let chunk3 = format!(
-                            "data: {{\"id\":\"chatcmpl-gha-{}\",\"object\":\"chat.completion.chunk\",\"created\":{},\"model\":\"{}\",\"choices\":[{{\"index\":0,\"delta\":{{}},\"finish_reason\":\"stop\"}}]}}\n\n",
+                            "data: {{\"id\":\"chatcmpl-aeon-{}\",\"object\":\"chat.completion.chunk\",\"created\":{},\"model\":\"{}\",\"choices\":[{{\"index\":0,\"delta\":{{}},\"finish_reason\":\"stop\"}}]}}\n\n",
                             now, now, model_name
                         );
                         let _ = writer.write_all(chunk3.as_bytes());
@@ -188,7 +175,7 @@ impl GemiServer {
                     } else {
                         // Non-streaming JSON response
                         let payload = format!(
-                            "{{\"id\":\"chatcmpl-gha-{}\",\"object\":\"chat.completion\",\"created\":1700000000,\"model\":\"{}\",\"choices\":[{{\"index\":0,\"message\":{{\"role\":\"assistant\",\"content\":{}}},\"finish_reason\":\"stop\"}}]}}",
+                            "{{\"id\":\"chatcmpl-aeon-{}\",\"object\":\"chat.completion\",\"created\":1700000000,\"model\":\"{}\",\"choices\":[{{\"index\":0,\"message\":{{\"role\":\"assistant\",\"content\":{}}},\"finish_reason\":\"stop\"}}]}}",
                             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
                             model_name,
                             serde_json::to_string(&content).unwrap_or_default()
@@ -248,7 +235,7 @@ fn get_web_app_html() -> &'static str {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>GHA Intelligence Web & Mobile App</title>
+<title>AEON Intelligence Web & Mobile App</title>
 <style>
   :root { --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --primary: #2563eb; --primary-hover: #1d4ed8; --border: #e2e8f0; --user-msg: #eff6ff; }
   @media (prefers-color-scheme: dark) {
@@ -284,7 +271,7 @@ fn get_web_app_html() -> &'static str {
 <body>
 
 <header>
-  <div class="logo">GHA Intelligence Interface</div>
+  <div class="logo">AEON Intelligence Interface</div>
   <div class="status"><div class="status-dot"></div> Substrate Active (Port 9091)</div>
 </header>
 
@@ -298,7 +285,7 @@ fn get_web_app_html() -> &'static str {
 </div>
 
 <div id="chat-container">
-  <div class="msg assistant">Welcome to GHA. Provide any technical instruction or query. Files and images can be analyzed directly.</div>
+  <div class="msg assistant">Welcome to AEON. Provide any technical instruction or query. Files and images can be analyzed directly.</div>
 </div>
 
 <div id="input-container">
@@ -307,7 +294,7 @@ fn get_web_app_html() -> &'static str {
     <button class="icon-btn" onclick="triggerFileSelect()" title="Attach File">Attach</button>
     <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(event)">
     <button class="icon-btn" id="mic-btn" onclick="toggleVoice()" title="Voice Input">Voice</button>
-    <input type="text" id="prompt" placeholder="Ask GHA anything..." onkeydown="if(event.key==='Enter') sendMsg()">
+    <input type="text" id="prompt" placeholder="Ask AEON anything..." onkeydown="if(event.key==='Enter') sendMsg()">
     <button onclick="sendMsg()">Send</button>
   </div>
 </div>
@@ -388,7 +375,7 @@ fn get_web_app_html() -> &'static str {
       const answer = data.choices[0].message.content;
       document.getElementById(loadingId).innerText = answer;
     } catch (e) {
-      document.getElementById(loadingId).innerText = "Connection error: Could not reach GHA local server on Port 9091.";
+      document.getElementById(loadingId).innerText = "Connection error: Could not reach AEON local server on Port 9091.";
     }
   }
 

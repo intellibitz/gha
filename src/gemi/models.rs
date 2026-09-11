@@ -66,8 +66,8 @@ impl ModelManager {
     pub fn list_models(workspace: &Path) -> Vec<ModelInfo> {
         let mut list = Vec::new();
         let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| ".".to_string());
-        let global_dir = PathBuf::from(home).join(".gha");
-        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+        let global_dir = PathBuf::from(home).join(".aeon");
+        let cfg = crate::sandbox::manager::AeonConfig::load(&global_dir);
 
         // 1. Load Cloud Models from Dynamic Configuration
         for model in cfg.cloud_models {
@@ -80,7 +80,7 @@ impl ModelManager {
             }
         }
 
-        // 2. System-Wide AI Model Scanner (LM Studio, HuggingFace Cache, GPT4All, GHA Vaults)
+        // 2. System-Wide AI Model Scanner (LM Studio, HuggingFace Cache, GPT4All, AEON Vaults)
         let system_models = Self::scan_system_for_local_models(workspace);
         for sys_model in system_models {
             if !list.iter().any(|m| m.model_id == sys_model.model_id) {
@@ -93,11 +93,11 @@ impl ModelManager {
         if list.is_empty() {
              list.push(ModelInfo {
                 name: "Native Rust Logic".to_string(),
-                registry: "gha Native".to_string(),
-                model_id: "gha-native-synthesis".to_string(),
+                registry: "aeon Native".to_string(),
+                model_id: "aeon-native-synthesis".to_string(),
                 description: "Deterministic protocol-level reasoning".to_string(),
                 is_local: true,
-                tier: ModelTier::Standard,
+                tier: ModelTier::Reflex,
                 latency_ms: Some(0),
                 provider: ProviderType::LocalGGUF,
                 api_base: None,
@@ -110,9 +110,9 @@ impl ModelManager {
 
     pub fn set_selected_model(model_name: &str) -> Result<String, String> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let gha_dir = home.join(".gha");
-        let _ = fs::create_dir_all(&gha_dir);
-        let model_file = gha_dir.join("selected_model_override.txt");
+        let aeon_dir = home.join(".aeon");
+        let _ = fs::create_dir_all(&aeon_dir);
+        let model_file = aeon_dir.join("selected_model_override.txt");
         fs::write(&model_file, model_name.trim()).map_err(|e| e.to_string())?;
         Ok(format!("Selected active model override set to: '{}'", model_name.trim()))
     }
@@ -196,9 +196,9 @@ impl ModelManager {
         if let Some((best_score, best_model)) = scored_models.first() {
             if *best_score > -500.0 {
                 let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-                let gha_dir = home.join(".gha");
-                let _ = fs::create_dir_all(&gha_dir);
-                let auto_file = gha_dir.join("selected_model_auto.txt");
+                let aeon_dir = home.join(".aeon");
+                let _ = fs::create_dir_all(&aeon_dir);
+                let auto_file = aeon_dir.join("selected_model_auto.txt");
                 let _ = fs::write(&auto_file, best_model.model_id.trim());
                 return Some(best_model.clone());
             }
@@ -209,7 +209,7 @@ impl ModelManager {
 
     pub fn get_selected_model() -> Option<String> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let override_file = home.join(".gha/selected_model_override.txt");
+        let override_file = home.join(".aeon/selected_model_override.txt");
         if override_file.is_file()
             && let Ok(content) = fs::read_to_string(&override_file)
         {
@@ -224,7 +224,7 @@ impl ModelManager {
             return Some(best.model_id);
         }
 
-        let auto_file = home.join(".gha/selected_model_auto.txt");
+        let auto_file = home.join(".aeon/selected_model_auto.txt");
         if auto_file.is_file()
             && let Ok(content) = fs::read_to_string(&auto_file)
         {
@@ -238,16 +238,16 @@ impl ModelManager {
 
     pub fn set_selected_engine(engine_name: &str) -> Result<String, String> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let gha_dir = home.join(".gha");
-        let _ = fs::create_dir_all(&gha_dir);
-        let engine_file = gha_dir.join("selected_engine.txt");
+        let aeon_dir = home.join(".aeon");
+        let _ = fs::create_dir_all(&aeon_dir);
+        let engine_file = aeon_dir.join("selected_engine.txt");
         fs::write(&engine_file, engine_name.trim()).map_err(|e| e.to_string())?;
         Ok(format!("Active execution engine set to: '{}'", engine_name.trim()))
     }
 
     pub fn get_selected_engine() -> Option<String> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let engine_file = home.join(".gha/selected_engine.txt");
+        let engine_file = home.join(".aeon/selected_engine.txt");
         if engine_file.is_file()
             && let Ok(content) = fs::read_to_string(&engine_file)
         {
@@ -261,8 +261,8 @@ impl ModelManager {
 
     pub fn get_active_engine_and_model() -> (String, String) {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let global_dir = home.join(".gha");
-        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+        let global_dir = home.join(".aeon");
+        let cfg = crate::sandbox::manager::AeonConfig::load(&global_dir);
 
         let model = Self::get_selected_model().unwrap_or(cfg.default_model);
         let engine_override = Self::get_selected_engine();
@@ -322,8 +322,8 @@ impl ModelManager {
 
         if let Some(best) = benched_models.first() {
             let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-            let gha_dir = home.join(".gha");
-            let auto_file = gha_dir.join("selected_model_auto.txt");
+            let aeon_dir = home.join(".aeon");
+            let auto_file = aeon_dir.join("selected_model_auto.txt");
             let _ = fs::write(&auto_file, best.model_id.trim());
         }
 
@@ -365,7 +365,7 @@ impl ModelManager {
                     let start = std::time::Instant::now();
                     let test_status = if is_valid_gguf && size_bytes > 10_000_000 {
                         "SUCCESS (Legit Local GGUF Model)".to_string()
-                    } else if path.to_string_lossy().contains(".gha/models") {
+                    } else if path.to_string_lossy().contains(".aeon/models") {
                         let _ = fs::remove_file(&path);
                         "FAILED (Corrupted File Purged - Auto-Redownload Enqueued)".to_string()
                     } else {
@@ -445,8 +445,8 @@ impl ModelManager {
         let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_default();
         let home_path = PathBuf::from(home);
 
-        let global_dir = home_path.join(".gha");
-        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+        let global_dir = home_path.join(".aeon");
+        let cfg = crate::sandbox::manager::AeonConfig::load(&global_dir);
 
         if workspace.is_dir() {
             Self::recursive_scan_model_dir(workspace, &mut discovered, &mut visited);
@@ -515,7 +515,7 @@ impl ModelManager {
                                 model_id: path_str.to_string(),
                                 description: format!("Discovered local AI model file ({} MB)", len_mb),
                                 is_local: true,
-                                tier: ModelTier::Standard,
+                                tier: ModelTier::Reflex,
                                 latency_ms: None,
                                 provider: ProviderType::LocalGGUF,
                                 api_base: None,
@@ -530,9 +530,9 @@ impl ModelManager {
 
     pub fn save_download_progress(model_name: &str, bytes_downloaded: u64, expected_bytes: u64, status: &str) {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let gha_dir = home.join(".gha");
-        let _ = fs::create_dir_all(&gha_dir);
-        let progress_file = gha_dir.join("download_progress.json");
+        let aeon_dir = home.join(".aeon");
+        let _ = fs::create_dir_all(&aeon_dir);
+        let progress_file = aeon_dir.join("download_progress.json");
 
         let percentage = if expected_bytes > 0 {
             (bytes_downloaded as f32 / expected_bytes as f32) * 100.0
@@ -556,7 +556,7 @@ impl ModelManager {
     #[allow(dead_code)]
     pub fn get_download_progress() -> Option<ModelDownloadProgress> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let progress_file = home.join(".gha/download_progress.json");
+        let progress_file = home.join(".aeon/download_progress.json");
         if progress_file.is_file()
             && let Ok(content) = fs::read_to_string(&progress_file)
             && let Ok(mut record) = serde_json::from_str::<ModelDownloadProgress>(&content)
@@ -565,7 +565,7 @@ impl ModelManager {
                 return None;
             }
 
-            let models_dir = home.join(".gha/models");
+            let models_dir = home.join(".aeon/models");
             let file_name = format!("{}.gguf", record.model_name.replace('/', "_"));
             let file_path = models_dir.join(file_name);
             if file_path.is_file()
@@ -583,9 +583,9 @@ impl ModelManager {
 
     pub fn run_fail_proof_model_agent(workspace: &Path) -> ModelAgentReport {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let gha_dir = home.join(".gha");
-        let _ = fs::create_dir_all(&gha_dir);
-        let models_dir = gha_dir.join("models");
+        let aeon_dir = home.join(".aeon");
+        let _ = fs::create_dir_all(&aeon_dir);
+        let models_dir = aeon_dir.join("models");
         let _ = fs::create_dir_all(&models_dir);
 
         let discovered = ModelManager::scan_system_for_local_models(workspace);
@@ -679,7 +679,7 @@ impl ModelManager {
         };
 
         if let Ok(json) = serde_json::to_string_pretty(&report) {
-            let report_path = gha_dir.join("model_agent_report.json");
+            let report_path = aeon_dir.join("model_agent_report.json");
             let _ = fs::write(&report_path, json);
         }
 
@@ -689,7 +689,7 @@ impl ModelManager {
     #[allow(dead_code)]
     pub fn get_model_agent_report() -> Option<ModelAgentReport> {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let report_path = home.join(".gha/model_agent_report.json");
+        let report_path = home.join(".aeon/model_agent_report.json");
         if report_path.is_file()
             && let Ok(content) = fs::read_to_string(&report_path)
             && let Ok(report) = serde_json::from_str::<ModelAgentReport>(&content)
@@ -716,7 +716,7 @@ impl ModelManager {
 
     pub fn install_model(query_or_url: &str) -> String {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let models_dir = home.join(".gha/models");
+        let models_dir = home.join(".aeon/models");
         let _ = fs::create_dir_all(&models_dir);
 
         let target = query_or_url.trim();
@@ -735,7 +735,7 @@ impl ModelManager {
         if target.starts_with("http://") || target.starts_with("https://") {
             let file_name = target.split('/').next_back().unwrap_or("model.gguf");
             let dest_path = models_dir.join(file_name);
-            match ureq::get(target).set("User-Agent", "GHA-Native-Engine/0.1").timeout(std::time::Duration::from_secs(300)).call() {
+            match ureq::get(target).set("User-Agent", "AEON-Native-Engine/0.1").timeout(std::time::Duration::from_secs(300)).call() {
                 Ok(resp) => {
                     if let Ok(mut file) = fs::File::create(&dest_path) {
                         let mut reader = resp.into_reader();
@@ -758,7 +758,7 @@ impl ModelManager {
             let exact_file = ladder.iter().find(|s| s.hf_repo == target).map(|s| s.hf_file).unwrap_or("model.gguf");
 
             let candidate_urls = vec![
-                format!("https://models.gha.ai/{}", exact_file),
+                format!("https://models.aeon.ai/{}", exact_file),
                 format!("https://modelscope.cn/api/v1/models/{}/repo?Revision=master&FilePath={}", target, exact_file),
                 format!("https://huggingface.co/{}/resolve/main/{}", target, exact_file),
             ];
@@ -770,7 +770,7 @@ impl ModelManager {
             let mut success_url = String::new();
 
             for mirror_url in candidate_urls {
-                if let Ok(resp) = ureq::get(&mirror_url).set("User-Agent", "GHA-Native-Engine/0.1").timeout(std::time::Duration::from_secs(300)).call() {
+                if let Ok(resp) = ureq::get(&mirror_url).set("User-Agent", "AEON-Native-Engine/0.1").timeout(std::time::Duration::from_secs(300)).call() {
                     if let Ok(mut file) = fs::File::create(&dest_path) {
                         let mut reader = resp.into_reader();
                         if let Ok(len) = std::io::copy(&mut reader, &mut file) {
@@ -792,7 +792,7 @@ impl ModelManager {
             } else {
                 let _ = fs::remove_file(&dest_path);
                 Self::save_download_progress(target, 0, expected_bytes, "FAILED");
-                "Model download failed across all mirrors (GHA CDN, ModelScope, HuggingFace). Usage: 'gha install_model <model_name_or_url>'".to_string()
+                "Model download failed across all mirrors (AEON CDN, ModelScope, HuggingFace). Usage: 'aeon install_model <model_name_or_url>'".to_string()
             }
         }
     }
@@ -807,9 +807,9 @@ impl ModelManager {
         let lower = goal.to_lowercase();
         if lower.contains("download model") || lower.contains("pull model") || lower.contains("offline model") || lower.contains("install model") {
             let target_model = if lower.contains("code") || lower.contains("rust") || lower.contains("bug") || lower.contains("python") {
-                "gha-alpha/gha-alpha-1.5b-instruct-v0.1-GGUF"
+                "aeon-alpha/aeon-alpha-1.5b-instruct-v0.1-GGUF"
             } else {
-                "gha-alpha/gha-alpha-1.5b-instruct-v0.1-GGUF"
+                "aeon-alpha/aeon-alpha-1.5b-instruct-v0.1-GGUF"
             };
 
             let res = Self::install_model(target_model);
@@ -839,7 +839,7 @@ impl ModelManager {
     pub fn ensure_max_local_hardware_models(_workspace: &Path) -> String {
         let ladder = HardwareProfiler::get_progressive_model_ladder();
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let models_dir = home.join(".gha/models");
+        let models_dir = home.join(".aeon/models");
 
         let mut completed_steps = Vec::new();
 
@@ -865,15 +865,15 @@ impl ModelManager {
         vec![
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 2: GEMI (Intelligence)".to_string(),
-                name: "GHA-Alpha-Reflex-Weights".to_string(),
-                provider: "GHA Hub".to_string(),
-                url: "https://gha.ai/models/alpha".to_string(),
+                name: "AEON-Alpha-Reflex-Weights".to_string(),
+                provider: "AEON Hub".to_string(),
+                url: "https://aeon.ai/models/alpha".to_string(),
             },
             crate::gawd::agents::DiscoverableAsset {
                 tier: "Tier 2: GEMI (Intelligence)".to_string(),
                 name: "GEMI-Reasoning-Core".to_string(),
-                provider: "GHA Swarm".to_string(),
-                url: "https://gha.ai/engines/gemi-core".to_string(),
+                provider: "AEON Swarm".to_string(),
+                url: "https://aeon.ai/engines/gemi-core".to_string(),
             },
         ]
     }
@@ -893,7 +893,7 @@ pub struct ModelRegistry;
 impl ModelRegistry {
     pub fn get_path() -> PathBuf {
         let home = std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        home.join(".gha/model_registry.json")
+        home.join(".aeon/model_registry.json")
     }
 
     pub fn load() -> HashMap<String, ModelRegistryEntry> {
@@ -943,8 +943,8 @@ mod tests {
         assert_eq!(p.model_name, "test-model-7b");
         assert_eq!(p.status, "IN_PROGRESS");
 
-        // Cleanup to prevent polluting the user's real ~/.gha directory
-        let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_else(|| std::path::PathBuf::from("."));
-        let _ = std::fs::remove_file(home.join(".gha/download_progress.json"));
+        // Cleanup to prevent polluting the user's real ~/.aeon directory
+        let home = std::env::var_os("HOME").map(std::path::PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let _ = std::fs::remove_file(home.join(".aeon/download_progress.json"));
     }
 }

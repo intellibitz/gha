@@ -1,4 +1,4 @@
-// 🌌 GHA-Alpha: Native Neural Intelligence Substrate
+// 🌌 AEON-Alpha: Native Neural Intelligence Substrate
 // 100% Rust implementation using Candle for Tier 0 Reflex Distillation
 
 use anyhow::{Result, anyhow};
@@ -6,19 +6,19 @@ use candle_core::{Device, Tensor, DType};
 use candle_nn::{Linear, Module, VarBuilder};
 use std::path::Path;
 
-/// GHA-Alpha Intent Classifier (Neural Reflex)
-pub struct GhaAlphaModel {
+/// AEON-Alpha Intent Classifier (Neural Reflex)
+pub struct AeonAlphaModel {
     fc1: Linear,
     fc2: Linear,
 }
 
-impl GhaAlphaModel {
+impl AeonAlphaModel {
     pub const DIM: usize = 128;
 
     pub fn load(global_dir: &Path) -> Result<Self> {
-        let weights_path = global_dir.join("models/gha-alpha.safetensors");
+        let weights_path = global_dir.join("models/aeon-alpha.safetensors");
         if !weights_path.exists() {
-            return Err(anyhow!("GHA-Alpha weights not found at {}", weights_path.display()));
+            return Err(anyhow!("AEON-Alpha weights not found at {}", weights_path.display()));
         }
 
         let device = Device::Cpu;

@@ -1,0 +1,180 @@
+// AEON Master Agent (AMA): The Orchestration Substrate
+// RULE 11: Agents must add functionality directly to the aeon engine via ToolRegistry.
+// Agents must not simulate or "fake" aeon capabilities by performing logic themselves.
+
+use std::path::Path;
+use serde::{Deserialize, Serialize};
+use crate::error::EaiResult;
+use super::agents::GawdAgentInfo;
+use super::amas::{A2AMessage, AmaSupervisor};
+use super::axiom::AxiomSubstrate;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AmaMissionReport {
+    pub goal: String,
+    pub status: String,
+    pub agents: Vec<GawdAgentInfo>,
+    pub interactions: Vec<A2AMessage>,
+    pub final_answer: String,
+}
+
+pub struct AmaMasterAgent;
+
+impl AmaMasterAgent {
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// Primary entry point for all natural language intents.
+    pub fn solve_clean(&self, goal: &str, workspace: &Path, version: &str) -> String {
+        let res = self.solve(goal, workspace, version);
+        match res {
+            Ok(report) => report.final_answer,
+            Err(e) => format!("AMA Engine Error: {}", e),
+        }
+    }
+
+    pub fn solve(&self, goal: &str, workspace: &Path, version: &str) -> EaiResult<AmaMissionReport> {
+        // 1. Pre-Execution Governance Audit
+        super::safety::SafetyDetector::audit_action("AMA_SOLVE", goal)?;
+        super::security::SecurityDetector::audit_action("AMA_SOLVE", goal)?;
+        super::model_supervisor::ModelSupervisor::audit_and_prepare_models(workspace)?;
+
+        // 2. Swarm Supervision (Tier 1 AOA Dispatch)
+        let (interactions, agents) = AmaSupervisor::supervise_mission(goal, workspace);
+
+        // 3. Reflex Result Distillation (Tier 0 -> Tier 2 Bridge)
+        let model_name = crate::gemi::models::ModelManager::get_selected_model()
+            .unwrap_or_else(|| "aeon-alpha.safetensors".to_string());
+
+        let final_answer = if interactions.is_empty() {
+            format!("AMA-Reflex ({}): No active agents responded to '{}'.", version, goal)
+        } else {
+            let last_payload = &interactions.last().unwrap().payload;
+            if last_payload.len() > 10 {
+                last_payload.clone()
+            } else {
+                format!("AMA-Synthesis ({} via {}):\n\nProcessed goal '{}' across {} active agents.",
+                    version, model_name, goal, agents.len())
+            }
+        };
+
+        // 4. Reality Verification (Rule 15)
+        let verified_answer = super::truth::TruthTransformer::verify_mission_reality(goal, "AMA_SOLVE", &final_answer, workspace)?;
+
+        Ok(AmaMissionReport {
+            goal: goal.to_string(),
+            status: "COMPLETE".to_string(),
+            agents,
+            interactions,
+            final_answer: verified_answer,
+        })
+    }
+
+    pub fn generate_self_awareness_report(&self, workspace: &Path) -> EaiResult<String> {
+        let (axiom_summary, topology_summary) = AxiomSubstrate::ingest_constitution(workspace);
+        let model_name = crate::gemi::models::ModelManager::get_selected_model()
+            .unwrap_or_else(|| "aeon-alpha.safetensors (Local Neural Reflex)".to_string());
+
+        let mut report = String::new();
+        report.push_str("# aeon Alpha Brain - Self-Awareness Report\n\n");
+        report.push_str(&format!("- **Engine**: aeon EAI Substrate\n"));
+        report.push_str(&format!("- **Version**: {}\n", crate::AEON_VERSION));
+        report.push_str(&format!("- **Active Model**: {}\n\n", model_name));
+
+        report.push_str(&axiom_summary);
+        report.push_str("\n");
+        report.push_str(&topology_summary);
+
+        Ok(report)
+    }
+
+    pub fn process_intent(&self, goal: &str, workspace: &Path) -> EaiResult<String> {
+        // 1. Audit
+        crate::sandbox::manager::AeonAuditLogger::log_event(workspace, "MISSION_START", goal);
+
+        // 2. Reasoning
+        let res = self.solve(goal, workspace, crate::AEON_VERSION)?;
+
+        // 3. Memory persistence (Rule 13)
+        crate::sandbox::manager::AeonMemory::save_interaction(workspace, goal, &res.final_answer);
+
+        // 4. Success check for Substrate Evolution (Rule 16)
+        for msg in &res.interactions {
+            if msg.sender == "AeonUniversalSubstrateAgent" {
+                if msg.payload.contains("VIOLATION") || msg.payload.contains("FAILURE") {
+                     crate::sandbox::manager::AeonAuditLogger::log_event(workspace, "TOOL_FAILURE", &msg.payload);
+                }
+            }
+        }
+
+        Ok(res.final_answer)
+    }
+
+    pub fn solve_with_feedback(&self, goal: &str, workspace: &Path, feedback_tx: std::sync::mpsc::Sender<String>) -> EaiResult<String> {
+        let _ = feedback_tx.send(format!("[AMA] Initiating mission for goal: '{}'", goal));
+
+        // Step 1: Governance
+        let _ = feedback_tx.send("[AMA] Auditing safety and security protocols...".to_string());
+        super::safety::SafetyDetector::audit_action("AMA_SOLVE", goal)?;
+        super::security::SecurityDetector::audit_action("AMA_SOLVE", goal)?;
+
+        // Step 2: Model Readiness
+        let _ = feedback_tx.send("[AMA] Verifying neural substrate readiness...".to_string());
+        super::model_supervisor::ModelSupervisor::audit_and_prepare_models(workspace)?;
+
+        // Step 3: Swarm Dispatch
+        let _ = feedback_tx.send(format!("[AMA] Dispatching swarm to workspace: {}", workspace.display()));
+        let (interactions, agents) = AmaSupervisor::supervise_mission(goal, workspace);
+
+        for msg in &interactions {
+            let _ = feedback_tx.send(format!("[Swarm: {}] {}", msg.sender, msg.action));
+        }
+
+        // Step 4: Final Synthesis
+        let _ = feedback_tx.send(format!("[AMA] Mission synthesized across {} agents. Verifying reality...", agents.len()));
+
+        let model_name = crate::gemi::models::ModelManager::get_selected_model()
+             .unwrap_or_else(|| "aeon-alpha.safetensors".to_string());
+
+        let ans = format!("AMA-Synthesis ({} via {}):\n\nProcessed goal '{}' across {} agents.",
+                        crate::AEON_VERSION, model_name, goal, agents.len());
+
+        let verified = super::truth::TruthTransformer::verify_mission_reality(goal, "AMA_SOLVE", &ans, workspace)?;
+
+        crate::sandbox::manager::AeonMemory::save_interaction(workspace, goal, &verified);
+
+        Ok(verified)
+    }
+
+    pub fn handle_autonomous_evolution(&self, goal: &str, workspace: &Path) -> EaiResult<String> {
+        crate::sandbox::manager::AeonAuditLogger::log_event(workspace, "MISSION_START", goal);
+
+        // 1. Attempt mission with current substrate
+        let res = self.solve(goal, workspace, crate::AEON_VERSION);
+
+        match res {
+            Ok(report) => {
+                if report.final_answer.contains("NO_ACTION_REQUIRED") || report.final_answer.contains("VIOLATION") {
+                     // Potential gap or blocked action
+                     if report.final_answer.contains("blocked") {
+                         crate::sandbox::manager::AeonAuditLogger::log_event(workspace, "TRUTH_BLOCK", &report.final_answer);
+                     }
+                     return Ok(report.final_answer);
+                }
+                Ok(report.final_answer)
+            }
+            Err(e) => {
+                // FAILURE Triggers the Motion Rule (Rule 16)
+                crate::sandbox::manager::AeonAuditLogger::log_event(workspace, "INTELLIGENCE_GAP", &format!("Goal '{}' failed: {}", goal, e));
+
+                if e.to_string().contains("not found") || e.to_string().contains("no models") {
+                    crate::sandbox::manager::AeonAuditLogger::log_event(workspace, "INTELLIGENCE_GAP", "No models found. Evolution required.");
+                }
+
+                // If in evolution mode, return specific protocol failure that triggers sub-agent hardening
+                Err(e)
+            }
+        }
+    }
+}

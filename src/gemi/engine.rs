@@ -41,13 +41,13 @@ impl GemiEngine {
 
         // 2. Try pulse action parser (for tools/actions, skipping synthesis prompts)
         if !is_synthesis {
-            if let Ok(action) = super::pulse::GhaPulse::reason(prompt, workspace) {
+            if let Ok(action) = super::pulse::AeonPulse::reason(prompt, workspace) {
                 return action;
             }
         }
 
         // 3. Fallback: Native reasoning substrate active via Candle tensors
-        "STATUS: Native reasoning substrate active via Candle tensors. Set GHA_API_KEY in ~/.gha/env for cloud models.".to_string()
+        "STATUS: Native reasoning substrate active via Candle tensors. Set AEON_API_KEY in ~/.aeon/env for cloud models.".to_string()
     }
 
     #[allow(dead_code)]
@@ -57,8 +57,8 @@ impl GemiEngine {
         use std::time::Duration;
 
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let global_dir = home.join(".gha");
-        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+        let global_dir = home.join(".aeon");
+        let cfg = crate::sandbox::manager::AeonConfig::load(&global_dir);
 
         let (tx, rx) = channel();
         let mut handle_count = 0;
@@ -172,8 +172,8 @@ impl GemiEngine {
     pub fn verify_provider(name: &str) -> String {
         let prompt = "Verification mission: Respond with 'ACTIVE'.";
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let global_dir = home.join(".gha");
-        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+        let global_dir = home.join(".aeon");
+        let cfg = crate::sandbox::manager::AeonConfig::load(&global_dir);
 
         if let Some(model) = cfg.cloud_models.iter().find(|m| m.name == name) {
             match Self::execute_generic_cloud(model, prompt) {
@@ -186,6 +186,6 @@ impl GemiEngine {
     }
 
     pub fn generate_multimodal_vision(prompt: &str, image_path: &Path) -> String {
-        format!("👁️ [gha Vision]: {} -> {}", image_path.display(), prompt)
+        format!("👁️ [aeon Vision]: {} -> {}", image_path.display(), prompt)
     }
 }

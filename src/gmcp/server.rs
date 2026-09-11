@@ -1,139 +1,132 @@
-// 🔌 GMCP Native Server: JSON-RPC 2.0 MCP Host & Server over stdio & TCP Port 9090
-// 100% Rust implementation supporting dynamic tool execution
+// GMCP Server Substrate: Model Context Protocol JSON-RPC 2.0 Interface
+// 100% Rust implementation serving Tier 1 Swarm & ToolRegistry
 
-use super::tools::ToolRegistry;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::thread;
 use serde_json::json;
 
+use crate::gmcp::tools::ToolRegistry;
+
 pub struct GmcpServer;
 
 impl GmcpServer {
-    /// 🚀 Run MCP server over stdio (Standard for GHA MCP Clients & IDE Substrates)
     pub fn run_stdio(workspace: &Path, version: &str) {
         eprintln!("🔌 [GMCP Server] Started (Listening on stdio).");
-        let stdin = io::stdin();
-        let mut stdout = io::stdout();
+        let stdin = std::io::stdin();
+        let mut stdout = std::io::stdout();
 
-        for line in stdin.lock().lines().map_while(Result::ok) {
-            if let Some(resp) = Self::process_json_rpc(&line, workspace, version) {
-                let _ = writeln!(stdout, "{}", resp);
-                let _ = stdout.flush();
-            }
+        for line in stdin.lock().lines() {
+            let line = match line {
+                Ok(l) => l,
+                Err(_) => break,
+            };
+
+            let response = Self::handle_line(&line, workspace, version);
+            let _ = writeln!(stdout, "{}", response);
+            let _ = stdout.flush();
         }
     }
 
-    /// 🌐 Run MCP server over TCP (Enables remote plugin integration)
     pub fn start_tcp_server(workspace: PathBuf, port: u16, version: String) {
-        let addr = format!("127.0.0.1:{}", port);
-        let listener = match TcpListener::bind(&addr) {
-            Ok(l) => l,
-            Err(e) => {
-                eprintln!("⚠️ [GMCP TCP Server] Could not bind to {}: {}", addr, e);
-                return;
-            }
-        };
+        let addr = format!("0.0.0.0:{}", port);
+        let listener = TcpListener::bind(&addr).expect("Failed to bind GMCP TCP server");
+        eprintln!("🔌 [GMCP TCP] Substrate active on {}", addr);
 
-        eprintln!("🔌 [GMCP Server] TCP Listener active at {}", addr);
+        for stream in listener.incoming() {
+            let mut stream = stream.expect("GMCP Stream Error");
+            let mut out_stream = stream.try_clone().expect("Failed to clone GMCP stream");
+            let workspace = workspace.clone();
+            let version = version.clone();
 
-        for stream in listener.incoming().flatten() {
-            let ws = workspace.clone();
-            let ver = version.clone();
             thread::spawn(move || {
-                let mut reader = BufReader::new(&stream);
-                let mut writer = &stream;
-                let mut line = String::new();
-
-                while reader.read_line(&mut line).is_ok() {
-                    if line.trim().is_empty() { break; }
-                    if let Some(resp) = Self::process_json_rpc(&line, &ws, &ver) {
-                        let _ = writeln!(writer, "{}", resp);
-                    }
-                    line.clear();
+                let mut reader = BufReader::new(&mut stream);
+                loop {
+                    let mut line = String::new();
+                    if reader.read_line(&mut line).is_err() || line.is_empty() { break; }
+                    let response = Self::handle_line(&line, &workspace, &version);
+                    if writeln!(out_stream, "{}", response).is_err() { break; }
+                    let _ = out_stream.flush();
                 }
             });
         }
     }
 
-    /// 🧠 Core JSON-RPC 2.0 Logic (Universal Interop)
-    fn process_json_rpc(line: &str, workspace: &Path, version: &str) -> Option<String> {
-        let trimmed = line.trim();
-        if trimmed.is_empty() { return None; }
+    fn handle_line(line: &str, workspace: &Path, version: &str) -> String {
+        let id = extract_id(line);
+        let method = extract_method(line);
 
-        if trimmed.contains("\"method\":\"initialize\"") {
-            let id = extract_json_id(trimmed).unwrap_or(json!(1));
-            let resp_val = json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": {
-                    "protocolVersion": "2024-11-05",
-                    "capabilities": {
-                        "tools": { "listChanged": false }
-                    },
-                    "serverInfo": {
-                        "name": "gmcp-native-server",
-                        "version": version
+        match method.as_deref() {
+            Some("initialize") => {
+                json!({
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "result": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {
+                            "tools": { "listChanged": false }
+                        },
+                        "serverInfo": { "name": "aeon-substrate", "version": version }
                     }
-                }
-            });
-            return serde_json::to_string(&resp_val).ok();
+                }).to_string()
+            }
+            Some("tools/list") => {
+                let tools = ToolRegistry::list_tools();
+                json!({
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "result": {
+                        "tools": tools
+                    }
+                }).to_string()
+            }
+            Some("tools/call") => {
+                let tool_name = extract_tool_name(line).unwrap_or_default();
+                let tool_arg = extract_tool_arg(line).unwrap_or_default();
+
+                let result_text = ToolRegistry::execute_tool(&tool_name, &tool_arg, workspace);
+
+                json!({
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "result": {
+                        "content": [
+                            { "type": "text", "text": result_text }
+                        ]
+                    }
+                }).to_string()
+            }
+            _ => {
+                json!({
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "error": { "code": -32601, "message": "Method not found" }
+                }).to_string()
+            }
         }
-
-        if trimmed.contains("\"method\":\"tools/list\"") {
-            let id = extract_json_id(trimmed).unwrap_or(json!(2));
-            let tools = ToolRegistry::list_tools();
-            let tools_json: Vec<serde_json::Value> = tools
-                .iter()
-                .map(|t| json!({"name": t.name, "description": t.description}))
-                .collect();
-            let resp_val = json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": {
-                    "tools": tools_json
-                }
-            });
-            return serde_json::to_string(&resp_val).ok();
-        }
-
-        if trimmed.contains("\"method\":\"tools/call\"") {
-            let id = extract_json_id(trimmed).unwrap_or(json!(3));
-            let tool_name = extract_tool_name(trimmed).unwrap_or_else(|| "status".to_string());
-            let tool_arg = extract_tool_arg(trimmed).unwrap_or_default();
-
-            let result_text = ToolRegistry::execute_tool(&tool_name, &tool_arg, workspace);
-
-            let resp_val = json!({
-                "jsonrpc": "2.0",
-                "id": id,
-                "result": {
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": result_text
-                        }
-                    ]
-                }
-            });
-            return serde_json::to_string(&resp_val).ok();
-        }
-
-        None
     }
 }
 
-pub fn extract_json_id(line: &str) -> Option<serde_json::Value> {
+fn extract_id(line: &str) -> serde_json::Value {
     if let Ok(v) = serde_json::from_str::<serde_json::Value>(line)
         && let Some(id) = v.get("id")
     {
-        return Some(id.clone());
+        return id.clone();
+    }
+    json!(null)
+}
+
+fn extract_method(line: &str) -> Option<String> {
+    if let Ok(v) = serde_json::from_str::<serde_json::Value>(line)
+        && let Some(m) = v.get("method").and_then(|m| m.as_str())
+    {
+        return Some(m.to_string());
     }
     None
 }
 
-pub fn extract_tool_name(line: &str) -> Option<String> {
+fn extract_tool_name(line: &str) -> Option<String> {
     if let Ok(v) = serde_json::from_str::<serde_json::Value>(line)
         && let Some(params) = v.get("params")
         && let Some(name) = params.get("name").and_then(|n| n.as_str())
@@ -143,7 +136,7 @@ pub fn extract_tool_name(line: &str) -> Option<String> {
     None
 }
 
-pub fn extract_tool_arg(line: &str) -> Option<String> {
+fn extract_tool_arg(line: &str) -> Option<String> {
     if let Ok(v) = serde_json::from_str::<serde_json::Value>(line)
         && let Some(params) = v.get("params")
         && let Some(arguments) = params.get("arguments")

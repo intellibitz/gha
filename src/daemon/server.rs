@@ -1,4 +1,4 @@
-// Always-On GMA Master Daemon Process Manager
+// Always-On AMA Master Daemon Process Manager
 // 100% Rust implementation managing GMCP (Port 9090), GEMI (Port 9091) & A2A Cluster UDP (Port 9092)
 
 use std::fs;
@@ -11,11 +11,11 @@ use std::time::Duration;
 use crate::gemi::GemiServer;
 use crate::gmcp::server::GmcpServer;
 
-pub struct GmaDaemon;
+pub struct AmaDaemon;
 
-impl GmaDaemon {
+impl AmaDaemon {
     pub fn get_lock_file(global_dir: &Path) -> PathBuf {
-        global_dir.join("gma.lock")
+        global_dir.join("ama.lock")
     }
 
     pub fn check_status(global_dir: &Path) -> Option<u32> {
@@ -30,7 +30,7 @@ impl GmaDaemon {
                 }
             } else {
                 // Cross-platform fallback for Windows & macOS: TCP ping on GMCP server port
-                let cfg = crate::sandbox::manager::GhaConfig::load(global_dir);
+                let cfg = crate::sandbox::manager::AeonConfig::load(global_dir);
                 let addr = format!("127.0.0.1:{}", cfg.gmcp_port);
                 if let Ok(addr_parsed) = addr.parse()
                     && TcpStream::connect_timeout(&addr_parsed, Duration::from_millis(100)).is_ok()
@@ -48,7 +48,7 @@ impl GmaDaemon {
         }
 
         let current_exe = std::env::current_exe().ok();
-        let bin_name = if cfg!(target_os = "windows") { "bin/gha-engine.exe" } else { "bin/gha-engine" };
+        let bin_name = if cfg!(target_os = "windows") { "bin/aeon-engine.exe" } else { "bin/aeon-engine" };
         let global_bin = global_dir.join(bin_name);
 
         let bin_to_run = if let Some(ref exe) = current_exe {
@@ -56,7 +56,7 @@ impl GmaDaemon {
         } else if global_bin.exists() {
             global_bin
         } else {
-            PathBuf::from(if cfg!(target_os = "windows") { "gha.exe" } else { "gha" })
+            PathBuf::from(if cfg!(target_os = "windows") { "aeon.exe" } else { "aeon" })
         };
 
         if cfg!(target_os = "windows") {
@@ -84,7 +84,7 @@ impl GmaDaemon {
         let lock_file = Self::get_lock_file(&global_dir);
         let _ = fs::write(&lock_file, pid.to_string());
 
-        let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+        let cfg = crate::sandbox::manager::AeonConfig::load(&global_dir);
 
         // High-Priority Hardware-Bounded Model Auto-Provisioning (Background Thread)
         crate::gemi::models::ModelManager::spawn_background_hardware_model_provisioner(&workspace);
@@ -100,7 +100,7 @@ impl GmaDaemon {
         let gmcp_port = cfg.gmcp_port;
         // 2. Spawn GMCP TCP Server Thread (Port 9090 / Dynamic)
         thread::spawn(move || {
-            GmcpServer::start_tcp_server(workspace_gmcp, gmcp_port, crate::GHA_VERSION.to_string());
+            GmcpServer::start_tcp_server(workspace_gmcp, gmcp_port, crate::AEON_VERSION.to_string());
         });
 
         let udp_port = cfg.udp_discovery_port;
@@ -122,8 +122,8 @@ impl GmaDaemon {
             let mut buf = [0u8; 512];
             while let Ok((amt, src)) = socket.recv_from(&mut buf) {
                 let msg = String::from_utf8_lossy(&buf[..amt]);
-                if msg.contains("GHA_LAN_PING") {
-                    let pong = format!("GHA_LAN_PONG:gha-daemon-node:{}", gmcp_port);
+                if msg.contains("AEON_LAN_PING") {
+                    let pong = format!("AEON_LAN_PONG:aeon-daemon-node:{}", gmcp_port);
                     let _ = socket.send_to(pong.as_bytes(), src);
                 }
             }

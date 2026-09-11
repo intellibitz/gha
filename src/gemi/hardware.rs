@@ -1,7 +1,5 @@
-// Hardware Profiler: Dynamic CPU Cores & Metal / CUDA Acceleration Detector
 // 100% Rust implementation for autonomous hardware profiling
 
-use std::process::Command;
 use serde::{Deserialize, Serialize};
 use candle_core::Device;
 
@@ -38,7 +36,7 @@ impl HardwareProfiler {
         let gpu_display = if acceleration_active {
             format!("{} ({} | {}GB VRAM)", native_accel, gpu_name, gpu_vram_gb)
         } else {
-            // 2. Fallback to Shell-Parsing for diagnostics if native probe is inactive
+            // 2. Fallback to Meta-Parsing for diagnostics if native probe is inactive
             let (_, shell_gpu) = Self::profile();
             shell_gpu
         };
@@ -70,12 +68,8 @@ impl HardwareProfiler {
                     }
                 }
             }
-        } else if cfg!(target_os = "macos") {
-            if let Ok(out) = Command::new("sysctl").arg("-n").arg("machdep.cpu.brand_string").output() {
-                return String::from_utf8_lossy(&out.stdout).trim().to_string();
-            }
         }
-        "Generic x86/ARM".to_string()
+        "Generic Hardware Substrate".to_string()
     }
 
     fn get_load_avg() -> String {
@@ -128,7 +122,7 @@ impl HardwareProfiler {
             caps.push("CPU".to_string());
         }
         caps.push(format!("{}GB", profile.ram_gb));
-        caps.push(format!("{}V", crate::GHA_VERSION));
+        caps.push(format!("{}V", crate::AEON_VERSION));
         caps.join(",")
     }
 
@@ -151,20 +145,7 @@ impl HardwareProfiler {
     }
 
     fn determine_disk_gb() -> usize {
-        if cfg!(target_os = "linux") || cfg!(target_os = "macos") {
-            if let Ok(out) = Command::new("df").arg("-k").arg("/").output() {
-                let s = String::from_utf8_lossy(&out.stdout);
-                if let Some(line) = s.lines().nth(1) {
-                    let parts: Vec<&str> = line.split_whitespace().collect();
-                    if let Some(kb_str) = parts.get(1) {
-                        if let Ok(kb) = kb_str.parse::<usize>() {
-                            return kb / (1024 * 1024);
-                        }
-                    }
-                }
-            }
-        }
-        256 // Fallback
+        256 // Fallback - Meta Interrogation Required
     }
 
     fn interrogate_native_acceleration() -> (String, String) {
@@ -189,16 +170,6 @@ impl HardwareProfiler {
     }
 
     fn determine_gpu_vram_gb() -> usize {
-        if cfg!(target_os = "linux") {
-            if let Ok(out) = Command::new("nvidia-smi").args(["--query-gpu=memory.total", "--format=csv,noheader,nounits"]).output() {
-                let s = String::from_utf8_lossy(&out.stdout);
-                if let Ok(m) = s.trim().parse::<usize>() {
-                    return m / 1024;
-                }
-            }
-        } else if cfg!(target_os = "macos") {
-             return (Self::determine_total_ram_gb() * 75) / 100;
-        }
         0
     }
 
@@ -207,25 +178,12 @@ impl HardwareProfiler {
             .map(|n| n.get())
             .unwrap_or(4);
 
-        let gpu_info = if cfg!(target_os = "macos") {
-            let is_arm64 = Command::new("uname")
-                .arg("-m")
-                .output()
-                .ok()
-                .map(|o| String::from_utf8_lossy(&o.stdout).contains("arm64"))
-                .unwrap_or(false);
-
-            if is_arm64 {
-                "Apple Silicon Metal Unified Memory Acceleration Active (-ngl 99)".to_string()
-            } else {
-                "macOS Metal GPU Acceleration Active".to_string()
-            }
-        } else if Command::new("nvidia-smi").output().is_ok() {
-            "NVIDIA CUDA GPU Offload Active (-ngl 99)".to_string()
-        } else if Command::new("rocm-smi").output().is_ok() {
-            "AMD ROCm GPU Offload Active (-ngl 99)".to_string()
+        let gpu_info = if candle_core::utils::cuda_is_available() {
+            "CUDA Acceleration Substrate Active".to_string()
+        } else if candle_core::utils::metal_is_available() {
+            "Metal Acceleration Substrate Active".to_string()
         } else {
-            format!("High-Throughput SIMD CPU Parallel Execution ({} Threads)", cpus)
+            format!("CPU Parallel Execution Substrate Active ({} Threads)", cpus)
         };
 
         (cpus, gpu_info)
@@ -238,34 +196,18 @@ impl HardwareProfiler {
                     if line.starts_with("MemTotal:") {
                         let parts: Vec<&str> = line.split_whitespace().collect();
                         if let Some(kb_str) = parts.get(1)
-                            && let Ok(kb) = kb_str.parse::<usize>()
-                        {
+                            && let Ok(kb) = kb_str.parse::<usize>() {
                             return kb / (1024 * 1024);
                         }
                     }
                 }
             }
-        } else if cfg!(target_os = "macos")
-            && let Ok(out) = Command::new("sysctl").arg("-n").arg("hw.memsize").output()
-            && let Ok(bytes_str) = String::from_utf8(out.stdout)
-            && let Ok(bytes) = bytes_str.trim().parse::<usize>()
-        {
-            return bytes / (1024 * 1024 * 1024);
+        } else if cfg!(target_os = "macos") {
+            return 16; // macOS Meta Interrogation Required
         } else if cfg!(target_os = "windows") {
-            let out = Command::new("wmic").args(["ComputerSystem", "get", "TotalPhysicalMemory"]).output();
-            if let Ok(o) = out {
-                let s = String::from_utf8_lossy(&o.stdout);
-                for line in s.lines() {
-                    let trimmed = line.trim();
-                    if !trimmed.is_empty() && trimmed.chars().all(|c| c.is_ascii_digit()) {
-                        if let Ok(bytes) = trimmed.parse::<u64>() {
-                            return (bytes / (1024 * 1024 * 1024)) as usize;
-                        }
-                    }
-                }
-            }
+            return 16; // Windows Meta Interrogation Required
         }
-        16 // Conservative fallback
+        8
     }
 
     pub fn get_progressive_model_ladder() -> Vec<ModelLadderStep> {
@@ -274,8 +216,8 @@ impl HardwareProfiler {
             ModelLadderStep {
                 step: 1,
                 label: "1.5B Parameters (Fast Local Edge)",
-                hf_repo: "gha-alpha/gha-alpha-1.5b-instruct-v0.1-GGUF",
-                hf_file: "gha-alpha-1.5b-instruct-q4_k_m.gguf",
+                hf_repo: "aeon-alpha/aeon-alpha-1.5b-instruct-v0.1-GGUF",
+                hf_file: "aeon-alpha-1.5b-instruct-q4_k_m.gguf",
             },
         ];
 
@@ -283,107 +225,43 @@ impl HardwareProfiler {
             ladder.push(ModelLadderStep {
                 step: 2,
                 label: "7B Parameters (Mid-Range Desktop)",
-                hf_repo: "gha-alpha/gha-alpha-7b-instruct-v0.1-GGUF",
-                hf_file: "gha-alpha-7b-instruct-q4_k_m.gguf",
+                hf_repo: "aeon-alpha/aeon-alpha-7b-instruct-v0.1-GGUF",
+                hf_file: "aeon-alpha-7b-instruct-q4_k_m.gguf",
             });
         }
         if ram_gb >= 16 {
             ladder.push(ModelLadderStep {
                 step: 3,
                 label: "14B Parameters (High-Accuracy Workstation)",
-                hf_repo: "gha-alpha/gha-alpha-14b-instruct-v0.1-GGUF",
-                hf_file: "gha-alpha-14b-instruct-q4_k_m.gguf",
+                hf_repo: "aeon-alpha/aeon-alpha-14b-instruct-v0.1-GGUF",
+                hf_file: "aeon-alpha-14b-instruct-q4_k_m.gguf",
             });
         }
         if ram_gb >= 32 {
             ladder.push(ModelLadderStep {
                 step: 4,
                 label: "32B Parameters (High-End Workstation)",
-                hf_repo: "gha-alpha/gha-alpha-32b-instruct-v0.1-GGUF",
-                hf_file: "gha-alpha-32b-instruct-q4_k_m.gguf",
+                hf_repo: "aeon-alpha/aeon-alpha-32b-instruct-v0.1-GGUF",
+                hf_file: "aeon-alpha-32b-instruct-q4_k_m.gguf",
             });
         }
         if ram_gb >= 64 {
             ladder.push(ModelLadderStep {
                 step: 5,
                 label: "72B Parameters (Ultra-Capacity Workstation)",
-                hf_repo: "gha-alpha/gha-alpha-72b-instruct-v0.1-GGUF",
-                hf_file: "gha-alpha-72b-instruct-q4_k_m.gguf",
+                hf_repo: "aeon-alpha/aeon-alpha-72b-instruct-v0.1-GGUF",
+                hf_file: "aeon-alpha-72b-instruct-q4_k_m.gguf",
             });
         }
 
         ladder
     }
-
-    #[allow(dead_code)]
-    pub fn determine_max_model_capacity() -> HardwareCapacity {
-        let ram_gb = Self::determine_total_ram_gb();
-
-        if ram_gb >= 64 {
-            HardwareCapacity {
-                ram_gb,
-                recommended_hf_repo: "gha-alpha/gha-alpha-72b-instruct-v0.1-GGUF",
-                recommended_file: "gha-alpha-72b-instruct-q4_k_m.gguf",
-                model_size_label: "72B Parameters (Ultra-Workstation Capacity)",
-            }
-        } else if ram_gb >= 32 {
-            HardwareCapacity {
-                ram_gb,
-                recommended_hf_repo: "gha-alpha/gha-alpha-32b-instruct-v0.1-GGUF",
-                recommended_file: "gha-alpha-32b-instruct-q4_k_m.gguf",
-                model_size_label: "32B Parameters (High-End Workstation Capacity)",
-            }
-        } else if ram_gb >= 16 {
-            HardwareCapacity {
-                ram_gb,
-                recommended_hf_repo: "gha-alpha/gha-alpha-14b-instruct-v0.1-GGUF",
-                recommended_file: "gha-alpha-14b-instruct-q4_k_m.gguf",
-                model_size_label: "14B Parameters (Desktop/Laptop Capacity)",
-            }
-        } else if ram_gb >= 8 {
-            HardwareCapacity {
-                ram_gb,
-                recommended_hf_repo: "gha-alpha/gha-alpha-7b-instruct-v0.1-GGUF",
-                recommended_file: "gha-alpha-7b-instruct-q4_k_m.gguf",
-                model_size_label: "7B Parameters (Mid-Range Hardware Capacity)",
-            }
-        } else {
-            HardwareCapacity {
-                ram_gb,
-                recommended_hf_repo: "gha-alpha/gha-alpha-1.5b-instruct-v0.1-GGUF",
-                recommended_file: "gha-alpha-1.5b-instruct-q4_k_m.gguf",
-                model_size_label: "1.5B Parameters (Embedded/Edge Hardware Capacity)",
-            }
-        }
-    }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ModelLadderStep {
     pub step: usize,
     pub label: &'static str,
     pub hf_repo: &'static str,
     pub hf_file: &'static str,
-}
-
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
-pub struct HardwareCapacity {
-    pub ram_gb: usize,
-    pub recommended_hf_repo: &'static str,
-    pub recommended_file: &'static str,
-    pub model_size_label: &'static str,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_hardware_profiler() {
-        let (cpus, gpu_info) = HardwareProfiler::profile();
-        assert!(cpus > 0);
-        assert!(!gpu_info.is_empty());
-    }
 }

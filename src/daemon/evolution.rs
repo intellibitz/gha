@@ -1,9 +1,9 @@
-// GHA Substrate Evolution Manager
+// AEON Substrate Evolution Manager
 // RULE 17: Native Evolutionary Assistant Protocol - Analysis & Synthesis
 
 use std::path::Path;
 use crate::error::EaiResult;
-use crate::sandbox::manager::GhaAuditLogger;
+use crate::sandbox::manager::AeonAuditLogger;
 use crate::gawd::reflex_synth::ReflexSynthesizer;
 use std::collections::HashMap;
 
@@ -16,9 +16,9 @@ impl EvolutionManager {
         if intent_to_harden.starts_with("scout_model ") {
             let model_name = intent_to_harden.trim_start_matches("scout_model ").to_string();
             let res = crate::gmcp::tools::ToolRegistry::execute_tool("scout_model", &model_name, workspace);
-            return Ok(format!("# GHA Intelligence Discovery\n\n\
-               The substrate has detected a request for an unknown model and autonomously initiated discovery.\n\n\
-               - **Model**: '{}'\n\
+            return Ok(format!("# AEON Intelligence Discovery\n\n\
+               The substrate has detected a request for an unknown model and autonomously initiated discovery.\\n\\n\
+               - **Model**: '{}'\\n\
                - **Result**: {}",
                model_name, res));
         }
@@ -27,21 +27,21 @@ impl EvolutionManager {
         let proposal = match ReflexSynthesizer::distill_native_reflex(&intent_to_harden, workspace) {
             Ok(p) => p,
             Err(e) => {
-                format!("⚠️ Distillation failed: {}. Proposed Evolution: Implement native Rust N-P-K nutrient calculation reflex in GhaPulse.", e)
+                format!("⚠️ Distillation failed: {}. Proposed Evolution: Implement native Rust N-P-K nutrient calculation reflex in AeonPulse.", e)
             }
         };
 
-        Ok(format!("# GHA Substrate Evolution Active\n\n\
-           The substrate has identified a neural pathway suitable for distillation based on audit log pathology.\n\n\
-           - **Intent Target**: '{}'\n\
-           - **Action**: {}\n\n\
+        Ok(format!("# AEON Substrate Evolution Active\n\n\
+           The substrate has identified a neural pathway suitable for distillation based on audit log pathology.\\n\\n\
+           - **Intent Target**: '{}'\\n\
+           - **Action**: {}\\n\\n\
            The new native reflex has been staged for the next release cycle.",
            intent_to_harden, proposal))
     }
 
     pub fn detect_high_frequency_gap(workspace: &Path) -> String {
         // 1. Read audit log (last 100 entries)
-        let log_content = GhaAuditLogger::read_audit_log(workspace, 100);
+        let log_content = AeonAuditLogger::read_audit_log(workspace, 100);
 
         // 2. Pathological Frequency Analysis
         let mut intent_freq = HashMap::new();

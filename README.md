@@ -1,8 +1,8 @@
-# gha
+# aeon
 
-![GHA Version](https://img.shields.io/badge/version-v0.1.2022682-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
+![AEON Version](https://img.shields.io/badge/version-v0.1.2022683-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)
 
-**gha** is a Rust-based local-first AI execution engine. It provides a sub-2ms CLI launcher that proxies commands to a persistent background daemon for zero-latency tool execution and agent orchestration.
+**aeon** is a Rust-based local-first AI execution engine. It provides a sub-2ms CLI launcher that proxies commands to a persistent background daemon for zero-latency tool execution and agent orchestration.
 
 ## Architecture
 
@@ -15,22 +15,29 @@
 
 ### Linux / macOS / WSL
 ```bash
-curl -sSL https://raw.githubusercontent.com/intellibitz/gha/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/intellibitz/aeon/main/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 ```powershell
-iwr -useb https://raw.githubusercontent.com/intellibitz/gha/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/intellibitz/aeon/main/install.ps1 | iex
 ```
+
+## Configuration
+
+`aeon` is designed to be zero-config, but you can customize its behavior via environment variables or a local `.env` file in `~/.aeon/env`.
+
+* **AEON_API_KEY**: Set this key for cloud inference fallback when local models are unavailable or insufficient.
+* **AEON_REPO**: Custom GitHub repository for binary updates (defaults to `intellibitz/aeon`).
 
 ## Usage
 
 Execute commands or natural language tasks directly:
 ```bash
-gha "read projects.md and agents.md"
-gha "list installed Android Studio versions"
-gha status
-gha mcp
+aeon "read projects.md and agents.md"
+aeon "list installed Android Studio versions"
+aeon status
+aeon mcp
 ```
 
 ## Maintainers

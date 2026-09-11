@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# gha installer - Lightning Fast Intelligence Substrate Onboarding
+# aeon installer - Lightning Fast Intelligence Substrate Onboarding
 set -e
 
-GLOBAL_GHA_DIR="$HOME/.gha"
-GLOBAL_BIN_DIR="$GLOBAL_GHA_DIR/bin"
+GLOBAL_AEON_DIR="$HOME/.aeon"
+GLOBAL_BIN_DIR="$GLOBAL_AEON_DIR/bin"
 mkdir -p "$GLOBAL_BIN_DIR"
-mkdir -p "$GLOBAL_GHA_DIR/models"
+mkdir -p "$GLOBAL_AEON_DIR/models"
 
-GHA_REPO="${GHA_REPO:-intellibitz/gha}"
+AEON_REPO="${AEON_REPO:-intellibitz/aeon}"
 
 # Try to detect repo from git if available
 if command -v git >/dev/null 2>&1 && [ -d ".git" ]; then
@@ -16,12 +16,12 @@ if command -v git >/dev/null 2>&1 && [ -d ".git" ]; then
         # Extract owner/repo from https://github.com/owner/repo.git or git@github.com:owner/repo.git
         DETECTED_REPO=$(echo "$GIT_REMOTE" | sed -E 's/.*github\.com[:\/](.*)\.git/\1/' | sed -E 's/.*github\.com[:\/](.*)/\1/')
         if [[ -n "$DETECTED_REPO" ]]; then
-            GHA_REPO="$DETECTED_REPO"
+            AEON_REPO="$DETECTED_REPO"
         fi
     fi
 fi
 
-echo "Initializing gha environment (Repo: $GHA_REPO)..."
+echo "Initializing aeon environment (Repo: $AEON_REPO)..."
 
 # 1. Detect Environment
 OS_TYPE="$(uname -s | tr '[:upper:]' '[:lower:]')"
@@ -52,43 +52,43 @@ fi
 # 2. Try Binary Download First (Lightning Fast) if no local source exists
 if [ "$HAS_LOCAL_SOURCE" = "0" ] && [[ "$PLATFORM" != "unknown" && "$ARCH" != "unknown" ]]; then
     # Try downloading both launcher and engine
-    LAUNCHER_BINARY="gha-$PLATFORM-$ARCH"
-    ENGINE_BINARY="gha-engine-$PLATFORM-$ARCH"
+    LAUNCHER_BINARY="aeon-$PLATFORM-$ARCH"
+    ENGINE_BINARY="aeon-engine-$PLATFORM-$ARCH"
 
     if [[ "$PLATFORM" == "windows" ]]; then
         LAUNCHER_BINARY="${LAUNCHER_BINARY}.exe"
         ENGINE_BINARY="${ENGINE_BINARY}.exe"
     fi
 
-    BASE_URL="https://github.com/$GHA_REPO/releases/latest/download"
+    BASE_URL="https://github.com/$AEON_REPO/releases/latest/download"
 
-    echo "Attempting to download pre-compiled binaries from $GHA_REPO..."
+    echo "Attempting to download pre-compiled binaries from $AEON_REPO..."
 
     DEPLOYED=0
     if command -v curl >/dev/null 2>&1; then
         # Download Launcher
         echo "  [1/2] Downloading launcher: $LAUNCHER_BINARY..."
-        if curl -sSfL "$BASE_URL/$LAUNCHER_BINARY" -o "$GLOBAL_BIN_DIR/gha-new"; then
+        if curl -sSfL "$BASE_URL/$LAUNCHER_BINARY" -o "$GLOBAL_BIN_DIR/aeon-new"; then
             # Download Engine
             echo "  [2/2] Downloading engine: $ENGINE_BINARY..."
-            if curl -sSfL "$BASE_URL/$ENGINE_BINARY" -o "$GLOBAL_BIN_DIR/gha-engine-new"; then
+            if curl -sSfL "$BASE_URL/$ENGINE_BINARY" -o "$GLOBAL_BIN_DIR/aeon-engine-new"; then
                 DEPLOYED=1
             fi
         fi
     elif command -v wget >/dev/null 2>&1; then
         # Download Launcher
         echo "  [1/2] Downloading launcher: $LAUNCHER_BINARY..."
-        if wget -q "$BASE_URL/$LAUNCHER_BINARY" -O "$GLOBAL_BIN_DIR/gha-new"; then
+        if wget -q "$BASE_URL/$LAUNCHER_BINARY" -O "$GLOBAL_BIN_DIR/aeon-new"; then
             # Download Engine
             echo "  [2/2] Downloading engine: $ENGINE_BINARY..."
-            if wget -q "$BASE_URL/$ENGINE_BINARY" -O "$GLOBAL_BIN_DIR/gha-engine-new"; then
+            if wget -q "$BASE_URL/$ENGINE_BINARY" -O "$GLOBAL_BIN_DIR/aeon-engine-new"; then
                 DEPLOYED=1
             fi
         fi
     fi
 
     if [ "$DEPLOYED" = "1" ]; then
-        pkill -f gha || true
+        pkill -f aeon || true
 
         BIN_EXE=""
         ENGINE_EXE="-engine"
@@ -97,15 +97,15 @@ if [ "$HAS_LOCAL_SOURCE" = "0" ] && [[ "$PLATFORM" != "unknown" && "$ARCH" != "u
             ENGINE_EXE="-engine.exe"
         fi
 
-        rm -f "$GLOBAL_BIN_DIR/gha${BIN_EXE}" "$GLOBAL_BIN_DIR/gha${ENGINE_EXE}" 2>/dev/null || true
-        mv "$GLOBAL_BIN_DIR/gha-new" "$GLOBAL_BIN_DIR/gha${BIN_EXE}"
-        mv "$GLOBAL_BIN_DIR/gha-engine-new" "$GLOBAL_BIN_DIR/gha${ENGINE_EXE}"
-        chmod +x "$GLOBAL_BIN_DIR/gha${BIN_EXE}" "$GLOBAL_BIN_DIR/gha${ENGINE_EXE}"
+        rm -f "$GLOBAL_BIN_DIR/aeon${BIN_EXE}" "$GLOBAL_BIN_DIR/aeon${ENGINE_EXE}" 2>/dev/null || true
+        mv "$GLOBAL_BIN_DIR/aeon-new" "$GLOBAL_BIN_DIR/aeon${BIN_EXE}"
+        mv "$GLOBAL_BIN_DIR/aeon-engine-new" "$GLOBAL_BIN_DIR/aeon${ENGINE_EXE}"
+        chmod +x "$GLOBAL_BIN_DIR/aeon${BIN_EXE}" "$GLOBAL_BIN_DIR/aeon${ENGINE_EXE}"
         INSTALLED=1
-        echo "Successfully deployed binaries from GitHub ($GHA_REPO)."
+        echo "Successfully deployed binaries from GitHub ($AEON_REPO)."
     else
         echo "Binary download unavailable or failed. Falling back to build."
-        rm -f "$GLOBAL_BIN_DIR/gha-new" "$GLOBAL_BIN_DIR/gha-engine-new" 2>/dev/null || true
+        rm -f "$GLOBAL_BIN_DIR/aeon-new" "$GLOBAL_BIN_DIR/aeon-engine-new" 2>/dev/null || true
     fi
 else
     if [ "$HAS_LOCAL_SOURCE" = "1" ]; then
@@ -127,9 +127,9 @@ if [ "$INSTALLED" = "0" ]; then
         SCRIPT_DIR="$SCRIPT_DIR_DETECT"
         echo "Using local source directory: $SCRIPT_DIR"
     else
-        echo "Downloading gha source archive ($GHA_REPO)..."
+        echo "Downloading aeon source archive ($AEON_REPO)..."
         TEMP_DIR=$(mktemp -d)
-        SOURCE_URL="https://github.com/$GHA_REPO/archive/refs/heads/main.tar.gz"
+        SOURCE_URL="https://github.com/$AEON_REPO/archive/refs/heads/main.tar.gz"
 
         # Move to temp dir to avoid CWD errors if the user is in a deleted directory
         cd "$TEMP_DIR" || { echo "Failed to enter temporary directory."; exit 1; }
@@ -165,10 +165,10 @@ if [ "$INSTALLED" = "0" ]; then
         (cd "$SCRIPT_DIR" && cargo build --release $BUILD_FEATURES >/dev/null 2>&1)
         # Build Launcher
         echo "  Building launcher..."
-        (cd "$SCRIPT_DIR/src/native/gha" && cargo build --release >/dev/null 2>&1)
+        (cd "$SCRIPT_DIR/src/native/aeon" && cargo build --release >/dev/null 2>&1)
 
-        ENGINE_SRC="$SCRIPT_DIR/target/release/gha"
-        LAUNCHER_SRC="$SCRIPT_DIR/src/native/gha/target/release/gha"
+        ENGINE_SRC="$SCRIPT_DIR/target/release/aeon-engine"
+        LAUNCHER_SRC="$SCRIPT_DIR/src/native/aeon/target/release/aeon"
 
         if [[ "$PLATFORM" == "windows" ]]; then
             ENGINE_SRC="${ENGINE_SRC}.exe"
@@ -176,11 +176,11 @@ if [ "$INSTALLED" = "0" ]; then
         fi
 
         if [ -f "$ENGINE_SRC" ] && [ -f "$LAUNCHER_SRC" ]; then
-            pkill -f gha || true
-            rm -f "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha" 2>/dev/null || true
-            cp "$ENGINE_SRC" "$GLOBAL_BIN_DIR/gha-engine"
-            cp "$LAUNCHER_SRC" "$GLOBAL_BIN_DIR/gha"
-            chmod +x "$GLOBAL_BIN_DIR/gha-engine" "$GLOBAL_BIN_DIR/gha"
+            pkill -f aeon || true
+            rm -f "$GLOBAL_BIN_DIR/aeon-engine" "$GLOBAL_BIN_DIR/aeon" 2>/dev/null || true
+            cp "$ENGINE_SRC" "$GLOBAL_BIN_DIR/aeon-engine"
+            cp "$LAUNCHER_SRC" "$GLOBAL_BIN_DIR/aeon"
+            chmod +x "$GLOBAL_BIN_DIR/aeon-engine" "$GLOBAL_BIN_DIR/aeon"
             INSTALLED=1
             echo "Deployed engine and launcher binaries to $GLOBAL_BIN_DIR"
         fi
@@ -193,24 +193,24 @@ if [ "$INSTALLED" = "0" ]; then
 fi
 
 # 4. Engine Initialization
-if [ -x "$GLOBAL_BIN_DIR/gha" ]; then
-    "$GLOBAL_BIN_DIR/gha" install >/dev/null 2>&1 || true
+if [ -x "$GLOBAL_BIN_DIR/aeon" ]; then
+    "$GLOBAL_BIN_DIR/aeon" install >/dev/null 2>&1 || true
 fi
 
 # 5. Model Substrate Check (Optional but recommended for offline mode)
-MODEL_DIR="$GLOBAL_GHA_DIR/models"
-ALPHA_MODEL="$MODEL_DIR/gha-alpha.safetensors"
+MODEL_DIR="$GLOBAL_AEON_DIR/models"
+ALPHA_MODEL="$MODEL_DIR/aeon-alpha.safetensors"
 if [ ! -f "$ALPHA_MODEL" ]; then
-    if [ -n "$GHA_WEIGHTS_URL" ]; then
-        echo "Downloading gha-alpha intelligence substrate from custom URL..."
+    if [ -n "$AEON_WEIGHTS_URL" ]; then
+        echo "Downloading aeon-alpha intelligence substrate from custom URL..."
         if command -v curl >/dev/null 2>&1; then
-            curl -sSfL "$GHA_WEIGHTS_URL" -o "$ALPHA_MODEL"
+            curl -sSfL "$AEON_WEIGHTS_URL" -o "$ALPHA_MODEL"
         elif command -v wget >/dev/null 2>&1; then
-            wget -q "$GHA_WEIGHTS_URL" -O "$ALPHA_MODEL"
+            wget -q "$AEON_WEIGHTS_URL" -O "$ALPHA_MODEL"
         fi
     else
-        echo "Intelligence substrate (gha-alpha.safetensors) missing."
-        echo "Note: Native reflex weights can be downloaded later using '/scout_model gha-alpha'."
+        echo "Intelligence substrate (aeon-alpha.safetensors) missing."
+        echo "Note: Native reflex weights can be downloaded later using '/scout_model aeon-alpha'."
     fi
 fi
 
@@ -218,18 +218,18 @@ fi
 if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
     CONFIG_FILES=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile")
     for config in "${CONFIG_FILES[@]}"; do
-        if [ -f "$config" ] && ! grep -q ".gha/bin" "$config"; then
-            echo -e "\n# gha path initialization\nexport PATH=\"\$HOME/.gha/bin:\$PATH\"" >> "$config"
+        if [ -f "$config" ] && ! grep -q ".aeon/bin" "$config"; then
+            echo -e "\n# aeon path initialization\nexport PATH=\"\$HOME/.aeon/bin:\$PATH\"" >> "$config"
         fi
     done
 
     FISH_CONFIG="$HOME/.config/fish/config.fish"
     if [ -d "$HOME/.config/fish" ] || command -v fish >/dev/null 2>&1; then
         mkdir -p "$HOME/.config/fish"
-        if [ -f "$FISH_CONFIG" ] && ! grep -q ".gha/bin" "$FISH_CONFIG"; then
-            echo -e "\n# gha path initialization\nfish_add_path \$HOME/.gha/bin" >> "$FISH_CONFIG"
+        if [ -f "$FISH_CONFIG" ] && ! grep -q ".aeon/bin" "$FISH_CONFIG"; then
+            echo -e "\n# aeon path initialization\nfish_add_path \$HOME/.aeon/bin" >> "$FISH_CONFIG"
         elif [ ! -f "$FISH_CONFIG" ]; then
-            echo -e "fish_add_path \$HOME/.gha/bin" > "$FISH_CONFIG"
+            echo -e "fish_add_path \$HOME/.aeon/bin" > "$FISH_CONFIG"
         fi
         if command -v fish >/dev/null 2>&1; then
             fish -c "fish_add_path $GLOBAL_BIN_DIR" >/dev/null 2>&1 || true
@@ -238,10 +238,10 @@ if [[ ":$PATH:" != *":$GLOBAL_BIN_DIR:"* ]]; then
 fi
 
 # 6. Finalize
-if [ -t 0 ] && [ -t 1 ] && [ -z "$NONINTERACTIVE" ] && [ -x "$GLOBAL_BIN_DIR/gha" ]; then
-    echo "Installation complete. Starting interactive gha session..."
+if [ -t 0 ] && [ -t 1 ] && [ -z "$NONINTERACTIVE" ] && [ -x "$GLOBAL_BIN_DIR/aeon" ]; then
+    echo "Installation complete. Starting interactive aeon session..."
     echo ""
-    exec "$GLOBAL_BIN_DIR/gha"
+    exec "$GLOBAL_BIN_DIR/aeon"
 else
-    echo "Installation complete. Run 'gha' to start."
+    echo "Installation complete. Run 'aeon' to start."
 fi

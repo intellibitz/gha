@@ -1,4 +1,4 @@
-// GHA Native Administrative Substrate
+// AEON Native Administrative Substrate
 // 100% Rust implementation for Full Compliance Enforcement, Version Synchronization & Release Orchestration
 
 use std::fs;
@@ -6,12 +6,12 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use crate::error::{EaiError, EaiResult};
 
-pub struct GhaAdmin;
+pub struct AeonAdmin;
 
-impl GhaAdmin {
+impl AeonAdmin {
     /// Full Compliance Audit (Rule 15)
     pub fn audit_compliance(workspace: &Path, target: Option<&str>) -> EaiResult<String> {
-        let mut report = "# GHA Compliance Audit\n\n".to_string();
+        let mut report = "# AEON Compliance Audit\n\n".to_string();
         if let Some(t) = target {
              report.push_str(&format!("Target: {}\n\n", t));
         }
@@ -47,10 +47,10 @@ impl GhaAdmin {
         let gitignore = workspace.join(".gitignore");
         if gitignore.exists() {
             let content = fs::read_to_string(&gitignore)?;
-            if content.contains(".gha") || content.contains(".gha/") {
-                report.push_str("- [PASS] Purity: Sandbox state .gha/ is correctly ignored.\n");
+            if content.contains(".aeon") || content.contains(".aeon/") {
+                report.push_str("- [PASS] Purity: Sandbox state .aeon/ is correctly ignored.\n");
             } else {
-                report.push_str("- [FAIL] Purity: .gha/ is NOT ignored in .gitignore.\n");
+                report.push_str("- [FAIL] Purity: .aeon/ is NOT ignored in .gitignore.\n");
                 overall_success = false;
             }
         } else {
@@ -63,10 +63,10 @@ impl GhaAdmin {
         if truth_file.exists() {
             let content = fs::read_to_string(&truth_file)?;
             if content.contains("Reality weights") || content.contains("Placeholder") {
-                report.push_str("- [FAIL] Purity: Hardcoded simulations or placeholders remain in GhaTruthAgent (Rule 11 Violation).\n");
+                report.push_str("- [FAIL] Purity: Hardcoded simulations or placeholders remain in AeonTruthAgent (Rule 11 Violation).\n");
                 overall_success = false;
             } else {
-                report.push_str("- [PASS] Purity: GhaTruthAgent truth logic is fully native and dynamic.\n");
+                report.push_str("- [PASS] Purity: AeonTruthAgent truth logic is fully native and dynamic.\n");
             }
         }
 
@@ -98,9 +98,9 @@ impl GhaAdmin {
 
         let files_to_update = vec![
             (workspace.join("Cargo.toml"), "version = \"", "\""),
-            (workspace.join("src/main.rs"), "pub const GHA_VERSION: &str = \"", "\";"),
-            (workspace.join("src/native/gha/src/main.rs"), "const GHA_VERSION: &str = \"", "\";"),
-            (workspace.join("src/native/gha/Cargo.toml"), "version = \"", "\""),
+            (workspace.join("src/main.rs"), "pub const AEON_VERSION: &str = \"", "\";"),
+            (workspace.join("src/native/aeon/src/main.rs"), "const AEON_VERSION: &str = \"", "\";"),
+            (workspace.join("src/native/aeon/Cargo.toml"), "version = \"", "\""),
             (workspace.join("README.md"), "version-v", "-blue.svg"),
             (workspace.join(".agents/PROJECTS.md"), "**Current Engine Version**: `v", "`"),
             (workspace.join("src/gemi/engine.rs"), "v0.1.", ")\"),"),
@@ -123,7 +123,7 @@ impl GhaAdmin {
                                 let updated = format!("{}{}{}", prefix, new_version, suffix);
                                 updated_lines.push(updated);
                             } else if path.to_string_lossy().contains("README.md") {
-                                let updated = format!("![GHA Version](https://img.shields.io/badge/version-v{}-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)", new_version);
+                                let updated = format!("![AEON Version](https://img.shields.io/badge/version-v{}-blue.svg) ![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)", new_version);
                                 updated_lines.push(updated);
                             } else if path.to_string_lossy().contains("PROJECTS.md") {
                                 let updated = format!("* **Current Engine Version**: `v{}`", new_version);
@@ -148,7 +148,7 @@ impl GhaAdmin {
 
     /// Full Release Orchestration (Rule 0, 4, 10, 15, 16)
     pub fn execute_release(workspace: &Path) -> EaiResult<String> {
-        let mut report = "# GHA Native Release Cycle\n\n".to_string();
+        let mut report = "# AEON Native Release Cycle\n\n".to_string();
 
         // 1. Build Verification
         report.push_str("## 1. Build Verification\n");
@@ -188,7 +188,7 @@ impl GhaAdmin {
 
         let git_add = Command::new("git").args(["add", "."]).current_dir(workspace).status()?;
 
-        if std::env::var("GHA_BATCH_EVOLVE").unwrap_or_default() == "true" {
+        if std::env::var("AEON_BATCH_EVOLVE").unwrap_or_default() == "true" {
              report.push_str("- [INFO] Batch Mode: Skipping Git commit/push and Testspace install for this cycle.\n");
              return Ok(report);
         }
@@ -225,7 +225,7 @@ impl GhaAdmin {
 
     /// Autonomous Evolution Cycle (The Threshold Loop)
     pub fn execute_autonomous_evolution_cycle(workspace: &Path) -> EaiResult<String> {
-        let mut report = "# GHA Autonomous Evolution Cycle\n\n".to_string();
+        let mut report = "# AEON Autonomous Evolution Cycle\n\n".to_string();
 
         // 1. Detection Phase
         report.push_str("## 1. Intelligence Gap Detection\n");
@@ -240,12 +240,12 @@ impl GhaAdmin {
             Ok(wasm_path) => {
                 let p = PathBuf::from(&wasm_path);
                 let name = p.file_stem().and_then(|s| s.to_str()).unwrap_or("new_reflex");
-                crate::gawd::gmas::GmasSupervisor::broadcast_reflex_learned(name, &p);
+                crate::gawd::amas::AmaSupervisor::broadcast_reflex_learned(name, &p);
                 report.push_str(&format!("- [PASS] Volatile reflex distilled and broadcast to cluster: {}\n", wasm_path));
             },
             Err(e) => {
                 report.push_str(&format!("- [WARN] Volatile distillation skipped: {}\n", e));
-                report.push_str("- [INFO] Proposed Evolution: Implement native Rust N-P-K nutrient calculation reflex in GhaPulse.\n");
+                report.push_str("- [INFO] Proposed Evolution: Implement native Rust N-P-K nutrient calculation reflex in AeonPulse.\n");
             }
         }
 

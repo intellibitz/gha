@@ -1,196 +1,139 @@
-// 🌌 GHA Protocol Knowledge Base (PKB)
-// Tier 0: Reflex Data Synthesis for GHA-Alpha Training
+// 🌌 AEON Protocol Knowledge Base (PKB)
+// Tier 0: Reflex Data Synthesis for AEON-Alpha Training
 
-use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
-use super::gmas::A2AMessage;
-use crate::error::{EaiError, EaiResult};
+use crate::error::EaiResult;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PkbTrainingEntry {
-    pub instruction: String,
-    pub swarm_flux: Vec<A2AMessage>,
-    pub tool_calls: Vec<String>,
-    pub outcome: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProtocolReflex {
+    pub intent: String,
+    pub action: String,
+    pub context: String,
+    pub verified: bool,
 }
 
-pub struct PkbSynthesizer;
+pub struct ProtocolKnowledgeBase;
 
-impl PkbSynthesizer {
-    #[allow(dead_code)]
-    pub fn calculate_semantic_score(target: &str, candidate: &str) -> f32 {
-        let t_low = target.to_lowercase();
-        let c_low = candidate.to_lowercase();
+impl ProtocolKnowledgeBase {
+    /// Ingests audit logs to synthesize new neural reflex training data
+    pub fn synthesize_training_data(workspace: &Path) -> EaiResult<Vec<ProtocolReflex>> {
+        let mut reflexes = Vec::new();
+        let log_content = crate::sandbox::manager::AeonAuditLogger::read_audit_log(workspace, 500);
 
-        let t_words: Vec<&str> = t_low.split_whitespace().collect();
-        let c_words: Vec<&str> = c_low.split_whitespace().collect();
-
-        let mut score = 0.0;
-        for tw in &t_words {
-            if c_low.contains(tw) {
-                score += 1.0;
-            }
-            for cw in &c_words {
-                 if tw.len() > 3 && cw.len() > 3 && tw == cw {
-                     score += 0.5;
-                 }
+        for line in log_content.lines() {
+            if line.contains("[MISSION_START]") {
+                let intent = line.split("[MISSION_START]").nth(1).unwrap_or("").trim().to_string();
+                if intent.len() > 5 {
+                    reflexes.push(ProtocolReflex {
+                        intent,
+                        action: "PENDING_DISTILLATION".to_string(),
+                        context: "SYNTHETIC_AUDIT_DERIVED".to_string(),
+                        verified: false,
+                    });
+                }
             }
         }
-        score
+        Ok(reflexes)
     }
 
-    pub fn generate_sample(intent: &str, workspace: &Path) -> PkbTrainingEntry {
-        // This is a bootstrap synthesizer. In a full run, it would use GEMI to generate
-        // thousands of these variations.
-        let mut logs = Vec::new();
-        let mut tool_calls = Vec::new();
-
-        logs.push(A2AMessage {
-            sender: "GhaSafetyAgent".to_string(),
-            recipient: "GMA".to_string(),
-            action: "MISSION_FLUX".to_string(),
-            payload: "Governance protocols active.".to_string(),
-        });
-
-        let action = crate::gemi::pulse::GhaPulse::reason(intent, workspace).unwrap_or_else(|_| "ACTION: status".to_string());
-        let clean_action = if action.contains("ACTION: ") {
-            action.split("ACTION: ").nth(1).unwrap_or("status").to_string()
-        } else {
-            action
-        };
-
-        logs.push(A2AMessage {
-            sender: "GhaContextAgent".to_string(),
-            recipient: "GMA".to_string(),
-            action: "MISSION_FLUX".to_string(),
-            payload: format!("Contextualizing mission for '{}' in {}", intent, workspace.display()),
-        });
-        logs.push(A2AMessage {
-            sender: "GhaReasoningAgent".to_string(),
-            recipient: "GMA".to_string(),
-            action: "MISSION_FLUX".to_string(),
-            payload: format!("[Native Synthesis]: ACTION: {}", clean_action),
-        });
-        tool_calls.push(clean_action.split_whitespace().next().unwrap_or("status").to_string());
-
-        PkbTrainingEntry {
-            instruction: intent.to_string(),
-            swarm_flux: logs,
-            tool_calls,
-            outcome: "SUCCESS".to_string(),
-        }
+    pub fn bootstrap_alpha_reflexes() -> Vec<ProtocolReflex> {
+        vec![
+            ProtocolReflex {
+                intent: "install".to_string(),
+                action: "SandboxManager::ensure_global_sandbox".to_string(),
+                context: "CORE_INITIALIZATION".to_string(),
+                verified: true,
+            },
+            ProtocolReflex {
+                intent: "audit compliance".to_string(),
+                action: "AeonAdmin::audit_compliance".to_string(),
+                context: "GOVERNANCE_ENFORCEMENT".to_string(),
+                verified: true,
+            }
+        ]
     }
 
-    pub fn save_training_data(entries: Vec<PkbTrainingEntry>, global_dir: &Path) -> EaiResult<String> {
-        let train_dir = global_dir.join("train");
-        fs::create_dir_all(&train_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
+    pub fn export_reflex_dataset(workspace: &Path) -> EaiResult<String> {
+        let mut reflexes = Self::bootstrap_alpha_reflexes();
+        let synthetic = Self::synthesize_training_data(workspace)?;
+        reflexes.extend(synthetic);
 
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
+        let data = serde_json::to_string_pretty(&reflexes).map_err(|e| crate::error::EaiError::Internal(e.to_string()))?;
+        let export_path = workspace.join(".aeon/reflex_dataset.json");
+        std::fs::write(&export_path, data)?;
 
-        let file_path = train_dir.join(format!("pkb_dataset_{}.jsonl", timestamp));
-        let mut content = String::new();
-        let len = entries.len();
-        for entry in entries {
-            if let Ok(line) = serde_json::to_string(&entry) {
-                content.push_str(&line);
-                content.push('\n');
+        Ok(format!("Exported {} neural reflexes to {}", reflexes.len(), export_path.display()))
+    }
+
+    pub fn generate_synthetic_intent_pair(intent: &str, workspace: &Path) -> EaiResult<String> {
+        // High-fidelity synthetic generation for Tier 0 reflex training
+        let mut pair = format!("INTENT: {}\n", intent);
+
+        let agents = super::agents::GawdAgentFleet::list_active_agents();
+        for agent in agents {
+            if agent.name() == "AeonSafetyAgent" || agent.name() == "AeonContextAgent" {
+                let res = agent.execute(intent, workspace)?;
+                pair.push_str(&format!("REFLEX_GUARD ({}): {}\n", agent.name(), res));
             }
         }
 
-        fs::write(&file_path, content).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-        let _ = Self::ensure_default_candle_weights(global_dir);
-        Ok(format!("Saved {} entries to {}", len, file_path.display()))
+        let action = crate::gemi::pulse::AeonPulse::reason(intent, workspace).unwrap_or_else(|_| "ACTION: status".into());
+        pair.push_str(&format!("FINAL_ACTION: {}\n", action));
+
+        Ok(pair)
     }
 
-    pub fn ensure_default_candle_weights(global_dir: &Path) -> EaiResult<String> {
-        let models_dir = global_dir.join("models");
-        fs::create_dir_all(&models_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-        let weights_file = models_dir.join("gha-alpha.safetensors");
+    pub fn list_reflex_weights(workspace: &Path) -> Vec<String> {
+        let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| ".".to_string());
+        let models_dir = PathBuf::from(home).join(".aeon").join("models");
 
-        if !weights_file.exists() {
-            use candle_core::{Tensor, Device, DType};
-            use std::collections::HashMap;
-
-            let device = Device::Cpu;
-            let mut tensors = HashMap::new();
-
-            // Learning Substrate (Bootstrap): Real weight mapping logic
-            // We use a 128x128 matrix to represent the reflex memory.
-            // Initializing with low-variance random-like values instead of constant ones.
-            let mut data = Vec::with_capacity(128 * 128);
-            for i in 0..(128 * 128) {
-                data.push((i % 100) as f32 / 100.0);
-            }
-            let weight = Tensor::from_vec(data, (128, 128), &device).map_err(|e| EaiError::Inference(e.to_string()))?;
-            let bias = Tensor::zeros(128, DType::F32, &device).map_err(|e| EaiError::Inference(e.to_string()))?;
-
-            tensors.insert("reflex.weight".to_string(), weight);
-            tensors.insert("reflex.bias".to_string(), bias);
-
-            candle_core::safetensors::save(&tensors, &weights_file).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-            return Ok(format!("Initialized native Candle weights at {}", weights_file.display()));
-        }
-        Ok(format!("Native Candle weights present at {}", weights_file.display()))
-    }
-
-    pub fn distill_step_0_to_63(global_dir: &Path) -> EaiResult<String> {
-        let train_dir = global_dir.join("train");
-        if !train_dir.is_dir() {
-            return Ok("No training datasets found to distill.".to_string());
-        }
-
-        let mut entries = Vec::new();
-        if let Ok(paths) = fs::read_dir(&train_dir) {
-            for entry in paths.flatten() {
-                if entry.path().extension().is_some_and(|ext| ext == "jsonl") {
-                    if let Ok(content) = fs::read_to_string(entry.path()) {
-                        for line in content.lines() {
-                            if let Ok(item) = serde_json::from_str::<PkbTrainingEntry>(line) {
-                                entries.push(item);
-                            }
-                        }
-                    }
+        let mut weights = Vec::new();
+        if let Ok(entries) = std::fs::read_dir(models_dir) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.ends_with(".safetensors") || name.ends_with(".gguf") {
+                    weights.push(name);
                 }
             }
         }
 
-        let total_samples = entries.len();
-        let models_dir = global_dir.join("models");
-        let weights_file = models_dir.join("gha-alpha.safetensors");
-
-        use candle_core::{Tensor, Device, DType};
-        use std::collections::HashMap;
-
-        let device = Device::Cpu;
-        let mut tensors = HashMap::new();
-
-        // Real Neural Distillation (Incremental Logic)
-        // Convert instruction keywords into embedding vectors and map to actions.
-        let dim = 128;
-        let mut matrix_data = vec![0.0f32; dim * dim];
-
-        for (i, entry) in entries.iter().enumerate().take(dim) {
-             let keywords: Vec<&str> = entry.instruction.split_whitespace().collect();
-             let success_multiplier = if entry.outcome.contains("SUCCESS") { 1.2 } else { 0.8 };
-
-             for (j, kw) in keywords.iter().enumerate().take(dim) {
-                  // Learning Rule: Weights adjusted by success score and term importance
-                  let weight_val = ((kw.len() as f32) / 10.0) * success_multiplier;
-                  matrix_data[i * dim + j] = weight_val;
-             }
+        let local_weights = workspace.join("target/release/aeon-alpha.safetensors");
+        if local_weights.exists() {
+            weights.push("target/release/aeon-alpha.safetensors".into());
         }
 
-        let weight = Tensor::from_vec(matrix_data, (dim, dim), &device).map_err(|e| EaiError::Inference(e.to_string()))?;
-        let bias = Tensor::zeros(dim, DType::F32, &device).map_err(|e| EaiError::Inference(e.to_string()))?;
+        weights
+    }
 
-        tensors.insert("reflex.weight".to_string(), weight);
-        tensors.insert("reflex.bias".to_string(), bias);
+    pub fn verify_alpha_substrate() -> EaiResult<String> {
+        let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| ".".to_string());
+        let models_dir = PathBuf::from(home).join(".aeon").join("models");
+        let weights_file = models_dir.join("aeon-alpha.safetensors");
 
-        candle_core::safetensors::save(&tensors, &weights_file).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-        Ok(format!("Distilled {} PKB pipeline samples across 63 steps into native weights ({})", total_samples, weights_file.display()))
+        if weights_file.exists() {
+            let meta = std::fs::metadata(&weights_file)?;
+            Ok(format!("AEON-Alpha Substrate Verified: {} ({} bytes)", weights_file.display(), meta.len()))
+        } else {
+            Err(crate::error::EaiError::Inference("AEON-Alpha weights missing. Run 'aeon install'.".into()))
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn distill_reflex_to_binary(intent: &str, workspace: &Path) -> EaiResult<PathBuf> {
+        let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| ".".to_string());
+        let models_dir = PathBuf::from(home).join(".aeon").join("models");
+        let weights_file = models_dir.join("aeon-alpha.safetensors");
+
+        if !weights_file.exists() {
+             return Err(crate::error::EaiError::Inference("AEON-Alpha substrate missing.".into()));
+        }
+
+        // Tier 0 Distillation Logic (Mock for now, will call candle-nn in next evolution)
+        let distilled_path = workspace.join(format!(".aeon/reflexes/{}.bin", intent.replace(' ', "_")));
+        let _ = std::fs::create_dir_all(distilled_path.parent().unwrap());
+        std::fs::write(&distilled_path, b"DISTILLED_AEON_REFLEX_V1")?;
+
+        Ok(distilled_path)
     }
 }

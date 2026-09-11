@@ -1,4 +1,4 @@
-// gha: Multi-Agent Engine
+// aeon: Multi-Agent Engine
 
 mod error;
 mod daemon;
@@ -13,13 +13,13 @@ use std::io::{self, Read, IsTerminal};
 use std::path::{Path, PathBuf};
 
 use crate::gmcp::tools::ToolRegistry;
-use daemon::GmaDaemon;
-use gawd::GmaMasterAgent;
+use daemon::AmaDaemon;
+use gawd::AmaMasterAgent;
 use gemi::GemiServer;
 use gmcp::server::GmcpServer;
 use sandbox::SandboxManager;
 
-pub const GHA_VERSION: &str = "0.1.2022682";
+pub const AEON_VERSION: &str = "0.1.2022683";
 
 fn get_home_dir() -> PathBuf {
     env::var_os("HOME")
@@ -29,13 +29,13 @@ fn get_home_dir() -> PathBuf {
 }
 
 fn print_help() {
-    println!("gha v{}", GHA_VERSION);
-    println!("Usage: gha [COMMAND | INTENT]\n");
+    println!("aeon v{}", AEON_VERSION);
+    println!("Usage: aeon [COMMAND | INTENT]\n");
     println!("Commands & Intents:");
     println!("  version, -v, --version   Print version");
     println!("  help, -h, --help         Show help");
-    println!("  install                  Initialize sandboxed .gha environment");
-    println!("  uninstall                Clean up sandboxed .gha environment");
+    println!("  install                  Initialize sandboxed .aeon environment");
+    println!("  uninstall                Clean up sandboxed .aeon environment");
     println!("  mcp                      Start native MCP server");
     println!("  gemi                     Start GEMI REST server");
     println!("  status                   Inspect workspace health report");
@@ -48,25 +48,25 @@ fn print_help() {
     println!("  clean                    Clean workspace build artifacts");
     println!("\nPowered by GAWD Agent Fleet & ToolRegistry for any natural language intent.");
     println!("Examples:");
-    println!("  gha \"analyze current git status\"");
-    println!("  cat error.log | gha \"debug this error\"");
-    println!("  gha scout_model <model_id> > model.json");
+    println!("  aeon \"analyze current git status\"");
+    println!("  cat error.log | aeon \"debug this error\"");
+    println!("  aeon scout_model <model_id> > model.json");
 }
 
 fn run_install(global_dir: &Path) {
-    println!("Initializing gha runtime...");
+    println!("Initializing aeon runtime...");
     let _ = SandboxManager::ensure_global_sandbox(global_dir);
-    GmaDaemon::ensure_daemon_running(global_dir, global_dir);
-    println!("gha runtime initialized.");
+    AmaDaemon::ensure_daemon_running(global_dir, global_dir);
+    println!("aeon runtime initialized.");
 }
 
 fn main() {
     let cwd = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let home = get_home_dir();
-    let global_dir = home.join(".gha");
+    let global_dir = home.join(".aeon");
 
     if env::args().nth(1).as_deref() != Some("daemon-start") {
-        GmaDaemon::ensure_daemon_running(&cwd, &global_dir);
+        AmaDaemon::ensure_daemon_running(&cwd, &global_dir);
     }
 
     let args: Vec<String> = env::args().skip(1).collect();
@@ -77,8 +77,8 @@ fn main() {
             if io::stdin().read_to_string(&mut buffer).is_ok() {
                 let trimmed = buffer.trim();
                 if !trimmed.is_empty() {
-                    let gma = GmaMasterAgent::new();
-                    let answer = gma.solve_clean(trimmed, &cwd, GHA_VERSION);
+                    let ama = AmaMasterAgent::new();
+                    let answer = ama.solve_clean(trimmed, &cwd, AEON_VERSION);
                     print!("{}", answer);
                     return;
                 }
@@ -95,23 +95,23 @@ fn main() {
             print_help();
         }
         "version" | "-v" | "--version" => {
-            println!("gha v{}", GHA_VERSION);
+            println!("aeon v{}", AEON_VERSION);
         }
         "install" => {
             run_install(&global_dir);
         }
         "uninstall" => {
             let _ = std::fs::remove_dir_all(&global_dir);
-            println!("gha runtime removed.");
+            println!("aeon runtime removed.");
         }
         "daemon-start" => {
-            GmaDaemon::run_daemon_loop(global_dir.clone(), global_dir);
+            AmaDaemon::run_daemon_loop(global_dir.clone(), global_dir);
         }
         "gmcp-server" | "mcp-server" | "mcp" => {
-            GmcpServer::run_stdio(&cwd, GHA_VERSION);
+            GmcpServer::run_stdio(&cwd, AEON_VERSION);
         }
         "gemi-server" | "gemi" => {
-            let cfg = crate::sandbox::manager::GhaConfig::load(&global_dir);
+            let cfg = crate::sandbox::manager::AeonConfig::load(&global_dir);
             GemiServer::start_http_server(cwd.clone(), cfg.gemi_port);
         }
         "clean" => {
@@ -133,7 +133,7 @@ fn main() {
                 }
             }
 
-            let gma = GmaMasterAgent::new();
+            let ama = AmaMasterAgent::new();
 
             // Unified GAWD & ToolRegistry Dispatch for all commands and intents
             if ToolRegistry::exists(cmd_name) {
@@ -146,7 +146,7 @@ fn main() {
                 return;
             }
 
-            let answer = gma.solve_clean(&goal, &cwd, GHA_VERSION);
+            let answer = ama.solve_clean(&goal, &cwd, AEON_VERSION);
             if !io::stdout().is_terminal() {
                 print!("{}", answer);
             } else {

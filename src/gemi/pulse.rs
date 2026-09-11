@@ -1,25 +1,25 @@
-// GHA-Pulse: Tier 0 Native Bootstrap Brain
+// AEON-Pulse: Tier 0 Native Bootstrap Brain
 // Powered by Candle — EAI: Exponential Intelligence for Any AI.
 
 use anyhow::{Result, anyhow};
 use candle_core::Device;
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
-use super::alpha::GhaAlphaModel;
+use super::alpha::AeonAlphaModel;
 
-pub struct GhaPulse;
+pub struct AeonPulse;
 
-impl GhaPulse {
+impl AeonPulse {
     #[allow(dead_code)]
     pub fn try_load_candle_weights() -> Result<usize> {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let weights_path = home.join(".gha/models/gha-alpha.safetensors");
+        let weights_path = home.join(".aeon/models/aeon-alpha.safetensors");
         if weights_path.is_file() {
             let device = Device::Cpu;
             let tensors = candle_core::safetensors::load(&weights_path, &device)?;
             Ok(tensors.len())
         } else {
-            Err(anyhow!("No native safetensors model weights found at ~/.gha/models/gha-alpha.safetensors"))
+            Err(anyhow!("No native safetensors model weights found at ~/.aeon/models/aeon-alpha.safetensors"))
         }
     }
 
@@ -119,10 +119,10 @@ impl GhaPulse {
             }
         }
 
-        // 3. Neural Reflex (GHA-Alpha Inference) - Fallback
+        // 3. Neural Reflex (AEON-Alpha Inference) - Fallback
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
-        let global_dir = home.join(".gha");
-        if let Ok(model) = GhaAlphaModel::load(&global_dir) {
+        let global_dir = home.join(".aeon");
+        if let Ok(model) = AeonAlphaModel::load(&global_dir) {
              if let Ok(neural_action) = model.predict_intent(&clean_prompt) {
                  return Ok(neural_action);
              }
@@ -134,7 +134,7 @@ impl GhaPulse {
         }
 
         if lower.contains("backup") || lower.contains("restore") {
-            if lower.contains("engine") || lower.contains("gha") {
+            if lower.contains("engine") || lower.contains("aeon") {
                 return Ok(if lower.contains("restore") { "ACTION: restore_engine" } else { "ACTION: backup_engine" }.to_string());
             }
             return Ok(if lower.contains("restore") { "ACTION: restore_work" } else { "ACTION: backup_work" }.to_string());

@@ -2,17 +2,17 @@
 
 ## System Information
 
-* **Project Name**: `gha`
-* **Current Engine Version**: `v0.1.2022682`
+* **Project Name**: `aeon`
+* **Current Engine Version**: `v0.1.2022683`
 
 ## Architecture
 
-`gha` is a local-first, native Rust AI execution engine designed for high-throughput, low-latency agent orchestration.
+`aeon` is a local-first, native Rust AI execution engine designed for high-throughput, low-latency agent orchestration.
 
 ### Engine Architecture
 
 * **Alpha-Self**: Immutable system rules (`AGENTS.md`), and component topologies (`PROJECTS.md`) compiled directly into strongly-typed Rust data structures (`AlphaSelf`). Eliminates runtime string parsing and provides instantaneous self-awareness to all engine components.
-* **Alpha-User**: Experiential memory and learned actions stored in local neural tensor weights (`gha-alpha.safetensors`), trained continuously.
+* **Alpha-User**: Experiential memory and learned actions stored in local neural tensor weights (`aeon-alpha.safetensors`), trained continuously.
 * **Local-First Fallback**: Automatic fallback strategy that prioritizes local execution (Candle tensor substrates and local model vaults) before calling cloud APIs.
 * **Hardware-Aware Model Selection**: Interrogates system RAM, VRAM, and GPU acceleration capabilities to dynamically identify and default to the best suited local model for the host hardware profile.
 
@@ -35,34 +35,34 @@
 * **Zero Setup**: All components run out-of-the-box with zero manual configuration.
 * **Dynamic Intelligence**: Tools and agents are implemented via dynamic traits and thread-safe registries, ensuring architectural flexibility.
 * **GPU Acceleration**: Inference engines are configured for 100% GPU offload (e.g., `-ngl 99` flag) whenever a CUDA, Metal, or Vulkan-compatible GPU is detected, utilizing the Candle Rust ML framework.
-* **CPU Thread Saturation**: For non-tensor tasks, `gha` saturates available physical CPU cores using parallel OS threads and async runtimes.
-* **Sandboxed State Isolation**: All engine states, temporary build artifacts, and configuration settings are isolated inside `.gha` sandbox containers, preventing host OS corruption.
+* **CPU Thread Saturation**: For non-tensor tasks, `aeon` saturates available physical CPU cores using parallel OS threads and async rtimes.
+* **Sandboxed State Isolation**: All engine states, temporary build artifacts, and configuration settings are isolated inside `.aeon` sandbox containers, preventing host OS corruption.
 
 ## Process Architecture
 
-* **GHA Launcher (`native/gha`)**: A micro-binary (<3MB) written in native Rust that serves as the high-speed entry point. It spawns the background daemon and proxies MCP JSON-RPC streams to the persistent engine over local TCP (Port 9090).
-* **GHA Engine (`gha`)**: The heavy-throughput intelligence engine that manages swarm orchestration, inference routing, local model management, and the dynamic tool registry.
+* **AEON Launcher (`src/native/aeon`)**: A micro-binary (<3MB) written in native Rust that serves as the high-speed entry point. It spawns the background daemon and proxies MCP JSON-RPC streams to the persistent engine over local TCP (Port 9090). The resulting binary is named `aeon`.
+* **AEON Engine (`.`)**: The heavy-throughput intelligence engine that manages swarm orchestration, inference routing, local model management, and the dynamic tool registry. The resulting binary is named `aeon-engine`.
 
 ## Security & Governance
 
-* **Pre-Execution Governance**: Inspects tool execution signatures prior to execution, blocking destructive commands (`rm -rf /`, raw disk formatting) and credential/secret leaks (`OPENAI_API_KEY`, `AWS_SECRET_ACCESS_KEY`, private keys).
-* **Audit Logging**: Logs every intent, governance check result, and tool invocation into `.gha/audit.log`.
+* **Pre-Execution Governance**: Inspects tool execution signatures prior to execution, blocking destructive commands (`rm -rf /`, raw disk formatting) and credential/secret leaks (`AEON_API_KEY`, `OPENAI_API_KEY`, `AWS_SECRET_ACCESS_KEY`, private keys).
+* **Audit Logging**: Logs every intent, governance check result, and tool invocation into `.aeon/audit.log`.
 * **State Verification**: Verifies that claimed action artifacts (written files, build status) actually exist and match technical specifications before completing tasks.
 
 ## Project Mechanics & Deployment Workflow
 
-0. **Clean Build Auto-Push**: Once `gha` cleanly compiles (build success, 0 warnings, 0 errors, no functionality broken), automatically push to GitHub.
+0. **Clean Build Auto-Push**: Once `aeon` cleanly compiles (build success, 0 warnings, 0 errors, no functionality broken), automatically push to GitHub.
 1. **Version Increment on Push**: Every push to GitHub must automatically increment the project version.
-2. **Lightning Fast Compilation**: `gha` must compile lightning fast through optimized build configurations, aggressive caching, and minimal overhead.
-3. **Maximum Resource Utilization**: `gha` is configured to utilize maximum available hardware resources (all available CPU threads, RAM, and parallel compilation jobs).
+2. **Lightning Fast Compilation**: `aeon` must compile lightning fast through optimized build configurations, aggressive caching, and minimal overhead.
+3. **Maximum Resource Utilization**: `aeon` is configured to utilize maximum available hardware resources (all available CPU threads, RAM, and parallel compilation jobs).
 4. **Terminology & Component Sync on Push**: Every GitHub push must update `.agents/PROJECTS.md` and `README.md` with the latest terminology, architecture components, and current version.
-5. **Natural Language Only**: `gha` interactions with users are natural language only.
-6. **100% Platform Independent**: `gha` is 100% platform independent, self-contained, and cross-platform across Linux, macOS, Windows, WSL, and mobile architectures.
-7. **Zero Configuration, Self-Tuning & Self-Healing**: `gha` is 100% zero configuration, self-tuning, and self-healing. It automatically adapts, discovers local hardware and models, and self-heals runtime errors without requiring manual user setup.
-8. **Workspace Boundaries**: Project root (`.`) is the target workspace. Temporary runtime state is isolated inside local git-ignored directories (`.gha/` / `~/.gha/`).
+5. **Natural Language Only**: `aeon` interactions with users are natural language only.
+6. **100% Platform Independent**: `aeon` is 100% platform independent, self-contained, and cross-platform across Linux, macOS, Windows, WSL, and mobile architectures.
+7. **Zero Configuration, Self-Tuning & Self-Healing**: `aeon` is 100% zero configuration, self-tuning, and self-healing. It automatically adapts, discovers local hardware and models, and self-heals runtime errors without requiring manual user setup.
+8. **Workspace Boundaries**: Project root (`.`) is the target workspace. Temporary runtime state is isolated inside local git-ignored directories (`.aeon/` / `~/.aeon/`).
 9. **Automated Build & Test Harness**: Every GitHub push verifies clean compilation (`cargo check`) and unit/integration test suite pass (`cargo test`).
 10. **Conventional Commit Format**: Git commit messages must use plain text conventional commit prefixes (e.g., `feat:`, `fix:`, `refactor:`, `chore:`, `release:`) without emojis.
-11. **Dynamic Configuration Enforcement**: Zero hardcoded static configurations in code. All engine, server, port, model, and network parameters must be dynamic and loaded from configuration files (`~/.gha/config.json`, `~/.gha/env`, `~/.gha/mcp_config.json`, `~/.gha/global_mcp_registry.json`) with automated dynamic defaults.
-12. **Workspace Purity Enforcement**: The main workspace must remain free of temporary artifacts and test pollutants. All runtime tests must use isolated ephemeral directories or `.gha/`.
-13. **Full Compliance Enforcement on Push**: Before every GitHub push, the agent MUST apply all Agent Instructions and GHA Execution Rules to the entire codebase. This includes verifying version synchronization, auditing security patterns, enforcing workspace purity, and ensuring that no hardcoded simulations remain.
-14. **Intent & Creator Auto-Push**: As a result of fulfilling an intent or executing a creator directive through the Motion Rule, when the `gha` codebase changes, the agent MUST automatically push the changes to GitHub following a successful clean build and version increment.
+11. **Dynamic Configuration Enforcement**: Zero hardcoded static configurations in code. All engine, server, port, model, and network parameters must be dynamic and loaded from configuration files (`~/.aeon/config.json`, `~/.aeon/env`, `~/.aeon/mcp_config.json`, `~/.aeon/global_mcp_registry.json`) with automated dynamic defaults.
+12. **Workspace Purity Enforcement**: The main workspace must remain free of temporary artifacts and test pollutants. All runtime tests must use isolated ephemeral directories or `.aeon/`.
+13. **Full Compliance Enforcement on Push**: Before every GitHub push, the agent MUST apply all Agent Instructions and AEON Execution Rules to the entire codebase. This includes verifying version synchronization, auditing security patterns, enforcing workspace purity, and ensuring that no hardcoded simulations remain.
+14. **Intent & Creator Auto-Push**: As a result of fulfilling an intent or executing a creator directive through the Motion Rule, when the `aeon` codebase changes, the agent MUST automatically push the changes to GitHub following a successful clean build and version increment.

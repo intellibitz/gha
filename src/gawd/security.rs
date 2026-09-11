@@ -1,4 +1,4 @@
-// 🔒 GHA Security & Violation Detector
+// 🔒 AEON Security & Violation Detector
 // 100% Rust implementation for detecting credential leaks and exfiltration
 // RULE 7: No Secret Leaks - Zero tolerance for tokens, credentials, or keys.
 
@@ -9,10 +9,10 @@ pub struct SecurityDetector;
 impl SecurityDetector {
     pub fn audit_action(_tool_name: &str, arg: &str) -> EaiResult<()> {
         let secret_patterns = vec![
-            "sk-", // OpenAI
-            "ghp_", // Personal Access Token
-            "AIza", // Google Gemini/Cloud
-            "xoxb-", // Slack
+            "sk-",
+            "ghp_",
+            "AIza",
+            "xoxb-",
             "AWS_ACCESS_KEY_ID",
             "AWS_SECRET_ACCESS_KEY",
             "-----BEGIN RSA PRIVATE KEY-----",
@@ -75,7 +75,7 @@ mod tests {
 
     #[test]
     fn test_security_audit_secret_leak() {
-        assert!(SecurityDetector::audit_action("reason", "OPENAI_API_KEY=sk-proj12345").is_err());
+        assert!(SecurityDetector::audit_action("reason", "AEON_API_KEY=sk-proj12345").is_err());
         assert!(SecurityDetector::audit_action("exec_command", "TOKEN=ghp_1234567890abcdef").is_err());
     }
 

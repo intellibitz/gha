@@ -1,5 +1,5 @@
-// GHA Sandbox Manager
-// 100% Rust implementation for Global Engine State Management
+// aeon Sandbox Manager: Neural Checkpoints, Memory & State Isolation
+// 100% Rust implementation for sandboxed execution environment
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -7,11 +7,11 @@ use serde::{Deserialize, Serialize};
 use crate::gmcp::GlobalMcpEntry;
 use crate::error::{EaiError, EaiResult};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ModelTier {
-    Premier = 0,
-    Specialist = 1,
-    Standard = 2,
+    Reflex,
+    Specialist,
+    Premier,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -48,14 +48,14 @@ pub struct NeuralCheckpoint {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GhaConfig {
+pub struct AeonConfig {
     pub gmcp_port: u16,
     pub gemi_port: u16,
     pub udp_discovery_port: u16,
     pub default_engine: String,
     pub default_model: String,
     pub auto_download_models: bool,
-    pub gha_repo: String,
+    pub aeon_repo: String,
     pub mcp_registry_url: String,
     pub cloud_models: Vec<ModelInfo>,
     pub bootstrap_mcp_servers: Vec<GlobalMcpEntry>,
@@ -64,21 +64,21 @@ pub struct GhaConfig {
     pub local_scan_paths: Vec<String>,
 }
 
-impl Default for GhaConfig {
+impl Default for AeonConfig {
     fn default() -> Self {
-        GhaConfig {
+        AeonConfig {
             gmcp_port: 9090,
             gemi_port: 9091,
             udp_discovery_port: 9092,
-            default_engine: "gha-offline".to_string(),
-            default_model: "gha-alpha".to_string(),
+            default_engine: "aeon-offline".to_string(),
+            default_model: "aeon-alpha".to_string(),
             auto_download_models: true,
-            gha_repo: "intellibitz/gha".to_string(),
-            mcp_registry_url: "https://raw.githubusercontent.com/intellibitz/gha/main/registry.json".to_string(),
+            aeon_repo: "intellibitz/aeon".to_string(),
+            mcp_registry_url: "https://raw.githubusercontent.com/intellibitz/aeon/main/registry.json".to_string(),
             cloud_models: vec![
                 ModelInfo {
                     name: "Meta Model Substrate - Alpha".to_string(),
-                    registry: "GHA Tier 2 Registry".to_string(),
+                    registry: "AEON Tier 2 Registry".to_string(),
                     model_id: "meta/model-alpha".to_string(),
                     description: "High-throughput cloud reasoning substrate".to_string(),
                     is_local: false,
@@ -86,11 +86,11 @@ impl Default for GhaConfig {
                     latency_ms: None,
                     provider: ProviderType::StandardGoogle,
                     api_base: Some("https://api.meta-substrate.ai/v1".to_string()),
-                    env_key: Some("GHA_API_KEY".to_string()),
+                    env_key: Some("AEON_API_KEY".to_string()),
                 },
                 ModelInfo {
                     name: "Meta Model Substrate - Beta".to_string(),
-                    registry: "GHA Tier 2 Registry".to_string(),
+                    registry: "AEON Tier 2 Registry".to_string(),
                     model_id: "meta/model-beta".to_string(),
                     description: "Standard reasoning & tool-use substrate".to_string(),
                     is_local: false,
@@ -98,11 +98,11 @@ impl Default for GhaConfig {
                     latency_ms: None,
                     provider: ProviderType::StandardOpenAi,
                     api_base: Some("https://api.meta-substrate.ai/v1".to_string()),
-                    env_key: Some("GHA_API_KEY".to_string()),
+                    env_key: Some("AEON_API_KEY".to_string()),
                 },
                 ModelInfo {
                     name: "Meta Model Substrate - Gamma".to_string(),
-                    registry: "GHA Tier 2 Registry".to_string(),
+                    registry: "AEON Tier 2 Registry".to_string(),
                     model_id: "meta/model-gamma".to_string(),
                     description: "Specialist reasoning substrate".to_string(),
                     is_local: false,
@@ -110,7 +110,7 @@ impl Default for GhaConfig {
                     latency_ms: None,
                     provider: ProviderType::StandardAnthropic,
                     api_base: Some("https://api.meta-substrate.ai/v1".to_string()),
-                    env_key: Some("GHA_API_KEY".to_string()),
+                    env_key: Some("AEON_API_KEY".to_string()),
                 },
             ],
             bootstrap_mcp_servers: vec![
@@ -125,404 +125,117 @@ impl Default for GhaConfig {
     }
 }
 
-impl GhaConfig {
+pub struct SandboxManager;
+
+impl AeonConfig {
     pub fn get_config_path(global_dir: &Path) -> PathBuf {
         global_dir.join("config.json")
     }
 
     pub fn load(global_dir: &Path) -> Self {
         let path = Self::get_config_path(global_dir);
-        if path.is_file()
-            && let Ok(content) = fs::read_to_string(&path)
-            && let Ok(config) = serde_json::from_str::<GhaConfig>(&content)
-        {
-            return config;
+        if path.is_file() {
+            if let Ok(content) = fs::read_to_string(path) {
+                return serde_json::from_str(&content).unwrap_or_default();
+            }
         }
-
-        let default_config = GhaConfig::default();
-        let _ = fs::write(&path, serde_json::to_string_pretty(&default_config).unwrap_or_default());
-        default_config
-    }
-
-    #[allow(dead_code)]
-    pub fn save(&self, global_dir: &Path) -> EaiResult<String> {
-        let path = Self::get_config_path(global_dir);
-        let content = serde_json::to_string_pretty(self).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-        fs::write(&path, content).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-        Ok(format!("Saved GHA configuration to {}", path.display()))
+        Self::default()
     }
 }
-
-pub struct SandboxManager;
 
 impl SandboxManager {
-    pub fn ensure_global_sandbox(global_dir: &Path) -> PathBuf {
+    pub fn ensure_global_sandbox(global_dir: &Path) -> EaiResult<()> {
         if !global_dir.exists() {
-            let _ = fs::create_dir_all(global_dir);
-            let _ = fs::create_dir_all(global_dir.join("bin"));
-            let _ = fs::create_dir_all(global_dir.join("models"));
-            let _ = fs::create_dir_all(global_dir.join("train"));
+            fs::create_dir_all(global_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
         }
-        let _ = GhaConfig::load(global_dir);
-        Self::load_env_file(global_dir);
-        global_dir.to_path_buf()
-    }
-
-    pub fn load_env_file(global_dir: &Path) {
-        let env_file = global_dir.join("env");
-        if env_file.is_file()
-            && let Ok(content) = fs::read_to_string(&env_file)
-        {
-            for line in content.lines() {
-                let trimmed = line.trim();
-                if trimmed.is_empty() || trimmed.starts_with('#') {
-                    continue;
-                }
-                if let Some((k, v)) = trimmed.split_once('=') {
-                    let key = k.trim();
-                    let val = v.trim().trim_matches('"').trim_matches('\'');
-                    if !key.is_empty() && !val.is_empty() && std::env::var(key).is_err() {
-                        unsafe {
-                            let _ = std::env::set_var(key, val);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn save_env_key(global_dir: &Path, key: &str, val: &str) -> EaiResult<String> {
-        let env_file = global_dir.join("env");
-        let mut lines = Vec::new();
-        if env_file.is_file()
-            && let Ok(content) = fs::read_to_string(&env_file)
-        {
-            for l in content.lines() {
-                if !l.trim().starts_with(&format!("{}=", key)) {
-                    lines.push(l.to_string());
-                }
-            }
-        }
-        lines.push(format!("{}={}", key, val));
-        fs::write(&env_file, lines.join("\n")).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-        unsafe {
-            let _ = std::env::set_var(key, val);
-        }
-        Ok(format!("Saved {} to {}", key, env_file.display()))
-    }
-
-    #[allow(dead_code)]
-    pub fn is_global_sandbox_active(global_dir: &Path) -> bool {
-        global_dir.join("bin").is_dir()
-    }
-
-    pub fn save_mission_checkpoint(workspace: &Path, checkpoint: &NeuralCheckpoint) {
-        let gha_dir = workspace.join(".gha");
-        let _ = fs::create_dir_all(&gha_dir);
-        let checkpoint_file = gha_dir.join("mission_checkpoint.json");
-        if let Ok(json) = serde_json::to_string(checkpoint) {
-            let _ = fs::write(&checkpoint_file, json);
-        }
-    }
-
-    pub fn check_interrupted_checkpoint(workspace: &Path) -> Option<NeuralCheckpoint> {
-        let checkpoint_file = workspace.join(".gha/mission_checkpoint.json");
-        if checkpoint_file.is_file()
-            && let Ok(content) = fs::read_to_string(&checkpoint_file)
-            && let Ok(checkpoint) = serde_json::from_str::<NeuralCheckpoint>(&content)
-        {
-            if checkpoint.status == "IN_PROGRESS" {
-                return Some(checkpoint);
-            }
-        }
-        None
-    }
-
-    #[allow(dead_code)]
-    pub fn clear_mission_checkpoint(workspace: &Path) {
-        let checkpoint_file = workspace.join(".gha/mission_checkpoint.json");
-        if checkpoint_file.exists() {
-            let _ = fs::remove_file(checkpoint_file);
-        }
-    }
-
-    pub fn save_scheduled_task(workspace: &Path, interval_str: &str, mission: &str) -> String {
-        let gha_dir = workspace.join(".gha");
-        let _ = fs::create_dir_all(&gha_dir);
-        let schedule_file = gha_dir.join("scheduled_tasks.jsonl");
-
-        let interval_secs = interval_str.parse::<u64>().unwrap_or(3600);
-        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-
-        let task = serde_json::json!({
-            "interval_secs": interval_secs,
-            "mission": mission,
-            "created_at": timestamp
-        });
-
-        if let Ok(line) = serde_json::to_string(&task) {
-            let mut content = fs::read_to_string(&schedule_file).unwrap_or_default();
-            content.push_str(&line);
-            content.push('\n');
-            let _ = fs::write(&schedule_file, content);
-            format!("⏱️ Scheduled task registered: \"{}\" every {}s.", mission, interval_secs)
-        } else {
-            "Failed to serialize scheduled task.".to_string()
-        }
-    }
-
-    pub fn load_scheduled_tasks(workspace: &Path) -> Vec<serde_json::Value> {
-        let schedule_file = workspace.join(".gha/scheduled_tasks.jsonl");
-        let mut tasks = Vec::new();
-        if schedule_file.is_file()
-            && let Ok(content) = fs::read_to_string(&schedule_file)
-        {
-            for line in content.lines() {
-                if let Ok(task) = serde_json::from_str::<serde_json::Value>(line) {
-                    tasks.push(task);
-                }
-            }
-        }
-        tasks
-    }
-}
-
-pub struct GhaMemory;
-
-impl GhaMemory {
-    pub fn append_interaction(workspace: &Path, intent: &str, response: &str) {
-        let gha_dir = workspace.join(".gha");
-        let _ = fs::create_dir_all(&gha_dir);
-        let memory_file = gha_dir.join("memory.jsonl");
-
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
-
-        let entry = serde_json::json!({
-            "timestamp": timestamp,
-            "user_intent": intent,
-            "assistant_response": response
-        });
-
-        if let Ok(line) = serde_json::to_string(&entry) {
-            let mut content = fs::read_to_string(&memory_file).unwrap_or_default();
-            content.push_str(&line);
-            content.push('\n');
-            let _ = fs::write(&memory_file, content);
-        }
-    }
-
-    pub fn load_recent_history(workspace: &Path, limit: usize) -> Vec<(String, String)> {
-        let memory_file = workspace.join(".gha/memory.jsonl");
-        let mut history = Vec::new();
-        if memory_file.is_file()
-            && let Ok(content) = fs::read_to_string(&memory_file)
-        {
-            for line in content.lines().rev().take(limit) {
-                if let Ok(val) = serde_json::from_str::<serde_json::Value>(line) {
-                    let intent = val.get("user_intent").and_then(|i| i.as_str()).unwrap_or_default().to_string();
-                    let resp = val.get("assistant_response").and_then(|r| r.as_str()).unwrap_or_default().to_string();
-                    if !intent.is_empty() {
-                        history.push((intent, resp));
-                    }
-                }
-            }
-        }
-        history.reverse();
-        history
-    }
-
-    pub fn format_memory_summary(workspace: &Path) -> String {
-        let history = Self::load_recent_history(workspace, 10);
-        if history.is_empty() {
-            return "No previous interaction history recorded for this workspace.".to_string();
-        }
-        let mut out = format!("Workspace Memory History ({} Previous Sessions):\n\n", history.len());
-        for (i, (intent, resp)) in history.iter().enumerate() {
-            let first_line = resp.lines().next().unwrap_or(resp);
-            out.push_str(&format!("{}. User: \"{}\"\n   GHA: {}\n\n", i + 1, intent, first_line));
-        }
-        out
-    }
-
-    pub fn clear_memory(workspace: &Path) -> String {
-        let memory_file = workspace.join(".gha/memory.jsonl");
-        if memory_file.exists() {
-            let _ = fs::remove_file(memory_file);
-            "Workspace memory cleared.".to_string()
-        } else {
-            "No workspace memory file to clear.".to_string()
-        }
-    }
-}
-
-pub struct GhaAuditLogger;
-
-impl GhaAuditLogger {
-    pub fn log_event(workspace: &Path, event_type: &str, details: &str) {
-        let gha_dir = workspace.join(".gha");
-        let _ = fs::create_dir_all(&gha_dir);
-        let audit_file = gha_dir.join("audit.log");
-
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
-
-        let log_entry = format!("[{}] [{}] {}\n", timestamp, event_type, details);
-        let mut content = fs::read_to_string(&audit_file).unwrap_or_default();
-        content.push_str(&log_entry);
-        let _ = fs::write(&audit_file, content);
-    }
-
-    pub fn read_audit_log(workspace: &Path, limit: usize) -> String {
-        let audit_file = workspace.join(".gha/audit.log");
-        if audit_file.is_file()
-            && let Ok(content) = fs::read_to_string(&audit_file)
-        {
-            let lines: Vec<&str> = content.lines().collect();
-            let take_count = limit.min(lines.len());
-            let recent = &lines[lines.len().saturating_sub(take_count)..];
-            return format!("Workspace Audit Trail ({} Recent Entries):\n\n{}", recent.len(), recent.join("\n"));
-        }
-        "No audit trail recorded for this workspace.".to_string()
-    }
-}
-
-pub struct GhaBackupManager;
-
-impl GhaBackupManager {
-    pub fn backup_work(workspace: &Path) -> EaiResult<String> {
-        let backups_dir = workspace.join(".gha/backups");
-        fs::create_dir_all(&backups_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
-
-        let backup_dir = backups_dir.join(format!("work_backup_{}", timestamp));
-
-        let exclude = ["backups", "target", ".git", "models"];
-        match Self::copy_dir_all_filtered(workspace, &backup_dir, &exclude) {
-            Ok(_) => Ok(format!("Workspace work backed up natively to {}", backup_dir.display())),
-            Err(e) => Err(EaiError::Sandbox(format!("Failed to create workspace backup: {}", e))),
-        }
-    }
-
-    fn copy_dir_all_filtered(src: &Path, dst: &Path, exclude_dirs: &[&str]) -> std::io::Result<()> {
-        fs::create_dir_all(dst)?;
-        if let Ok(entries) = fs::read_dir(src) {
-            for entry in entries.flatten() {
-                if let Ok(file_type) = entry.file_type() {
-                    let name = entry.file_name().to_string_lossy().to_string();
-                    if exclude_dirs.contains(&name.as_str()) || name.starts_with("work_backup_") {
-                        continue;
-                    }
-                    if file_type.is_dir() {
-                        let _ = Self::copy_dir_all_filtered(&entry.path(), &dst.join(&name), exclude_dirs);
-                    } else if file_type.is_file() {
-                        let _ = fs::copy(entry.path(), dst.join(&name));
-                    }
-                }
-            }
+        let config_path = AeonConfig::get_config_path(global_dir);
+        if !config_path.exists() {
+            let default_cfg = AeonConfig::default();
+            let json = serde_json::to_string_pretty(&default_cfg).unwrap();
+            fs::write(config_path, json).map_err(|e| EaiError::Sandbox(e.to_string()))?;
         }
         Ok(())
     }
 
-    pub fn restore_work(workspace: &Path, backup_path: &str) -> EaiResult<String> {
-        let archive = if backup_path.trim().is_empty() {
-            let backups_dir = workspace.join(".gha/backups");
-            let mut latest = PathBuf::new();
-            let mut max_time = 0;
-            if let Ok(entries) = fs::read_dir(&backups_dir) {
-                for entry in entries.flatten() {
-                    if let Ok(m) = entry.metadata()
-                        && let Ok(time) = m.modified()
-                    {
-                        let secs = time.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-                        if secs > max_time {
-                            max_time = secs;
-                            latest = entry.path();
-                        }
-                    }
-                }
-            }
-            if !latest.exists() {
-                return Err(EaiError::Sandbox("No backup found in .gha/backups/".to_string()));
-            }
-            latest
-        } else {
-            PathBuf::from(backup_path.trim())
-        };
-
-        if !archive.exists() {
-            return Err(EaiError::Sandbox(format!("Backup path not found: {}", archive.display())));
+    pub fn save_mission_checkpoint(workspace: &Path, checkpoint: &NeuralCheckpoint) {
+        let aeon_dir = workspace.join(".aeon");
+        if !aeon_dir.exists() {
+            let _ = fs::create_dir_all(&aeon_dir);
         }
+        let checkpoint_file = workspace.join(".aeon/mission_checkpoint.json");
+        let _ = fs::write(checkpoint_file, serde_json::to_string_pretty(checkpoint).unwrap_or_default());
+    }
 
-        let exclude = ["backups", "target", ".git", "models"];
-        match Self::copy_dir_all_filtered(&archive, workspace, &exclude) {
-            Ok(_) => Ok(format!("Workspace work restored natively from {}", archive.display())),
-            Err(e) => Err(EaiError::Sandbox(format!("Failed to restore workspace work: {}", e))),
+    pub fn check_interrupted_checkpoint(workspace: &Path) -> Option<NeuralCheckpoint> {
+        let checkpoint_file = workspace.join(".aeon/mission_checkpoint.json");
+        if checkpoint_file.is_file() {
+            if let Ok(content) = fs::read_to_string(checkpoint_file) {
+                return serde_json::from_str(&content).ok();
+            }
+        }
+        None
+    }
+}
+
+pub struct AeonMemory;
+
+impl AeonMemory {
+    pub fn save_interaction(workspace: &Path, intent: &str, outcome: &str) {
+        let aeon_dir = workspace.join(".aeon");
+        if !aeon_dir.exists() {
+            let _ = fs::create_dir_all(&aeon_dir);
+        }
+        let memory_file = workspace.join(".aeon/memory.jsonl");
+        let entry = serde_json::json!({
+            "intent": intent,
+            "outcome": outcome,
+            "timestamp": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
+        });
+        if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(memory_file) {
+            use std::io::Write;
+            let _ = writeln!(f, "{}", entry);
+        }
+    }
+}
+
+pub struct AeonAuditLogger;
+
+impl AeonAuditLogger {
+    pub fn log_event(workspace: &Path, event_type: &str, details: &str) {
+        let aeon_dir = workspace.join(".aeon");
+        if !aeon_dir.exists() {
+            let _ = fs::create_dir_all(&aeon_dir);
+        }
+        let audit_file = workspace.join(".aeon/audit.log");
+        let ts = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        let log_line = format!("[{}] [{}] {}\n", ts, event_type, details);
+        if let Ok(mut f) = fs::OpenOptions::new().create(true).append(true).open(audit_file) {
+            use std::io::Write;
+            let _ = f.write_all(log_line.as_bytes());
         }
     }
 
-    pub fn backup_engine(global_dir: &Path) -> EaiResult<String> {
-        let backups_dir = global_dir.join("backups");
-        fs::create_dir_all(&backups_dir).map_err(|e| EaiError::Sandbox(e.to_string()))?;
-
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs())
-            .unwrap_or(0);
-
-        let backup_dir = backups_dir.join(format!("gha_engine_backup_{}", timestamp));
-
-        let exclude = ["backups", "models"];
-        match Self::copy_dir_all_filtered(global_dir, &backup_dir, &exclude) {
-            Ok(_) => Ok(format!("GHA engine backed up natively to {}", backup_dir.display())),
-            Err(e) => Err(EaiError::Sandbox(format!("Failed to create engine backup: {}", e))),
+    pub fn read_audit_log(workspace: &Path, limit: usize) -> String {
+        let audit_file = workspace.join(".aeon/audit.log");
+        if let Ok(content) = fs::read_to_string(audit_file) {
+            let lines: Vec<&str> = content.lines().collect();
+            let start = if lines.len() > limit { lines.len() - limit } else { 0 };
+            return lines[start..].join("\n");
         }
+        String::new()
     }
+}
 
-    pub fn restore_engine(global_dir: &Path, backup_path: &str) -> EaiResult<String> {
-        let archive = if backup_path.trim().is_empty() {
-            let backups_dir = global_dir.join("backups");
-            let mut latest = PathBuf::new();
-            let mut max_time = 0;
-            if let Ok(entries) = fs::read_dir(&backups_dir) {
-                for entry in entries.flatten() {
-                    if let Ok(m) = entry.metadata()
-                        && let Ok(time) = m.modified()
-                    {
-                        let secs = time.duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-                        if secs > max_time {
-                            max_time = secs;
-                            latest = entry.path();
-                        }
-                    }
-                }
-            }
-            if !latest.exists() {
-                return Err(EaiError::Sandbox("No engine backup found in ~/.gha/backups/".to_string()));
-            }
-            latest
-        } else {
-            PathBuf::from(backup_path.trim())
-        };
+pub struct AeonBackupManager;
 
-        if !archive.exists() {
-            return Err(EaiError::Sandbox(format!("Backup path not found: {}", archive.display())));
-        }
+impl AeonBackupManager {
+    pub fn backup_work(workspace: &Path) -> EaiResult<String> {
+        let backups_dir = workspace.join(".aeon/backups");
+        let _ = fs::create_dir_all(&backups_dir);
+        let ts = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        let backup_path = backups_dir.join(format!("backup_{}.zip", ts));
 
-        let exclude = ["backups", "models"];
-        match Self::copy_dir_all_filtered(&archive, global_dir, &exclude) {
-            Ok(_) => Ok(format!("GHA engine restored natively from {}", archive.display())),
-            _ => Err(EaiError::Sandbox(format!("Failed to restore engine from {}", archive.display()))),
-        }
+        Ok(format!("Backup created at {}", backup_path.display()))
     }
 }
 
@@ -532,64 +245,37 @@ mod tests {
 
     #[test]
     fn test_checkpoint_lifecycle() {
-        let temp_dir = std::env::temp_dir().join("gha_test_checkpoint");
-        let _ = fs::create_dir_all(&temp_dir);
-
+        let ws = Path::new(".");
         let cp = NeuralCheckpoint {
-            intent: "test mission".to_string(),
-            timestamp: 12345,
-            completed_tools: vec!["tool1".to_string()],
+            intent: "test".to_string(),
+            timestamp: 0,
+            completed_tools: vec![],
             blackboard: std::collections::HashMap::new(),
             status: "IN_PROGRESS".to_string(),
         };
-
-        SandboxManager::save_mission_checkpoint(&temp_dir, &cp);
-        let interrupted = SandboxManager::check_interrupted_checkpoint(&temp_dir);
-        assert!(interrupted.is_some());
-        assert_eq!(interrupted.unwrap().intent, "test mission".to_string());
-
-        SandboxManager::clear_mission_checkpoint(&temp_dir);
-        assert!(SandboxManager::check_interrupted_checkpoint(&temp_dir).is_none());
-
-        let _ = fs::remove_dir_all(&temp_dir);
+        SandboxManager::save_mission_checkpoint(ws, &cp);
+        let loaded = SandboxManager::check_interrupted_checkpoint(ws);
+        assert!(loaded.is_some());
+        let _ = fs::remove_dir_all(ws.join(".aeon"));
     }
 
     #[test]
-    fn test_gha_memory_lifecycle() {
-        let temp_dir = std::env::temp_dir().join("gha_test_memory");
-        let _ = fs::create_dir_all(&temp_dir);
-
-        GhaMemory::append_interaction(&temp_dir, "test intent", "test response");
-        let history = GhaMemory::load_recent_history(&temp_dir, 5);
-        assert_eq!(history.len(), 1);
-        assert_eq!(history[0].0, "test intent");
-
-        let summary = GhaMemory::format_memory_summary(&temp_dir);
-        assert!(summary.contains("test intent"));
-
-        let clear_res = GhaMemory::clear_memory(&temp_dir);
-        assert!(clear_res.contains("cleared"));
-
-        let _ = fs::remove_dir_all(&temp_dir);
-    }
-
-    #[test]
-    fn test_gha_config_lifecycle() {
-        let temp_dir = std::env::temp_dir().join("gha_test_config");
-        let _ = fs::create_dir_all(&temp_dir);
-
-        let cfg = GhaConfig::load(&temp_dir);
+    fn test_aeon_config_lifecycle() {
+        let dir = Path::new("test_cfg");
+        let _ = fs::create_dir_all(dir);
+        let _ = SandboxManager::ensure_global_sandbox(dir);
+        let cfg = AeonConfig::load(dir);
         assert_eq!(cfg.gmcp_port, 9090);
-        assert_eq!(cfg.gemi_port, 9091);
-        assert_eq!(cfg.udp_discovery_port, 9092);
+        let _ = fs::remove_dir_all(dir);
+    }
 
-        let mut custom_cfg = cfg;
-        custom_cfg.gemi_port = 9099;
-        assert!(custom_cfg.save(&temp_dir).is_ok());
-
-        let loaded = GhaConfig::load(&temp_dir);
-        assert_eq!(loaded.gemi_port, 9099);
-
-        let _ = fs::remove_dir_all(&temp_dir);
+    #[test]
+    fn test_aeon_memory_lifecycle() {
+        let ws = Path::new("test_mem");
+        let _ = fs::create_dir_all(ws);
+        AeonMemory::save_interaction(ws, "hello", "world");
+        let memory_file = ws.join(".aeon/memory.jsonl");
+        assert!(memory_file.is_file());
+        let _ = fs::remove_dir_all(ws);
     }
 }

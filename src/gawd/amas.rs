@@ -1,4 +1,4 @@
-// 🌌 GMAS: Universal EAI Swarm Supervisor
+// 🌌 AMAS: Universal EAI Swarm Supervisor
 // Tier 1 AOA Protocol governing Exponential Explosive Intelligence Swarms
 
 use std::fs;
@@ -33,16 +33,16 @@ pub struct ClusterPeerNode {
     pub trust_score: f32,
 }
 
-pub struct GmasSupervisor;
+pub struct AmaSupervisor;
 
-impl GmasSupervisor {
+impl AmaSupervisor {
     pub const UDP_DISCOVERY_PORT: u16 = 9092;
 
     pub fn list_cluster_nodes() -> Vec<ClusterPeerNode> {
         static DISCOVERED_PEERS: OnceLock<Arc<Mutex<Vec<ClusterPeerNode>>>> = OnceLock::new();
         let peers_mutex = DISCOVERED_PEERS.get_or_init(|| {
             let initial = vec![ClusterPeerNode {
-                node_id: "gha-local-master".to_string(),
+                node_id: "aeon-local-master".to_string(),
                 address: "127.0.0.1:9090".to_string(),
                 node_type: "LOCAL_MASTER".to_string(),
                 is_active: true,
@@ -64,16 +64,16 @@ impl GmasSupervisor {
                     let mut buf = [0u8; 1024];
                     loop {
                         let local_caps = HardwareProfiler::get_caps_string();
-                        let ping_msg = format!("GHA_PING:{}", local_caps);
+                        let ping_msg = format!("AEON_PING:{}", local_caps);
 
                         if let Ok((amt, src)) = socket.recv_from(&mut buf) {
                             let msg = String::from_utf8_lossy(&buf[..amt]);
-                            if msg.starts_with("GHA_PING") {
-                                let pong_msg = format!("GHA_PONG:{}", local_caps);
+                            if msg.starts_with("AEON_PING") {
+                                let pong_msg = format!("AEON_PONG:{}", local_caps);
                                 let _ = socket.send_to(pong_msg.as_bytes(), src);
                             }
 
-                            if msg.starts_with("GHA_PONG") || msg.starts_with("GHA_PING") {
+                            if msg.starts_with("AEON_PONG") || msg.starts_with("AEON_PING") {
                                  let parts: Vec<&str> = msg.split(':').collect();
                                  let caps = if parts.len() > 1 {
                                      parts[1].split(',').map(|s| s.to_string()).collect()
@@ -88,7 +88,7 @@ impl GmasSupervisor {
                                      p.is_active = true;
                                  } else {
                                      peers.push(ClusterPeerNode {
-                                         node_id: format!("gha-peer-{}", src.ip()),
+                                         node_id: format!("aeon-peer-{}", src.ip()),
                                          address: addr_str,
                                          node_type: if caps.contains(&"GPU".to_string()) { "WORKSTATION_NODE".into() } else { "PEER".into() },
                                          is_active: true,
@@ -123,7 +123,7 @@ impl GmasSupervisor {
         for (name, output) in swarm_logs {
             a2a_logs.push(A2AMessage {
                 sender: name,
-                recipient: "GMA-Master".to_string(),
+                recipient: "AMA-Master".to_string(),
                 action: "MISSION_FLUX".to_string(),
                 payload: output,
             });
@@ -162,12 +162,12 @@ impl GmasSupervisor {
         if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
             let _ = socket.set_broadcast(true);
             let _ = socket.set_read_timeout(Some(Duration::from_millis(200)));
-            let _ = socket.send_to(b"GHA_LAN_PING", format!("255.255.255.255:{}", Self::UDP_DISCOVERY_PORT));
+            let _ = socket.send_to(b"AEON_LAN_PING", format!("255.255.255.255:{}", Self::UDP_DISCOVERY_PORT));
 
             let mut buf = [0u8; 512];
             while let Ok((amt, src)) = socket.recv_from(&mut buf) {
                 let msg = String::from_utf8_lossy(&buf[..amt]);
-                if msg.contains("GHA_LAN_ACK") || msg.contains("GHA") {
+                if msg.contains("AEON_LAN_ACK") || msg.contains("AEON") {
                     active_peers.push(src.to_string());
                 }
             }
@@ -185,7 +185,7 @@ impl GmasSupervisor {
 
         // 🚀 Parallel AOA Synchronization Logic (Rule 2: Saturation)
         for node in nodes.clone() {
-            if node.node_id == "gha-local-master" { continue; }
+            if node.node_id == "aeon-local-master" { continue; }
             let addr = node.address.clone();
             let p = payload.to_string();
             let nid = node.node_id.clone();
@@ -205,7 +205,7 @@ impl GmasSupervisor {
             }
         }
 
-        let sync_file = workspace.join(".gha/cluster_sync.json");
+        let sync_file = workspace.join(".aeon/cluster_sync.json");
         let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
         let sync_data = serde_json::json!({
             "timestamp": now,
@@ -224,7 +224,7 @@ impl GmasSupervisor {
 
         // Find a workstation node with GPU capability
         let target_node = nodes.iter()
-            .find(|n| n.node_type == "WORKSTATION_NODE" && n.is_active && n.node_id != "gha-local-master");
+            .find(|n| n.node_type == "WORKSTATION_NODE" && n.is_active && n.node_id != "aeon-local-master");
 
         if let Some(node) = target_node {
              let res = Self::dispatch_peer_task(&node.address, "reason", prompt);
@@ -240,7 +240,7 @@ impl GmasSupervisor {
         let payload = serde_json::to_string(checkpoint).unwrap_or_default();
 
         for node in nodes {
-            if node.node_type == "WORKSTATION_NODE" && node.node_id != "gha-local-master" {
+            if node.node_type == "WORKSTATION_NODE" && node.node_id != "aeon-local-master" {
                 let _ = Self::dispatch_peer_task(&node.address, "replicate_state", &payload);
             }
         }
@@ -252,7 +252,7 @@ impl GmasSupervisor {
         let mut checkpoints = Vec::new();
 
         for node in nodes {
-            if node.node_id != "gha-local-master" {
+            if node.node_id != "aeon-local-master" {
                 let res = Self::dispatch_peer_task(&node.address, "get_checkpoints", "");
                 if let Ok(list) = serde_json::from_str::<Vec<NeuralCheckpoint>>(&res) {
                     checkpoints.extend(list);
@@ -273,7 +273,7 @@ impl GmasSupervisor {
             }).to_string();
 
             for node in nodes {
-                if node.node_type == "WORKSTATION_NODE" && node.node_id != "gha-local-master" {
+                if node.node_type == "WORKSTATION_NODE" && node.node_id != "aeon-local-master" {
                     let _ = Self::dispatch_peer_task(&node.address, "replicate_reflex", &payload);
                 }
             }

@@ -1,13 +1,13 @@
-// GHA Truth Transformer: Formal Verification Substrate
+// AEON Truth Transformer: Formal Verification Substrate
 // RULE 15: Truth & Hallucination Sovereignty - Native Candle Verification
 
 use std::path::Path;
 use candle_core::{Device, Tensor};
 use crate::error::{EaiError, EaiResult};
 
-pub struct TruthTransformer;
+pub struct AeonTruthAgent;
 
-impl TruthTransformer {
+impl AeonTruthAgent {
     /// Formal Verification Reflex
     /// Validates tool output against physical workspace reality before user delivery.
     pub fn verify_mission_reality(_goal: &str, tool_name: &str, result: &str, workspace: &Path) -> EaiResult<String> {
@@ -29,7 +29,7 @@ impl TruthTransformer {
         }
 
         if !violations.is_empty() {
-            let error_msg = format!("TRUTH VIOLATION: {}\nMission blocked to prevent substrate pollution.", violations.join("\n"));
+            let error_msg = format!("TRUTH VIOLATION: {}\\nMission blocked to prevent substrate pollution.", violations.join("\\n"));
             return Err(EaiError::Governance(error_msg));
         }
 
@@ -60,5 +60,13 @@ impl TruthTransformer {
         // We normalize the score to [0, 1].
         let score = (var * 10.0 + 0.5).min(1.0).max(0.0);
         Ok(score)
+    }
+}
+
+pub struct TruthTransformer;
+
+impl TruthTransformer {
+    pub fn verify_mission_reality(goal: &str, tool_name: &str, result: &str, workspace: &Path) -> EaiResult<String> {
+        AeonTruthAgent::verify_mission_reality(goal, tool_name, result, workspace)
     }
 }

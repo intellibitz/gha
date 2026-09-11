@@ -1,4 +1,4 @@
-// GHA Axiom Substrate: Autonomous Self-Awareness from Compiled Binary Instructions
+// AEON Axiom Substrate: Autonomous Self-Awareness from Compiled Binary Instructions
 // Bypasses string parsing by leveraging compiled Rust structs and enums in AlphaSelf.
 
 use std::path::Path;
